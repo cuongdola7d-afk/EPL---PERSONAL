@@ -26,16 +26,24 @@ Người học đã biết Python, Java, OOP và SQL/MySQL cơ bản; chưa họ
 ├── AGENTS.md
 ├── README.md
 ├── .gitignore
+├── docs/phase-1.md
 ├── .vscode/
 │   └── settings.json
 └── backend/
     ├── pom.xml
+    ├── data/clubs.csv
     └── src/
-        ├── main/java/com/premierhub/App.java
-        └── test/java/com/premierhub/AppTest.java
+        ├── main/java/com/premierhub/
+        │   ├── App.java
+        │   ├── csv/ClubCsvReader.java
+        │   └── model/Club.java
+        └── test/java/com/premierhub/
+            ├── AppTest.java
+            ├── csv/ClubCsvReaderTest.java
+            └── model/ClubTest.java
 ```
 
-`App` hiện là chương trình Hello World; `AppTest` là test mẫu, chưa kiểm tra nghiệp vụ. Chưa có frontend, database, bộ dữ liệu CSV hoặc chức năng nghiệp vụ. `backend/target/` là đầu ra build, không phải mã nguồn để commit. Cập nhật phần cấu trúc này khi dự án thay đổi.
+`App` hiển thị một câu lạc bộ mẫu; `Club` kiểm tra đầu vào và có unit test. `ClubCsvReader` import CSV đơn giản UTF-8 với header `id,name,city`, kiểm tra ID trùng và báo lỗi kèm số dòng; có test và dữ liệu giả tại `backend/data/clubs.csv`. Bài thực hành `matchesName` và tích hợp reader vào `App` dành cho người học, chưa triển khai; xem `docs/phase-1.md`. Theo yêu cầu Sprint 1, import Club được làm trước Player. Chưa có frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit. Cập nhật phần cấu trúc này khi dự án thay đổi.
 
 ## Quy tắc code
 
@@ -73,6 +81,17 @@ Lệnh đầu biên dịch và chạy test; lệnh sau chạy `com.premierhub.Ap
 
 - Hoàn thiện README với mục tiêu, yêu cầu môi trường và lệnh chạy/test.
 - Bổ sung ignore đầu ra Maven `target/`, xem xét file cấu hình IDE trước khi đưa vào Git và thống nhất môi trường Java.
-- Bắt đầu nghiệp vụ nhỏ với lớp `Team` và test hành vi; chia rõ phần khung do Codex làm và phần người học thực hành.
+- Đã bắt đầu nghiệp vụ với lớp `Club` (thay tên đề xuất `Team`) và test hành vi; phần tìm tên dành cho người học thực hành.
 - Giải thích, chạy test và xem diff trước mỗi commit được cho phép.
 - Sau nền tảng này mới tiến tới CSV, rồi database/web theo từng bước học. Đây là định hướng đề xuất, không phải các chức năng đã hoàn thành.
+
+## Lộ trình người dùng đã chọn
+
+1. Java và CSV: `Club`, `Player`, `Match`, `Standing`, đọc CSV, tìm kiếm/lọc, bảng xếp hạng, thống kê cầu thủ và unit test.
+2. Spring Boot: REST API, controller/service/repository/DTO, JSON và Postman.
+3. Frontend cơ bản: HTML/CSS/JavaScript, `fetch` và giao diện dữ liệu bóng đá.
+4. Database: ERD, MySQL, JPA/Hibernate và chuyển dữ liệu CSV sang database.
+5. Tài khoản và cộng đồng: đăng ký/đăng nhập, bảo vệ mật khẩu bằng hàm băm phù hợp, USER/ADMIN, đội yêu thích, bình luận và quản lý bình luận.
+6. React và triển khai: chuyển frontend sang React, tách frontend/backend, Docker, testing và deploy.
+
+Triển khai từng bài nhỏ theo cách cộng tác ở trên; không tự hoàn thành bài tập đã giao cho người học.

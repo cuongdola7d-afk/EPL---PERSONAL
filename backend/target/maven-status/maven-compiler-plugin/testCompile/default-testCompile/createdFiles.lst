@@ -1,1 +1,10 @@
+com\premierhub\model\PlayerTest.class
+com\premierhub\service\LeagueTableServiceTest.class
+com\premierhub\csv\MatchCsvReaderTest.class
+com\premierhub\csv\PlayerCsvReaderTest.class
+com\premierhub\model\ClubTest.class
+com\premierhub\model\MatchTest.class
+com\premierhub\model\StandingTest.class
+com\premierhub\service\PremierHubServiceTest.class
+com\premierhub\csv\ClubCsvReaderTest.class
 com\premierhub\AppTest.class

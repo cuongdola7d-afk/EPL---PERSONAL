@@ -1,0 +1,13 @@
+id,name,clubId,position,goals,assists
+1,David Raya,1,GOALKEEPER,0,0
+2,Bukayo Saka,1,FORWARD,12,10
+3,Robert Sanchez,2,GOALKEEPER,0,0
+4,Cole Palmer,2,MIDFIELDER,14,8
+5,Alisson Becker,3,GOALKEEPER,0,1
+6,Mohamed Salah,3,FORWARD,18,11
+7,Ederson,4,GOALKEEPER,0,1
+8,Erling Haaland,4,FORWARD,20,4
+9,Andre Onana,5,GOALKEEPER,0,0
+10,Bruno Fernandes,5,MIDFIELDER,9,9
+11,Guglielmo Vicario,6,GOALKEEPER,0,0
+12,Son Heung-min,6,FORWARD,13,7

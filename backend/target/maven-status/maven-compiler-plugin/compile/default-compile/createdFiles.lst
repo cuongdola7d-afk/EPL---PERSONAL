@@ -1,1 +1,13 @@
+com\premierhub\csv\ClubCsvReader.class
+com\premierhub\model\MatchStatus.class
+com\premierhub\service\LeagueTableService$MutableStanding.class
+com\premierhub\service\PremierHubService.class
+com\premierhub\model\Position.class
 com\premierhub\App.class
+com\premierhub\csv\PlayerCsvReader.class
+com\premierhub\model\Player.class
+com\premierhub\model\Standing.class
+com\premierhub\service\LeagueTableService.class
+com\premierhub\csv\MatchCsvReader.class
+com\premierhub\model\Match.class
+com\premierhub\model\Club.class
