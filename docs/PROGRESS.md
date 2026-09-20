@@ -8,6 +8,14 @@
 - Hoàn thành chương trình console demo và unit test.
 - Dữ liệu hiện nằm trong bộ nhớ; chưa có Spring Boot, API hoặc database.
 
+## Giai đoạn 2 — Spring Boot Club API: bước 1 hoàn thành
+
+- Chuyển Maven project sang Spring Boot 4.1.1, Java release 21.
+- Thêm class khởi động và REST API chỉ đọc cho `Club`.
+- Tải `clubs.csv` một lần từ classpath khi application context khởi động.
+- Thêm `ClubResponse`, validation HTTP, context test và MockMvc test.
+- Chưa có Player/Match/Standing API, database hoặc frontend.
+
 ## Bước kế tiếp
 
-Ôn lại các bài trong `LEARNING_TASKS.md`, sau đó mới lên kế hoạch chuyển lõi nghiệp vụ sang Spring Boot ở Sprint tiếp theo.
+Toàn bộ phần code từng dành cho người học trong `LEARNING_TASKS.md` đã được hoàn thiện và có test. Bước kế tiếp của Giai đoạn 2 nên được lập kế hoạch riêng, không mở rộng API trong thay đổi hiện tại.

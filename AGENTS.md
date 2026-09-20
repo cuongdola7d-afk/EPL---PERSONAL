@@ -12,7 +12,7 @@ Người học đã biết Python, Java, OOP và SQL/MySQL cơ bản; chưa họ
 
 ## Công nghệ
 
-- Hiện tại: Java, Maven, JUnit Jupiter; Java release mục tiêu là 21.
+- Hiện tại: Java 21, Maven, JUnit Jupiter và Spring Boot 4.1.1.
 - Maven coordinates: `com.premierhub:premierhub-backend`, phiên bản hiện tại `0.1.0-SNAPSHOT`.
 - Backend về sau: Spring Boot; database: MySQL.
 - Frontend: bắt đầu với HTML/CSS/JavaScript, sau đó React.
@@ -31,19 +31,27 @@ Người học đã biết Python, Java, OOP và SQL/MySQL cơ bản; chưa họ
 │   └── settings.json
 └── backend/
     ├── pom.xml
-    ├── data/clubs.csv
+    ├── data/
+    │   ├── clubs.csv
+    │   ├── players.csv
+    │   └── matches.csv
     └── src/
         ├── main/java/com/premierhub/
         │   ├── App.java
-        │   ├── csv/ClubCsvReader.java
-        │   └── model/Club.java
+        │   ├── PremierHubApplication.java
+        │   ├── config/ClubDataConfiguration.java
+        │   ├── csv/
+        │   ├── model/
+        │   ├── service/
+        │   └── web/
+        ├── main/resources/data/clubs.csv
         └── test/java/com/premierhub/
             ├── AppTest.java
             ├── csv/ClubCsvReaderTest.java
             └── model/ClubTest.java
 ```
 
-`App` hiển thị một câu lạc bộ mẫu; `Club` kiểm tra đầu vào và có unit test. `ClubCsvReader` import CSV đơn giản UTF-8 với header `id,name,city`, kiểm tra ID trùng và báo lỗi kèm số dòng; có test và dữ liệu giả tại `backend/data/clubs.csv`. Bài thực hành `matchesName` và tích hợp reader vào `App` dành cho người học, chưa triển khai; xem `docs/phase-1.md`. Theo yêu cầu Sprint 1, import Club được làm trước Player. Chưa có frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit. Cập nhật phần cấu trúc này khi dự án thay đổi.
+Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Standing. Giai đoạn 2 đã bắt đầu với Spring Boot và API chỉ đọc cho Club; `clubs.csv` được tải từ classpath một lần khi khởi động. Chưa có API cho Player/Match/Standing, frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit. Cập nhật phần cấu trúc này khi dự án thay đổi.
 
 ## Quy tắc code
 
@@ -72,7 +80,7 @@ Chạy từ thư mục `backend/`:
 
 ```powershell
 mvn clean test
-mvn compile exec:java
+mvn spring-boot:run
 ```
 
 Lệnh đầu biên dịch và chạy test; lệnh sau chạy `com.premierhub.App` qua exec-maven-plugin.

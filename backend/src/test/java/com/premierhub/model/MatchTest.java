@@ -41,6 +41,7 @@ class MatchTest {
         assertFalse(match.isFinished());
         assertFalse(match.isDraw());
         assertTrue(match.getWinnerClubId().isEmpty());
+        assertTrue(match.getLoserClubId().isEmpty());
         assertThrows(IllegalStateException.class, () -> match.getPointsFor(1));
     }
 

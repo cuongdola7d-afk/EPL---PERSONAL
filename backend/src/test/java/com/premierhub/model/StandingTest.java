@@ -17,6 +17,14 @@ class StandingTest {
     }
 
     @Test
+    void allowsNegativeGoalDifference() {
+        Standing standing = new Standing(club, 2, 0, 1, 1, 4, 7);
+
+        assertEquals(-3, standing.getGoalDifference());
+        assertEquals(1, standing.getPoints());
+    }
+
+    @Test
     void rejectsNegativeAndInconsistentValues() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Standing(club, 1, 1, 0, 0, -1, 0));

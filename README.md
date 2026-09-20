@@ -1,13 +1,14 @@
 # PremierHub
 
-PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Sprint 1 xây dựng lõi Java thuần trước khi chuyển sang Spring Boot: đọc CSV, kiểm tra dữ liệu, tìm kiếm câu lạc bộ/cầu thủ, thống kê cầu thủ và tính bảng xếp hạng.
+PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạn 1 xây dựng lõi Java thuần; bước đầu Giai đoạn 2 đưa lõi đó vào Spring Boot và cung cấp API chỉ đọc cho câu lạc bộ.
 
-## Công nghệ Sprint 1
+## Công nghệ hiện tại
 
 - Java 21
 - Maven
 - JUnit Jupiter
-- Java standard library; chưa dùng Spring Boot hoặc database
+- Spring Boot 4.1.1, Spring Web MVC và Bean Validation
+- Dữ liệu CSV trong bộ nhớ; chưa dùng database
 
 ## Chức năng đã hoàn thành
 
@@ -18,6 +19,8 @@ PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Sprint 1 x�
 - Lọc cầu thủ theo câu lạc bộ, tìm cầu thủ, lấy danh sách vua phá lưới.
 - Tính bảng xếp hạng từ các trận đã kết thúc.
 - Chương trình console demo và unit test cho model, CSV reader, service.
+- API `GET` cho danh sách câu lạc bộ, câu lạc bộ theo ID và tìm kiếm theo tên.
+- Spring context test và MockMvc test cho Club API.
 
 ## Cấu trúc chính
 
@@ -31,6 +34,8 @@ backend/
 └── src/
     ├── main/java/com/premierhub/
     │   ├── App.java
+    │   ├── PremierHubApplication.java
+    │   ├── config/ClubDataConfiguration.java
     │   ├── csv/
     │   │   ├── ClubCsvReader.java
     │   │   ├── MatchCsvReader.java
@@ -42,9 +47,13 @@ backend/
     │   │   ├── Player.java
     │   │   ├── Position.java
     │   │   └── Standing.java
-    │   └── service/
+    │   ├── service/
     │       ├── LeagueTableService.java
     │       └── PremierHubService.java
+    │   └── web/
+    │       ├── ClubController.java
+    │       └── dto/ClubResponse.java
+    ├── main/resources/data/clubs.csv
     └── test/java/com/premierhub/
         ├── csv/
         ├── model/
@@ -92,19 +101,23 @@ Cần JDK 21 trở lên; Maven biên dịch với Java release 21.
 ```powershell
 cd backend
 mvn clean test
-mvn compile exec:java
+mvn spring-boot:run
 ```
 
-Lệnh demo mặc định đọc thư mục `backend/data`. Có thể truyền thư mục dữ liệu khác:
+Ứng dụng chạy tại `http://localhost:8080`. Các endpoint hiện có:
 
-```powershell
-mvn compile exec:java -Dexec.args="D:\duong-dan\data"
-```
+- `GET /api/clubs`
+- `GET /api/clubs/{id}`
+- `GET /api/clubs/search?keyword=united`
 
-Đường dẫn chỉ được truyền khi chạy; source code không hard-code đường dẫn máy cá nhân.
+Các request mẫu nằm trong `docs/api-requests.http`. API đọc `src/main/resources/data/clubs.csv` từ classpath, nên resource hoạt động khi chạy trong IDE lẫn JAR. File được đọc một lần lúc tạo application context.
+
+`Club` là model nghiệp vụ: nó giữ dữ liệu hợp lệ và logic `matchesName`. `ClubResponse` là DTO của HTTP API: record này xác định đúng các field JSON mà client được nhận. Mapping dùng Java thông thường, không dùng mapper framework.
+
+Luồng request: `HTTP → ClubController → PremierHubService → danh sách Club đã nạp từ CSV → ClubResponse → JSON`.
 
 ## Quy tắc bảng xếp hạng
 
 Thắng 3 điểm, hòa 1 điểm, thua 0 điểm. Chỉ trận `FINISHED` được tính. Thứ tự lần lượt theo điểm giảm dần, hiệu số giảm dần, bàn thắng giảm dần và tên câu lạc bộ tăng dần.
 
-Các bài tự luyện tiếp theo nằm trong [docs/LEARNING_TASKS.md](docs/LEARNING_TASKS.md).
+Các ví dụ học tập đã hoàn thiện và test tương ứng nằm trong [docs/LEARNING_TASKS.md](docs/LEARNING_TASKS.md).

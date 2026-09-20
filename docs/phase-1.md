@@ -35,7 +35,7 @@ mvn compile exec:java
 
 Console mong đợi: `1 | Sample United | Sample City`.
 
-## Bài luyện ban đầu: tìm theo tên
+## Implementation tìm theo tên
 
 Thêm phương thức sau vào `Club` và viết test trong `ClubTest`:
 
@@ -56,7 +56,7 @@ Yêu cầu với câu lạc bộ có tên `Sample United`:
 
 Gợi ý: kiểm tra `null` trước khi gọi phương thức trên chuỗi; dùng `isBlank()`, `strip()`, `toLowerCase(Locale.ROOT)` và `contains()`. `Locale.ROOT` giúp chuyển chữ thường nhất quán, không phụ thuộc ngôn ngữ máy chạy.
 
-Phương thức này hiện đã được triển khai đầy đủ cùng test. Bạn có thể tự viết lại để luyện tập; danh sách bài tập tập trung tại `docs/LEARNING_TASKS.md`.
+Phương thức này đã được triển khai đầy đủ cùng test.
 
 ## Sprint 1: Import Club từ CSV
 
@@ -90,13 +90,13 @@ Cách đọc code:
 
 Test dùng `@TempDir` để tạo file riêng cho từng test; kiểm tra UTF-8, BOM, CRLF, header, dòng trắng, cột thiếu/thừa, ID sai/trùng, dữ liệu trống và file không tồn tại.
 
-### Bài luyện ban đầu: nối reader vào App
+### Implementation nối reader vào App
 
-Reader và phần tích hợp console hiện đã hoàn chỉnh. Các bước dưới đây được giữ lại như một bài luyện:
+Reader và phần tích hợp console đã hoàn chỉnh với các bước sau:
 
 1. Trong `App.main`, thay câu lạc bộ tạo thủ công bằng lời gọi reader theo ví dụ trên.
 2. Dùng vòng lặp `for` và `formatClub` đang có để in từng câu lạc bộ.
-3. In tổng số câu lạc bộ: `Imported 3 clubs` với file mẫu.
+3. In tổng số câu lạc bộ đã import.
 4. Bắt `IOException` và `IllegalArgumentException`, in thông báo lỗi ra `System.err`; chỉ in tổng số khi import thành công.
 
 Các import cần dùng: `com.premierhub.csv.ClubCsvReader`, `java.nio.file.Path`, `java.io.IOException`; có thể dùng `var` hoặc thêm `java.util.List`.
@@ -108,13 +108,13 @@ mvn clean test
 mvn compile exec:java
 ```
 
-Sau khi bạn hoàn thành tích hợp, kết quả console mong đợi:
+Ví dụ kết quả console:
 
 ```text
 1 | Sample United | London
 2 | Sample City | Manchester
 3 | Sample Rovers | Liverpool
-Imported 3 clubs
+Imported 6 clubs
 ```
 
 `App` hiện đọc đủ `clubs.csv`, `players.csv`, `matches.csv`, thực hiện tìm kiếm, hiển thị thống kê và in bảng xếp hạng. Xem README để chạy demo hoàn chỉnh.

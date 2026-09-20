@@ -4,6 +4,8 @@ import com.premierhub.model.Club;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,37 +20,51 @@ import java.util.Set;
  */
 public final class ClubCsvReader {
     public List<Club> read(Path path) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            return read(reader);
+        }
+    }
+
+    public List<Club> read(InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("CSV input stream must not be null");
+        }
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            return read(reader);
+        }
+    }
+
+    private List<Club> read(BufferedReader reader) throws IOException {
         List<Club> clubs = new ArrayList<>();
         Set<Integer> ids = new HashSet<>();
 
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            String header = reader.readLine();
-            if (header == null) {
-                throw invalidRow(1, "Missing header id,name,city");
-            }
-            if (header.startsWith("\uFEFF")) {
-                header = header.substring(1);
-            }
-            String[] columns = splitRow(header, 1);
-            if (!columns[0].strip().equals("id")
-                    || !columns[1].strip().equals("name")
-                    || !columns[2].strip().equals("city")) {
-                throw invalidRow(1, "Expected header id,name,city");
-            }
+        String header = reader.readLine();
+        if (header == null) {
+            throw invalidRow(1, "Missing header id,name,city");
+        }
+        if (header.startsWith("\uFEFF")) {
+            header = header.substring(1);
+        }
+        String[] columns = splitRow(header, 1);
+        if (!columns[0].strip().equals("id")
+                || !columns[1].strip().equals("name")
+                || !columns[2].strip().equals("city")) {
+            throw invalidRow(1, "Expected header id,name,city");
+        }
 
-            String line;
-            int lineNumber = 1;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (line.isBlank()) {
-                    continue;
-                }
-                Club club = parseClub(line, lineNumber);
-                if (!ids.add(club.getId())) {
-                    throw invalidRow(lineNumber, "Duplicate club id: " + club.getId());
-                }
-                clubs.add(club);
+        String line;
+        int lineNumber = 1;
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            if (line.isBlank()) {
+                continue;
             }
+            Club club = parseClub(line, lineNumber);
+            if (!ids.add(club.getId())) {
+                throw invalidRow(lineNumber, "Duplicate club id: " + club.getId());
+            }
+            clubs.add(club);
         }
         return clubs;
     }

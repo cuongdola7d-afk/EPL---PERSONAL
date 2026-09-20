@@ -1,0 +1,11 @@
+### Lấy tất cả câu lạc bộ
+GET http://localhost:8080/api/clubs
+Accept: application/json
+
+### Lấy câu lạc bộ theo ID
+GET http://localhost:8080/api/clubs/1
+Accept: application/json
+
+### Tìm câu lạc bộ theo tên
+GET http://localhost:8080/api/clubs/search?keyword=united
+Accept: application/json

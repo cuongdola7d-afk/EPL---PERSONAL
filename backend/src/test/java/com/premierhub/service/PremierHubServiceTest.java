@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PremierHubServiceTest {
     private final Club arsenal = new Club(1, "Arsenal", "London");
@@ -34,6 +35,16 @@ class PremierHubServiceTest {
     }
 
     @Test
+    void findsClubByIdAndRejectsBlankSearchKeyword() {
+        PremierHubService service = service();
+
+        assertEquals(city, service.findClubById(2).orElseThrow());
+        assertTrue(service.findClubById(99).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> service.findClubsByName(null));
+        assertThrows(IllegalArgumentException.class, () -> service.findClubsByName("   "));
+    }
+
+    @Test
     void returnsTopScorersByGoalsAssistsThenName() {
         Player another = new Player(4, "Aaron Forward", 2,
                 Position.FORWARD, 5, 8);
@@ -42,6 +53,16 @@ class PremierHubServiceTest {
 
         assertEquals(List.of(haaland, saka, another), service.getTopScorers(3));
         assertThrows(IllegalArgumentException.class, () -> service.getTopScorers(-1));
+    }
+
+    @Test
+    void filtersPlayersByPositionAndPreservesInputOrder() {
+        PremierHubService service = service();
+
+        assertEquals(List.of(saka, haaland), service.getPlayersByPosition(Position.FORWARD));
+        assertEquals(List.of(odegaard), service.getPlayersByPosition(Position.MIDFIELDER));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getPlayersByPosition(null));
     }
 
     @Test

@@ -81,6 +81,18 @@ class PlayerCsvReaderTest {
         assertTrue(exception.getMessage().startsWith("CSV line 1:"));
     }
 
+    @Test
+    void rejectsQuotedFields() throws IOException {
+        Path path = writeCsv("id,name,clubId,position,goals,assists\n"
+                + "1,\"Sample Player\",1,FORWARD,0,0\n");
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> reader.read(path));
+
+        assertTrue(exception.getMessage().startsWith("CSV line 2:"));
+        assertTrue(exception.getMessage().contains("Quoted fields are not supported"));
+    }
+
     private Path writeCsv(String content) throws IOException {
         return Files.writeString(directory.resolve("players.csv"), content, StandardCharsets.UTF_8);
     }

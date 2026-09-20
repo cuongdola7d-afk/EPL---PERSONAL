@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,6 +105,17 @@ class ClubCsvReaderTest {
 
         assertEquals(1, reader.read(path).size());
         assertEquals(1, reader.read(path).size());
+    }
+
+    @Test
+    void readsFromInputStreamForClasspathResources() throws IOException {
+        byte[] content = "id,name,city\n1,United,London\n"
+                .getBytes(StandardCharsets.UTF_8);
+
+        List<Club> clubs = reader.read(new ByteArrayInputStream(content));
+
+        assertEquals(1, clubs.size());
+        assertEquals("United", clubs.get(0).getName());
     }
 
     private Path writeCsv(String content) throws IOException {

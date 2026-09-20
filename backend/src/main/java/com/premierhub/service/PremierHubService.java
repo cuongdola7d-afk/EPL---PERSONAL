@@ -3,12 +3,14 @@ package com.premierhub.service;
 import com.premierhub.model.Club;
 import com.premierhub.model.Match;
 import com.premierhub.model.Player;
+import com.premierhub.model.Position;
 import com.premierhub.model.Standing;
 
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 public final class PremierHubService {
@@ -35,9 +37,18 @@ public final class PremierHubService {
     }
 
     public List<Club> findClubsByName(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            throw new IllegalArgumentException("Search keyword must not be blank");
+        }
         return clubs.stream()
                 .filter(club -> club.matchesName(keyword))
                 .toList();
+    }
+
+    public Optional<Club> findClubById(int id) {
+        return clubs.stream()
+                .filter(club -> club.getId() == id)
+                .findFirst();
     }
 
     public List<Player> getPlayersByClub(int clubId) {
@@ -50,6 +61,15 @@ public final class PremierHubService {
     public List<Player> findPlayersByName(String keyword) {
         return players.stream()
                 .filter(player -> player.matchesName(keyword))
+                .toList();
+    }
+
+    public List<Player> getPlayersByPosition(Position position) {
+        if (position == null) {
+            throw new IllegalArgumentException("Position must not be null");
+        }
+        return players.stream()
+                .filter(player -> player.getPosition() == position)
                 .toList();
     }
 

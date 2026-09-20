@@ -31,6 +31,7 @@ public class App {
 
         out.println("=== Clubs ===");
         service.getClubs().forEach(club -> out.println(formatClub(club)));
+        out.println("Imported " + service.getClubs().size() + " clubs");
 
         out.println();
         out.println("=== Search clubs: manchester ===");
