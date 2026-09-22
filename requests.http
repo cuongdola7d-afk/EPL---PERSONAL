@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:8080
+
+GET {{baseUrl}}/api/players
+
+###
+GET {{baseUrl}}/api/players/2
+
+###
+GET {{baseUrl}}/api/players/999
+
+###
+GET {{baseUrl}}/api/players?club=Arsenal
+
+###
+GET {{baseUrl}}/api/players?position=Forward
+
+###
+GET {{baseUrl}}/api/players?club=Arsenal&position=Forward

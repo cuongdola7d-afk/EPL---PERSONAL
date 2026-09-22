@@ -5,6 +5,8 @@ import com.premierhub.model.Position;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,10 +21,24 @@ public final class PlayerCsvReader {
     private static final String EXPECTED_HEADER = "id,name,clubId,position,goals,assists";
 
     public List<Player> read(Path path) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            return read(reader);
+        }
+    }
+
+    public List<Player> read(InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("CSV input stream must not be null");
+        }
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            return read(reader);
+        }
+    }
+
+    private List<Player> read(BufferedReader reader) throws IOException {
         List<Player> players = new ArrayList<>();
         Set<Integer> ids = new HashSet<>();
-
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             validateHeader(reader.readLine());
             String line;
             int lineNumber = 1;
@@ -37,7 +53,6 @@ public final class PlayerCsvReader {
                 }
                 players.add(player);
             }
-        }
         return players;
     }
 

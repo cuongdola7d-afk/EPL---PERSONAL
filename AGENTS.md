@@ -51,7 +51,7 @@ Người học đã biết Python, Java, OOP và SQL/MySQL cơ bản; chưa họ
             └── model/ClubTest.java
 ```
 
-Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Standing. Giai đoạn 2 đã bắt đầu với Spring Boot và API chỉ đọc cho Club; `clubs.csv` được tải từ classpath một lần khi khởi động. Chưa có API cho Player/Match/Standing, frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit. Cập nhật phần cấu trúc này khi dự án thay đổi.
+Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Standing. Giai đoạn 2 có API chỉ đọc cho Club và Player; `clubs.csv` và `players.csv` được tải từ classpath một lần khi khởi động. Player API dùng `config/PlayerDataConfiguration.java`, `repository/`, `service/PlayerService.java`, `web/PlayerController.java` và `web/dto/PlayerResponse.java`. Tài liệu ở `docs/stage-2-player-api.md`, request mẫu ở `requests.http`. Chưa có API cho Match/Standing, frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit.
 
 ## Quy tắc code
 
