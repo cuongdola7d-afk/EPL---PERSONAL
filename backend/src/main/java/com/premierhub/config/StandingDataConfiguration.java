@@ -1,0 +1,16 @@
+package com.premierhub.config;
+
+import com.premierhub.repository.MatchRepository;
+import com.premierhub.service.LeagueTableService;
+import com.premierhub.service.PremierHubService;
+import com.premierhub.service.StandingService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class StandingDataConfiguration {
+    @Bean
+    public StandingService standingService(MatchRepository matches, PremierHubService clubs) {
+        return new StandingService(new LeagueTableService(), matches, clubs.getClubs());
+    }
+}

@@ -40,3 +40,15 @@ GET {{baseUrl}}/api/matches?status=FINISHED
 
 ###
 GET {{baseUrl}}/api/matches?matchweek=0
+
+###
+GET {{baseUrl}}/api/standings
+
+###
+GET {{baseUrl}}/api/standings?limit=5
+
+###
+GET {{baseUrl}}/api/standings/1
+
+###
+GET {{baseUrl}}/api/standings?limit=0
