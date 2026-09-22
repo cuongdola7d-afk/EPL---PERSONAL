@@ -1,78 +1,86 @@
 package com.premierhub.web;
 
-import com.premierhub.repository.InMemoryMatchRepository;
-import com.premierhub.service.LeagueTableService;
+import com.premierhub.model.Club;
+import com.premierhub.model.Standing;
 import com.premierhub.service.StandingService;
-import org.junit.jupiter.api.BeforeEach;
+import com.premierhub.service.StandingService.RankedStanding;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 import java.util.List;
+import java.util.Optional;
+import static com.premierhub.web.ErrorResponseAssertions.expectError;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@WebMvcTest(StandingController.class)
 class StandingControllerTest {
+    private final RankedStanding arsenal = new RankedStanding(1,
+            new Standing(new Club(1, "Arsenal", "London"), 1, 1, 0, 0, 2, 1));
+
     @Autowired
-    private WebApplicationContext context;
     private MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-    }
+    @MockitoBean
+    private StandingService service;
 
     @Test
-    void getAllReturnsOrderedJsonArrayWithExpectedFields() throws Exception {
+    void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
+        when(service.getStandings(null)).thenReturn(List.of(arsenal));
+
         mockMvc.perform(get("/api/standings"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(6))
                 .andExpect(jsonPath("$[0].position").value(1))
-                .andExpect(jsonPath("$[0].clubId").value(3))
-                .andExpect(jsonPath("$[0].clubName").value("Liverpool"))
-                .andExpect(jsonPath("$[0].played").value(3))
-                .andExpect(jsonPath("$[0].won").value(1))
-                .andExpect(jsonPath("$[0].drawn").value(2))
-                .andExpect(jsonPath("$[0].lost").value(0))
-                .andExpect(jsonPath("$[0].goalsFor").value(3))
-                .andExpect(jsonPath("$[0].goalsAgainst").value(1))
-                .andExpect(jsonPath("$[0].goalDifference").value(2))
-                .andExpect(jsonPath("$[0].points").value(5));
+                .andExpect(jsonPath("$[0].clubId").value(1))
+                .andExpect(jsonPath("$[0].clubName").value("Arsenal"))
+                .andExpect(jsonPath("$[0].points").value(3));
     }
 
     @Test
-    void findsStandingByClubIdAndMissingIdReturns404() throws Exception {
+    void findsClubAndReturns404WhenMissing() throws Exception {
+        when(service.findByClubId(1)).thenReturn(Optional.of(arsenal));
+
         mockMvc.perform(get("/api/standings/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.clubName").value("Arsenal"))
-                .andExpect(jsonPath("$.position").value(3));
-        mockMvc.perform(get("/api/standings/999"))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.clubName").value("Arsenal"));
+        expectError(mockMvc.perform(get("/api/standings/999")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/standings/999");
     }
 
     @Test
-    void limitReturnsTopFiveAndInvalidLimitReturns400() throws Exception {
-        mockMvc.perform(get("/api/standings").param("limit", "5"))
+    void validLimitAndLargerThanTableReturn200() throws Exception {
+        when(service.getStandings(1)).thenReturn(List.of(arsenal));
+        when(service.getStandings(50)).thenReturn(List.of(arsenal));
+
+        mockMvc.perform(get("/api/standings").param("limit", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(5))
-                .andExpect(jsonPath("$[4].position").value(5));
-        mockMvc.perform(get("/api/standings").param("limit", "0"))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$.length()").value(1));
+        mockMvc.perform(get("/api/standings").param("limit", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void invalidLimitAndWrongTypeReturnDistinctCodes() throws Exception {
+        expectError(mockMvc.perform(get("/api/standings").param("limit", "0")),
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "/api/standings");
+        expectError(mockMvc.perform(get("/api/standings").param("limit", "abc")),
+                HttpStatus.BAD_REQUEST, "TYPE_MISMATCH", "/api/standings");
+        expectError(mockMvc.perform(get("/api/standings/0")), HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR", "/api/standings/0");
     }
 
     @Test
     void emptyDataReturns200WithEmptyArray() throws Exception {
-        StandingService empty = new StandingService(new LeagueTableService(),
-                new InMemoryMatchRepository(List.of()), List.of());
-        MockMvc emptyMvc = MockMvcBuilders.standaloneSetup(new StandingController(empty)).build();
+        when(service.getStandings(null)).thenReturn(List.of());
 
-        emptyMvc.perform(get("/api/standings"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+        mockMvc.perform(get("/api/standings"))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
     }
 }

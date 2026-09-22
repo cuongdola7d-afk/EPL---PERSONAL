@@ -4,6 +4,7 @@ import com.premierhub.model.Club;
 import com.premierhub.model.Match;
 import com.premierhub.model.MatchStatus;
 import com.premierhub.repository.InMemoryMatchRepository;
+import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,6 +47,12 @@ class MatchServiceTest {
     void filtersStatusIgnoringCaseAndCombinesAllFilters() {
         assertEquals(List.of(3), ids(service.findMatches(null, null, "  sCheDuleD ")));
         assertEquals(List.of(1), ids(service.findMatches("Arsenal", 1, "finished")));
+    }
+
+    @Test
+    void rejectsUnknownStatusEvenWhenClubDoesNotMatch() {
+        assertThrows(InvalidFilterException.class,
+                () -> service.findMatches("Unknown", null, "  unknown  "));
     }
 
     @Test

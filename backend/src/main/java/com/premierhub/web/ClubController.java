@@ -2,14 +2,14 @@ package com.premierhub.web;
 
 import com.premierhub.service.ClubService;
 import com.premierhub.web.dto.ClubResponse;
+import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -30,11 +30,10 @@ public class ClubController {
     }
 
     @GetMapping("/{id}")
-    public ClubResponse getById(@PathVariable int id) {
+    public ClubResponse getById(@PathVariable @Positive int id) {
         return service.findById(id)
                 .map(ClubResponse::from)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Club not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found: " + id));
     }
 
     @GetMapping("/search")

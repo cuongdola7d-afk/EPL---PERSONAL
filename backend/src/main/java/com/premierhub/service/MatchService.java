@@ -2,6 +2,7 @@ package com.premierhub.service;
 
 import com.premierhub.model.Club;
 import com.premierhub.model.Match;
+import com.premierhub.model.MatchStatus;
 import com.premierhub.repository.MatchRepository;
 import java.util.List;
 import java.util.Locale;
@@ -29,14 +30,14 @@ public final class MatchService {
             throw new IllegalArgumentException("Matchweek must be positive");
         }
         String clubFilter = normalize(club);
-        String statusFilter = normalize(status);
+        MatchStatus statusFilter = EnumFilterParser.parse(status, MatchStatus.class, "status");
         return repository.findAll().stream()
                 .filter(match -> clubFilter == null
                         || normalize(clubName(match.getHomeClubId())).equals(clubFilter)
                         || normalize(clubName(match.getAwayClubId())).equals(clubFilter))
                 .filter(match -> matchweek == null || match.getMatchweek() == matchweek)
                 .filter(match -> statusFilter == null
-                        || normalize(match.getStatus().name()).equals(statusFilter))
+                        || match.getStatus() == statusFilter)
                 .toList();
     }
 

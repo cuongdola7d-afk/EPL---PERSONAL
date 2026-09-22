@@ -2,6 +2,7 @@ package com.premierhub.service;
 
 import com.premierhub.model.Club;
 import com.premierhub.model.Player;
+import com.premierhub.model.Position;
 import com.premierhub.repository.PlayerRepository;
 import java.util.HashMap;
 import java.util.List;
@@ -33,12 +34,12 @@ public final class PlayerService {
 
     public List<Player> findPlayers(String club, String position) {
         String clubFilter = normalize(club);
-        String positionFilter = normalize(position);
+        Position positionFilter = EnumFilterParser.parse(position, Position.class, "position");
         return repository.findAll().stream()
                 .filter(player -> clubFilter == null
                         || normalize(clubsById.get(player.getClubId()).getName()).equals(clubFilter))
                 .filter(player -> positionFilter == null
-                        || normalize(player.getPosition().name()).equals(positionFilter))
+                        || player.getPosition() == positionFilter)
                 .toList();
     }
 

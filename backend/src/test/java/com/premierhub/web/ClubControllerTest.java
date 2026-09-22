@@ -1,41 +1,46 @@
 package com.premierhub.web;
 
+import com.premierhub.model.Club;
+import com.premierhub.service.ClubService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
+import org.springframework.test.web.servlet.ResultActions;
+import java.util.List;
+import java.util.Optional;
+import static com.premierhub.web.ErrorResponseAssertions.expectError;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@WebMvcTest(ClubController.class)
 class ClubControllerTest {
-    @Autowired
-    private WebApplicationContext context;
+    private final Club arsenal = new Club(1, "Arsenal", "London");
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-    }
+    @MockitoBean
+    private ClubService service;
 
     @Test
     void getAllReturnsJsonArray() throws Exception {
+        when(service.getAll()).thenReturn(List.of(arsenal));
+
         mockMvc.perform(get("/api/clubs"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(6));
+                .andExpect(jsonPath("$[0].name").value("Arsenal"));
     }
 
     @Test
-    void getExistingClubReturnsClub() throws Exception {
+    void getExistingClubReturnsSameJsonFields() throws Exception {
+        when(service.findById(1)).thenReturn(Optional.of(arsenal));
+
         mockMvc.perform(get("/api/clubs/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -44,31 +49,46 @@ class ClubControllerTest {
     }
 
     @Test
-    void getMissingClubReturnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/clubs/999"))
-                .andExpect(status().isNotFound());
+    void missingClubReturnsStructured404() throws Exception {
+        when(service.findById(999)).thenReturn(Optional.empty());
+
+        expectError(mockMvc.perform(get("/api/clubs/999")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/clubs/999");
     }
 
     @Test
-    void searchReturnsMatchingClubs() throws Exception {
-        mockMvc.perform(get("/api/clubs/search").param("keyword", "united"))
+    void invalidIdReturnsValidationErrorAndWrongTypeReturnsTypeMismatch() throws Exception {
+        expectError(mockMvc.perform(get("/api/clubs/0")), HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR", "/api/clubs/0");
+        expectError(mockMvc.perform(get("/api/clubs/-1")), HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR", "/api/clubs/-1");
+        expectError(mockMvc.perform(get("/api/clubs/abc")), HttpStatus.BAD_REQUEST,
+                "TYPE_MISMATCH", "/api/clubs/abc");
+    }
+
+    @Test
+    void searchReturnsMatches() throws Exception {
+        when(service.searchByName("arsenal")).thenReturn(List.of(arsenal));
+
+        mockMvc.perform(get("/api/clubs/search").param("keyword", "arsenal"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(5))
-                .andExpect(jsonPath("$[0].name").value("Manchester United"))
-                .andExpect(jsonPath("$[0].city").value("Manchester"));
+                .andExpect(jsonPath("$[0].name").value("Arsenal"));
     }
 
     @Test
-    void blankSearchKeywordReturnsBadRequest() throws Exception {
-        mockMvc.perform(get("/api/clubs/search").param("keyword", "   "))
-                .andExpect(status().isBadRequest());
+    void blankAndMissingKeywordReturnDistinctCodes() throws Exception {
+        expectError(mockMvc.perform(get("/api/clubs/search").param("keyword", "   ")),
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "/api/clubs/search");
+        expectError(mockMvc.perform(get("/api/clubs/search")), HttpStatus.BAD_REQUEST,
+                "MISSING_PARAMETER", "/api/clubs/search");
     }
 
     @Test
-    void missingSearchKeywordReturnsBadRequest() throws Exception {
-        mockMvc.perform(get("/api/clubs/search"))
-                .andExpect(status().isBadRequest());
+    void unexpectedExceptionHidesInternalMessage() throws Exception {
+        when(service.getAll()).thenThrow(new IllegalStateException("internal detail"));
+
+        ResultActions result = mockMvc.perform(get("/api/clubs"));
+        expectError(result, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "/api/clubs");
+        result.andExpect(jsonPath("$.message").value("An unexpected error occurred"));
     }
 }

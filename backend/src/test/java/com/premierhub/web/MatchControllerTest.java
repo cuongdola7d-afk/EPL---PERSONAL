@@ -1,78 +1,108 @@
 package com.premierhub.web;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.premierhub.model.Match;
+import com.premierhub.model.MatchStatus;
+import com.premierhub.service.MatchService;
+import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import static com.premierhub.web.ErrorResponseAssertions.expectError;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@WebMvcTest(MatchController.class)
 class MatchControllerTest {
+    private final Match match = new Match(1, 1, 2, 1, LocalDate.of(2025, 8, 16),
+            MatchStatus.FINISHED, 2, 1);
+
     @Autowired
-    private WebApplicationContext context;
     private MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-    }
+    @MockitoBean
+    private MatchService service;
 
     @Test
-    void getAllReturnsJsonArray() throws Exception {
+    void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
+        when(service.findMatches(null, null, null)).thenReturn(List.of(match));
+        stubClubNames();
+
         mockMvc.perform(get("/api/matches"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(8));
+                .andExpect(jsonPath("$[0].homeClub").value("Arsenal"))
+                .andExpect(jsonPath("$[0].awayClub").value("Chelsea"))
+                .andExpect(jsonPath("$[0].matchweek").value(1));
     }
 
     @Test
-    void getByIdReturnsMatchAndMissingIdReturns404() throws Exception {
+    void getByIdSucceedsAndMissingIdReturns404() throws Exception {
+        when(service.findById(1)).thenReturn(Optional.of(match));
+        stubClubNames();
+
         mockMvc.perform(get("/api/matches/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.homeClub").value("Arsenal"))
-                .andExpect(jsonPath("$.matchweek").value(1));
-        mockMvc.perform(get("/api/matches/999"))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.status").value("FINISHED"));
+        expectError(mockMvc.perform(get("/api/matches/999")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/matches/999");
     }
 
     @Test
-    void filtersByClubIncludingAwayTeam() throws Exception {
-        mockMvc.perform(get("/api/matches").param("club", "  arsenal  "))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[2].awayClub").value("Arsenal"));
-    }
+    void validFiltersAndCombinationStillReturnMatches() throws Exception {
+        when(service.findMatches("Arsenal", 1, " finished ")).thenReturn(List.of(match));
+        stubClubNames();
 
-    @Test
-    void filtersByMatchweekAndCombinesWithClub() throws Exception {
-        mockMvc.perform(get("/api/matches").param("matchweek", "1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3));
         mockMvc.perform(get("/api/matches").param("club", "Arsenal")
-                        .param("matchweek", "1"))
+                        .param("matchweek", "1").param("status", " finished "))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(1));
     }
 
     @Test
-    void filtersByStatus() throws Exception {
-        mockMvc.perform(get("/api/matches").param("status", " scheduled "))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(8));
+    void invalidWeekAndWrongTypeReturnDistinctCodes() throws Exception {
+        expectError(mockMvc.perform(get("/api/matches").param("matchweek", "0")),
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "/api/matches");
+        expectError(mockMvc.perform(get("/api/matches").param("matchweek", "abc")),
+                HttpStatus.BAD_REQUEST, "TYPE_MISMATCH", "/api/matches");
     }
 
     @Test
-    void invalidMatchweekReturns400AndNoResultReturnsEmptyArray() throws Exception {
-        mockMvc.perform(get("/api/matches").param("matchweek", "0"))
-                .andExpect(status().isBadRequest());
+    void unknownStatusReturnsInvalidFilter() throws Exception {
+        when(service.findMatches(null, null, "UNKNOWN"))
+                .thenThrow(new InvalidFilterException("Unknown status: UNKNOWN"));
+
+        expectError(mockMvc.perform(get("/api/matches").param("status", "UNKNOWN")),
+                HttpStatus.BAD_REQUEST, "INVALID_FILTER", "/api/matches");
+    }
+
+    @Test
+    void blankOptionalFiltersAndInvalidIdReturnValidationError() throws Exception {
+        expectError(mockMvc.perform(get("/api/matches").param("club", "")),
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "/api/matches");
+        expectError(mockMvc.perform(get("/api/matches").param("status", "   ")),
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "/api/matches");
+        expectError(mockMvc.perform(get("/api/matches/-1")), HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR", "/api/matches/-1");
+    }
+
+    @Test
+    void validFilterWithoutMatchesReturnsEmptyArray() throws Exception {
+        when(service.findMatches("Unknown", null, null)).thenReturn(List.of());
+
         mockMvc.perform(get("/api/matches").param("club", "Unknown"))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
+    }
+
+    private void stubClubNames() {
+        when(service.clubName(1)).thenReturn("Arsenal");
+        when(service.clubName(2)).thenReturn("Chelsea");
     }
 }

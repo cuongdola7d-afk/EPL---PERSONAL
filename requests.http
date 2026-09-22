@@ -52,3 +52,27 @@ GET {{baseUrl}}/api/standings/1
 
 ###
 GET {{baseUrl}}/api/standings?limit=0
+
+###
+GET {{baseUrl}}/api/clubs/999
+
+###
+GET {{baseUrl}}/api/clubs/-1
+
+###
+GET {{baseUrl}}/api/clubs/search?keyword=
+
+###
+GET {{baseUrl}}/api/players?position=STRIKER
+
+###
+GET {{baseUrl}}/api/players?club=
+
+###
+GET {{baseUrl}}/api/matches?matchweek=abc
+
+###
+GET {{baseUrl}}/api/matches?status=UNKNOWN
+
+###
+GET {{baseUrl}}/api/standings?limit=abc

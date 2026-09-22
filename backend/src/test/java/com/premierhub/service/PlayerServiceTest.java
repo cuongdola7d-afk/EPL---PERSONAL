@@ -4,6 +4,7 @@ import com.premierhub.model.Club;
 import com.premierhub.model.Player;
 import com.premierhub.model.Position;
 import com.premierhub.repository.InMemoryPlayerRepository;
+import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +41,13 @@ class PlayerServiceTest {
     @Test
     void noMatchReturnsEmptyList() {
         assertTrue(service.findPlayers("Chelsea", "FORWARD").isEmpty());
-        assertTrue(service.findPlayers(null, "Striker").isEmpty());
+        assertTrue(service.findPlayers(null, "DEFENDER").isEmpty());
+    }
+
+    @Test
+    void rejectsUnknownPositionEvenWhenClubDoesNotMatch() {
+        assertThrows(InvalidFilterException.class,
+                () -> service.findPlayers("Unknown", "  sTrIkEr  "));
     }
 
     @Test
