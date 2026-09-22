@@ -1,11 +1,11 @@
 # PremierHub
 
-PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạn 1 xây dựng lõi Java thuần; bước đầu Giai đoạn 2 đưa lõi đó vào Spring Boot và cung cấp API chỉ đọc cho câu lạc bộ.
+PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạn 1 xây dựng lõi Java thuần; Giai đoạn 2 cung cấp API chỉ đọc cho câu lạc bộ, cầu thủ, trận đấu và bảng xếp hạng bằng Spring Boot.
 
 ## Công nghệ hiện tại
 
 - Java 21
-- Maven
+- Maven Wrapper (không bắt buộc cài Maven)
 - JUnit Jupiter
 - Spring Boot 4.1.1, Spring Web MVC và Bean Validation
 - Dữ liệu CSV trong bộ nhớ; chưa dùng database
@@ -19,49 +19,26 @@ PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạ
 - Lọc cầu thủ theo câu lạc bộ, tìm cầu thủ, lấy danh sách vua phá lưới.
 - Tính bảng xếp hạng từ các trận đã kết thúc.
 - Chương trình console demo và unit test cho model, CSV reader, service.
-- API `GET` cho danh sách câu lạc bộ, câu lạc bộ theo ID và tìm kiếm theo tên.
-- Spring context test và MockMvc test cho Club API.
+- API `GET` cho Club, Player, Match và Standing; JSON lỗi chung cho request không hợp lệ.
+- Unit test, controller web slice test và Spring context integration test.
 
 ## Cấu trúc chính
 
 ```text
 backend/
-├── data/
-│   ├── clubs.csv
-│   ├── players.csv
-│   └── matches.csv
+├── mvnw, mvnw.cmd, .mvn/wrapper/
 ├── pom.xml
+├── data/                         # CSV cho console demo
 └── src/
     ├── main/java/com/premierhub/
-    │   ├── App.java
-    │   ├── PremierHubApplication.java
-    │   ├── config/ClubDataConfiguration.java
-    │   ├── csv/
-    │   │   ├── ClubCsvReader.java
-    │   │   ├── MatchCsvReader.java
-    │   │   └── PlayerCsvReader.java
-    │   ├── model/
-    │   │   ├── Club.java
-    │   │   ├── Match.java
-    │   │   ├── MatchStatus.java
-    │   │   ├── Player.java
-    │   │   ├── Position.java
-    │   │   └── Standing.java
-    │   ├── service/
-    │       ├── LeagueTableService.java
-    │       └── PremierHubService.java
-    │   └── web/
-    │       ├── ClubController.java
-    │       └── dto/ClubResponse.java
-    ├── main/resources/data/clubs.csv
+    │   ├── config/, csv/, model/, repository/, service/, web/
+    │   └── PremierHubApplication.java
+    ├── main/resources/
+    │   ├── application.properties, application-prod.properties
+    │   └── data/                  # CSV đóng gói trong JAR
     └── test/java/com/premierhub/
-        ├── csv/
-        ├── model/
-        └── service/
-docs/
-├── LEARNING_TASKS.md
-├── PROGRESS.md
-└── phase-1.md
+docs/                               # tài liệu học theo từng bước
+requests.http                        # request mẫu
 ```
 
 ## Định dạng CSV
@@ -85,36 +62,38 @@ id,name,clubId,position,goals,assists
 `matches.csv`:
 
 ```csv
-id,homeClubId,awayClubId,date,status,homeGoals,awayGoals
-1,1,2,2025-08-16,FINISHED,2,1
-2,2,3,2025-08-20,SCHEDULED,,
+id,homeClubId,awayClubId,matchweek,date,status,homeGoals,awayGoals
+1,1,2,1,2025-08-16,FINISHED,2,1
+2,2,3,2,2025-08-20,SCHEDULED,,
 ```
 
 Ngày dùng định dạng `yyyy-MM-dd`. Trận `FINISHED` cần đủ hai tỉ số không âm; trận `SCHEDULED` phải để trống cả hai tỉ số.
 
 Reader hiện dùng `split(",", -1)` để phục vụ bài học. Vì vậy mỗi trường không được chứa dấu phẩy, dấu ngoặc kép hoặc xuống dòng. Đây chưa phải bộ phân tích CSV tổng quát. Dữ liệu mẫu là dữ liệu minh họa cho việc học, không đại diện cho một mùa giải thật.
 
-## Chạy project
+## Chạy và build
 
-Cần JDK 21 trở lên; Maven biên dịch với Java release 21.
+Cần **JDK 21** (hoặc JDK mới hơn có thể biên dịch cho Java 21). Không cần cài Maven vì repo có Maven Wrapper. Từ PowerShell trên Windows:
 
 ```powershell
 cd backend
-mvn clean test
-mvn spring-boot:run
+.\mvnw.cmd clean test
+.\mvnw.cmd spring-boot:run
 ```
 
-Ứng dụng chạy tại `http://localhost:8080`. Các endpoint hiện có:
+Để build và chạy executable JAR:
 
-- `GET /api/clubs`
-- `GET /api/clubs/{id}`
-- `GET /api/clubs/search?keyword=united`
+```powershell
+cd backend
+.\mvnw.cmd clean package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar
+```
 
-Các request mẫu nằm trong `docs/api-requests.http`. API đọc `src/main/resources/data/clubs.csv` từ classpath, nên resource hoạt động khi chạy trong IDE lẫn JAR. File được đọc một lần lúc tạo application context.
+Trên Linux/macOS, dùng `./mvnw` thay cho `.\mvnw.cmd`. Ứng dụng chạy ở cổng 8080 khi không đặt biến môi trường `PORT`; ví dụ trên PowerShell, `$env:PORT=9090` đổi cổng sang 9090. Khi deploy, đặt `SPRING_PROFILES_ACTIVE=prod` để dùng cấu hình production. Không cần bật profile này khi chạy local.
 
-`Club` là model nghiệp vụ: nó giữ dữ liệu hợp lệ và logic `matchesName`. `ClubResponse` là DTO của HTTP API: record này xác định đúng các field JSON mà client được nhận. Mapping dùng Java thông thường, không dùng mapper framework.
+Health check: `http://localhost:8080/actuator/health` (thay cổng nếu đã đặt `PORT`). Request mẫu ở [requests.http](requests.http). Dữ liệu API nằm trong `backend/src/main/resources/data`, được nạp từ classpath lúc ứng dụng khởi động và hiện chỉ đọc. File trong `backend/data` phục vụ console demo.
 
-Luồng request: `HTTP → ClubController → PremierHubService → danh sách Club đã nạp từ CSV → ClubResponse → JSON`.
+Luồng Club API: `HTTP → ClubController → ClubService → ClubRepository → ClubResponse → JSON`. Các API khác dùng cùng dữ liệu Club và CSV tương ứng trong bộ nhớ.
 
 ## Quy tắc bảng xếp hạng
 

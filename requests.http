@@ -76,3 +76,6 @@ GET {{baseUrl}}/api/matches?status=UNKNOWN
 
 ###
 GET {{baseUrl}}/api/standings?limit=abc
+
+### Health check
+GET {{baseUrl}}/actuator/health
