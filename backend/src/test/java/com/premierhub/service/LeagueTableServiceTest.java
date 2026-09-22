@@ -45,7 +45,7 @@ class LeagueTableServiceTest {
                 finished(1, 1, 2, 2, 0),
                 finished(2, 2, 3, 1, 1),
                 finished(3, 3, 1, 3, 0),
-                new Match(4, 4, 1, DATE, MatchStatus.SCHEDULED, null, null));
+                new Match(4, 4, 1, 1, DATE, MatchStatus.SCHEDULED, null, null));
 
         List<Standing> table = service.calculate(
                 List.of(alpha, beta, gamma, delta), matches);
@@ -82,7 +82,7 @@ class LeagueTableServiceTest {
 
     private Match finished(int id, int homeId, int awayId,
                            int homeGoals, int awayGoals) {
-        return new Match(id, homeId, awayId, DATE,
+        return new Match(id, homeId, awayId, 1, DATE,
                 MatchStatus.FINISHED, homeGoals, awayGoals);
     }
 

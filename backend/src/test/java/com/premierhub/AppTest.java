@@ -50,8 +50,8 @@ class AppTest {
                         + "1,Sample Player,1,FORWARD,3,2\n",
                 StandardCharsets.UTF_8);
         Files.writeString(directory.resolve("matches.csv"),
-                "id,homeClubId,awayClubId,date,status,homeGoals,awayGoals\n"
-                        + "1,1,2,2025-08-16,FINISHED,2,0\n",
+                "id,homeClubId,awayClubId,matchweek,date,status,homeGoals,awayGoals\n"
+                        + "1,1,2,1,2025-08-16,FINISHED,2,0\n",
                 StandardCharsets.UTF_8);
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();

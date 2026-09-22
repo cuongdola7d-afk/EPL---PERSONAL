@@ -16,3 +16,27 @@ GET {{baseUrl}}/api/players?position=Forward
 
 ###
 GET {{baseUrl}}/api/players?club=Arsenal&position=Forward
+
+###
+GET {{baseUrl}}/api/matches
+
+###
+GET {{baseUrl}}/api/matches/1
+
+###
+GET {{baseUrl}}/api/matches/999
+
+###
+GET {{baseUrl}}/api/matches?club=Arsenal
+
+###
+GET {{baseUrl}}/api/matches?matchweek=1
+
+###
+GET {{baseUrl}}/api/matches?club=Arsenal&matchweek=1
+
+###
+GET {{baseUrl}}/api/matches?status=FINISHED
+
+###
+GET {{baseUrl}}/api/matches?matchweek=0

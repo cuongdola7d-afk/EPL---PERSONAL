@@ -5,6 +5,8 @@ import com.premierhub.model.MatchStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,27 +21,40 @@ import java.util.Set;
 /** Reads simple UTF-8 CSV whose fields do not contain commas or quotes. */
 public final class MatchCsvReader {
     private static final String EXPECTED_HEADER =
-            "id,homeClubId,awayClubId,date,status,homeGoals,awayGoals";
+            "id,homeClubId,awayClubId,matchweek,date,status,homeGoals,awayGoals";
 
     public List<Match> read(Path path) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            return read(reader);
+        }
+    }
+
+    public List<Match> read(InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("CSV input stream must not be null");
+        }
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            return read(reader);
+        }
+    }
+
+    private List<Match> read(BufferedReader reader) throws IOException {
         List<Match> matches = new ArrayList<>();
         Set<Integer> ids = new HashSet<>();
-
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            validateHeader(reader.readLine());
-            String line;
-            int lineNumber = 1;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (line.isBlank()) {
-                    continue;
-                }
-                Match match = parseMatch(line, lineNumber);
-                if (!ids.add(match.getId())) {
-                    throw invalidRow(lineNumber, "Duplicate match id: " + match.getId());
-                }
-                matches.add(match);
+        validateHeader(reader.readLine());
+        String line;
+        int lineNumber = 1;
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            if (line.isBlank()) {
+                continue;
             }
+            Match match = parseMatch(line, lineNumber);
+            if (!ids.add(match.getId())) {
+                throw invalidRow(lineNumber, "Duplicate match id: " + match.getId());
+            }
+            matches.add(match);
         }
         return matches;
     }
@@ -51,7 +66,7 @@ public final class MatchCsvReader {
         if (header.startsWith("\uFEFF")) {
             header = header.substring(1);
         }
-        String[] columns = splitRow(header, 1, 7);
+        String[] columns = splitRow(header, 1, 8);
         String normalized = String.join(",", java.util.Arrays.stream(columns)
                 .map(String::strip)
                 .toList());
@@ -61,16 +76,17 @@ public final class MatchCsvReader {
     }
 
     private Match parseMatch(String line, int lineNumber) {
-        String[] values = splitRow(line, lineNumber, 7);
+        String[] values = splitRow(line, lineNumber, 8);
         try {
             int id = parseInteger(values[0], "Match id", lineNumber);
             int homeClubId = parseInteger(values[1], "Home club id", lineNumber);
             int awayClubId = parseInteger(values[2], "Away club id", lineNumber);
-            LocalDate date = parseDate(values[3], lineNumber);
-            MatchStatus status = parseStatus(values[4], lineNumber);
-            Integer homeGoals = parseOptionalInteger(values[5], "Home goals", lineNumber);
-            Integer awayGoals = parseOptionalInteger(values[6], "Away goals", lineNumber);
-            return new Match(id, homeClubId, awayClubId, date,
+            int matchweek = parseInteger(values[3], "Matchweek", lineNumber);
+            LocalDate date = parseDate(values[4], lineNumber);
+            MatchStatus status = parseStatus(values[5], lineNumber);
+            Integer homeGoals = parseOptionalInteger(values[6], "Home goals", lineNumber);
+            Integer awayGoals = parseOptionalInteger(values[7], "Away goals", lineNumber);
+            return new Match(id, homeClubId, awayClubId, matchweek, date,
                     status, homeGoals, awayGoals);
         } catch (IllegalArgumentException exception) {
             if (exception.getMessage().startsWith("CSV line ")) {

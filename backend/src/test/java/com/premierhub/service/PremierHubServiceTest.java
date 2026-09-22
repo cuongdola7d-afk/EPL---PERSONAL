@@ -82,7 +82,7 @@ class PremierHubServiceTest {
     }
 
     private PremierHubService service() {
-        Match match = new Match(1, 1, 2, LocalDate.of(2025, 8, 16),
+        Match match = new Match(1, 1, 2, 1, LocalDate.of(2025, 8, 16),
                 MatchStatus.FINISHED, 2, 1);
         return new PremierHubService(
                 List.of(arsenal, city), List.of(saka, haaland, odegaard), List.of(match));

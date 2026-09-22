@@ -36,7 +36,7 @@ class MatchTest {
 
     @Test
     void representsScheduledMatchWithoutScore() {
-        Match match = new Match(1, 1, 2, DATE, MatchStatus.SCHEDULED, null, null);
+        Match match = new Match(1, 1, 2, 1, DATE, MatchStatus.SCHEDULED, null, null);
 
         assertFalse(match.isFinished());
         assertFalse(match.isDraw());
@@ -48,30 +48,32 @@ class MatchTest {
     @Test
     void rejectsSameClubInvalidScoresAndInconsistentStatus() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(1, 1, 1, DATE, MatchStatus.FINISHED, 0, 0));
+                () -> new Match(1, 1, 1, 1, DATE, MatchStatus.FINISHED, 0, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(1, 1, 2, DATE, MatchStatus.FINISHED, -1, 0));
+                () -> new Match(1, 1, 2, 1, DATE, MatchStatus.FINISHED, -1, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(1, 1, 2, DATE, MatchStatus.FINISHED, null, 0));
+                () -> new Match(1, 1, 2, 1, DATE, MatchStatus.FINISHED, null, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(1, 1, 2, DATE, MatchStatus.SCHEDULED, 0, 0));
+                () -> new Match(1, 1, 2, 1, DATE, MatchStatus.SCHEDULED, 0, 0));
     }
 
     @Test
     void rejectsInvalidIdsDatesStatusesAndUnrelatedClub() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(0, 1, 2, DATE, MatchStatus.FINISHED, 0, 0));
+                () -> new Match(0, 1, 2, 1, DATE, MatchStatus.FINISHED, 0, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> new Match(1, 0, 2, DATE, MatchStatus.FINISHED, 0, 0));
+                () -> new Match(1, 0, 2, 1, DATE, MatchStatus.FINISHED, 0, 0));
         assertThrows(NullPointerException.class,
-                () -> new Match(1, 1, 2, null, MatchStatus.FINISHED, 0, 0));
+                () -> new Match(1, 1, 2, 1, null, MatchStatus.FINISHED, 0, 0));
         assertThrows(NullPointerException.class,
-                () -> new Match(1, 1, 2, DATE, null, 0, 0));
+                () -> new Match(1, 1, 2, 1, DATE, null, 0, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Match(1, 1, 2, 0, DATE, MatchStatus.FINISHED, 0, 0));
         assertThrows(IllegalArgumentException.class,
                 () -> finishedMatch(1, 0).getPointsFor(3));
     }
 
     private Match finishedMatch(int homeGoals, int awayGoals) {
-        return new Match(1, 1, 2, DATE, MatchStatus.FINISHED, homeGoals, awayGoals);
+        return new Match(1, 1, 2, 1, DATE, MatchStatus.FINISHED, homeGoals, awayGoals);
     }
 }
