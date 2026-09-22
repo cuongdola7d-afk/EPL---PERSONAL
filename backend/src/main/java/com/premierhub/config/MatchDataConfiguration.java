@@ -2,9 +2,9 @@ package com.premierhub.config;
 
 import com.premierhub.csv.MatchCsvReader;
 import com.premierhub.repository.InMemoryMatchRepository;
+import com.premierhub.repository.ClubRepository;
 import com.premierhub.repository.MatchRepository;
 import com.premierhub.service.MatchService;
-import com.premierhub.service.PremierHubService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -19,7 +19,7 @@ public class MatchDataConfiguration {
     }
 
     @Bean
-    public MatchService matchService(MatchRepository repository, PremierHubService clubService) {
-        return new MatchService(repository, clubService.getClubs());
+    public MatchService matchService(MatchRepository repository, ClubRepository clubs) {
+        return new MatchService(repository, clubs.findAll());
     }
 }

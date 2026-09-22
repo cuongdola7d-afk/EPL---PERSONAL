@@ -49,6 +49,30 @@ class PlayerServiceTest {
         assertTrue(service.findById(999).isEmpty());
     }
 
+    @Test
+    void acceptsPlayersReferencingKnownClubs() {
+        assertEquals("Arsenal", service.findClubName(1).orElseThrow());
+        assertEquals(3, service.findPlayers(null, null).size());
+    }
+
+    @Test
+    void rejectsPlayerReferencingUnknownClubAtConstruction() {
+        Player unknown = new Player(42, "Unknown", 99, Position.FORWARD, 0, 0);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new PlayerService(new InMemoryPlayerRepository(List.of(unknown)),
+                        List.of(new Club(1, "Arsenal", "London"))));
+        assertTrue(exception.getMessage().contains("42"));
+        assertTrue(exception.getMessage().contains("99"));
+    }
+
+    @Test
+    void rejectsNullConstructorDependencies() {
+        assertThrows(NullPointerException.class, () -> new PlayerService(null, List.of()));
+        assertThrows(NullPointerException.class,
+                () -> new PlayerService(new InMemoryPlayerRepository(List.of()), null));
+    }
+
     private List<Integer> ids(List<Player> players) {
         return players.stream().map(Player::getId).toList();
     }

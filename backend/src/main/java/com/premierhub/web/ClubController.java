@@ -1,6 +1,6 @@
 package com.premierhub.web;
 
-import com.premierhub.service.PremierHubService;
+import com.premierhub.service.ClubService;
 import com.premierhub.web.dto.ClubResponse;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -16,22 +16,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/clubs")
 public class ClubController {
-    private final PremierHubService service;
+    private final ClubService service;
 
-    public ClubController(PremierHubService service) {
+    public ClubController(ClubService service) {
         this.service = service;
     }
 
     @GetMapping
     public List<ClubResponse> getAll() {
-        return service.getClubs().stream()
+        return service.getAll().stream()
                 .map(ClubResponse::from)
                 .toList();
     }
 
     @GetMapping("/{id}")
     public ClubResponse getById(@PathVariable int id) {
-        return service.findClubById(id)
+        return service.findById(id)
                 .map(ClubResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Club not found: " + id));
@@ -40,7 +40,7 @@ public class ClubController {
     @GetMapping("/search")
     public List<ClubResponse> search(
             @RequestParam @NotBlank(message = "keyword must not be blank") String keyword) {
-        return service.findClubsByName(keyword).stream()
+        return service.searchByName(keyword).stream()
                 .map(ClubResponse::from)
                 .toList();
     }

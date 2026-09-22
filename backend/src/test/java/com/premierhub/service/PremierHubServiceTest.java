@@ -12,7 +12,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PremierHubServiceTest {
     private final Club arsenal = new Club(1, "Arsenal", "London");
@@ -25,23 +24,12 @@ class PremierHubServiceTest {
             Position.MIDFIELDER, 5, 8);
 
     @Test
-    void searchesClubsAndPlayersAndFiltersByClub() {
+    void searchesPlayersAndFiltersByClub() {
         PremierHubService service = service();
 
-        assertEquals(List.of(city), service.findClubsByName("CITY"));
         assertEquals(List.of(saka), service.findPlayersByName("saka"));
         assertEquals(List.of(saka, odegaard), service.getPlayersByClub(1));
         assertThrows(IllegalArgumentException.class, () -> service.getPlayersByClub(99));
-    }
-
-    @Test
-    void findsClubByIdAndRejectsBlankSearchKeyword() {
-        PremierHubService service = service();
-
-        assertEquals(city, service.findClubById(2).orElseThrow());
-        assertTrue(service.findClubById(99).isEmpty());
-        assertThrows(IllegalArgumentException.class, () -> service.findClubsByName(null));
-        assertThrows(IllegalArgumentException.class, () -> service.findClubsByName("   "));
     }
 
     @Test

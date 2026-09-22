@@ -10,9 +10,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
+/** Stage 1 console demo service; Spring APIs use the focused services. */
 public final class PremierHubService {
     private static final Comparator<Player> TOP_SCORER_ORDER =
             Comparator.comparingInt(Player::getGoals).reversed()
@@ -30,25 +30,6 @@ public final class PremierHubService {
         this.matches = List.copyOf(Objects.requireNonNull(matches, "Matches must not be null"));
         this.leagueTableService = new LeagueTableService();
         validateClubReferences();
-    }
-
-    public List<Club> getClubs() {
-        return clubs;
-    }
-
-    public List<Club> findClubsByName(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            throw new IllegalArgumentException("Search keyword must not be blank");
-        }
-        return clubs.stream()
-                .filter(club -> club.matchesName(keyword))
-                .toList();
-    }
-
-    public Optional<Club> findClubById(int id) {
-        return clubs.stream()
-                .filter(club -> club.getId() == id)
-                .findFirst();
     }
 
     public List<Player> getPlayersByClub(int clubId) {

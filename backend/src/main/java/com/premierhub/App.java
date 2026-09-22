@@ -6,6 +6,8 @@ import com.premierhub.csv.PlayerCsvReader;
 import com.premierhub.model.Club;
 import com.premierhub.model.Player;
 import com.premierhub.model.Standing;
+import com.premierhub.repository.InMemoryClubRepository;
+import com.premierhub.service.ClubService;
 import com.premierhub.service.PremierHubService;
 
 import java.io.IOException;
@@ -28,14 +30,15 @@ public class App {
         var players = new PlayerCsvReader().read(dataDirectory.resolve("players.csv"));
         var matches = new MatchCsvReader().read(dataDirectory.resolve("matches.csv"));
         PremierHubService service = new PremierHubService(clubs, players, matches);
+        ClubService clubService = new ClubService(new InMemoryClubRepository(clubs));
 
         out.println("=== Clubs ===");
-        service.getClubs().forEach(club -> out.println(formatClub(club)));
-        out.println("Imported " + service.getClubs().size() + " clubs");
+        clubService.getAll().forEach(club -> out.println(formatClub(club)));
+        out.println("Imported " + clubService.getAll().size() + " clubs");
 
         out.println();
         out.println("=== Search clubs: manchester ===");
-        service.findClubsByName("manchester")
+        clubService.searchByName("manchester")
                 .forEach(club -> out.println(formatClub(club)));
 
         out.println();
