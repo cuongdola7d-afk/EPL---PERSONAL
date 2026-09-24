@@ -31,17 +31,18 @@ public class FixtureEvidenceCommand implements ApplicationRunner {
         }
         Path file = Path.of(args.getOptionValues("premierhub.fixture-evidence.file").getFirst());
         JsonNode payload = mapper.readTree(Files.readString(file));
+        int fixtureId = payload.path("fixtureId").asInt(-1);
         evidence.save(payload);
-        var detail = queries.matchDetail(FixtureEvidenceService.FIXTURE_ID, 2024).orElseThrow();
+        var detail = queries.matchDetail(fixtureId, 2024).orElseThrow();
         if (!"VERIFIED".equals(detail.evidenceStatus())) {
-            throw new IllegalStateException("Bằng chứng fixture 1208021 không khớp: "
+            throw new IllegalStateException("Bằng chứng fixture " + fixtureId + " không khớp: "
                     + detail.evidenceError());
         }
         long complete = java.util.stream.Stream.concat(detail.homePlayers().stream(),
                 detail.awayPlayers().stream()).filter(player ->
                 "COMPLETE".equals(player.score().status())).count();
         System.out.printf("EVIDENCE fixture=%d status=%s players=%d complete=%d%n",
-                FixtureEvidenceService.FIXTURE_ID, detail.evidenceStatus(),
+                fixtureId, detail.evidenceStatus(),
                 detail.homePlayers().size() + detail.awayPlayers().size(), complete);
     }
 }

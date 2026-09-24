@@ -19,7 +19,6 @@ import java.util.Set;
 
 @Service
 public class FixtureEvidenceService {
-    public static final int FIXTURE_ID = 1208021;
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
 
@@ -29,25 +28,27 @@ public class FixtureEvidenceService {
     }
 
     public void save(JsonNode evidence) {
-        require(evidence.path("fixtureId").asInt(-1) == FIXTURE_ID,
-                "Chỉ được nhập bằng chứng cho fixture 1208021.");
+        int fixtureId = integer(evidence, "fixtureId", "ID fixture");
+        require(jdbc.queryForObject("SELECT COUNT(*) FROM fixtures WHERE id=? AND league_id=39 "
+                + "AND season_year=2024 AND gameweek=1", Integer.class, fixtureId) == 1,
+                "Chỉ được nhập bằng chứng cho fixture Gameweek 1 mùa 2024/25 đã lưu.");
         require("API_FOOTBALL".equals(evidence.path("source").asText()),
                 "Nguồn bằng chứng không hợp lệ.");
         String json = evidence.toString();
         Timestamp now = Timestamp.from(Instant.now());
         if (jdbc.update("UPDATE fixture_score_evidence SET payload_json=?, captured_at=? WHERE fixture_id=?",
-                json, now, FIXTURE_ID) == 0) {
+                json, now, fixtureId) == 0) {
             jdbc.update("INSERT INTO fixture_score_evidence (fixture_id, payload_json, captured_at) "
-                    + "VALUES (?, ?, ?)", FIXTURE_ID, json, now);
+                    + "VALUES (?, ?, ?)", fixtureId, json, now);
         }
     }
 
     public Review review(int season, MatchResponse match, List<MatchPlayerStatResponse> players) {
-        if (season != 2024 || match.id() != FIXTURE_ID) {
+        if (season != 2024 || match.matchweek() != 1) {
             return new Review("NOT_APPLICABLE", null, Map.of());
         }
         List<String> rows = jdbc.query("SELECT payload_json FROM fixture_score_evidence WHERE fixture_id=?",
-                (rs, row) -> rs.getString(1), FIXTURE_ID);
+                (rs, row) -> rs.getString(1), match.id());
         if (rows.isEmpty()) return new Review("MISSING", "Chưa lưu bằng chứng sự kiện và đội hình.", Map.of());
         try {
             return validate(mapper.readTree(rows.getFirst()), match, players);
@@ -59,11 +60,10 @@ public class FixtureEvidenceService {
     }
 
     private Review validate(JsonNode root, MatchResponse match, List<MatchPlayerStatResponse> players) {
-        require(root.path("fixtureId").asInt(-1) == FIXTURE_ID &&
+        require(root.path("fixtureId").asInt(-1) == match.id() &&
                 "API_FOOTBALL".equals(root.path("source").asText()), "Sai fixture hoặc nguồn bằng chứng.");
-        require("FINISHED".equals(match.status()) && match.homeClubId() == 33 &&
-                match.awayClubId() == 36 && Integer.valueOf(1).equals(match.homeGoals()) &&
-                Integer.valueOf(0).equals(match.awayGoals()), "Fixture không còn khớp kết quả 1–0 đã kiểm chứng.");
+        require("FINISHED".equals(match.status()) && match.homeGoals() != null &&
+                match.awayGoals() != null, "Fixture chưa có kết quả hoàn chỉnh để kiểm chứng.");
         require(players.size() == 40, "Bằng chứng cần đúng 40 dòng cầu thủ–trận trong H2.");
 
         Map<Integer, MatchPlayerStatResponse> byId = new HashMap<>();
@@ -142,8 +142,8 @@ public class FixtureEvidenceService {
                 throw new IllegalArgumentException("Loại sự kiện bằng chứng không hợp lệ.");
             }
         }
-        require(homeGoals == 1 && awayGoals == 0 && substitutions == 10,
-                "Sự kiện bàn thắng/thay người không khớp tỉ số 1–0 hoặc 10 lượt thay người.");
+        require(homeGoals == match.homeGoals() && awayGoals == match.awayGoals(),
+                "Sự kiện bàn thắng không khớp tỉ số đã lưu trong H2.");
 
         Map<Integer, InferredMatchStatsResponse> inferred = new HashMap<>();
         int unused = 0;
@@ -169,7 +169,8 @@ public class FixtureEvidenceService {
                     player.goals() == null ? goals : null,
                     player.assists() == null ? assists : null));
         }
-        require(unused == 8, "Số dự bị không vào sân không khớp 8 dòng thiếu phút.");
+        require(unused + substitutions == 18,
+                "Số dự bị không vào sân không khớp sự kiện thay người.");
         return new Review("VERIFIED", null, Map.copyOf(inferred));
     }
 

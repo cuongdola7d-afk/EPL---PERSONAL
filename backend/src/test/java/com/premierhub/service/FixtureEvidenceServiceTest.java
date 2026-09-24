@@ -46,7 +46,7 @@ class FixtureEvidenceServiceTest {
         jdbc.update("INSERT INTO clubs VALUES (36, 'Fulham', 'London')");
         jdbc.update("INSERT INTO fixtures VALUES (1208021, 39, 2024, 33, 36, 1, "
                 + "DATE '2024-08-16', 'FINISHED', 'FT', 1, 0, 'hash', CURRENT_TIMESTAMP)");
-        jdbc.update("INSERT INTO fixtures VALUES (1208022, 39, 2024, 33, 36, 1, "
+        jdbc.update("INSERT INTO fixtures VALUES (1209000, 39, 2024, 33, 36, 2, "
                 + "DATE '2024-08-17', 'FINISHED', 'FT', 0, 0, 'hash', CURRENT_TIMESTAMP)");
 
         Set<Integer> entered = Set.of(284324, 70100, 532, 18772, 903,
@@ -99,8 +99,8 @@ class FixtureEvidenceServiceTest {
                         .value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.nullValue())))
                 .andExpect(jsonPath("$.homePlayers[?(@.playerId == 174)].inferred.minutes")
                         .value(org.hamcrest.Matchers.hasItem(0)));
-        assertEquals("NOT_APPLICABLE", detail(1208022).evidenceStatus());
-        assertEquals("PROVISIONAL", player(detail(1208022), 174).score().status());
+        assertEquals("NOT_APPLICABLE", detail(1209000).evidenceStatus());
+        assertEquals("PROVISIONAL", player(detail(1209000), 174).score().status());
     }
 
     @Test
@@ -169,7 +169,7 @@ class FixtureEvidenceServiceTest {
                 (fixture_id, player_id, club_id, position, minutes, goals, assists,
                  yellow_cards, red_cards, rating, shots_on, passes_key, tackles, saves,
                  raw_statistics, synced_at)
-                VALUES (1208022, ?, ?, 'F', ?, ?, ?, 0, 0, NULL, NULL, NULL, NULL, NULL,
+                VALUES (1209000, ?, ?, 'F', ?, ?, ?, 0, 0, NULL, NULL, NULL, NULL, NULL,
                         '{}', CURRENT_TIMESTAMP)
                 """, id, team, minutes, goals, assists);
     }
