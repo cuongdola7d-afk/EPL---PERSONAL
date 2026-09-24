@@ -136,10 +136,21 @@
 .match-player { margin-bottom: 12px; padding: 16px; border: 1px solid #dae4de; border-radius: 10px; background: #fff; }
 .match-player-heading { display: flex; justify-content: space-between; gap: 10px; color: #15343c; }
 .match-player-heading span { color: #62747a; font-size: .8rem; }
+.match-player-score { margin-top: 14px; padding: 13px; border-radius: 8px; background: #f3f6f0; }
+.match-player-score.complete { background: #edf6df; }
+.match-score-total { margin: 0; color: #183b3e; font-size: 1rem; font-weight: 850; }
+.match-score-note { margin: 4px 0 0; color: #796845; font-size: .75rem; }
+.match-score-parts { margin: 10px 0 0; padding: 0; list-style: none; }
+.match-score-parts li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid #dce7d9; color: #26474b; font-size: .78rem; }
+.match-score-parts li > span { min-width: 0; }
+.match-score-parts li > strong { text-align: right; white-space: nowrap; }
+.match-score-parts small { display: block; margin-top: 2px; color: #647873; font-size: .7rem; }
 .match-player-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; }
 .match-player-stats div { min-width: 0; padding-top: 9px; border-top: 1px solid #edf1ed; }
 .match-player-stats dt { color: #738487; font-size: .72rem; }
 .match-player-stats dd { margin: 3px 0 0; color: #183b3e; font-size: .85rem; font-weight: 750; overflow-wrap: anywhere; }
+.inferred-label { color: #87622e; font-size: .7rem; font-weight: 700; }
+.match-evidence-error { padding: 13px 16px; border: 1px solid #e7b7a6; border-radius: 8px; background: #fff3ef; color: #8a392c; }
 .match-detail-empty { padding: 18px; border-radius: 8px; background: #fff; color: #62747a; }
 
 .standings-table-wrap { overflow-x: auto; border: 1px solid #dae4de; border-radius: 12px; background: #fff; box-shadow: 0 5px 18px #142b3208; }

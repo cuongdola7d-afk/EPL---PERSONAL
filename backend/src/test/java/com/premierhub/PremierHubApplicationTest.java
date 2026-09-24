@@ -122,8 +122,14 @@ class PremierHubApplicationTest {
                 .andExpect(jsonPath("$.awayPlayers.length()").value(1))
                 .andExpect(jsonPath("$.homePlayers[0].goals").value(1))
                 .andExpect(jsonPath("$.homePlayers[0].assists").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.homePlayers[0].score.status").value("PROVISIONAL"))
+                .andExpect(jsonPath("$.homePlayers[0].score.confirmedPoints").value(6))
+                .andExpect(jsonPath("$.homePlayers[0].score.parts[2].points")
+                        .value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.awayPlayers[0].minutes").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.awayPlayers[0].yellowCards").value(org.hamcrest.Matchers.nullValue()));
+                .andExpect(jsonPath("$.awayPlayers[0].yellowCards").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.awayPlayers[0].score.status").value("PROVISIONAL"))
+                .andExpect(jsonPath("$.awayPlayers[0].score.confirmedPoints").value(0));
         mockMvc.perform(get("/api/matches/801/details"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.homePlayers.length()").value(0))

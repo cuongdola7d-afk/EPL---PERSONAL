@@ -125,10 +125,19 @@ Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). �
 - CLB: `GET /api/clubs`, hoặc `/api/clubs/search?keyword=...` khi tìm tên; lọc thành phố và sắp xếp trên dữ liệu nhận được.
 - Cầu thủ: `GET /api/players` với `club`, `position` khi chọn; sắp xếp và tính tổng trên kết quả nhận được.
 - Lịch đấu: `GET /api/matches` với `club`, `matchweek`, `status` khi áp dụng bộ lọc.
-- Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê từng cầu thủ; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
+- Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Mỗi cầu thủ có thêm `score` gồm `status` (`COMPLETE`/`PROVISIONAL`), `confirmedPoints` và `parts` giải thích từng khoản điểm. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê và điểm; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
 - BXH: `GET /api/standings`; chỉ số lấy từ BXH nhà cung cấp và được đọc lại từ database theo mỗi request.
 
 Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). Hiện chỉ mùa này được đồng bộ; bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. Cầu thủ có thể hiện nhiều dòng khi chuyển CLB vì thống kê mùa được lưu riêng cho từng CLB.
+
+Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
+
+Riêng fixture `1208021` có thể dùng bằng chứng API-Football đã đối chiếu để tính điểm v1 đầy đủ. Lệnh nhập một lần đọc file JSON rút gọn `data/fixture-1208021-evidence.json` gồm ID bàn thắng/kiến tạo, người vào/ra sân và đội hình; lưu vào `fixture_score_evidence` theo khóa fixture ID. Trước khi dùng, backend kiểm tra đúng 40 ID, 11 đá chính + 9 dự bị mỗi đội, người vào sân có phút trong H2, bàn thắng/kiến tạo khớp dữ liệu dương và tỉ số 1–0. Nếu kiểm tra sai, API trả `evidenceStatus=INVALID`, `evidenceError` và điểm vẫn tạm tính. Khi đúng, `inferred.minutes/goals/assists` chứa riêng giá trị suy luận; các trường gốc trong `fixture_player_stats` và JSON chi tiết vẫn giữ `null`. Chạy lại cùng file cập nhật một dòng bằng chứng, không tạo dòng trùng. Không áp dụng suy luận này cho trận khác. Lệnh local từ `backend/`:
+
+```powershell
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.fixture-evidence.enabled=true --premierhub.fixture-evidence.file=data/fixture-1208021-evidence.json
+```
 
 Lựa chọn CLB trong bộ lọc lấy từ Club API. Khi chạy bằng `npm.cmd run dev`, frontend luôn gọi `/api/...` qua Vite proxy, dù `VITE_API_BASE_URL` có được đặt trong môi trường local.
 

@@ -26,8 +26,18 @@ export function fetchMatches(filters, signal) {
 
 export async function fetchMatchDetail(id, signal) {
   const detail = await fetchApiJson(`/api/matches/${id}/details`, signal, 'Không tìm thấy trận đấu này.')
+  const isValidScore = (score) => score !== null &&
+    ['COMPLETE', 'PROVISIONAL'].includes(score.status) &&
+    Number.isInteger(score.confirmedPoints) && Array.isArray(score.parts) &&
+    score.parts.every((part) => part !== null && typeof part.code === 'string' &&
+      typeof part.label === 'string' && typeof part.detail === 'string' &&
+      (part.points === null || Number.isInteger(part.points)))
   const isValidPlayer = (player) => player !== null && Number.isInteger(player.playerId) &&
-    typeof player.playerName === 'string' && Number.isInteger(player.clubId)
+    typeof player.playerName === 'string' && Number.isInteger(player.clubId) &&
+    isValidScore(player.score) &&
+    (player.inferred === null || (player.inferred !== null &&
+      ['minutes', 'goals', 'assists'].every((field) =>
+        player.inferred[field] === null || Number.isInteger(player.inferred[field]))))
   if (!detail || !isValidMatch(detail.match) ||
       !Array.isArray(detail.homePlayers) || !detail.homePlayers.every(isValidPlayer) ||
       !Array.isArray(detail.awayPlayers) || !detail.awayPlayers.every(isValidPlayer)) {

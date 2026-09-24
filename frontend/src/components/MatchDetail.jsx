@@ -3,12 +3,41 @@ import { fetchMatchDetail } from '../api/matches.js'
 
 const STATS = [
   ['minutes', 'Phút'], ['goals', 'Bàn thắng'], ['assists', 'Kiến tạo'],
-  ['yellowCards', 'Thẻ vàng'], ['redCards', 'Thẻ đỏ'], ['rating', 'Điểm đánh giá'],
+  ['yellowCards', 'Thẻ vàng'], ['redCards', 'Thẻ đỏ'], ['rating', 'Đánh giá trận (API)'],
   ['shotsOn', 'Sút trúng đích'], ['passesKey', 'Chuyền quyết định'],
   ['tackles', 'Tắc bóng'], ['saves', 'Cứu thua'],
 ]
 
 const POSITIONS = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' }
+
+function signed(points) {
+  return points >= 0 ? `+${points}` : String(points)
+}
+
+function PlayerScore({ score, inferred }) {
+  const complete = score.status === 'COMPLETE'
+  const hasKnownPart = score.parts.some((part) => part.points !== null)
+  const hasInference = inferred && Object.values(inferred).some((value) => value !== null)
+  return (
+    <div className={`match-player-score${complete ? ' complete' : ' provisional'}`}>
+      <p className="match-score-total">
+        {complete ? `Điểm v1: ${score.confirmedPoints}`
+          : hasKnownPart ? `Tạm tính: ${score.confirmedPoints} điểm đã xác định`
+            : 'Chưa đủ dữ liệu để tính điểm'}
+      </p>
+      {!complete && <p className="match-score-note">Còn chỉ số thiếu; đây chưa phải điểm cuối cùng.</p>}
+      {hasInference && <p className="match-score-note">Một số chỉ số được suy luận từ sự kiện và đội hình đã đối chiếu.</p>}
+      <ul className="match-score-parts">
+        {score.parts.map((part) => (
+          <li key={part.code}>
+            <span><strong>{part.label}</strong><small>{part.detail}</small></span>
+            <strong>{part.points === null ? 'Chưa có dữ liệu' : signed(part.points)}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 function PlayerStats({ player }) {
   return (
@@ -17,10 +46,18 @@ function PlayerStats({ player }) {
         <strong>{player.playerName}</strong>
         <span>{POSITIONS[player.position] ?? player.position ?? 'Chưa có dữ liệu'}</span>
       </div>
+      <PlayerScore score={player.score} inferred={player.inferred} />
       <dl className="match-player-stats">
-        {STATS.map(([field, label]) => (
-          <div key={field}><dt>{label}</dt><dd>{player[field] ?? 'Chưa có dữ liệu'}</dd></div>
-        ))}
+        {STATS.map(([field, label]) => {
+          const inferredValue = player.inferred?.[field]
+          const isInferred = player[field] === null && inferredValue !== null && inferredValue !== undefined
+          return (
+            <div key={field}><dt>{label}</dt><dd>
+              {player[field] ?? inferredValue ?? 'Chưa có dữ liệu'}
+              {isInferred && <small className="inferred-label"> suy luận</small>}
+            </dd></div>
+          )
+        })}
       </dl>
     </article>
   )
@@ -72,6 +109,9 @@ function MatchDetail({ matchId, onClose }) {
       </div>
       {status === 'loading' && <p role="status">Đang tải chi tiết trận đấu...</p>}
       {status === 'error' && <div role="alert"><p>{error}</p><button type="button" onClick={() => setReloadCount((count) => count + 1)}>Thử lại</button></div>}
+      {status === 'success' && detail.evidenceStatus === 'INVALID' && (
+        <p className="match-evidence-error" role="alert">Bằng chứng trận không khớp: {detail.evidenceError}. Điểm vẫn tạm tính.</p>
+      )}
       {noStats && <p className="match-detail-empty">Trận này chưa có thống kê cầu thủ được lưu.</p>}
       {status === 'success' && !noStats && (
         <div className="match-detail-teams">

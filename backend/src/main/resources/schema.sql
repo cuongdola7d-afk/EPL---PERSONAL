@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS fixture_player_stats (
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
 
+CREATE TABLE IF NOT EXISTS fixture_score_evidence (
+    fixture_id INTEGER PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    captured_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (fixture_id) REFERENCES fixtures(id)
+);
+
 CREATE TABLE IF NOT EXISTS sync_states (
     league_id INTEGER NOT NULL,
     season_year INTEGER NOT NULL,

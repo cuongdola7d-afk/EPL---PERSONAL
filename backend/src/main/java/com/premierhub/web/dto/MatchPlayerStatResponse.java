@@ -4,5 +4,6 @@ public record MatchPlayerStatResponse(int playerId, String playerName, int clubI
                                       String position, Integer minutes, Integer goals,
                                       Integer assists, Integer yellowCards, Integer redCards,
                                       String rating, Integer shotsOn, Integer passesKey,
-                                      Integer tackles, Integer saves) {
+                                      Integer tackles, Integer saves, MatchScoreResponse score,
+                                      InferredMatchStatsResponse inferred) {
 }

@@ -4,6 +4,7 @@ import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.dto.MatchDetailResponse;
 import com.premierhub.web.dto.MatchPlayerStatResponse;
+import com.premierhub.web.dto.InferredMatchStatsResponse;
 import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.dto.StandingResponse;
 import com.premierhub.web.error.InvalidFilterException;
@@ -22,9 +23,14 @@ public class FootballQueries {
     public static final int LEAGUE_ID = 39;
     public static final int DEFAULT_SEASON = 2024;
     private final JdbcTemplate jdbc;
+    private final MatchScoringService scoring;
+    private final FixtureEvidenceService evidence;
 
-    public FootballQueries(JdbcTemplate jdbc) {
+    public FootballQueries(JdbcTemplate jdbc, MatchScoringService scoring,
+                           FixtureEvidenceService evidence) {
         this.jdbc = jdbc;
+        this.scoring = scoring;
+        this.evidence = evidence;
     }
 
     public List<ClubResponse> clubs(int season, String keyword) {
@@ -89,24 +95,46 @@ public class FootballQueries {
 
     public Optional<MatchDetailResponse> matchDetail(int id, int season) {
         return match(id, season).map(match -> {
-            List<MatchPlayerStatResponse> players = jdbc.query("""
+            List<MatchPlayerStatResponse> rawPlayers = jdbc.query("""
                     SELECT s.player_id, p.name AS player_name, s.club_id, s.position,
                            s.minutes, s.goals, s.assists, s.yellow_cards, s.red_cards,
                            s.rating, s.shots_on, s.passes_key, s.tackles, s.saves
                     FROM fixture_player_stats s JOIN players p ON p.id = s.player_id
                     WHERE s.fixture_id = ? AND s.club_id IN (?, ?)
                     ORDER BY s.club_id, p.name, s.player_id
-                    """, (rs, row) -> new MatchPlayerStatResponse(
-                    rs.getInt("player_id"), rs.getString("player_name"), rs.getInt("club_id"),
-                    rs.getString("position"), (Integer) rs.getObject("minutes"),
-                    (Integer) rs.getObject("goals"), (Integer) rs.getObject("assists"),
-                    (Integer) rs.getObject("yellow_cards"), (Integer) rs.getObject("red_cards"),
-                    rs.getString("rating"), (Integer) rs.getObject("shots_on"),
-                    (Integer) rs.getObject("passes_key"), (Integer) rs.getObject("tackles"),
-                    (Integer) rs.getObject("saves")), id, match.homeClubId(), match.awayClubId());
+                    """, (rs, row) -> {
+                String position = rs.getString("position");
+                Integer minutes = (Integer) rs.getObject("minutes");
+                Integer goals = (Integer) rs.getObject("goals");
+                Integer assists = (Integer) rs.getObject("assists");
+                Integer yellowCards = (Integer) rs.getObject("yellow_cards");
+                Integer redCards = (Integer) rs.getObject("red_cards");
+                return new MatchPlayerStatResponse(
+                        rs.getInt("player_id"), rs.getString("player_name"), rs.getInt("club_id"),
+                        position, minutes, goals, assists, yellowCards, redCards,
+                        rs.getString("rating"), (Integer) rs.getObject("shots_on"),
+                        (Integer) rs.getObject("passes_key"), (Integer) rs.getObject("tackles"),
+                        (Integer) rs.getObject("saves"),
+                        scoring.score(position, minutes, goals, assists, yellowCards, redCards), null);
+            }, id, match.homeClubId(), match.awayClubId());
+            FixtureEvidenceService.Review review = evidence.review(season, match, rawPlayers);
+            List<MatchPlayerStatResponse> players = rawPlayers.stream().map(player -> {
+                InferredMatchStatsResponse inferred = review.inferred().get(player.playerId());
+                if (inferred == null) return player;
+                Integer minutes = player.minutes() == null ? inferred.minutes() : player.minutes();
+                Integer goals = player.goals() == null ? inferred.goals() : player.goals();
+                Integer assists = player.assists() == null ? inferred.assists() : player.assists();
+                return new MatchPlayerStatResponse(player.playerId(), player.playerName(),
+                        player.clubId(), player.position(), player.minutes(), player.goals(),
+                        player.assists(), player.yellowCards(), player.redCards(), player.rating(),
+                        player.shotsOn(), player.passesKey(), player.tackles(), player.saves(),
+                        scoring.score(player.position(), minutes, goals, assists,
+                                player.yellowCards(), player.redCards()), inferred);
+            }).toList();
             return new MatchDetailResponse(match,
                     players.stream().filter(player -> player.clubId() == match.homeClubId()).toList(),
-                    players.stream().filter(player -> player.clubId() == match.awayClubId()).toList());
+                    players.stream().filter(player -> player.clubId() == match.awayClubId()).toList(),
+                    review.status(), review.error());
         });
     }
 
