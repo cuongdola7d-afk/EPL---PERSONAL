@@ -127,9 +127,32 @@ Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). �
 - Lịch đấu: `GET /api/matches` với `club`, `matchweek`, `status` khi áp dụng bộ lọc.
 - BXH: `GET /api/standings`; chỉ số được tính từ các trận đã kết thúc.
 
-Lựa chọn CLB trong bộ lọc lấy từ Club API. Frontend chưa deploy và chưa cấu hình URL Railway.
+Lựa chọn CLB trong bộ lọc lấy từ Club API. Khi chạy bằng `npm.cmd run dev`, frontend luôn gọi `/api/...` qua Vite proxy, dù `VITE_API_BASE_URL` có được đặt trong môi trường local.
 
 Nếu trang báo lỗi API, mở `http://localhost:8080/actuator/health` rồi thử trực tiếp `/api/clubs`, `/api/players`, `/api/matches` hoặc `/api/standings` trên cùng host. Nếu không phản hồi, kiểm tra terminal backend, JDK và biến `PORT` (local cần cổng 8080 để khớp proxy). Nếu backend trả dữ liệu nhưng frontend vẫn lỗi, xem tab Network trong Developer Tools để kiểm tra request `/api/...`, rồi xác nhận Vite đang chạy đúng cổng/đúng thư mục. Chạy `npm.cmd run build` trong `frontend/` để kiểm tra bản build; `frontend/dist/` và `frontend/node_modules/` được Git bỏ qua.
+
+## Deploy frontend lên Vercel, dùng backend Railway
+
+Frontend là ứng dụng Vite tĩnh; backend Spring Boot tiếp tục chạy trên Railway. Trước khi triển khai, kiểm tra URL backend Railway công khai qua `https://<railway-domain>/actuator/health` và `https://<railway-domain>/api/clubs`. URL này là **origin** (giao thức + host, có thể có cổng), không chứa `/api` hay đường dẫn khác. Repo không lưu sẵn domain Railway hoặc Vercel.
+
+1. Sau khi review và đưa commit frontend/backend này lên GitHub, vào [Vercel Dashboard](https://vercel.com/new), chọn **Add New → Project**, kết nối GitHub nếu chưa kết nối. Khi cấp quyền cho Vercel GitHub App, chọn đúng repo riêng tư `EPL---PERSONAL` (hoặc chọn **Only select repositories** rồi cấp quyền cho repo đó), sau đó **Import** repo.
+2. Trong **Configure Project**, chọn **Framework Preset: Vite** và **Root Directory: `frontend`** bằng nút **Edit**. **Build Command: `npm run build`**, **Output Directory: `dist`** (tính từ `frontend/`). Để Install Command mặc định của Vercel; dependency được cài theo `frontend/package-lock.json`. Không chọn `backend/` hay thư mục gốc làm Root Directory.
+3. Trong **Environment Variables**, thêm `VITE_API_BASE_URL=https://<railway-domain>` cho **Production**; thêm cho **Preview** nếu muốn dùng bản preview. Không thêm `/api` ở cuối. Dấu `/` cuối URL vẫn được code xử lý. Biến `VITE_` được Vite đóng vào JavaScript gửi cho trình duyệt, nên chỉ đặt URL công khai, **không đặt token/mật khẩu**. Bấm **Deploy**.
+4. Lấy domain production trong **Project → Domains** hoặc deployment production, ví dụ `https://<project>.vercel.app`. Trên Railway, vào service backend → **Variables**, đặt `PREMIERHUB_CORS_ALLOWED_ORIGINS=https://<project>.vercel.app`. Nếu cần nhiều domain, phân cách bằng dấu phẩy, ví dụ `https://<project>.vercel.app,https://<custom-domain>`. Đây là danh sách origin chính xác, không có `/` cuối và không dùng `*`. Deploy lại backend nếu Railway chưa tự tạo deployment khi biến thay đổi.
+5. Sau khi backend Railway chạy với biến mới, mở domain Vercel và thử cả bốn trang: `/#clubs`, `/#players`, `/#matches`, `/#standings`. Thử tìm/lọc và kiểm tra tab **Network**: request phải đi tới `https://<railway-domain>/api/...`, trả JSON và có header `Access-Control-Allow-Origin` bằng đúng domain Vercel. Nếu đổi `VITE_API_BASE_URL` trên Vercel, cần tạo **deployment mới** vì biến được đóng vào bản build.
+
+Backend luôn cho phép `http://localhost:5173` và `http://127.0.0.1:5173` khi gọi trực tiếp; local thông thường dùng Vite proxy. Nếu Vite chạy trên cổng khác và muốn gọi trực tiếp backend, thêm origin local đó vào `PREMIERHUB_CORS_ALLOWED_ORIGINS`.
+
+Vercel tạo domain Preview riêng; domain này có thể khác domain Production. Muốn Preview gọi API, thêm **origin Preview cụ thể** vào `PREMIERHUB_CORS_ALLOWED_ORIGINS` trên Railway rồi redeploy backend. Nếu URL Preview thay đổi theo mỗi deployment, dùng một domain Preview/branch ổn định hoặc cập nhật từng origin cần thử. Không dùng `*.vercel.app` hay `*` để mở CORS cho mọi site.
+
+Nếu trang production báo lỗi API: (1) kiểm tra trực tiếp `https://<railway-domain>/actuator/health` và `/api/clubs`; (2) trong Network xác nhận request dùng đúng Railway URL và không bị lỗi mixed content; (3) kiểm tra `Origin` của request có trong `PREMIERHUB_CORS_ALLOWED_ORIGINS` và response có `Access-Control-Allow-Origin`; (4) kiểm tra cả Vercel deployment mới và Railway deployment mới đã hoàn tất. Có thể kiểm tra CORS bằng lệnh sau, thay các domain bằng URL thật:
+
+```powershell
+curl.exe -i -H "Origin: https://<project>.vercel.app" "https://<railway-domain>/api/clubs"
+curl.exe -i -H "Origin: https://other.example" "https://<railway-domain>/api/clubs"
+```
+
+Lệnh đầu phải có `Access-Control-Allow-Origin: https://<project>.vercel.app`; lệnh thứ hai phải bị từ chối và không có header này. Nguồn tham khảo: [Vercel monorepo](https://vercel.com/docs/monorepos), [Vercel GitHub](https://vercel.com/docs/git/vercel-for-github), [Vercel build](https://vercel.com/docs/builds/configure-a-build), [Vite env](https://vite.dev/guide/env-and-mode), [Spring MVC CORS](https://docs.spring.io/spring-framework/reference/web/webmvc-cors.html).
 
 ## Quy tắc bảng xếp hạng
 
