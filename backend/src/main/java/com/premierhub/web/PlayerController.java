@@ -1,7 +1,6 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Player;
-import com.premierhub.service.PlayerService;
+import com.premierhub.service.FootballQueries;
 import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.Pattern;
@@ -16,9 +15,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/players")
 public class PlayerController {
-    private final PlayerService service;
+    private final FootballQueries service;
 
-    public PlayerController(PlayerService service) {
+    public PlayerController(FootballQueries service) {
         this.service = service;
     }
 
@@ -27,20 +26,15 @@ public class PlayerController {
             @RequestParam(required = false)
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "club must not be blank") String club,
             @RequestParam(required = false)
-            @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "position must not be blank") String position) {
-        return service.findPlayers(club, position).stream().map(this::toResponse).toList();
+            @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "position must not be blank") String position,
+            @RequestParam(defaultValue = "2024") int season) {
+        return service.players(season, club, position);
     }
 
     @GetMapping("/{id}")
-    public PlayerResponse getById(@PathVariable @Positive int id) {
-        return service.findById(id).map(this::toResponse)
+    public PlayerResponse getById(@PathVariable @Positive int id,
+                                  @RequestParam(defaultValue = "2024") int season) {
+        return service.player(id, season)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
-    }
-
-    private PlayerResponse toResponse(Player player) {
-        String clubName = service.findClubName(player.getClubId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Unknown club id: " + player.getClubId()));
-        return PlayerResponse.from(player, clubName);
     }
 }

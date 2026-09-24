@@ -1,8 +1,8 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Match;
-import com.premierhub.service.MatchService;
+import com.premierhub.service.FootballQueries;
 import com.premierhub.web.dto.MatchResponse;
+import com.premierhub.web.dto.MatchDetailResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -17,9 +17,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/matches")
 public class MatchController {
-    private final MatchService service;
+    private final FootballQueries service;
 
-    public MatchController(MatchService service) {
+    public MatchController(FootballQueries service) {
         this.service = service;
     }
 
@@ -29,19 +29,22 @@ public class MatchController {
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "club must not be blank") String club,
             @RequestParam(required = false) @Min(1) Integer matchweek,
             @RequestParam(required = false)
-            @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "status must not be blank") String status) {
-        return service.findMatches(club, matchweek, status).stream()
-                .map(this::toResponse).toList();
+            @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "status must not be blank") String status,
+            @RequestParam(defaultValue = "2024") int season) {
+        return service.matches(season, club, matchweek, status);
     }
 
     @GetMapping("/{id}")
-    public MatchResponse getById(@PathVariable @Positive int id) {
-        return service.findById(id).map(this::toResponse)
+    public MatchResponse getById(@PathVariable @Positive int id,
+                                 @RequestParam(defaultValue = "2024") int season) {
+        return service.match(id, season)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + id));
     }
 
-    private MatchResponse toResponse(Match match) {
-        return MatchResponse.from(match, service.clubName(match.getHomeClubId()),
-                service.clubName(match.getAwayClubId()));
+    @GetMapping("/{id}/details")
+    public MatchDetailResponse getDetails(@PathVariable @Positive int id,
+                                          @RequestParam(defaultValue = "2024") int season) {
+        return service.matchDetail(id, season)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + id));
     }
 }

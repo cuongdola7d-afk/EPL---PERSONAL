@@ -24,7 +24,7 @@ function StandingsPage() {
           <div>
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>04 / TABLE</span></p>
             <h2 id="standings-heading">Bảng xếp hạng</h2>
-            <p className="section-description">Thứ hạng được tính từ các trận đã kết thúc trong PremierHub API.</p>
+            <p className="section-description">Bảng xếp hạng cuối mùa 2024/25 từ dữ liệu nhà cung cấp; đây không phải thứ hạng sau Gameweek 1.</p>
           </div>
           <button className="refresh-button" type="button" onClick={reload} disabled={status === 'loading'}>Làm mới</button>
         </div>

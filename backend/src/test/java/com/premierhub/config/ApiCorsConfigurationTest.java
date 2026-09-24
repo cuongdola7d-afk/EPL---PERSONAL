@@ -1,6 +1,6 @@
 package com.premierhub.config;
 
-import com.premierhub.service.ClubService;
+import com.premierhub.service.FootballQueries;
 import com.premierhub.web.ClubController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +28,11 @@ class ApiCorsConfigurationTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ClubService service;
+    private FootballQueries service;
 
     @Test
     void allowsConfiguredProductionOriginWithoutChangingSuccessfulApiResponse() throws Exception {
-        when(service.getAll()).thenReturn(List.of());
+        when(service.clubs(2024, null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/clubs").header("Origin", "https://premierhub.vercel.app"))
                 .andExpect(status().isOk())

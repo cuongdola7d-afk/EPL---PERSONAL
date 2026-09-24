@@ -1,9 +1,7 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Club;
-import com.premierhub.model.Standing;
-import com.premierhub.service.StandingService;
-import com.premierhub.service.StandingService.RankedStanding;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.web.dto.StandingResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -19,18 +17,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(StandingController.class)
 class StandingControllerTest {
-    private final RankedStanding arsenal = new RankedStanding(1,
-            new Standing(new Club(1, "Arsenal", "London"), 1, 1, 0, 0, 2, 1));
+    private final StandingResponse arsenal = new StandingResponse(1, 1, "Arsenal",
+            1, 1, 0, 0, 2, 1, 1, 3);
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private StandingService service;
+    private FootballQueries service;
 
     @Test
     void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
-        when(service.getStandings(null)).thenReturn(List.of(arsenal));
+        when(service.standings(2024, null)).thenReturn(List.of(arsenal));
 
         mockMvc.perform(get("/api/standings"))
                 .andExpect(status().isOk())
@@ -44,7 +42,7 @@ class StandingControllerTest {
 
     @Test
     void findsClubAndReturns404WhenMissing() throws Exception {
-        when(service.findByClubId(1)).thenReturn(Optional.of(arsenal));
+        when(service.standing(1, 2024)).thenReturn(Optional.of(arsenal));
 
         mockMvc.perform(get("/api/standings/1"))
                 .andExpect(status().isOk())
@@ -55,8 +53,8 @@ class StandingControllerTest {
 
     @Test
     void validLimitAndLargerThanTableReturn200() throws Exception {
-        when(service.getStandings(1)).thenReturn(List.of(arsenal));
-        when(service.getStandings(50)).thenReturn(List.of(arsenal));
+        when(service.standings(2024, 1)).thenReturn(List.of(arsenal));
+        when(service.standings(2024, 50)).thenReturn(List.of(arsenal));
 
         mockMvc.perform(get("/api/standings").param("limit", "1"))
                 .andExpect(status().isOk())
@@ -78,7 +76,7 @@ class StandingControllerTest {
 
     @Test
     void emptyDataReturns200WithEmptyArray() throws Exception {
-        when(service.getStandings(null)).thenReturn(List.of());
+        when(service.standings(2024, null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/standings"))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));

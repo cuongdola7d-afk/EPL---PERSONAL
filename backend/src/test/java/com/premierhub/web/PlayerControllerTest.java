@@ -1,8 +1,7 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Player;
-import com.premierhub.model.Position;
-import com.premierhub.service.PlayerService;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,18 +18,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PlayerController.class)
 class PlayerControllerTest {
-    private final Player saka = new Player(2, "Bukayo Saka", 1, Position.FORWARD, 12, 10);
+    private final PlayerResponse saka = new PlayerResponse(2, "Bukayo Saka", 1,
+            "Arsenal", "FORWARD", 12, 10);
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private PlayerService service;
+    private FootballQueries service;
 
     @Test
     void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
-        when(service.findPlayers(null, null)).thenReturn(List.of(saka));
-        when(service.findClubName(1)).thenReturn(Optional.of("Arsenal"));
+        when(service.players(2024, null, null)).thenReturn(List.of(saka));
 
         mockMvc.perform(get("/api/players"))
                 .andExpect(status().isOk())
@@ -43,8 +42,7 @@ class PlayerControllerTest {
 
     @Test
     void getByIdSucceedsAndMissingIdReturns404() throws Exception {
-        when(service.findById(2)).thenReturn(Optional.of(saka));
-        when(service.findClubName(1)).thenReturn(Optional.of("Arsenal"));
+        when(service.player(2, 2024)).thenReturn(Optional.of(saka));
 
         mockMvc.perform(get("/api/players/2"))
                 .andExpect(status().isOk())
@@ -55,9 +53,8 @@ class PlayerControllerTest {
 
     @Test
     void validPositionAndCombinedFiltersStillReturnPlayers() throws Exception {
-        when(service.findPlayers(null, " forward ")).thenReturn(List.of(saka));
-        when(service.findPlayers("Arsenal", "Forward")).thenReturn(List.of(saka));
-        when(service.findClubName(1)).thenReturn(Optional.of("Arsenal"));
+        when(service.players(2024, null, " forward ")).thenReturn(List.of(saka));
+        when(service.players(2024, "Arsenal", "Forward")).thenReturn(List.of(saka));
 
         mockMvc.perform(get("/api/players").param("position", " forward "))
                 .andExpect(status().isOk())
@@ -70,7 +67,7 @@ class PlayerControllerTest {
 
     @Test
     void unknownPositionReturnsInvalidFilter() throws Exception {
-        when(service.findPlayers(null, "STRIKER"))
+        when(service.players(2024, null, "STRIKER"))
                 .thenThrow(new InvalidFilterException("Unknown position: STRIKER"));
 
         expectError(mockMvc.perform(get("/api/players").param("position", "STRIKER")),
@@ -89,7 +86,7 @@ class PlayerControllerTest {
 
     @Test
     void validFilterWithoutMatchesReturnsEmptyArray() throws Exception {
-        when(service.findPlayers("Unknown", null)).thenReturn(List.of());
+        when(service.players(2024, "Unknown", null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/players").param("club", "Unknown"))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));

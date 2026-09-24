@@ -1,8 +1,7 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Match;
-import com.premierhub.model.MatchStatus;
-import com.premierhub.service.MatchService;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,19 +19,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MatchController.class)
 class MatchControllerTest {
-    private final Match match = new Match(1, 1, 2, 1, LocalDate.of(2025, 8, 16),
-            MatchStatus.FINISHED, 2, 1);
+    private final MatchResponse match = new MatchResponse(1, 1, "Arsenal", 2, "Chelsea",
+            1, LocalDate.of(2025, 8, 16), "FINISHED", 2, 1);
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private MatchService service;
+    private FootballQueries service;
 
     @Test
     void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
-        when(service.findMatches(null, null, null)).thenReturn(List.of(match));
-        stubClubNames();
+        when(service.matches(2024, null, null, null)).thenReturn(List.of(match));
 
         mockMvc.perform(get("/api/matches"))
                 .andExpect(status().isOk())
@@ -45,8 +43,7 @@ class MatchControllerTest {
 
     @Test
     void getByIdSucceedsAndMissingIdReturns404() throws Exception {
-        when(service.findById(1)).thenReturn(Optional.of(match));
-        stubClubNames();
+        when(service.match(1, 2024)).thenReturn(Optional.of(match));
 
         mockMvc.perform(get("/api/matches/1"))
                 .andExpect(status().isOk())
@@ -57,8 +54,7 @@ class MatchControllerTest {
 
     @Test
     void validFiltersAndCombinationStillReturnMatches() throws Exception {
-        when(service.findMatches("Arsenal", 1, " finished ")).thenReturn(List.of(match));
-        stubClubNames();
+        when(service.matches(2024, "Arsenal", 1, " finished ")).thenReturn(List.of(match));
 
         mockMvc.perform(get("/api/matches").param("club", "Arsenal")
                         .param("matchweek", "1").param("status", " finished "))
@@ -76,7 +72,7 @@ class MatchControllerTest {
 
     @Test
     void unknownStatusReturnsInvalidFilter() throws Exception {
-        when(service.findMatches(null, null, "UNKNOWN"))
+        when(service.matches(2024, null, null, "UNKNOWN"))
                 .thenThrow(new InvalidFilterException("Unknown status: UNKNOWN"));
 
         expectError(mockMvc.perform(get("/api/matches").param("status", "UNKNOWN")),
@@ -95,14 +91,10 @@ class MatchControllerTest {
 
     @Test
     void validFilterWithoutMatchesReturnsEmptyArray() throws Exception {
-        when(service.findMatches("Unknown", null, null)).thenReturn(List.of());
+        when(service.matches(2024, "Unknown", null, null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/matches").param("club", "Unknown"))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
     }
 
-    private void stubClubNames() {
-        when(service.clubName(1)).thenReturn("Arsenal");
-        when(service.clubName(2)).thenReturn("Chelsea");
-    }
 }

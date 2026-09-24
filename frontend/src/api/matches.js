@@ -1,4 +1,4 @@
-import { fetchApiList } from './request.js'
+import { fetchApiJson, fetchApiList } from './request.js'
 
 function isValidMatch(match) {
   return match !== null &&
@@ -22,4 +22,16 @@ export function fetchMatches(filters, signal) {
 
   const query = params.toString()
   return fetchApiList(`/api/matches${query ? `?${query}` : ''}`, signal, isValidMatch, 'trận đấu')
+}
+
+export async function fetchMatchDetail(id, signal) {
+  const detail = await fetchApiJson(`/api/matches/${id}/details`, signal, 'Không tìm thấy trận đấu này.')
+  const isValidPlayer = (player) => player !== null && Number.isInteger(player.playerId) &&
+    typeof player.playerName === 'string' && Number.isInteger(player.clubId)
+  if (!detail || !isValidMatch(detail.match) ||
+      !Array.isArray(detail.homePlayers) || !detail.homePlayers.every(isValidPlayer) ||
+      !Array.isArray(detail.awayPlayers) || !detail.awayPlayers.every(isValidPlayer)) {
+    throw new Error('Dữ liệu chi tiết trận đấu từ API không đúng định dạng.')
+  }
+  return detail
 }

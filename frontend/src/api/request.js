@@ -21,23 +21,29 @@ export function buildApiUrl(path, baseUrl, isDevelopment) {
   return `${url.origin}${apiPath}`
 }
 
-export async function fetchApiList(path, signal, isValidItem, itemName) {
+export async function fetchApiJson(path, signal, notFoundMessage = 'API trả về mã HTTP 404.') {
   const url = buildApiUrl(path, import.meta.env.VITE_API_BASE_URL, import.meta.env.DEV)
   const response = await fetch(url, {
     headers: { Accept: 'application/json' },
     signal,
   })
 
+  if (response.status === 404) {
+    throw new Error(notFoundMessage)
+  }
   if (!response.ok) {
     throw new Error(`API trả về mã HTTP ${response.status}.`)
   }
 
-  let items
   try {
-    items = await response.json()
+    return await response.json()
   } catch {
     throw new Error('API không trả về JSON hợp lệ.')
   }
+}
+
+export async function fetchApiList(path, signal, isValidItem, itemName) {
+  const items = await fetchApiJson(path, signal)
 
   if (!Array.isArray(items) || items.some((item) => !isValidItem(item))) {
     throw new Error(`Dữ liệu ${itemName} từ API không đúng định dạng.`)

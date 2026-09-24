@@ -1,6 +1,10 @@
-function MatchCard({ match }) {
+function MatchCard({ match, onOpen }) {
   const hasScore = match.homeGoals !== null && match.awayGoals !== null
-  const statusLabel = match.status === 'FINISHED' ? 'Đã kết thúc' : 'Chưa diễn ra'
+  const statusLabel = {
+    FINISHED: 'Đã kết thúc', SCHEDULED: 'Chưa diễn ra', POSTPONED: 'Bị hoãn',
+    CANCELLED: 'Đã hủy', SUSPENDED: 'Tạm dừng', LIVE: 'Đang diễn ra',
+    AWARDED: 'Kết quả xử lý',
+  }[match.status] ?? match.status
   const dateLabel = match.date.split('-').reverse().join('/')
 
   return (
@@ -21,6 +25,10 @@ function MatchCard({ match }) {
         </div>
         <strong className="match-team away-team">{match.awayClub}</strong>
       </div>
+      <button className="match-detail-button" type="button" onClick={() => onOpen(match.id)}
+        aria-label={`Xem chi tiết trận ${match.homeClub} gặp ${match.awayClub}`}>
+        Xem chi tiết cầu thủ <span aria-hidden="true">→</span>
+      </button>
     </article>
   )
 }

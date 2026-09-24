@@ -8,7 +8,7 @@ PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạ
 - Maven Wrapper (không bắt buộc cài Maven)
 - JUnit Jupiter
 - Spring Boot 4.1.1, Spring Web MVC và Bean Validation
-- Dữ liệu CSV trong bộ nhớ; chưa dùng database
+- API tra cứu đọc database: H2 file khi chạy local, MySQL khi chạy trên Railway; CSV chỉ còn cho console demo và bài học cũ
 - React, JavaScript và Vite cho frontend
 
 ## Chức năng đã hoàn thành
@@ -18,7 +18,7 @@ PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạ
 - Import câu lạc bộ, cầu thủ và trận đấu từ file UTF-8 CSV.
 - Phân biệt trận `SCHEDULED` và `FINISHED`; tính hòa, thắng, thua và điểm.
 - Lọc cầu thủ theo câu lạc bộ, tìm cầu thủ, lấy danh sách vua phá lưới.
-- Tính bảng xếp hạng từ các trận đã kết thúc.
+- Tính bảng xếp hạng từ các trận đã kết thúc trong console demo; web API đọc BXH nhà cung cấp đã lưu trong database.
 - Chương trình console demo và unit test cho model, CSV reader, service.
 - API `GET` cho Club, Player, Match và Standing; JSON lỗi chung cho request không hợp lệ.
 - Unit test, controller web slice test và Spring context integration test.
@@ -97,9 +97,9 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar
 
 Trên Linux/macOS, dùng `./mvnw` thay cho `.\mvnw.cmd`. Ứng dụng chạy ở cổng 8080 khi không đặt biến môi trường `PORT`; ví dụ trên PowerShell, `$env:PORT=9090` đổi cổng sang 9090. Khi deploy, đặt `SPRING_PROFILES_ACTIVE=prod` để dùng cấu hình production. Không cần bật profile này khi chạy local.
 
-Health check: `http://localhost:8080/actuator/health` (thay cổng nếu đã đặt `PORT`). Request mẫu ở [requests.http](requests.http). Dữ liệu API nằm trong `backend/src/main/resources/data`, được nạp từ classpath lúc ứng dụng khởi động và hiện chỉ đọc. File trong `backend/data` phục vụ console demo.
+Health check: `http://localhost:8080/actuator/health` (thay cổng nếu đã đặt `PORT`). Request mẫu ở [requests.http](requests.http). Web API đọc dữ liệu đã đồng bộ trong `backend/premierhub-local.mv.db` khi chạy local. Thư mục `backend/data` và CSV trong resources chỉ phục vụ console demo, CSV reader và test cũ; không nạp vào web API.
 
-Luồng Club API: `HTTP → ClubController → ClubService → ClubRepository → ClubResponse → JSON`. Các API khác dùng cùng dữ liệu Club và CSV tương ứng trong bộ nhớ.
+Luồng tra cứu: `API-Football → lệnh FootballSync → database → FootballQueries → controller → JSON → frontend`. Không có endpoint đồng bộ công khai.
 
 ## Chạy frontend cùng backend tại máy local
 
@@ -125,7 +125,10 @@ Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). �
 - CLB: `GET /api/clubs`, hoặc `/api/clubs/search?keyword=...` khi tìm tên; lọc thành phố và sắp xếp trên dữ liệu nhận được.
 - Cầu thủ: `GET /api/players` với `club`, `position` khi chọn; sắp xếp và tính tổng trên kết quả nhận được.
 - Lịch đấu: `GET /api/matches` với `club`, `matchweek`, `status` khi áp dụng bộ lọc.
-- BXH: `GET /api/standings`; chỉ số được tính từ các trận đã kết thúc.
+- Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê từng cầu thủ; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
+- BXH: `GET /api/standings`; chỉ số lấy từ BXH nhà cung cấp và được đọc lại từ database theo mỗi request.
+
+Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). Hiện chỉ mùa này được đồng bộ; bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. Cầu thủ có thể hiện nhiều dòng khi chuyển CLB vì thống kê mùa được lưu riêng cho từng CLB.
 
 Lựa chọn CLB trong bộ lọc lấy từ Club API. Khi chạy bằng `npm.cmd run dev`, frontend luôn gọi `/api/...` qua Vite proxy, dù `VITE_API_BASE_URL` có được đặt trong môi trường local.
 
@@ -154,8 +157,50 @@ curl.exe -i -H "Origin: https://other.example" "https://<railway-domain>/api/clu
 
 Lệnh đầu phải có `Access-Control-Allow-Origin: https://<project>.vercel.app`; lệnh thứ hai phải bị từ chối và không có header này. Nguồn tham khảo: [Vercel monorepo](https://vercel.com/docs/monorepos), [Vercel GitHub](https://vercel.com/docs/git/vercel-for-github), [Vercel build](https://vercel.com/docs/builds/configure-a-build), [Vite env](https://vite.dev/guide/env-and-mode), [Spring MVC CORS](https://docs.spring.io/spring-framework/reference/web/webmvc-cors.html).
 
+## Nguồn dữ liệu 2024/25 và giới hạn Free
+
+PremierHub dùng API-Football với `league=39`, `season=2024`. Lần kiểm chứng thực tế cho thấy 20 đội, 10 trận vòng 1, 20 dòng BXH, thống kê mùa cầu thủ và 40 dòng thống kê cầu thủ của một trận đã kết thúc. `GET /players?league=39&season=2024` báo 57 trang nhưng gói Free từ chối `page=4` vì **mỗi truy vấn chỉ truy cập tối đa 3 trang**. Lệnh đồng bộ chia truy vấn theo CLB; đội nào có hơn 3 trang vẫn thiếu một phần cầu thủ. Job ghi `truncatedClubIds` và `complete=false` trong trường hợp này. Không dùng dữ liệu giả để lấp chỗ thiếu. Những trường như bàn thắng, kiến tạo, phút thi đấu hoặc rating có thể là `null` trong response; database giữ `NULL` cho thống kê theo trận. Màn hình tổng mùa hiển thị `0` cho bàn thắng/kiến tạo thiếu để giữ cấu trúc JSON cũ.
+
+Ảnh chụp H2 local ngày 25/09/2026, **không chạy đồng bộ thêm**: 20 CLB, 10 trận Gameweek 1, 400 bản ghi thống kê cầu thủ–trận và 20 dòng BXH cuối mùa (38 trận/đội). Bảng `players` có 432 cầu thủ do thống kê trận cung cấp, nhưng trang `/api/players` chỉ trả **63 dòng thống kê mùa cầu thủ–CLB** từ ba trang đầu của truy vấn toàn giải. Bournemouth, Brentford và Crystal Palace hiện chưa có dòng thống kê mùa nào trong H2. Trang Cầu thủ vì vậy chưa đủ dữ liệu để chọn đội Fantasy; kết quả lọc rỗng có thể chỉ là dữ liệu chưa được tải. BXH hiện có là BXH cuối mùa, không phải BXH sau Gameweek 1.
+
+Đặt `API_FOOTBALL_KEY` trong môi trường backend hoặc file Git-ignored `backend/.env.local` với một dòng `API_FOOTBALL_KEY=...`. Key chỉ được đọc bởi backend/job, không đặt vào `VITE_`. Kiểm chứng theo Gameweek:
+
+```powershell
+cd backend
+node scripts/verify-api-football.mjs 2024 1
+```
+
+Script kiểm tra đội, trận, BXH, trang cầu thủ đầu và thống kê cầu thủ của trận đã kết thúc, tối đa 8 request, cách nhau 6,5 giây. Không in key hoặc response đầy đủ. Trước đây Free đã từ chối mùa 2026/27; ứng dụng này cố ý dùng mùa 2024/25 có thể truy cập.
+
+## Đồng bộ từng Gameweek và database
+
+Chạy từ `backend/` sau khi đã build JAR. Lệnh sau đồng bộ vòng 1 và thoát; có thể chạy lại an toàn:
+
+```powershell
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.sync.enabled=true --premierhub.sync.season=2024 --premierhub.sync.gameweek=1 --premierhub.sync.budget=70
+```
+
+Vòng tiếp theo: đổi `--premierhub.sync.gameweek=2`. Mỗi lần chạy chỉ tải một Gameweek; nếu hết ngân sách request, job giữ checkpoint và in `complete=false`, chạy lại sau khi quota được cấp. `--premierhub.sync.budget` giới hạn tối đa 90 request/lần, mặc định 70; job còn giữ tối thiểu 5 request trong quota ngày và giãn các request 6,5 giây. Job lấy lại danh sách trận của Gameweek để phát hiện trạng thái/tỉ số thay đổi, nhưng bỏ qua thống kê trận đã có nếu fingerprint trận chưa đổi. Nếu nhà cung cấp sửa thống kê cầu thủ mà không đổi trận, chạy cùng Gameweek với `--premierhub.sync.refresh-stats=true`. Muốn cập nhật lại thống kê tổng mùa đã lưu, thêm `--premierhub.sync.refresh-players=true` khi còn quota. Không cần chạy lại toàn bộ mùa.
+
+Local dùng H2 file `backend/premierhub-local.mv.db`, giữ dữ liệu qua lần chạy. Schema nằm trong `backend/src/main/resources/schema.sql`, tự tạo bảng còn thiếu lúc khởi động. Các bảng chính là `seasons`, `clubs`, `season_clubs`, `players`, `player_season_stats`, `fixtures`, `standings`, `fixture_player_stats`, `sync_states`. ID đội, cầu thủ và trận dùng ID của nhà cung cấp. Thống kê cầu thủ theo trận có khóa `(fixture_id, player_id)`, lưu phút, bàn thắng, kiến tạo, thẻ, rating và các chỉ số sẵn có khác, cùng JSON gốc để xử lý thêm về sau. Chưa có điểm hay giao diện Fantasy.
+
+### Railway
+
+Không dùng H2 file trên Railway vì storage của web service có thể không bền qua deploy. Trên tài khoản Railway, bạn cần tự thêm MySQL (xem chi phí/gói dịch vụ trước khi tạo), rồi đặt các biến sau cho **web service** và **Cron service** của backend:
+
+- `SPRING_PROFILES_ACTIVE=prod`
+- `PREMIERHUB_JDBC_URL=jdbc:mysql://<MYSQLHOST>:<MYSQLPORT>/<MYSQLDATABASE>` (điền bằng Railway reference variables tới MySQL cùng project)
+- `PREMIERHUB_DB_USER=<MYSQLUSER>` và `PREMIERHUB_DB_PASSWORD=<MYSQLPASSWORD>` (dùng reference variables, không ghi mật khẩu vào Git)
+- `API_FOOTBALL_KEY=<key>` chỉ cho Cron service; web service không cần key để tra cứu
+- Giữ `PREMIERHUB_CORS_ALLOWED_ORIGINS` cho domain Vercel như phần trên.
+
+Trước khi dùng Cron, build cùng source `backend/` và chạy một lần Gameweek 1 bằng lệnh Java ở trên với `--spring.profiles.active=prod` và kết nối MySQL. Với Cron service, đặt Start Command tương tự (thay Gameweek và giữ `--spring.main.web-application-type=none`), đặt Cron Schedule theo UTC tùy ngày muốn chạy. Job phải chạy xong rồi thoát, không chạy scheduler trong web service Serverless. Sau lần đầu, xem log `SYNC ...` để biết request, Gameweek và checkpoint; đổi sang vòng tiếp theo sau khi vòng hiện tại đã đồng bộ đủ phần truy cập được. Không tự tạo dịch vụ, không deploy từ repo này trong bước hiện tại.
+
+Sau deploy, thử `https://<railway-domain>/api/clubs?season=2024`, `/api/players?season=2024`, `/api/matches?season=2024&matchweek=1`, `/api/standings?season=2024`; rồi mở bốn trang trên Vercel. Nếu API trả mảng rỗng, kiểm tra Cron đã dùng cùng database với web service và đã in kết quả sync.
+
 ## Quy tắc bảng xếp hạng
 
-Thắng 3 điểm, hòa 1 điểm, thua 0 điểm. Chỉ trận `FINISHED` được tính. Thứ tự lần lượt theo điểm giảm dần, hiệu số giảm dần, bàn thắng giảm dần và tên câu lạc bộ tăng dần.
+Web API dùng hạng/điểm/hiệu số do API-Football trả về và đọc database mỗi request. Bộ tính BXH từ trận (thắng 3, hòa 1) chỉ còn trong console demo và test Java cũ.
 
 Các ví dụ học tập đã hoàn thiện và test tương ứng nằm trong [docs/LEARNING_TASKS.md](docs/LEARNING_TASKS.md).

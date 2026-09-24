@@ -6,6 +6,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class PremierHubApplication {
     public static void main(String[] args) {
-        SpringApplication.run(PremierHubApplication.class, args);
+        var context = SpringApplication.run(PremierHubApplication.class, args);
+        for (String arg : args) {
+            if (arg.equals("--premierhub.sync.enabled=true")) {
+                System.exit(SpringApplication.exit(context));
+            }
+        }
     }
 }

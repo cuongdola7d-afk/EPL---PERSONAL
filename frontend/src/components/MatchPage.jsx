@@ -3,6 +3,7 @@ import { fetchClubs } from '../api/clubs.js'
 import { fetchMatches } from '../api/matches.js'
 import { useApiList } from '../hooks/useApiList.js'
 import MatchCard from './MatchCard.jsx'
+import MatchDetail from './MatchDetail.jsx'
 import ResultPanel from './ResultPanel.jsx'
 
 const EMPTY_FILTERS = { club: '', matchweek: '', status: '' }
@@ -13,6 +14,7 @@ function MatchPage() {
   const [draftStatus, setDraftStatus] = useState('')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [validationError, setValidationError] = useState('')
+  const [selectedMatchId, setSelectedMatchId] = useState(null)
   const requestClubs = useCallback((signal) => fetchClubs('', signal), [])
   const requestMatches = useCallback((signal) => fetchMatches(filters, signal), [filters])
   const clubList = useApiList(requestClubs)
@@ -28,6 +30,7 @@ function MatchPage() {
     }
 
     setValidationError('')
+    setSelectedMatchId(null)
     setFilters({ club: draftClub, matchweek, status: draftStatus })
   }
 
@@ -36,6 +39,7 @@ function MatchPage() {
     setDraftWeek('')
     setDraftStatus('')
     setValidationError('')
+    setSelectedMatchId(null)
     setFilters(EMPTY_FILTERS)
   }
 
@@ -72,6 +76,11 @@ function MatchPage() {
                 <option value="">Tất cả trạng thái</option>
                 <option value="FINISHED">Đã kết thúc</option>
                 <option value="SCHEDULED">Chưa diễn ra</option>
+                <option value="POSTPONED">Bị hoãn</option>
+                <option value="CANCELLED">Đã hủy</option>
+                <option value="SUSPENDED">Tạm dừng</option>
+                <option value="LIVE">Đang diễn ra</option>
+                <option value="AWARDED">Kết quả xử lý</option>
               </select>
             </div>
             <button className="search-button filter-apply" type="submit">Áp dụng</button>
@@ -96,9 +105,12 @@ function MatchPage() {
           onClear={hasFilters ? clearFilters : undefined}
         >
           <div className="match-list">
-            {matches.map((match) => <MatchCard key={match.id} match={match} />)}
+            {matches.map((match) => <MatchCard key={match.id} match={match} onOpen={setSelectedMatchId} />)}
           </div>
         </ResultPanel>
+        {selectedMatchId !== null && (
+          <MatchDetail key={selectedMatchId} matchId={selectedMatchId} onClose={() => setSelectedMatchId(null)} />
+        )}
       </div>
     </section>
   )

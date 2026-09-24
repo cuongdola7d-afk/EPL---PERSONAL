@@ -46,6 +46,7 @@ function PlayerPage() {
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>02 / PLAYERS</span></p>
             <h2 id="players-heading">Cầu thủ</h2>
             <p className="section-description">Cầu thủ, vị trí và chỉ số từ API PremierHub.</p>
+            <p className="filter-note">Thống kê mùa 2024/25 của trang Cầu thủ mới được lưu một phần. Một số CLB chưa có cầu thủ trong danh sách này; kết quả rỗng không có nghĩa CLB không có cầu thủ.</p>
           </div>
           {status === 'success' && (
             <p className="result-count" aria-live="polite">
@@ -112,7 +113,7 @@ function PlayerPage() {
           <div className="player-grid">
             {visiblePlayers.map((player) => (
               <PlayerCard
-                key={player.id}
+                key={`${player.id}-${player.clubId}`}
                 player={player}
                 positionLabel={POSITIONS.find((item) => item.value === player.position)?.label ?? player.position}
               />

@@ -1,7 +1,7 @@
 package com.premierhub.web;
 
-import com.premierhub.model.Club;
-import com.premierhub.service.ClubService;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.web.dto.ClubResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,17 +18,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ClubController.class)
 class ClubControllerTest {
-    private final Club arsenal = new Club(1, "Arsenal", "London");
+    private final ClubResponse arsenal = new ClubResponse(1, "Arsenal", "London");
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ClubService service;
+    private FootballQueries service;
 
     @Test
     void getAllReturnsJsonArray() throws Exception {
-        when(service.getAll()).thenReturn(List.of(arsenal));
+        when(service.clubs(2024, null)).thenReturn(List.of(arsenal));
 
         mockMvc.perform(get("/api/clubs"))
                 .andExpect(status().isOk())
@@ -39,7 +39,7 @@ class ClubControllerTest {
 
     @Test
     void getExistingClubReturnsSameJsonFields() throws Exception {
-        when(service.findById(1)).thenReturn(Optional.of(arsenal));
+        when(service.club(1, 2024)).thenReturn(Optional.of(arsenal));
 
         mockMvc.perform(get("/api/clubs/1"))
                 .andExpect(status().isOk())
@@ -50,7 +50,7 @@ class ClubControllerTest {
 
     @Test
     void missingClubReturnsStructured404() throws Exception {
-        when(service.findById(999)).thenReturn(Optional.empty());
+        when(service.club(999, 2024)).thenReturn(Optional.empty());
 
         expectError(mockMvc.perform(get("/api/clubs/999")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/clubs/999");
@@ -68,7 +68,7 @@ class ClubControllerTest {
 
     @Test
     void searchReturnsMatches() throws Exception {
-        when(service.searchByName("arsenal")).thenReturn(List.of(arsenal));
+        when(service.clubs(2024, "arsenal")).thenReturn(List.of(arsenal));
 
         mockMvc.perform(get("/api/clubs/search").param("keyword", "arsenal"))
                 .andExpect(status().isOk())
@@ -85,7 +85,7 @@ class ClubControllerTest {
 
     @Test
     void unexpectedExceptionHidesInternalMessage() throws Exception {
-        when(service.getAll()).thenThrow(new IllegalStateException("internal detail"));
+        when(service.clubs(2024, null)).thenThrow(new IllegalStateException("internal detail"));
 
         ResultActions result = mockMvc.perform(get("/api/clubs"));
         expectError(result, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "/api/clubs");
