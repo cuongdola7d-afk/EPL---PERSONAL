@@ -3,6 +3,7 @@ import ClubPage from './components/ClubPage.jsx'
 import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
 import StandingsPage from './components/StandingsPage.jsx'
+import FantasyReplayPage from './components/FantasyReplayPage.jsx'
 import './App.css'
 
 const PAGES = {
@@ -25,6 +26,11 @@ const PAGES = {
     navLabel: 'Bảng xếp hạng', label: 'Bảng xếp hạng', title: 'Mỗi điểm số.', highlight: 'Một vị trí.',
     description: 'Xem thứ hạng và các chỉ số được tính từ những trận đã kết thúc trong PremierHub API.',
     component: StandingsPage,
+  },
+  replay: {
+    navLabel: 'Fantasy Replay', label: 'Fantasy Replay · GW1 2024/25', title: 'Chọn 11 cầu thủ.', highlight: 'Xem lại GW1.',
+    description: 'Chơi lại Gameweek 1 mùa 2024/25 đã kết thúc với điểm v1 đã xác minh từ 10 trận. Đội hình được lưu trên trình duyệt của bạn.',
+    component: FantasyReplayPage,
   },
 }
 

@@ -13,7 +13,7 @@ function ResultPanel({ status, error, count, itemName, emptyMessage, onRetry, on
         <div className="state-panel state-error" role="alert">
           <span className="state-symbol" aria-hidden="true">!</span>
           <h3>Không thể tải {itemName}</h3>
-          <p>{error} Hãy kiểm tra backend tại localhost:8080 rồi thử lại.</p>
+          <p>{error} Hãy kiểm tra kết nối tới backend rồi thử lại.</p>
           <button type="button" onClick={onRetry}>Thử lại</button>
         </div>
       )}

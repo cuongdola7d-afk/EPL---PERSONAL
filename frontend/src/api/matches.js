@@ -16,6 +16,7 @@ function isValidMatch(match) {
 
 export function fetchMatches(filters, signal) {
   const params = new URLSearchParams()
+  if (filters.season) params.set('season', filters.season)
   if (filters.club) params.set('club', filters.club)
   if (filters.matchweek) params.set('matchweek', filters.matchweek)
   if (filters.status) params.set('status', filters.status)
@@ -24,8 +25,9 @@ export function fetchMatches(filters, signal) {
   return fetchApiList(`/api/matches${query ? `?${query}` : ''}`, signal, isValidMatch, 'trận đấu')
 }
 
-export async function fetchMatchDetail(id, signal) {
-  const detail = await fetchApiJson(`/api/matches/${id}/details`, signal, 'Không tìm thấy trận đấu này.')
+export async function fetchMatchDetail(id, signal, season) {
+  const query = season ? `?season=${encodeURIComponent(season)}` : ''
+  const detail = await fetchApiJson(`/api/matches/${id}/details${query}`, signal, 'Không tìm thấy trận đấu này.')
   const isValidScore = (score) => score !== null &&
     ['COMPLETE', 'PROVISIONAL'].includes(score.status) &&
     Number.isInteger(score.confirmedPoints) && Array.isArray(score.parts) &&

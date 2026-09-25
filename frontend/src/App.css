@@ -153,6 +153,40 @@
 .match-evidence-error { padding: 13px 16px; border: 1px solid #e7b7a6; border-radius: 8px; background: #fff3ef; color: #8a392c; }
 .match-detail-empty { padding: 18px; border-radius: 8px; background: #fff; color: #62747a; }
 
+.replay-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(290px, 1fr); align-items: start; gap: 22px; }
+.replay-filters { margin-bottom: 13px; }
+.replay-filters .filter-controls { flex-wrap: wrap; }
+.replay-filters .filter-field { min-width: 145px; }
+.replay-count { margin: 0 0 12px; color: #62747a; font-size: .82rem; }
+.replay-candidates { max-height: 620px; overflow-y: auto; border: 1px solid #dae4de; border-radius: 12px; background: #fff; }
+.replay-candidate { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #e9eeeb; }
+.replay-candidate:last-child { border-bottom: 0; }
+.replay-candidate > div { min-width: 0; }
+.replay-candidate strong, .replay-candidate span { display: block; overflow-wrap: anywhere; }
+.replay-candidate strong { color: #15343c; font-size: .88rem; }
+.replay-candidate span { margin-top: 3px; color: #62747a; font-size: .75rem; }
+.replay-candidate button, .replay-selected button { flex: none; padding: 7px 12px; border: 1px solid #bfd0c8; border-radius: 8px; background: #f6faf3; color: #245851; font-size: .77rem; font-weight: 800; }
+.replay-candidate button:disabled { opacity: .56; cursor: default; }
+.replay-lineup { padding: 22px; border: 1px solid #dae4de; border-radius: 12px; background: #fff; box-shadow: 0 5px 18px #142b3208; }
+.replay-lineup h3 { display: flex; justify-content: space-between; gap: 10px; margin: 0; color: #102c36; font-size: 1.25rem; }
+.replay-lineup h3 span { color: #397258; }
+.replay-lineup > p { color: #62747a; font-size: .79rem; line-height: 1.5; }
+.replay-position-counts { display: flex; flex-wrap: wrap; gap: 7px; margin: 16px 0; }
+.replay-position-counts span { padding: 5px 8px; border-radius: 5px; background: #edf5e9; color: #386254; font-size: .72rem; font-weight: 800; }
+.replay-selected { margin: 0; padding: 0; list-style: none; }
+.replay-selected li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid #edf1ed; }
+.replay-selected strong, .replay-selected small { display: block; overflow-wrap: anywhere; }
+.replay-selected strong { color: #183b3e; font-size: .81rem; }
+.replay-selected small { margin-top: 2px; color: #6d8182; font-size: .7rem; }
+.replay-selected button { background: #fff; }
+.replay-submit { width: 100%; min-height: 46px; margin-top: 18px; }
+.replay-result { margin-top: 18px; padding: 18px; border-radius: 10px; background: #edf6df; }
+.replay-result > span { display: block; color: #416b55; font-size: .75rem; font-weight: 800; }
+.replay-result > strong { display: block; margin-top: 4px; color: #183b3e; font-size: 2rem; }
+.replay-result p { color: #536f62; font-size: .76rem; line-height: 1.5; }
+.replay-result ul { margin: 12px 0 0; padding: 0; list-style: none; }
+.replay-result li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid #dce7d9; color: #26474b; font-size: .78rem; }
+
 .standings-table-wrap { overflow-x: auto; border: 1px solid #dae4de; border-radius: 12px; background: #fff; box-shadow: 0 5px 18px #142b3208; }
 .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
 .standings-table th, .standings-table td { padding: 16px 12px; border-bottom: 1px solid #e9eeeb; white-space: nowrap; }
@@ -190,6 +224,7 @@
 .footer-inner span:first-child { color: #fff; font-size: .96rem; font-weight: 800; }
 
 @media (max-width: 850px) {
+  .replay-layout { grid-template-columns: 1fr; }
   .hero-art { width: 245px; height: 245px; margin-right: 20px; box-shadow: 0 0 0 20px #173741, 0 0 0 21px #35545c; }
   .pitch-center { width: 97px; height: 97px; font-size: 2rem; }
   .hero-art::before { inset: 27px; }
@@ -203,6 +238,8 @@
 }
 
 @media (max-width: 650px) {
+  .replay-lineup { padding: 18px; }
+  .replay-candidates { max-height: 450px; }
   .container { width: min(100% - 36px, 1180px); }
   .header-inner { min-height: 71px; align-items: flex-start; flex-direction: column; justify-content: center; gap: 0; padding-top: 14px; }
   .site-nav { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; font-size: .77rem; }
