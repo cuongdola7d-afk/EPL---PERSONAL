@@ -9,7 +9,8 @@ public class PremierHubApplication {
         var context = SpringApplication.run(PremierHubApplication.class, args);
         for (String arg : args) {
             if (arg.equals("--premierhub.sync.enabled=true")
-                    || arg.equals("--premierhub.fixture-evidence.enabled=true")) {
+                    || arg.equals("--premierhub.fixture-evidence.enabled=true")
+                    || arg.startsWith("--premierhub.snapshot.mode=")) {
                 System.exit(SpringApplication.exit(context));
             }
         }

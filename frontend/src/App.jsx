@@ -18,7 +18,7 @@ const PAGES = {
   },
   matches: {
     navLabel: 'Lịch đấu', label: 'Lịch đấu & Kết quả', title: 'Từng vòng đấu.', highlight: 'Từng khoảnh khắc.',
-    description: 'Theo dõi lịch đấu và kết quả, lọc theo đội bóng, vòng đấu hoặc trạng thái từ PremierHub API.',
+    description: 'Xem lịch đấu và kết quả Gameweek 1 mùa 2024/25, lọc theo đội bóng, vòng đấu hoặc trạng thái từ PremierHub API.',
     component: MatchPage,
   },
   standings: {

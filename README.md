@@ -132,13 +132,13 @@ Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). 
 
 Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
 
-Chín fixture Gameweek 1 (`1208021`–`1208027`, `1208029`, `1208030`) có file bằng chứng API-Football rút gọn trong `data/fixture-<id>-evidence.json`. Lệnh nhập một lần lưu ID bàn thắng/kiến tạo, người vào/ra sân và đội hình vào `fixture_score_evidence` theo khóa fixture ID. Trước khi lưu và suy luận, backend kiểm tra 40 ID, 11 đá chính + 9 dự bị mỗi đội, người vào sân có phút trong H2, bàn thắng/kiến tạo khớp dữ liệu dương và sự kiện bàn thắng khớp tỉ số. Bàn thắng thường và bàn thắng phạt đền được tính; phản lưới vẫn bị từ chối để tránh cộng điểm sai. Nếu kiểm tra sai, lệnh nhập dừng trước khi lưu và giữ nguyên bản ghi bằng chứng cũ nếu có. Khi đúng, `inferred.minutes/goals/assists` chứa riêng giá trị suy luận; các trường gốc trong `fixture_player_stats` và JSON chi tiết vẫn giữ `null`. Chạy lại cùng file cập nhật một dòng bằng chứng, không tạo dòng trùng. Fixture `1208028` có sự kiện phản lưới nên chưa lưu bằng chứng: 2 cầu thủ đủ điểm thô, 38 người vẫn `PROVISIONAL`. Lệnh local từ `backend/` (chọn file tương ứng):
+Mười fixture Gameweek 1 (`1208021`–`1208030`) có file bằng chứng API-Football rút gọn trong `data/fixture-<id>-evidence.json`. Lệnh nhập một lần lưu ID bàn thắng/kiến tạo, người vào/ra sân và đội hình vào `fixture_score_evidence` theo khóa fixture ID. Trước khi lưu và suy luận, backend kiểm tra 40 ID, 11 đá chính + 9 dự bị mỗi đội, người vào sân có phút trong H2, bàn thắng/kiến tạo khớp dữ liệu dương và sự kiện bàn thắng khớp tỉ số. Bàn thường và bàn phạt đền cộng vào thống kê bàn thắng cầu thủ. Với phản lưới, cầu thủ phải thuộc đội đối phương của đội được ghi bàn; bàn chỉ cộng vào tỉ số đội hưởng, không cộng hay trừ điểm bàn thắng cho cầu thủ trong v1. Nếu kiểm tra sai, lệnh nhập dừng trước khi lưu và giữ nguyên bản ghi bằng chứng cũ nếu có. Khi đúng, `inferred.minutes/goals/assists` chứa riêng giá trị suy luận; các trường gốc trong `fixture_player_stats` và JSON chi tiết vẫn giữ `null`. Chạy lại cùng file cập nhật một dòng bằng chứng, không tạo dòng trùng. Lệnh local từ `backend/` (chọn file tương ứng):
 
 ```powershell
 .\mvnw.cmd -q -DskipTests package
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.fixture-evidence.enabled=true --premierhub.fixture-evidence.file=data/fixture-1208021-evidence.json
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.fixture-evidence.enabled=true --premierhub.fixture-evidence.file=data/fixture-1208022-evidence.json
-# Tương tự, chọn file data/fixture-<id>-evidence.json của các trận 1208023–1208027, 1208029 hoặc 1208030.
+# Tương tự, chọn file data/fixture-<id>-evidence.json của các trận 1208023–1208030.
 ```
 
 Lựa chọn CLB trong bộ lọc lấy từ Club API. Khi chạy bằng `npm.cmd run dev`, frontend luôn gọi `/api/...` qua Vite proxy, dù `VITE_API_BASE_URL` có được đặt trong môi trường local.
@@ -194,7 +194,7 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-applica
 
 Vòng tiếp theo: đổi `--premierhub.sync.gameweek=2`. Mỗi lần chạy chỉ tải một Gameweek; nếu hết ngân sách request, job giữ checkpoint và in `complete=false`, chạy lại sau khi quota được cấp. `--premierhub.sync.budget` giới hạn tối đa 90 request/lần, mặc định 70; job còn giữ tối thiểu 5 request trong quota ngày và giãn các request 6,5 giây. Job lấy lại danh sách trận của Gameweek để phát hiện trạng thái/tỉ số thay đổi, nhưng bỏ qua thống kê trận đã có nếu fingerprint trận chưa đổi. Nếu nhà cung cấp sửa thống kê cầu thủ mà không đổi trận, chạy cùng Gameweek với `--premierhub.sync.refresh-stats=true`. Muốn cập nhật lại thống kê tổng mùa đã lưu, thêm `--premierhub.sync.refresh-players=true` khi còn quota. Không cần chạy lại toàn bộ mùa.
 
-Local dùng H2 file `backend/premierhub-local.mv.db`, giữ dữ liệu qua lần chạy. Schema nằm trong `backend/src/main/resources/schema.sql`, tự tạo bảng còn thiếu lúc khởi động. Các bảng chính là `seasons`, `clubs`, `season_clubs`, `players`, `player_season_stats`, `fixtures`, `standings`, `fixture_player_stats`, `sync_states`. ID đội, cầu thủ và trận dùng ID của nhà cung cấp. Thống kê cầu thủ theo trận có khóa `(fixture_id, player_id)`, lưu phút, bàn thắng, kiến tạo, thẻ, rating và các chỉ số sẵn có khác, cùng JSON gốc để xử lý thêm về sau. Chưa có điểm hay giao diện Fantasy.
+Local dùng H2 file `backend/premierhub-local.mv.db`, giữ dữ liệu qua lần chạy. Schema nằm trong `backend/src/main/resources/schema.sql`, tự tạo bảng còn thiếu lúc khởi động. Các bảng chính là `seasons`, `clubs`, `season_clubs`, `players`, `player_season_stats`, `fixtures`, `standings`, `fixture_player_stats`, `sync_states`. ID đội, cầu thủ và trận dùng ID của nhà cung cấp. Thống kê cầu thủ theo trận có khóa `(fixture_id, player_id)`, lưu phút, bàn thắng, kiến tạo, thẻ, rating và các chỉ số sẵn có khác, cùng JSON gốc để xử lý thêm về sau. Chi tiết trận đã có điểm v1; chưa có giao diện Fantasy.
 
 ### Railway
 
@@ -206,9 +206,31 @@ Không dùng H2 file trên Railway vì storage của web service có thể khôn
 - `API_FOOTBALL_KEY=<key>` chỉ cho Cron service; web service không cần key để tra cứu
 - Giữ `PREMIERHUB_CORS_ALLOWED_ORIGINS` cho domain Vercel như phần trên.
 
-Trước khi dùng Cron, build cùng source `backend/` và chạy một lần Gameweek 1 bằng lệnh Java ở trên với `--spring.profiles.active=prod` và kết nối MySQL. Với Cron service, đặt Start Command tương tự (thay Gameweek và giữ `--spring.main.web-application-type=none`), đặt Cron Schedule theo UTC tùy ngày muốn chạy. Job phải chạy xong rồi thoát, không chạy scheduler trong web service Serverless. Sau lần đầu, xem log `SYNC ...` để biết request, Gameweek và checkpoint; đổi sang vòng tiếp theo sau khi vòng hiện tại đã đồng bộ đủ phần truy cập được. Không tự tạo dịch vụ, không deploy từ repo này trong bước hiện tại.
+Nếu về sau dùng Cron để đồng bộ vòng khác, build cùng source `backend/` và đặt Start Command như lệnh Java ở trên (thay Gameweek và giữ `--spring.main.web-application-type=none`), đặt Cron Schedule theo UTC tùy ngày muốn chạy. Job phải chạy xong rồi thoát, không chạy scheduler trong web service Serverless. Xem log `SYNC ...` để biết request, Gameweek và checkpoint. Để đưa bản GW1 hiện có lên production, dùng **snapshot** bên dưới, không chạy đồng bộ API-Football.
 
 Sau deploy, thử `https://<railway-domain>/api/clubs?season=2024`, `/api/players?season=2024`, `/api/matches?season=2024&matchweek=1`, `/api/standings?season=2024`; rồi mở bốn trang trên Vercel. Nếu API trả mảng rỗng, kiểm tra Cron đã dùng cùng database với web service và đã in kết quả sync.
+
+## Đưa bản tra cứu Gameweek 1 mùa 2024/25 lên database
+
+Snapshot `backend/src/main/resources/data/gw1-2024-snapshot.json` được xuất từ H2 local đã kiểm chứng; ứng dụng production đọc snapshot đóng trong JAR, **không cần file H2 local hoặc API-Football key**. Snapshot có 20 CLB, 432 hồ sơ cầu thủ, 63 dòng thống kê mùa, 10 trận, 20 dòng BXH cuối mùa, 400 dòng cầu thủ–trận và 10 bằng chứng tính điểm. Trang Cầu thủ chỉ hiển thị 63 dòng thống kê mùa hiện có; dữ liệu mùa này chưa đầy đủ. Giá trị `NULL` của provider được giữ nguyên. Trang Lịch đấu ghi rõ GW1 2024/25; BXH ghi rõ đó là **BXH cuối mùa 2024/25**, không phải BXH sau GW1.
+
+Nhập vào một database **đã tạo hoặc đang dùng** (không xóa bảng/dòng cũ). Dùng đúng JDBC URL và credentials của database mà **web service Railway** sử dụng:
+
+```powershell
+cd backend
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.snapshot.mode=import
+```
+
+Lệnh đọc `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD` từ môi trường, in số dòng mới ở mỗi bảng cùng `verifiedFixtures=10`, rồi thoát. Trên Railway, đặt tạm **Pre-deploy Command** cho backend service trong environment `production`:
+
+```text
+java -jar /app/target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --premierhub.snapshot.mode=import
+```
+
+Pre-deploy chạy trong private network với biến của backend, trước khi web service nhận traffic; nó ghi vào MySQL, không dùng volume của web container. Backend cần `SPRING_PROFILES_ACTIVE=prod` và ba biến `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD` tham chiếu tới service MySQL. Kiểm tra log `GW1 SNAPSHOT ... verifiedFixtures=10`; chạy lại deployment phải in số dòng mới bằng `0`. **Gỡ Pre-deploy Command sau khi đã kiểm tra**, để lần deploy sau không phụ thuộc snapshot lịch sử. Không đặt API key trong frontend hoặc Git. Nếu một bản ghi cùng ID đã có nhưng nội dung khác, lệnh dừng và rollback thay vì ghi đè dữ liệu production; các bảng khác và mùa khác không bị xóa.
+
+Sau khi job hoàn tất, kiểm tra `/api/clubs?season=2024` (20 dòng), `/api/players?season=2024` (63 dòng), `/api/matches?season=2024&matchweek=1` (10 dòng), `/api/standings?season=2024` (20 dòng), và `/api/matches/1208021/details?season=2024` đến `1208030` (`VERIFIED`, 40/40 `COMPLETE` mỗi trận). Kiểm tra bốn trang và mở chi tiết các trận tại domain Vercel; Vercel cần root directory `frontend`, build `npm run build`, output `dist` và `VITE_API_BASE_URL` là origin Railway công khai. Nếu web còn hiển thị dữ liệu cũ, kiểm tra Vercel deployment đã lấy commit mới và cả job lẫn web đang kết nối cùng database.
 
 ## Quy tắc bảng xếp hạng
 

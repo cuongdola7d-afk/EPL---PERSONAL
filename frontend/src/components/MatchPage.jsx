@@ -50,7 +50,7 @@ function MatchPage() {
           <div>
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>03 / MATCHES</span></p>
             <h2 id="matches-heading">Lịch đấu &amp; Kết quả</h2>
-            <p className="section-description">Trận đấu và kết quả từ API PremierHub.</p>
+            <p className="section-description">Premier League 2024/25 · Gameweek 1. Trận đấu và kết quả từ API PremierHub.</p>
           </div>
           {status === 'success' && (
             <p className="result-count" aria-live="polite"><strong>{matches.length}</strong> trận đấu</p>

@@ -116,19 +116,30 @@ public class FixtureEvidenceService {
             require(databaseTeams.containsKey(teamId), "Sự kiện thuộc đội khác fixture.");
             int playerId = integer(event, "playerId", "ID cầu thủ trong sự kiện");
             if ("Goal".equals(event.path("type").asText())) {
-                require("Normal Goal".equals(event.path("detail").asText())
-                                || "Penalty".equals(event.path("detail").asText()),
-                        "Có bàn thắng chưa được hỗ trợ đối chiếu, gồm cả phản lưới.");
-                require(databaseTeams.get(teamId).contains(playerId) && played(byId.get(playerId)),
-                        "Người ghi bàn không khớp cầu thủ đã thi đấu trong H2.");
-                eventGoals.merge(playerId, 1, Integer::sum);
-                if (teamId == match.homeClubId()) homeGoals++; else awayGoals++;
-                if (!event.path("assistId").isNull()) {
-                    int assistId = integer(event, "assistId", "ID kiến tạo");
-                    require(databaseTeams.get(teamId).contains(assistId) && played(byId.get(assistId)),
-                            "Người kiến tạo không khớp cầu thủ đã thi đấu trong H2.");
-                    eventAssists.merge(assistId, 1, Integer::sum);
+                String detail = event.path("detail").asText();
+                if ("Own Goal".equals(detail)) {
+                    int scorerTeam = teamId == match.homeClubId()
+                            ? match.awayClubId() : match.homeClubId();
+                    require(databaseTeams.get(scorerTeam).contains(playerId)
+                                    && played(byId.get(playerId)),
+                            "Cầu thủ phản lưới không thuộc đội đối phương đã thi đấu.");
+                    require(event.path("assistId").isNull(),
+                            "Bàn phản lưới có kiến tạo chưa thể đối chiếu.");
+                    // The opponent receives the team goal; the player receives no goal points.
+                } else {
+                    require("Normal Goal".equals(detail) || "Penalty".equals(detail),
+                            "Có loại bàn thắng chưa được hỗ trợ đối chiếu.");
+                    require(databaseTeams.get(teamId).contains(playerId) && played(byId.get(playerId)),
+                            "Người ghi bàn không khớp cầu thủ đã thi đấu trong H2.");
+                    eventGoals.merge(playerId, 1, Integer::sum);
+                    if (!event.path("assistId").isNull()) {
+                        int assistId = integer(event, "assistId", "ID kiến tạo");
+                        require(databaseTeams.get(teamId).contains(assistId) && played(byId.get(assistId)),
+                                "Người kiến tạo không khớp cầu thủ đã thi đấu trong H2.");
+                        eventAssists.merge(assistId, 1, Integer::sum);
+                    }
                 }
+                if (teamId == match.homeClubId()) homeGoals++; else awayGoals++;
             } else if ("subst".equals(event.path("type").asText())) {
                 int inId = integer(event, "assistId", "ID cầu thủ vào sân");
                 require(onField.get(teamId).remove(playerId),
