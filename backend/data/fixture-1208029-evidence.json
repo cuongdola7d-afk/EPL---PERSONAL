@@ -1,0 +1,111 @@
+{
+    "fixtureId":  1208029,
+    "source":  "API_FOOTBALL",
+    "events":  [
+                   {
+                       "teamId":  50,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  1100,
+                       "assistId":  636
+                   },
+                   {
+                       "teamId":  50,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  266657,
+                       "assistId":  631
+                   },
+                   {
+                       "teamId":  49,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  269,
+                       "assistId":  1864
+                   },
+                   {
+                       "teamId":  49,
+                       "type":  "subst",
+                       "detail":  "Substitution 2",
+                       "playerId":  283058,
+                       "assistId":  392270
+                   },
+                   {
+                       "teamId":  49,
+                       "type":  "subst",
+                       "detail":  "Substitution 3",
+                       "playerId":  282125,
+                       "assistId":  148099
+                   },
+                   {
+                       "teamId":  49,
+                       "type":  "subst",
+                       "detail":  "Substitution 4",
+                       "playerId":  47380,
+                       "assistId":  336671
+                   },
+                   {
+                       "teamId":  50,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  2291,
+                       "assistId":  null
+                   }
+               ],
+    "lineups":  [
+                    {
+                        "teamId":  49,
+                        "starters":  [
+                                         18959,
+                                         161907,
+                                         22094,
+                                         152953,
+                                         47380,
+                                         116117,
+                                         282125,
+                                         152982,
+                                         5996,
+                                         269,
+                                         283058
+                                     ],
+                        "bench":  [
+                                      1864,
+                                      392270,
+                                      148099,
+                                      336671,
+                                      136723,
+                                      286616,
+                                      95,
+                                      63577,
+                                      19145
+                                  ]
+                    },
+                    {
+                        "teamId":  50,
+                        "starters":  [
+                                         617,
+                                         5,
+                                         567,
+                                         129033,
+                                         284230,
+                                         2291,
+                                         1422,
+                                         636,
+                                         629,
+                                         266657,
+                                         1100
+                                     ],
+                        "bench":  [
+                                      631,
+                                      19187,
+                                      25004,
+                                      626,
+                                      307123,
+                                      18861,
+                                      158697,
+                                      627,
+                                      41621
+                                  ]
+                    }
+                ]
+}

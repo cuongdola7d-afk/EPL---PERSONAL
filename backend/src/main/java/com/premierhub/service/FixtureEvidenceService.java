@@ -59,7 +59,7 @@ public class FixtureEvidenceService {
         }
     }
 
-    private Review validate(JsonNode root, MatchResponse match, List<MatchPlayerStatResponse> players) {
+    Review validate(JsonNode root, MatchResponse match, List<MatchPlayerStatResponse> players) {
         require(root.path("fixtureId").asInt(-1) == match.id() &&
                 "API_FOOTBALL".equals(root.path("source").asText()), "Sai fixture hoặc nguồn bằng chứng.");
         require("FINISHED".equals(match.status()) && match.homeGoals() != null &&
@@ -116,7 +116,8 @@ public class FixtureEvidenceService {
             require(databaseTeams.containsKey(teamId), "Sự kiện thuộc đội khác fixture.");
             int playerId = integer(event, "playerId", "ID cầu thủ trong sự kiện");
             if ("Goal".equals(event.path("type").asText())) {
-                require("Normal Goal".equals(event.path("detail").asText()),
+                require("Normal Goal".equals(event.path("detail").asText())
+                                || "Penalty".equals(event.path("detail").asText()),
                         "Có bàn thắng chưa được hỗ trợ đối chiếu, gồm cả phản lưới.");
                 require(databaseTeams.get(teamId).contains(playerId) && played(byId.get(playerId)),
                         "Người ghi bàn không khớp cầu thủ đã thi đấu trong H2.");

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -124,6 +126,55 @@ class FixtureEvidenceServiceTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.evidenceStatus").value("INVALID"))
                 .andExpect(jsonPath("$.evidenceError").isNotEmpty());
+    }
+
+    @Test
+    void penaltyGoalCanBeVerifiedButOwnGoalCannotBeInferred() {
+        JsonNode changed = evidence.deepCopy();
+        for (JsonNode event : changed.path("events")) {
+            if ("Goal".equals(event.path("type").asText())) {
+                ((ObjectNode) event).put("detail", "Penalty");
+            }
+        }
+        evidenceService.save(changed);
+        MatchDetailResponse detail = detail(1208021);
+        assertEquals("VERIFIED", detail.evidenceStatus());
+        assertEquals(40, Stream.concat(detail.homePlayers().stream(), detail.awayPlayers().stream())
+                .filter(player -> "COMPLETE".equals(player.score().status())).count());
+
+        for (JsonNode event : changed.path("events")) {
+            if ("Goal".equals(event.path("type").asText())) {
+                ((ObjectNode) event).put("detail", "Own Goal");
+            }
+        }
+        evidenceService.save(changed);
+        detail = detail(1208021);
+        assertEquals("INVALID", detail.evidenceStatus());
+        assertTrue(detail.evidenceError().contains("phản lưới"));
+        assertNull(player(detail, 174).inferred());
+    }
+
+    @Test
+    void commandDoesNotStoreEvidenceWhenValidationFails() throws Exception {
+        JsonNode changed = evidence.deepCopy();
+        for (JsonNode event : changed.path("events")) {
+            if ("Goal".equals(event.path("type").asText())) {
+                ((ObjectNode) event).put("playerId", 1485);
+            }
+        }
+        Path file = Files.createTempFile(Path.of("target"), "invalid-evidence-", ".json");
+        try {
+            Files.writeString(file, changed.toString());
+            var command = new FixtureEvidenceCommand(evidenceService, queries, mapper);
+
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> command.run(new DefaultApplicationArguments(
+                            "--premierhub.fixture-evidence.file=" + file)));
+            assertTrue(error.getMessage().contains("Bàn thắng"));
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM fixture_score_evidence", Integer.class));
+        } finally {
+            Files.deleteIfExists(file);
+        }
     }
 
     @Test

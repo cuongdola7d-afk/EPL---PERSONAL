@@ -1,0 +1,132 @@
+{
+    "fixtureId":  1208023,
+    "source":  "API_FOOTBALL",
+    "events":  [
+                   {
+                       "teamId":  42,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  978,
+                       "assistId":  1460
+                   },
+                   {
+                       "teamId":  39,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  20665,
+                       "assistId":  1165
+                   },
+                   {
+                       "teamId":  42,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  641,
+                       "assistId":  38746
+                   },
+                   {
+                       "teamId":  42,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  1460,
+                       "assistId":  978
+                   },
+                   {
+                       "teamId":  39,
+                       "type":  "subst",
+                       "detail":  "Substitution 2",
+                       "playerId":  282770,
+                       "assistId":  1605
+                   },
+                   {
+                       "teamId":  42,
+                       "type":  "subst",
+                       "detail":  "Substitution 2",
+                       "playerId":  1460,
+                       "assistId":  1946
+                   },
+                   {
+                       "teamId":  39,
+                       "type":  "subst",
+                       "detail":  "Substitution 3",
+                       "playerId":  21138,
+                       "assistId":  19147
+                   },
+                   {
+                       "teamId":  39,
+                       "type":  "subst",
+                       "detail":  "Substitution 4",
+                       "playerId":  2032,
+                       "assistId":  195962
+                   },
+                   {
+                       "teamId":  39,
+                       "type":  "subst",
+                       "detail":  "Substitution 5",
+                       "playerId":  195103,
+                       "assistId":  2056
+                   },
+                   {
+                       "teamId":  42,
+                       "type":  "subst",
+                       "detail":  "Substitution 3",
+                       "playerId":  2937,
+                       "assistId":  643
+                   }
+               ],
+    "lineups":  [
+                    {
+                        "teamId":  42,
+                        "starters":  [
+                                         19465,
+                                         19959,
+                                         22090,
+                                         22224,
+                                         641,
+                                         37127,
+                                         49,
+                                         2937,
+                                         1460,
+                                         978,
+                                         127769
+                                     ],
+                        "bench":  [
+                                      38746,
+                                      1946,
+                                      643,
+                                      313236,
+                                      1468,
+                                      157052,
+                                      20355,
+                                      2289,
+                                      727
+                                  ]
+                    },
+                    {
+                        "teamId":  39,
+                        "starters":  [
+                                         1590,
+                                         18742,
+                                         195717,
+                                         41606,
+                                         21138,
+                                         195103,
+                                         18947,
+                                         24888,
+                                         20665,
+                                         282770,
+                                         2032
+                                     ],
+                        "bench":  [
+                                      1165,
+                                      1605,
+                                      19147,
+                                      195962,
+                                      2056,
+                                      135334,
+                                      925,
+                                      144732,
+                                      19341
+                                  ]
+                    }
+                ]
+}

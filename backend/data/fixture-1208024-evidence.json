@@ -1,0 +1,139 @@
+{
+    "fixtureId":  1208024,
+    "source":  "API_FOOTBALL",
+    "events":  [
+                   {
+                       "teamId":  51,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  106835,
+                       "assistId":  383685
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  383685,
+                       "assistId":  301771
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  1469,
+                       "assistId":  92993
+                   },
+                   {
+                       "teamId":  45,
+                       "type":  "subst",
+                       "detail":  "Substitution 1",
+                       "playerId":  18805,
+                       "assistId":  18592
+                   },
+                   {
+                       "teamId":  45,
+                       "type":  "subst",
+                       "detail":  "Substitution 2",
+                       "playerId":  18766,
+                       "assistId":  125743
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "subst",
+                       "detail":  "Substitution 2",
+                       "playerId":  18963,
+                       "assistId":  19265
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "subst",
+                       "detail":  "Substitution 3",
+                       "playerId":  10329,
+                       "assistId":  202086
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "subst",
+                       "detail":  "Substitution 4",
+                       "playerId":  296,
+                       "assistId":  130423
+                   },
+                   {
+                       "teamId":  45,
+                       "type":  "subst",
+                       "detail":  "Substitution 3",
+                       "playerId":  19128,
+                       "assistId":  19150
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "Goal",
+                       "detail":  "Normal Goal",
+                       "playerId":  301771,
+                       "assistId":  1469
+                   },
+                   {
+                       "teamId":  51,
+                       "type":  "subst",
+                       "detail":  "Substitution 5",
+                       "playerId":  106835,
+                       "assistId":  265820
+                   }
+               ],
+    "lineups":  [
+                    {
+                        "teamId":  45,
+                        "starters":  [
+                                         2932,
+                                         894,
+                                         2936,
+                                         2934,
+                                         2165,
+                                         284500,
+                                         2990,
+                                         19128,
+                                         18805,
+                                         18929,
+                                         18766
+                                     ],
+                        "bench":  [
+                                      18592,
+                                      125743,
+                                      19150,
+                                      405360,
+                                      270139,
+                                      15884,
+                                      297641,
+                                      18755,
+                                      19364
+                                  ]
+                    },
+                    {
+                        "teamId":  51,
+                        "starters":  [
+                                         18960,
+                                         537,
+                                         38695,
+                                         18963,
+                                         305730,
+                                         296,
+                                         92993,
+                                         383685,
+                                         10329,
+                                         106835,
+                                         1469
+                                     ],
+                        "bench":  [
+                                      301771,
+                                      19265,
+                                      202086,
+                                      130423,
+                                      265820,
+                                      356041,
+                                      340135,
+                                      319572,
+                                      278088
+                                  ]
+                    }
+                ]
+}

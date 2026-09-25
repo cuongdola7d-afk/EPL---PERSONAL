@@ -32,6 +32,10 @@ public class FixtureEvidenceCommand implements ApplicationRunner {
         Path file = Path.of(args.getOptionValues("premierhub.fixture-evidence.file").getFirst());
         JsonNode payload = mapper.readTree(Files.readString(file));
         int fixtureId = payload.path("fixtureId").asInt(-1);
+        var beforeImport = queries.matchDetail(fixtureId, 2024).orElseThrow();
+        evidence.validate(payload, beforeImport.match(),
+                java.util.stream.Stream.concat(beforeImport.homePlayers().stream(),
+                        beforeImport.awayPlayers().stream()).toList());
         evidence.save(payload);
         var detail = queries.matchDetail(fixtureId, 2024).orElseThrow();
         if (!"VERIFIED".equals(detail.evidenceStatus())) {
