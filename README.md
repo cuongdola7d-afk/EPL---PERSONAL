@@ -128,7 +128,7 @@ Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). �
 - Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Mỗi cầu thủ có thêm `score` gồm `status` (`COMPLETE`/`PROVISIONAL`), `confirmedPoints` và `parts` giải thích từng khoản điểm. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê và điểm; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
 - BXH: `GET /api/standings`; chỉ số lấy từ BXH nhà cung cấp và được đọc lại từ database theo mỗi request.
 
-Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). CLB, trận đấu và BXH có dữ liệu cơ bản cho cả mùa 2024/25 và 2026/27; cầu thủ và Fantasy Replay hiện chỉ có dữ liệu 2024/25. Bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. Cầu thủ có thể hiện nhiều dòng khi chuyển CLB vì thống kê mùa được lưu riêng cho từng CLB.
+Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). CLB, trận đấu và BXH có dữ liệu cơ bản cho cả mùa 2024/25 và 2026/27; API cầu thủ đọc danh sách 2026/27 sau khi nhập CSV thủ công, còn Fantasy Replay hiện chỉ có 2024/25. Bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. Cầu thủ có thể hiện nhiều dòng khi chuyển CLB vì dữ liệu mùa được lưu riêng cho từng CLB.
 
 Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
 
@@ -267,7 +267,7 @@ Sau khi khởi động backend local với cùng H2, kiểm tra:
 - `/api/matches?season=2026&round=1`: 10 trận; `matchweek=1` vẫn được hỗ trợ. Nếu cùng gửi hai tên lọc với giá trị khác nhau thì trả 400.
 - `/api/matches?season=2026`: 380 trận, 330 trận chưa có tỉ số tại thời điểm kiểm chứng.
 - `/api/standings?season=2026`: 20 dòng TOTAL hiện tại.
-- `/api/players?season=2026`: mảng rỗng; chi tiết trận 2026 chưa có thống kê cầu thủ.
+- `/api/players?season=2026`: mảng rỗng trước khi nhập danh sách thủ công; chi tiết trận 2026 chưa có thống kê cầu thủ.
 - Các API `season=2024` và Replay GW1 vẫn dùng dữ liệu/điểm cũ.
 
 Ngày 27/09/2026 đã nhập cache kiểm chứng vào Railway MySQL production: 20 CLB, 380 trận (50 `FINISHED`) và 20 dòng BXH; 330 trận chưa kết thúc giữ tỉ số `NULL`. Nhập lại tạo thêm 0 CLB và 0 trận. Schema chỉ tạo thêm hai bảng ánh xạ, không xóa bảng cũ; bản sao lưu SQL trước khi nhập được lưu local ngoài Git. Không thiết lập Cron hoặc Pre-deploy Command để tự nhập lại. Thống kê cầu thủ–trận 2026 sẽ nhập thủ công ở bước sau.
@@ -279,3 +279,25 @@ BXH ghi rõ **cuối mùa 2024/25** hoặc **hiện tại 2026/27 theo lần đ�
 Kiểm tra local bằng backend đọc H2 ở cổng 8080 và `npm run dev` trong `frontend/`, mở `http://localhost:5173/`. Thử chuyển mùa trên ba trang: 2026/27 có 20 CLB, GW1 có 10 trận, BXH có 20 đội; chọn GW6 để xem trận chưa đá. Chuyển về 2024/25 và mở chi tiết GW1 để thấy dữ liệu đã xác minh. Sau khi phát hành backend và frontend, kiểm tra lại các URL production `/api/clubs?season=2026`, `/api/matches?season=2026&matchweek=1`, `/api/matches?season=2026&matchweek=6`, `/api/standings?season=2026` và trang `/#replay`. Frontend không tự gọi nhà cung cấp hoặc đồng bộ database.
 
 Tài liệu chính thức: [Competition v4 và bộ lọc mùa](https://docs.football-data.org/general/v4/competition.html), [trạng thái và header X-Auth-Token](https://docs.football-data.org/general/v4/lookup_tables.html), [Free 10 request/phút và ý nghĩa null](https://docs.football-data.org/general/v4/policies.html).
+
+## Danh sách cầu thủ 2026/27 nhập thủ công
+
+Mẫu trống ở `backend/data/manual-players-2026-template.csv`. Tạo file UTF-8 với đúng header và một dòng cho mỗi cặp cầu thủ–CLB:
+
+```csv
+season,club_id,player_id,name,fantasy_position
+2026,1000000057,2000000001,Tên cầu thủ đã kiểm chứng,GK
+```
+
+Ví dụ trên chỉ minh họa **định dạng**, không xác nhận cầu thủ đó thuộc Arsenal và không được nhập nguyên mẫu vào dữ liệu thật. `club_id` lấy từ `GET /api/clubs?season=2026` trên backend đọc cùng database. `player_id` do chúng ta cấp thủ công, ổn định qua các mùa và lần chuyển CLB, trong khoảng `2000000000..2099999999`; không tạo ID từ tên. Vị trí Fantasy chỉ nhận `GK`, `DEF`, `MID`, `FWD`; API giữ cách ghi hiện có `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, `FORWARD`. Tên không được chứa dấu phẩy, dấu nháy kép hoặc tab vì file CSV này không hỗ trợ trường được quote. File phải có ít nhất một dòng dữ liệu.
+
+Nếu cầu thủ chuyển CLB trong cùng mùa, thêm dòng mới với **cùng `player_id` và `name`**, `club_id` mới; giữ dòng CLB cũ. Khóa `(season, player_id, club_id)` ngăn nhập trùng, còn `players.id` giữ danh tính ổn định. Lệnh từ chối ID dùng cho tên khác, cặp đã lưu có vị trí khác, CLB không tham dự mùa 2026/27, vị trí sai, mùa khác và các dòng trùng trong file. Lệnh không xóa hàng cũ và không ghi đè thống kê đã có. API danh sách có thể trả nhiều dòng cho một ID khi chuyển CLB; API lấy một cầu thủ theo ID vẫn trả một dòng theo hợp đồng cũ.
+
+Sau khi tự kiểm chứng và điền file `backend/data/manual-players-2026.csv`, chạy **chỉ trên H2 local** từ `backend/`:
+
+```powershell
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-roster.enabled=true --premierhub.manual-roster.file=data/manual-players-2026.csv --spring.main.web-application-type=none --spring.profiles.active=local "--spring.datasource.url=jdbc:h2:file:./premierhub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE" --spring.datasource.username=sa --spring.datasource.password=
+```
+
+Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi thoát; log `MANUAL_ROSTER` cho biết số cầu thủ và cặp cầu thủ–CLB mới. Nhập lại file giống hệt sẽ báo `playersInserted=0 membershipsInserted=0`. Sau đó gọi `/api/players?season=2026`: `goals` và `assists` là JSON `null` khi chưa có thống kê, không phải `0`. File giả `backend/src/test/resources/manual-players-2026-example.csv` chỉ dành cho H2 test; không nhập vào H2 dùng để tra cứu hoặc MySQL production. Bước này chưa tạo thống kê theo trận hay điểm Fantasy 2026/27, và chưa nhập Railway.

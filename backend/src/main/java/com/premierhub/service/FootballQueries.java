@@ -62,7 +62,7 @@ public class FootballQueries {
                 ORDER BY p.name, c.name
                 """, (rs, row) -> new PlayerResponse(rs.getInt("id"), rs.getString("name"),
                 rs.getInt("club_id"), rs.getString("club_name"), rs.getString("position"),
-                rs.getInt("goals"), rs.getInt("assists")), LEAGUE_ID, season,
+                rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class)), LEAGUE_ID, season,
                 blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
     }
 
