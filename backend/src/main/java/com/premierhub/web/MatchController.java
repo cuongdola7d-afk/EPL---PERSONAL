@@ -4,6 +4,7 @@ import com.premierhub.service.FootballQueries;
 import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.dto.MatchDetailResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
+import com.premierhub.web.error.InvalidFilterException;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -28,10 +29,14 @@ public class MatchController {
             @RequestParam(required = false)
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "club must not be blank") String club,
             @RequestParam(required = false) @Min(1) Integer matchweek,
+            @RequestParam(required = false) @Min(1) Integer round,
             @RequestParam(required = false)
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "status must not be blank") String status,
             @RequestParam(defaultValue = "2024") int season) {
-        return service.matches(season, club, matchweek, status);
+        if (matchweek != null && round != null && !matchweek.equals(round)) {
+            throw new InvalidFilterException("round and matchweek must agree when both are provided");
+        }
+        return service.matches(season, club, matchweek != null ? matchweek : round, status);
     }
 
     @GetMapping("/{id}")

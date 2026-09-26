@@ -71,6 +71,16 @@ class MatchControllerTest {
     }
 
     @Test
+    void roundAliasFiltersSeason2026AndRejectsConflicts() throws Exception {
+        when(service.matches(2026, null, 1, null)).thenReturn(List.of(match));
+        mockMvc.perform(get("/api/matches?season=2026&round=1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        mockMvc.perform(get("/api/matches?round=1&matchweek=2"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FILTER"));
+        mockMvc.perform(get("/api/matches?round=0")).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void unknownStatusReturnsInvalidFilter() throws Exception {
         when(service.matches(2024, null, null, "UNKNOWN"))
                 .thenThrow(new InvalidFilterException("Unknown status: UNKNOWN"));

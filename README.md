@@ -236,6 +236,40 @@ Sau khi job hoàn tất, kiểm tra `/api/clubs?season=2024` (20 dòng), `/api/p
 
 ## Quy tắc bảng xếp hạng
 
-Web API dùng hạng/điểm/hiệu số do API-Football trả về và đọc database mỗi request. Bộ tính BXH từ trận (thắng 3, hòa 1) chỉ còn trong console demo và test Java cũ.
+Web API đọc hạng/điểm/hiệu số từ database mỗi request: API-Football cho 2024/25, bảng TOTAL của football-data.org cho 2026/27. Bộ tính BXH từ trận (thắng 3, hòa 1) chỉ còn trong console demo và test Java cũ.
 
 Các ví dụ học tập đã hoàn thiện và test tương ứng nằm trong [docs/LEARNING_TASKS.md](docs/LEARNING_TASKS.md).
+
+## Dữ liệu cơ bản 2026/27 từ football-data.org
+
+Kiểm chứng ngày 26/09/2026 bằng đúng **3 GET** API v4, cùng `season=2026`: `PL/teams` trả HTTP 200, 20 đội; `PL/matches` trả HTTP 200, 380 trận (50 FINISHED, 330 TIMED); `PL/standings` trả HTTP 200, 20 dòng TOTAL. Mùa trong response bắt đầu `2026-08-21`, kết thúc `2027-05-30`. Không thiếu ID đội/trận, vòng, giờ UTC hoặc chỉ số BXH bắt buộc. 330 trận TIMED có hai tỉ số `null`; cả 50 trận FINISHED có tỉ số. Không dùng squad hoặc thống kê cầu thủ từ nguồn này.
+
+Đặt `FOOTBALL_DATA_API_KEY` trong môi trường của tiến trình backend hoặc thêm dòng `FOOTBALL_DATA_API_KEY=<token>` vào `backend/.env.local` (đã Git ignore). Client ưu tiên biến môi trường, rồi tự đọc file `.env.local` khi chạy từ thư mục `backend/`; không cần Spring tự nạp dotenv. Không dùng `VITE_` và không truyền token trong tham số dòng lệnh.
+
+Chạy thủ công từ `backend/` (các tham số database bên dưới cố định vào **H2 local**, không dùng Railway MySQL):
+
+```powershell
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.football-data.enabled=true --premierhub.football-data.season=2026 --spring.main.web-application-type=none --spring.profiles.active=local "--spring.datasource.url=jdbc:h2:file:./premierhub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE" --spring.datasource.username=sa --spring.datasource.password=
+```
+
+Mỗi lần chạy gọi đúng ba endpoint ở trên, cách nhau ít nhất 6,5 giây, không retry. Toàn bộ response phải qua kiểm tra mùa, đủ 20 đội/380 trận/20 dòng TOTAL và các trường bắt buộc trước khi ghi trong một transaction. Lỗi HTTP 401/403/429, response thiếu/sai mùa hoặc xung đột ID làm lệnh thất bại; dữ liệu trước đó được giữ nguyên. Lệnh in tổng số dòng và số đội/trận thêm mới rồi thoát; chạy lại cập nhật lịch, trạng thái, tỉ số và BXH mà không tạo trùng. Chỉ hỗ trợ mùa 2026 trong bước này.
+
+Để dùng lại ba response đã kiểm chứng mà không gọi API, thêm `--premierhub.football-data.input-dir=target` vào lệnh trên. Thư mục phải có `football-data-2026-teams.json`, `football-data-2026-matches.json`, `football-data-2026-standings.json`. Đây là cache local trong thư mục Git ignore, không đóng vào JAR hoặc commit. Đường nhập cache vẫn kiểm tra toàn bộ dữ liệu như đường API.
+
+Schema chỉ thêm `football_data_teams` và `football_data_fixtures`, không đổi/xóa bảng cũ. Mỗi bảng lưu provider ID và internal ID; internal ID của đội/trận mới là `1_000_000_000 + provider ID`, có kiểm tra va chạm trước khi dùng. Không ghép đội theo tên. Cùng CLB thực tế có thể có hai internal ID ở hai nguồn; muốn gộp sau này cần ánh xạ được kiểm chứng. Premier League của football-data.org (`2021`/`PL`) được ánh xạ rõ vào league nội bộ hiện có `39`.
+
+`football_data_fixtures.utc_date` lưu giờ ISO-8601 UTC và `provider_status` lưu trạng thái gốc (ví dụ TIMED). Bảng `fixtures` giữ trạng thái chung (TIMED → SCHEDULED), ngày UTC và tỉ số nullable. JSON API cũ giữ nguyên trường `date` chỉ có ngày, chưa thêm giờ vào response. Thành phố CLB mới để NULL, không suy đoán từ địa chỉ. Không sinh player, player-season-stat, player-match-stat, bằng chứng hoặc điểm Fantasy cho 2026.
+
+Sau khi khởi động backend local với cùng H2, kiểm tra:
+
+- `/api/clubs?season=2026`: 20 đội.
+- `/api/matches?season=2026&round=1`: 10 trận; `matchweek=1` vẫn được hỗ trợ. Nếu cùng gửi hai tên lọc với giá trị khác nhau thì trả 400.
+- `/api/matches?season=2026`: 380 trận, 330 trận chưa có tỉ số tại thời điểm kiểm chứng.
+- `/api/standings?season=2026`: 20 dòng TOTAL hiện tại.
+- `/api/players?season=2026`: mảng rỗng; chi tiết trận 2026 chưa có thống kê cầu thủ.
+- Các API `season=2024` và Replay GW1 vẫn dùng dữ liệu/điểm cũ.
+
+Chưa ghi Railway MySQL hoặc deploy bước này. Schema dùng `CREATE TABLE IF NOT EXISTS` tương thích kiểu dữ liệu MySQL hiện có, đã kiểm tra với H2 MySQL mode; chưa chạy migration hoặc importer trên MySQL thật. Frontend vẫn cần bộ chọn mùa và truyền `season` cho CLB/trận/BXH, đổi nhãn BXH phù hợp mùa; Replay phải tiếp tục cố định 2024/25. Thống kê cầu thủ–trận 2026 sẽ nhập thủ công ở bước sau.
+
+Tài liệu chính thức: [Competition v4 và bộ lọc mùa](https://docs.football-data.org/general/v4/competition.html), [trạng thái và header X-Auth-Token](https://docs.football-data.org/general/v4/lookup_tables.html), [Free 10 request/phút và ý nghĩa null](https://docs.football-data.org/general/v4/policies.html).

@@ -117,3 +117,18 @@ CREATE TABLE IF NOT EXISTS sync_states (
     PRIMARY KEY (league_id, season_year, scope, item_id),
     FOREIGN KEY (league_id, season_year) REFERENCES seasons(league_id, season_year)
 );
+
+-- Additive provider mappings: existing API-Football IDs and data are untouched.
+CREATE TABLE IF NOT EXISTS football_data_teams (
+    provider_id INTEGER PRIMARY KEY,
+    club_id INTEGER NOT NULL UNIQUE,
+    FOREIGN KEY (club_id) REFERENCES clubs(id)
+);
+
+CREATE TABLE IF NOT EXISTS football_data_fixtures (
+    provider_id INTEGER PRIMARY KEY,
+    fixture_id INTEGER NOT NULL UNIQUE,
+    utc_date VARCHAR(40) NOT NULL,
+    provider_status VARCHAR(30) NOT NULL,
+    FOREIGN KEY (fixture_id) REFERENCES fixtures(id)
+);
