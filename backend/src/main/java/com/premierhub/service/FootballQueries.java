@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -50,8 +53,32 @@ public class FootballQueries {
     }
 
     public List<PlayerResponse> players(int season, String club, String position) {
+        return players(season, club, position, null);
+    }
+
+    public List<PlayerResponse> players(int season, String club, String position, LocalDate asOf) {
         validateSeason(season);
         String parsedPosition = filterEnum(position, "position", "GOALKEEPER", "DEFENDER", "MIDFIELDER", "FORWARD");
+        if (season == 2026) {
+            LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneOffset.UTC) : asOf;
+            return jdbc.query("""
+                    SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
+                           ps.goals, ps.assists FROM manual_player_memberships membership
+                    JOIN player_season_stats ps ON ps.league_id=membership.league_id
+                        AND ps.season_year=membership.season_year AND ps.player_id=membership.player_id
+                        AND ps.club_id=membership.club_id
+                    JOIN players p ON p.id=membership.player_id
+                    JOIN clubs c ON c.id=membership.club_id
+                    WHERE membership.league_id=? AND membership.season_year=?
+                      AND membership.start_date<=?
+                      AND (membership.end_date IS NULL OR membership.end_date>?)
+                      AND (? IS NULL OR LOWER(c.name)=LOWER(?))
+                      AND (? IS NULL OR ps.position=?)
+                    ORDER BY p.name, c.name
+                    """, (rs, row) -> playerResponse(rs), LEAGUE_ID, season,
+                    Date.valueOf(effectiveDate), Date.valueOf(effectiveDate),
+                    blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
+        }
         return jdbc.query("""
                 SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
                        ps.goals, ps.assists FROM player_season_stats ps
@@ -60,14 +87,22 @@ public class FootballQueries {
                   AND (? IS NULL OR LOWER(c.name) = LOWER(?))
                   AND (? IS NULL OR ps.position = ?)
                 ORDER BY p.name, c.name
-                """, (rs, row) -> new PlayerResponse(rs.getInt("id"), rs.getString("name"),
-                rs.getInt("club_id"), rs.getString("club_name"), rs.getString("position"),
-                rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class)), LEAGUE_ID, season,
+                """, (rs, row) -> playerResponse(rs), LEAGUE_ID, season,
                 blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
     }
 
     public Optional<PlayerResponse> player(int id, int season) {
-        return players(season, null, null).stream().filter(player -> player.id() == id).findFirst();
+        return player(id, season, null);
+    }
+
+    public Optional<PlayerResponse> player(int id, int season, LocalDate asOf) {
+        return players(season, null, null, asOf).stream().filter(player -> player.id() == id).findFirst();
+    }
+
+    private static PlayerResponse playerResponse(ResultSet rs) throws SQLException {
+        return new PlayerResponse(rs.getInt("id"), rs.getString("name"),
+                rs.getInt("club_id"), rs.getString("club_name"), rs.getString("position"),
+                rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class));
     }
 
     public List<MatchResponse> matches(int season, String club, Integer matchweek, String status) {

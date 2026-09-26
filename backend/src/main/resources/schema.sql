@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS player_season_stats (
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
 
+-- Half-open membership interval [start_date, end_date); NULL end_date is open-ended.
+CREATE TABLE IF NOT EXISTS manual_player_memberships (
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    club_id INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    PRIMARY KEY (league_id, season_year, player_id, club_id, start_date),
+    FOREIGN KEY (league_id, season_year, player_id, club_id)
+        REFERENCES player_season_stats(league_id, season_year, player_id, club_id)
+);
+
 CREATE TABLE IF NOT EXISTS fixtures (
     id INTEGER PRIMARY KEY,
     league_id INTEGER NOT NULL,

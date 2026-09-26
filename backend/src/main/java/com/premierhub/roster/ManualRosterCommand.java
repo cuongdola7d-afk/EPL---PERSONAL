@@ -24,7 +24,9 @@ public class ManualRosterCommand implements ApplicationRunner {
             throw new IllegalArgumentException("Set exactly one --premierhub.manual-roster.file=<csv-path>");
         }
         ManualRosterImporter.Result result = importer.importFile(Path.of(files.getFirst()));
-        System.out.printf("MANUAL_ROSTER season=2026 rows=%d playersInserted=%d membershipsInserted=%d%n",
-                result.rows(), result.playersInserted(), result.membershipsInserted());
+        System.out.printf("MANUAL_ROSTER season=2026 rows=%d playersInserted=%d membershipsInserted=%d "
+                        + "intervalsInserted=%d intervalsUpdated=%d%n",
+                result.rows(), result.playersInserted(), result.membershipsInserted(),
+                result.intervalsInserted(), result.intervalsUpdated());
     }
 }

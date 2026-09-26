@@ -6,6 +6,8 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,11 +18,12 @@ import java.util.Set;
 
 /** Strict UTF-8 CSV for manually verified player identities. No quoted fields. */
 public final class ManualRosterCsvReader {
-    private static final String HEADER = "season,club_id,player_id,name,fantasy_position";
+    private static final String HEADER = "season,club_id,player_id,name,fantasy_position,start_date,end_date";
     private static final int FIRST_MANUAL_ID = 2_000_000_000;
     private static final int LAST_MANUAL_ID = 2_099_999_999;
 
-    public record Row(int line, int season, int clubId, int playerId, String name, String position) { }
+    public record Row(int line, int season, int clubId, int playerId, String name,
+                      String position, LocalDate startDate, LocalDate endDate) { }
 
     public List<Row> read(Path file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
@@ -49,12 +52,17 @@ public final class ManualRosterCsvReader {
                 throw invalid(lineNumber, "Quoted fields and tabs are not supported");
             }
             String[] fields = line.split(",", -1);
-            if (fields.length != 5) throw invalid(lineNumber, "Expected exactly 5 columns");
+            if (fields.length != 7) throw invalid(lineNumber, "Expected exactly 7 columns");
             int season = number(fields[0], "season", lineNumber);
             int clubId = number(fields[1], "club_id", lineNumber);
             int playerId = number(fields[2], "player_id", lineNumber);
             String name = fields[3].strip();
             String code = fields[4].strip().toUpperCase(Locale.ROOT);
+            LocalDate startDate = date(fields[5], "start_date", lineNumber, true);
+            LocalDate endDate = date(fields[6], "end_date", lineNumber, false);
+            if (endDate != null && !endDate.isAfter(startDate)) {
+                throw invalid(lineNumber, "end_date must be after start_date");
+            }
             if (season != 2026) throw invalid(lineNumber, "Only season 2026 is supported");
             if (clubId <= 0) throw invalid(lineNumber, "club_id must be positive");
             if (playerId < FIRST_MANUAL_ID || playerId > LAST_MANUAL_ID) {
@@ -68,14 +76,14 @@ public final class ManualRosterCsvReader {
                 case "FWD" -> "FORWARD";
                 default -> throw invalid(lineNumber, "Unknown fantasy_position: " + code);
             };
-            if (!memberships.add(season + ":" + clubId + ":" + playerId)) {
-                throw invalid(lineNumber, "Duplicate player_id for the same season and club: " + playerId);
+            if (!memberships.add(season + ":" + clubId + ":" + playerId + ":" + startDate)) {
+                throw invalid(lineNumber, "Duplicate membership start for player_id: " + playerId);
             }
             String previousName = identities.putIfAbsent(playerId, name);
             if (previousName != null && !previousName.equals(name)) {
                 throw invalid(lineNumber, "One player_id has conflicting names: " + playerId);
             }
-            rows.add(new Row(lineNumber, season, clubId, playerId, name, position));
+            rows.add(new Row(lineNumber, season, clubId, playerId, name, position, startDate, endDate));
         }
         if (rows.isEmpty()) throw invalid(2, "File has no player rows");
         return List.copyOf(rows);
@@ -86,6 +94,19 @@ public final class ManualRosterCsvReader {
             return Integer.parseInt(raw.strip());
         } catch (NumberFormatException invalidNumber) {
             throw invalid(line, field + " must be a 32-bit integer");
+        }
+    }
+
+    private static LocalDate date(String raw, String field, int line, boolean required) {
+        String value = raw.strip();
+        if (value.isEmpty() && !required) return null;
+        if (!value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            throw invalid(line, field + " must be YYYY-MM-DD" + (required ? "" : " or blank"));
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException invalidDate) {
+            throw invalid(line, field + " is not a valid date");
         }
     }
 

@@ -285,13 +285,17 @@ Tài liệu chính thức: [Competition v4 và bộ lọc mùa](https://docs.foo
 Mẫu trống ở `backend/data/manual-players-2026-template.csv`. Tạo file UTF-8 với đúng header và một dòng cho mỗi cặp cầu thủ–CLB:
 
 ```csv
-season,club_id,player_id,name,fantasy_position
-2026,1000000057,2000000001,Tên cầu thủ đã kiểm chứng,GK
+season,club_id,player_id,name,fantasy_position,start_date,end_date
+2026,1000000057,2000000001,Tên cầu thủ đã kiểm chứng,GK,2026-08-01,
 ```
 
 Ví dụ trên chỉ minh họa **định dạng**, không xác nhận cầu thủ đó thuộc Arsenal và không được nhập nguyên mẫu vào dữ liệu thật. `club_id` lấy từ `GET /api/clubs?season=2026` trên backend đọc cùng database. `player_id` do chúng ta cấp thủ công, ổn định qua các mùa và lần chuyển CLB, trong khoảng `2000000000..2099999999`; không tạo ID từ tên. Vị trí Fantasy chỉ nhận `GK`, `DEF`, `MID`, `FWD`; API giữ cách ghi hiện có `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, `FORWARD`. Tên không được chứa dấu phẩy, dấu nháy kép hoặc tab vì file CSV này không hỗ trợ trường được quote. File phải có ít nhất một dòng dữ liệu.
 
-Nếu cầu thủ chuyển CLB trong cùng mùa, thêm dòng mới với **cùng `player_id` và `name`**, `club_id` mới; giữ dòng CLB cũ. Khóa `(season, player_id, club_id)` ngăn nhập trùng, còn `players.id` giữ danh tính ổn định. Lệnh từ chối ID dùng cho tên khác, cặp đã lưu có vị trí khác, CLB không tham dự mùa 2026/27, vị trí sai, mùa khác và các dòng trùng trong file. Lệnh không xóa hàng cũ và không ghi đè thống kê đã có. API danh sách có thể trả nhiều dòng cho một ID khi chuyển CLB; API lấy một cầu thủ theo ID vẫn trả một dòng theo hợp đồng cũ.
+`start_date` bắt buộc theo `YYYY-MM-DD`; `end_date` để trống nếu vẫn thuộc CLB. Khoảng hiệu lực là **[start_date, end_date)**: ngày kết thúc không còn thuộc CLB cũ và có thể là ngày bắt đầu ở CLB mới. Khi chuyển đội, giữ **cùng `player_id` và `name`**, nhập lại dòng CLB cũ với `end_date` được điền và thêm dòng CLB mới với `start_date` đúng ngày đó. Phải nhập cả hai dòng trong cùng file nếu dòng cũ đang mở; chỉ thêm dòng mới sẽ bị từ chối vì hai khoảng chồng nhau. Có thể nhập thêm đợt mới cho cùng CLB nếu ngày bắt đầu khác và các khoảng không chồng nhau. Khóa thời gian là `(season, player_id, club_id, start_date)`. Lệnh kiểm tra cả các khoảng đã lưu trước khi ghi, từ chối trùng/chồng lấn, ID dùng cho tên khác, vị trí khác của cặp cầu thủ–CLB, CLB không thuộc mùa 2026/27 và vị trí sai. Lệnh không xóa lịch sử hoặc ghi đè thống kê.
+
+`GET /api/players?season=2026` trả CLB có hiệu lực **hôm nay theo UTC**; thêm `asOf=2026-09-14` để xem CLB vào một ngày cũ, ví dụ `GET /api/players?season=2026&asOf=2026-09-14`. `GET /api/players/{id}?season=2026&asOf=...` dùng cùng quy tắc. Ngày trước khi cầu thủ gia nhập hoặc sau khi đã rời CLB mà chưa có dòng mới sẽ không trả cầu thủ đó. API mùa 2024/25 giữ nguyên.
+
+Nếu H2 local đã có dòng cầu thủ 2026/27 nhập theo CSV cũ chưa có ngày, cần nhập lại các dòng đó bằng định dạng mới với ngày đã kiểm chứng. Không thể tự suy ra ngày từ dòng cũ; API 2026 chỉ đọc các khoảng thời gian đã nhập.
 
 Sau khi tự kiểm chứng và điền file `backend/data/manual-players-2026.csv`, chạy **chỉ trên H2 local** từ `backend/`:
 
@@ -300,4 +304,4 @@ Sau khi tự kiểm chứng và điền file `backend/data/manual-players-2026.c
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-roster.enabled=true --premierhub.manual-roster.file=data/manual-players-2026.csv --spring.main.web-application-type=none --spring.profiles.active=local "--spring.datasource.url=jdbc:h2:file:./premierhub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE" --spring.datasource.username=sa --spring.datasource.password=
 ```
 
-Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi thoát; log `MANUAL_ROSTER` cho biết số cầu thủ và cặp cầu thủ–CLB mới. Nhập lại file giống hệt sẽ báo `playersInserted=0 membershipsInserted=0`. Sau đó gọi `/api/players?season=2026`: `goals` và `assists` là JSON `null` khi chưa có thống kê, không phải `0`. File giả `backend/src/test/resources/manual-players-2026-example.csv` chỉ dành cho H2 test; không nhập vào H2 dùng để tra cứu hoặc MySQL production. Bước này chưa tạo thống kê theo trận hay điểm Fantasy 2026/27, và chưa nhập Railway.
+Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi thoát; log `MANUAL_ROSTER` cho biết số cầu thủ, cặp cầu thủ–CLB và khoảng thời gian mới/cập nhật. Nhập lại file giống hệt sẽ báo `playersInserted=0 membershipsInserted=0 intervalsInserted=0 intervalsUpdated=0`. `goals` và `assists` là JSON `null` khi chưa có thống kê, không phải `0`. File giả `backend/src/test/resources/manual-players-2026-example.csv` chỉ dành cho H2 test; không nhập vào H2 dùng để tra cứu hoặc MySQL production. Bước này chưa tạo thống kê theo trận hay điểm Fantasy 2026/27, và chưa nhập Railway.

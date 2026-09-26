@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,14 +29,17 @@ public class PlayerController {
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "club must not be blank") String club,
             @RequestParam(required = false)
             @Pattern(regexp = "(?s).*[^\\p{javaWhitespace}].*", message = "position must not be blank") String position,
-            @RequestParam(defaultValue = "2024") int season) {
-        return service.players(season, club, position);
+            @RequestParam(defaultValue = "2024") int season,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
+        return asOf == null ? service.players(season, club, position)
+                : service.players(season, club, position, asOf);
     }
 
     @GetMapping("/{id}")
     public PlayerResponse getById(@PathVariable @Positive int id,
-                                  @RequestParam(defaultValue = "2024") int season) {
-        return service.player(id, season)
+                                  @RequestParam(defaultValue = "2024") int season,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
+        return (asOf == null ? service.player(id, season) : service.player(id, season, asOf))
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
     }
 }
