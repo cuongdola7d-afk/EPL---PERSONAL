@@ -1,5 +1,7 @@
+import { hasMatchScore } from '../utils/seasons.js'
+
 function MatchCard({ match, onOpen }) {
-  const hasScore = match.homeGoals !== null && match.awayGoals !== null
+  const hasScore = hasMatchScore(match)
   const statusLabel = {
     FINISHED: 'Đã kết thúc', SCHEDULED: 'Chưa diễn ra', POSTPONED: 'Bị hoãn',
     CANCELLED: 'Đã hủy', SUSPENDED: 'Tạm dừng', LIVE: 'Đang diễn ra',
@@ -25,10 +27,10 @@ function MatchCard({ match, onOpen }) {
         </div>
         <strong className="match-team away-team">{match.awayClub}</strong>
       </div>
-      <button className="match-detail-button" type="button" onClick={() => onOpen(match.id)}
+      {onOpen ? <button className="match-detail-button" type="button" onClick={() => onOpen(match.id)}
         aria-label={`Xem chi tiết trận ${match.homeClub} gặp ${match.awayClub}`}>
         Xem chi tiết cầu thủ <span aria-hidden="true">→</span>
-      </button>
+      </button> : <p className="match-stat-unavailable">Chưa có thống kê cầu thủ.</p>}
     </article>
   )
 }

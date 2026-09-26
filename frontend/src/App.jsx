@@ -8,6 +8,7 @@ import './App.css'
 
 const PAGES = {
   clubs: {
+    hasSeasons: true,
     navLabel: 'Câu lạc bộ', label: 'Câu lạc bộ', title: 'Một giải đấu.', highlight: 'Nhiều câu chuyện.',
     description: 'Bắt đầu khám phá Premier League qua danh sách câu lạc bộ. Tìm tên đội bạn quan tâm từ dữ liệu của PremierHub API.',
     component: ClubPage,
@@ -18,13 +19,15 @@ const PAGES = {
     component: PlayerPage,
   },
   matches: {
+    hasSeasons: true,
     navLabel: 'Lịch đấu', label: 'Lịch đấu & Kết quả', title: 'Từng vòng đấu.', highlight: 'Từng khoảnh khắc.',
-    description: 'Xem lịch đấu và kết quả Gameweek 1 mùa 2024/25, lọc theo đội bóng, vòng đấu hoặc trạng thái từ PremierHub API.',
+    description: 'Tra cứu lịch đấu và kết quả mùa 2024/25 hoặc 2026/27, lọc theo đội bóng, Gameweek và trạng thái trận.',
     component: MatchPage,
   },
   standings: {
+    hasSeasons: true,
     navLabel: 'Bảng xếp hạng', label: 'Bảng xếp hạng', title: 'Mỗi điểm số.', highlight: 'Một vị trí.',
-    description: 'Xem thứ hạng và các chỉ số được tính từ những trận đã kết thúc trong PremierHub API.',
+    description: 'Tra cứu bảng xếp hạng theo mùa giải từ dữ liệu đã lưu tại PremierHub.',
     component: StandingsPage,
   },
   replay: {
@@ -41,6 +44,7 @@ function pageFromHash() {
 
 function App() {
   const [page, setPage] = useState(pageFromHash)
+  const [season, setSeason] = useState(2024)
 
   useEffect(() => {
     function handleHashChange() {
@@ -98,7 +102,8 @@ function App() {
           </div>
         </section>
 
-        <CurrentPage />
+        <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
+          {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})} />
       </main>
 
       <footer className="site-footer">

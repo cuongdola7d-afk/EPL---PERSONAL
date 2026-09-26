@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS football_data_teams (
 CREATE TABLE IF NOT EXISTS football_data_fixtures (
     provider_id INTEGER PRIMARY KEY,
     fixture_id INTEGER NOT NULL UNIQUE,
-    utc_date VARCHAR(40) NOT NULL,
+    kickoff_utc VARCHAR(40) NOT NULL,
     provider_status VARCHAR(30) NOT NULL,
     FOREIGN KEY (fixture_id) REFERENCES fixtures(id)
 );

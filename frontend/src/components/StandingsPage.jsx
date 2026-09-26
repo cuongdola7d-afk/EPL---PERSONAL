@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { fetchStandings } from '../api/standings.js'
 import { useApiList } from '../hooks/useApiList.js'
 import ResultPanel from './ResultPanel.jsx'
+import SeasonPicker from './SeasonPicker.jsx'
 
 const STATS = [
   { key: 'played', short: 'Tr', label: 'Trận' },
@@ -13,8 +14,8 @@ const STATS = [
   { key: 'goalDifference', short: 'HS', label: 'Hiệu số' },
 ]
 
-function StandingsPage() {
-  const requestStandings = useCallback((signal) => fetchStandings(signal), [])
+function StandingsPage({ season, onSeasonChange }) {
+  const requestStandings = useCallback((signal) => fetchStandings(signal, season), [season])
   const { data: standings, status, error, reload } = useApiList(requestStandings)
 
   return (
@@ -24,11 +25,14 @@ function StandingsPage() {
           <div>
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>04 / TABLE</span></p>
             <h2 id="standings-heading">Bảng xếp hạng</h2>
-            <p className="section-description">Bảng xếp hạng cuối mùa 2024/25 từ dữ liệu nhà cung cấp; đây không phải thứ hạng sau Gameweek 1.</p>
+            <p className="section-description">{season === 2024
+              ? 'Bảng xếp hạng cuối mùa 2024/25; đây không phải thứ hạng sau Gameweek 1.'
+              : 'Bảng xếp hạng hiện tại mùa 2026/27, theo dữ liệu đã đồng bộ gần nhất.'}</p>
           </div>
           <button className="refresh-button" type="button" onClick={reload} disabled={status === 'loading'}>Làm mới</button>
         </div>
 
+        <SeasonPicker season={season} onChange={onSeasonChange} />
         <ResultPanel
           status={status}
           error={error}

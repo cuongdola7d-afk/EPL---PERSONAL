@@ -12,9 +12,11 @@ export function useApiList(request) {
     async function load() {
       setStatus('loading')
       setError('')
+      setData([])
 
       try {
         const result = await request(controller.signal)
+        if (controller.signal.aborted) return
         setData(result)
         setStatus('success')
       } catch (requestError) {

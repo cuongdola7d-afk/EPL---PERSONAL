@@ -10,7 +10,7 @@ function ClubCard({ club, index }) {
       <div className="club-card-bottom">
         <div>
           <h3>{club.name}</h3>
-          <p><span className="location-dot" aria-hidden="true" />{club.city}</p>
+          <p><span className="location-dot" aria-hidden="true" />{club.city || 'Chưa có dữ liệu thành phố'}</p>
         </div>
       </div>
     </article>

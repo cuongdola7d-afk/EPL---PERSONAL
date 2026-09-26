@@ -75,7 +75,7 @@ class FootballDataSyncTest {
         sync.importBatch(FootballDataBatch.parse(input[0], input[1], input[2]));
         assertEquals(2, queries.match(1001208022, 2026).orElseThrow().homeGoals());
         assertEquals("2026-08-22T23:30:00Z", jdbc.queryForObject(
-                "SELECT utc_date FROM football_data_fixtures WHERE provider_id=1208022", String.class));
+                "SELECT kickoff_utc FROM football_data_fixtures WHERE provider_id=1208022", String.class));
         assertEquals(3, queries.standings(2026, null).getFirst().points());
 
         var beforeFailure = queries.matches(2026, null, null, null);

@@ -75,7 +75,7 @@ public class FootballDataSync {
                             """, internal, LEAGUE, SEASON, internalId(fixture.home()), internalId(fixture.away()),
                             fixture.round(), date, fixture.status(), fixture.status(), fixture.homeGoals(), fixture.awayGoals(),
                             hash(fixture.payload()), now);
-                    jdbc.update("INSERT INTO football_data_fixtures (provider_id, fixture_id, utc_date, provider_status) "
+                    jdbc.update("INSERT INTO football_data_fixtures (provider_id, fixture_id, kickoff_utc, provider_status) "
                                     + "VALUES (?, ?, ?, ?)", fixture.id(), internal, fixture.kickoff().toString(), fixture.providerStatus());
                     fixturesInserted++;
                 } else {
@@ -88,7 +88,7 @@ public class FootballDataSync {
                             fixture.status(), fixture.status(), fixture.homeGoals(), fixture.awayGoals(), hash(fixture.payload()),
                             now, internal, LEAGUE, SEASON);
                     if (updated != 1) throw new IllegalStateException("Mapped fixture belongs to a different season");
-                    jdbc.update("UPDATE football_data_fixtures SET utc_date=?, provider_status=? WHERE provider_id=?",
+                    jdbc.update("UPDATE football_data_fixtures SET kickoff_utc=?, provider_status=? WHERE provider_id=?",
                             fixture.kickoff().toString(), fixture.providerStatus(), fixture.id());
                 }
             }

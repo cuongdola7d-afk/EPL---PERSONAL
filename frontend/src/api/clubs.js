@@ -7,10 +7,10 @@ function isValidClub(club) {
     typeof club.city === 'string'
 }
 
-export async function fetchClubs(keyword, signal) {
-  const path = keyword
-    ? `/api/clubs/search?${new URLSearchParams({ keyword })}`
-    : '/api/clubs'
+export async function fetchClubs(keyword, signal, season = 2024) {
+  const params = new URLSearchParams({ season })
+  if (keyword) params.set('keyword', keyword)
+  const path = `/api/clubs${keyword ? '/search' : ''}?${params}`
 
   return fetchApiList(path, signal, isValidClub, 'câu lạc bộ')
 }

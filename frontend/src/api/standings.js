@@ -11,6 +11,6 @@ function isValidStanding(row) {
     NUMBER_FIELDS.every((field) => Number.isInteger(row[field]))
 }
 
-export function fetchStandings(signal) {
-  return fetchApiList('/api/standings', signal, isValidStanding, 'bảng xếp hạng')
+export function fetchStandings(signal, season = 2024) {
+  return fetchApiList(`/api/standings?${new URLSearchParams({ season })}`, signal, isValidStanding, 'bảng xếp hạng')
 }

@@ -3,19 +3,21 @@ import { fetchClubs } from '../api/clubs.js'
 import { useApiList } from '../hooks/useApiList.js'
 import ClubCard from './ClubCard.jsx'
 import ResultPanel from './ResultPanel.jsx'
+import SeasonPicker from './SeasonPicker.jsx'
+import { SEASONS } from '../utils/seasons.js'
 
-function ClubPage() {
+function ClubPage({ season, onSeasonChange }) {
   const [draft, setDraft] = useState('')
   const [keyword, setKeyword] = useState('')
   const [city, setCity] = useState('')
   const [cities, setCities] = useState([])
   const [sortOrder, setSortOrder] = useState('asc')
-  const requestClubs = useCallback((signal) => fetchClubs(keyword, signal), [keyword])
+  const requestClubs = useCallback((signal) => fetchClubs(keyword, signal, season), [keyword, season])
   const { data: clubs, status, error, reload } = useApiList(requestClubs)
 
   useEffect(() => {
     if (status === 'success' && !keyword) {
-      setCities([...new Set(clubs.map((club) => club.city))].sort((a, b) => a.localeCompare(b)))
+      setCities([...new Set(clubs.map((club) => club.city).filter(Boolean))].sort((a, b) => a.localeCompare(b)))
     }
   }, [clubs, keyword, status])
 
@@ -49,7 +51,7 @@ function ClubPage() {
           <div>
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>01 / CLUBS</span></p>
             <h2 id="clubs-heading">Câu lạc bộ</h2>
-            <p className="section-description">Tên đội bóng và thành phố từ API PremierHub.</p>
+            <p className="section-description">Các câu lạc bộ tham dự Premier League {SEASONS[season]}.</p>
           </div>
           {status === 'success' && (
             <p className="result-count" aria-live="polite">
@@ -58,6 +60,7 @@ function ClubPage() {
           )}
         </div>
 
+        <SeasonPicker season={season} onChange={onSeasonChange} />
         <form className="search-form" role="search" onSubmit={handleSearch}>
           <label htmlFor="club-search">Tìm câu lạc bộ theo tên</label>
           <div className="search-controls">
@@ -83,7 +86,7 @@ function ClubPage() {
           <div className="secondary-controls">
             <div className="filter-field">
               <label htmlFor="club-city">Thành phố</label>
-              <select id="club-city" value={city} onChange={(event) => setCity(event.target.value)} disabled={status !== 'success'}>
+              <select id="club-city" value={city} onChange={(event) => setCity(event.target.value)} disabled={status !== 'success' || cities.length === 0}>
                 <option value="">Tất cả thành phố</option>
                 {cities.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>

@@ -33,5 +33,6 @@ frontend/dist/
 frontend/.env*.local
 frontend/.vercel/
 /backend/.env.local
+/backend/local-backups/
 backend/premierhub-local*.db
 .npm-cache/

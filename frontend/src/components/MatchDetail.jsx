@@ -63,7 +63,7 @@ function PlayerStats({ player }) {
   )
 }
 
-function MatchDetail({ matchId, onClose }) {
+function MatchDetail({ matchId, onClose, season = 2024 }) {
   const [detail, setDetail] = useState(null)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -79,15 +79,15 @@ function MatchDetail({ matchId, onClose }) {
     const controller = new AbortController()
     setStatus('loading')
     setError('')
-    fetchMatchDetail(matchId, controller.signal)
-      .then((value) => { setDetail(value); setStatus('success') })
+    fetchMatchDetail(matchId, controller.signal, season)
+      .then((value) => { if (!controller.signal.aborted) { setDetail(value); setStatus('success') } })
       .catch((requestError) => {
         if (controller.signal.aborted) return
         setError(requestError instanceof Error ? requestError.message : 'Không thể tải chi tiết trận đấu.')
         setStatus('error')
       })
     return () => controller.abort()
-  }, [matchId, reloadCount])
+  }, [matchId, season, reloadCount])
 
   const match = detail?.match
   const noStats = status === 'success' &&
@@ -112,6 +112,7 @@ function MatchDetail({ matchId, onClose }) {
       {status === 'success' && detail.evidenceStatus === 'INVALID' && (
         <p className="match-evidence-error" role="alert">Bằng chứng trận không khớp: {detail.evidenceError}. Điểm vẫn tạm tính.</p>
       )}
+      {status === 'success' && detail.evidenceStatus === 'VERIFIED' && <p className="match-evidence-verified">Thống kê trận đã được xác minh.</p>}
       {noStats && <p className="match-detail-empty">Trận này chưa có thống kê cầu thủ được lưu.</p>}
       {status === 'success' && !noStats && (
         <div className="match-detail-teams">
