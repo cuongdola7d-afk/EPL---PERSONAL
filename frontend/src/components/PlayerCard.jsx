@@ -13,8 +13,8 @@ function PlayerCard({ player, positionLabel }) {
         <p className="player-club"><span className="location-dot" aria-hidden="true" />{player.club}</p>
       </div>
       <div className="player-stats">
-        <div><strong>{player.goals}</strong><span>Bàn thắng</span></div>
-        <div><strong>{player.assists}</strong><span>Kiến tạo</span></div>
+        <div><strong aria-label={player.goals === null ? 'Chưa có dữ liệu' : undefined}>{player.goals ?? '—'}</strong><span>Bàn thắng</span></div>
+        <div><strong aria-label={player.assists === null ? 'Chưa có dữ liệu' : undefined}>{player.assists ?? '—'}</strong><span>Kiến tạo</span></div>
       </div>
     </article>
   )

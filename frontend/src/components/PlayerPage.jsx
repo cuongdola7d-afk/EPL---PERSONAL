@@ -4,6 +4,8 @@ import { fetchPlayers } from '../api/players.js'
 import { useApiList } from '../hooks/useApiList.js'
 import PlayerCard from './PlayerCard.jsx'
 import ResultPanel from './ResultPanel.jsx'
+import SeasonPicker from './SeasonPicker.jsx'
+import { SEASONS } from '../utils/seasons.js'
 
 const POSITIONS = [
   { value: 'GOALKEEPER', label: 'Thủ môn' },
@@ -12,20 +14,20 @@ const POSITIONS = [
   { value: 'FORWARD', label: 'Tiền đạo' },
 ]
 
-function PlayerPage() {
+function PlayerPage({ season, onSeasonChange }) {
   const [club, setClub] = useState('')
   const [position, setPosition] = useState('')
   const [sortByGoals, setSortByGoals] = useState(false)
-  const requestClubs = useCallback((signal) => fetchClubs('', signal), [])
+  const requestClubs = useCallback((signal) => fetchClubs('', signal, season), [season])
   const requestPlayers = useCallback(
-    (signal) => fetchPlayers({ club, position }, signal),
-    [club, position],
+    (signal) => fetchPlayers({ club, position }, signal, season),
+    [club, position, season],
   )
   const clubList = useApiList(requestClubs)
   const { data: players, status, error, reload } = useApiList(requestPlayers)
   const hasFilters = Boolean(club || position)
   const visiblePlayers = [...players]
-  if (sortByGoals) {
+  if (season === 2024 && sortByGoals) {
     visiblePlayers.sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
   }
   const totals = players.reduce((sum, player) => ({
@@ -45,8 +47,12 @@ function PlayerPage() {
           <div>
             <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>02 / PLAYERS</span></p>
             <h2 id="players-heading">Cầu thủ</h2>
-            <p className="section-description">Cầu thủ, vị trí và chỉ số từ API PremierHub.</p>
-            <p className="filter-note">Thống kê mùa 2024/25 của trang Cầu thủ mới được lưu một phần. Một số CLB chưa có cầu thủ trong danh sách này; kết quả rỗng không có nghĩa CLB không có cầu thủ.</p>
+            <p className="section-description">Cầu thủ Premier League {SEASONS[season]} từ API PremierHub.</p>
+            {season === 2024 ? (
+              <p className="filter-note">Thống kê mùa 2024/25 của trang Cầu thủ mới được lưu một phần. Một số CLB chưa có cầu thủ trong danh sách này; kết quả rỗng không có nghĩa CLB không có cầu thủ.</p>
+            ) : (
+              <p className="filter-note">Danh sách cầu thủ 2026/27 đang được bổ sung và hiện mới có dữ liệu cho một số CLB. Chỉ số chưa có được hiển thị bằng dấu —.</p>
+            )}
           </div>
           {status === 'success' && (
             <p className="result-count" aria-live="polite">
@@ -55,6 +61,7 @@ function PlayerPage() {
           )}
         </div>
 
+        <SeasonPicker season={season} onChange={onSeasonChange} showAttribution={false} />
         <div className="search-form filters-form" role="group" aria-label="Bộ lọc cầu thủ">
           <div className="filter-controls">
             <div className="filter-field">
@@ -76,13 +83,15 @@ function PlayerPage() {
                 {POSITIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
             </div>
-            <div className="filter-field">
-              <label htmlFor="player-sort">Sắp xếp</label>
-              <select id="player-sort" value={sortByGoals ? 'goals' : 'default'} onChange={(event) => setSortByGoals(event.target.value === 'goals')}>
-                <option value="default">Thứ tự API</option>
-                <option value="goals">Bàn thắng giảm dần</option>
-              </select>
-            </div>
+            {season === 2024 && (
+              <div className="filter-field">
+                <label htmlFor="player-sort">Sắp xếp</label>
+                <select id="player-sort" value={sortByGoals ? 'goals' : 'default'} onChange={(event) => setSortByGoals(event.target.value === 'goals')}>
+                  <option value="default">Thứ tự API</option>
+                  <option value="goals">Bàn thắng giảm dần</option>
+                </select>
+              </div>
+            )}
             {hasFilters && <button className="clear-button filter-clear" type="button" onClick={clearFilters}>Xóa lọc</button>}
           </div>
           {clubList.status === 'loading' && <p className="filter-note">Đang tải danh sách câu lạc bộ...</p>}
@@ -93,7 +102,7 @@ function PlayerPage() {
           )}
         </div>
 
-        {status === 'success' && (
+        {status === 'success' && season === 2024 && (
           <div className="result-summary" aria-live="polite">
             <span>Tổng trong kết quả lọc</span>
             <strong>{totals.goals} <small>bàn thắng</small></strong>

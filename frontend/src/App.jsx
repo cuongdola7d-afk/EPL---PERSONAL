@@ -14,6 +14,7 @@ const PAGES = {
     component: ClubPage,
   },
   players: {
+    hasSeasons: true,
     navLabel: 'Cầu thủ', label: 'Cầu thủ', title: 'Những gương mặt.', highlight: 'Tạo nên trận đấu.',
     description: 'Khám phá cầu thủ theo câu lạc bộ và vị trí, cùng số bàn thắng và kiến tạo từ PremierHub API.',
     component: PlayerPage,

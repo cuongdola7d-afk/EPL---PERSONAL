@@ -1,6 +1,6 @@
 import { SEASONS } from '../utils/seasons.js'
 
-function SeasonPicker({ season, onChange }) {
+function SeasonPicker({ season, onChange, showAttribution = true }) {
   return (
     <div className="season-controls">
       <div className="filter-field">
@@ -9,7 +9,7 @@ function SeasonPicker({ season, onChange }) {
           {Object.entries(SEASONS).map(([year, label]) => <option key={year} value={year}>{label}</option>)}
         </select>
       </div>
-      {season === 2026 && (
+      {season === 2026 && showAttribution && (
         <p className="data-attribution">Data provided by <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.
           {' '}Dữ liệu theo lần đồng bộ gần nhất.</p>
       )}
