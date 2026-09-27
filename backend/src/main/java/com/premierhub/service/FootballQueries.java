@@ -106,6 +106,36 @@ public class FootballQueries {
 
     public List<PlayerMatchResponse> playerMatches(int id, int season) {
         validateSeason(season);
+        Map<Integer, MatchPlayerStatResponse> manualStats = new HashMap<>();
+        if (season == 2026) {
+            jdbc.query("""
+                    SELECT m.fixture_id, m.player_id, m.club_id, m.minutes, m.goals, m.assists,
+                           m.yellow_cards, m.red_cards, m.rating, p.name, ps.position
+                    FROM manual_fixture_player_stats m
+                    JOIN players p ON p.id=m.player_id
+                    JOIN player_season_stats ps ON ps.league_id=m.league_id
+                      AND ps.season_year=m.season_year AND ps.player_id=m.player_id
+                      AND ps.club_id=m.club_id
+                    WHERE m.league_id=? AND m.season_year=? AND m.player_id=?
+                    """, (RowCallbackHandler) rs -> {
+                String position = switch (rs.getString("position")) {
+                    case "GOALKEEPER" -> "G";
+                    case "DEFENDER" -> "D";
+                    case "MIDFIELDER" -> "M";
+                    case "FORWARD" -> "F";
+                    default -> null;
+                };
+                var rating = rs.getBigDecimal("rating");
+                manualStats.put(rs.getInt("fixture_id"), new MatchPlayerStatResponse(
+                        rs.getInt("player_id"), rs.getString("name"), rs.getInt("club_id"),
+                        position, rs.getObject("minutes", Integer.class),
+                        rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class),
+                        rs.getObject("yellow_cards", Integer.class),
+                        rs.getObject("red_cards", Integer.class),
+                        rating == null ? null : rating.toPlainString(),
+                        null, null, null, null, null, null));
+            }, LEAGUE_ID, season, id);
+        }
         Set<Integer> fixtureIdsWithStats = Set.copyOf(jdbc.queryForList("""
                 SELECT s.fixture_id FROM fixture_player_stats s
                 JOIN fixtures f ON f.id = s.fixture_id
@@ -132,8 +162,13 @@ public class FootballQueries {
                     id, LEAGUE_ID, season);
         }
         List<MatchResponse> fixtures = matches(season, null, null, null);
-        return fixtures.stream().filter(match -> fixtureIdsWithStats.contains(match.id()) ||
+        return fixtures.stream().filter(match -> manualStats.containsKey(match.id())
+                || fixtureIdsWithStats.contains(match.id()) ||
                 fixtureClubs.containsKey(match.id())).map(match -> {
+            MatchPlayerStatResponse manual = manualStats.get(match.id());
+            if (manual != null) {
+                return new PlayerMatchResponse(match, manual.clubId(), manual, "MANUAL_VERIFIED");
+            }
             if (!fixtureIdsWithStats.contains(match.id())) {
                 return new PlayerMatchResponse(match, fixtureClubs.get(match.id()), null, null);
             }

@@ -305,4 +305,29 @@ Sau khi tự kiểm chứng và điền file `backend/data/manual-players-2026.c
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-roster.enabled=true --premierhub.manual-roster.file=data/manual-players-2026.csv --spring.main.web-application-type=none --spring.profiles.active=local "--spring.datasource.url=jdbc:h2:file:./premierhub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE" --spring.datasource.username=sa --spring.datasource.password=
 ```
 
-Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi thoát; log `MANUAL_ROSTER` cho biết số cầu thủ, cặp cầu thủ–CLB và khoảng thời gian mới/cập nhật. Nhập lại file giống hệt sẽ báo `playersInserted=0 membershipsInserted=0 intervalsInserted=0 intervalsUpdated=0`. `goals` và `assists` là JSON `null` khi chưa có thống kê, không phải `0`. File giả `backend/src/test/resources/manual-players-2026-example.csv` chỉ dành cho H2 test; không nhập vào H2 dùng để tra cứu hoặc MySQL production. Bước này chưa tạo thống kê theo trận hay điểm Fantasy 2026/27, và chưa nhập Railway.
+Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi thoát; log `MANUAL_ROSTER` cho biết số cầu thủ, cặp cầu thủ–CLB và khoảng thời gian mới/cập nhật. Nhập lại file giống hệt sẽ báo `playersInserted=0 membershipsInserted=0 intervalsInserted=0 intervalsUpdated=0`. `goals` và `assists` là JSON `null` khi chưa có thống kê, không phải `0`. File giả `backend/src/test/resources/manual-players-2026-example.csv` chỉ dành cho H2 test; không nhập vào H2 dùng để tra cứu hoặc MySQL production. Bước roster này chưa nhập thống kê theo trận hoặc điểm Fantasy 2026/27 vào Railway.
+
+## CSV thống kê cầu thủ–trận 2026/27 (nhập tay)
+
+Sao chép `backend/data/manual-match-stats-2026-template.csv` thành một file CSV UTF-8 cho từng trận hoặc Gameweek. Header cố định:
+
+```csv
+season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red_cards,source_url,checked_at
+```
+
+Mỗi dòng là **một cặp `(fixture_id, player_id)`**. Lấy `fixture_id` từ `/api/matches?season=2026&round=...` và `player_id` từ roster đã nhập; không suy ID từ tên. Một cầu thủ có thể xuất hiện ở hai fixture khác nhau trong cùng file, nhưng cùng cặp không được lặp. `status` chỉ nhận `PLAYED` hoặc `DID_NOT_PLAY`. `rating` là số thập phân 0–10, tối đa hai chữ số sau dấu chấm; để trống nếu chưa biết. Các chỉ số đếm cũng để trống nếu chưa biết, **không tự điền 0**. `PLAYED` cho phép để trống phút nếu nguồn chưa nêu, nhưng nếu điền phải lớn hơn 0. `DID_NOT_PLAY` chỉ dùng khi nguồn xác nhận cầu thủ không vào sân: `rating` trống, `minutes=0`, các chỉ số khác trống hoặc 0. Nếu nguồn không xác nhận tình trạng ra sân, chưa đưa cầu thủ đó vào file.
+
+`source_url` phải là URL HTTP(S) của bằng chứng; `checked_at` là thời điểm kiểm tra UTC theo ISO-8601, ví dụ `2026-09-27T12:00:00Z`. Người nhập phải tự đối chiếu nội dung nguồn với dòng CSV; importer **không gọi URL** để xác minh. URL không được có dấu phẩy; CSV này không hỗ trợ trường được đặt trong dấu nháy kép hoặc tab. File giả ở `backend/src/test/resources/manual-match-stats-2026-example.csv` chỉ dùng cho H2 test, không phải thống kê thật.
+
+Importer chỉ nhận fixture Premier League `season=2026` đã `FINISHED`, và đối chiếu cầu thủ với khoảng thuộc CLB trong `manual_player_memberships` vào **ngày trận đấu**. Dữ liệu nhập tay vào bảng riêng `manual_fixture_player_stats`, gồm nguồn và thời điểm kiểm tra; không sửa `fixture_player_stats` thô hoặc điểm v1 của 2024/25. Với dòng `PLAYED`, `fantasy_points` bằng `rating` nếu đã có rating, nếu chưa có thì `NULL`; với `DID_NOT_PLAY` đã được người nhập xác nhận, điểm là `0`. Đây mới là dữ liệu nền cho Fantasy 2026/27, chưa có UI Fantasy mới. API `/api/players/{id}/matches?season=2026` đọc rating và chỉ số nhập tay ở `stats`; `stats.score` v1 để `null` cho dòng này.
+
+Để thử trên **bản sao H2 cô lập**, tắt backend local trước, tạo file CSV đã điền rồi chạy từ `backend/`:
+
+```powershell
+Copy-Item -LiteralPath premierhub-local.mv.db -Destination target/manual-match-check.mv.db
+$env:PREMIERHUB_JDBC_URL='jdbc:h2:file:./target/manual-match-check;MODE=MySQL;DATABASE_TO_LOWER=TRUE'
+.\mvnw.cmd -q -DskipTests package
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/manual-match-stats-2026-GW1.csv
+```
+
+Lệnh chạy một lần rồi thoát; log `MANUAL_MATCH_STATS ... inserted=N`. Chạy lại **cùng file** phải báo `inserted=0`. Nếu một dòng sai hoặc trùng khóa đã lưu nhưng khác nội dung (kể cả nguồn/thời điểm kiểm tra), toàn file bị từ chối và không ghi dở dang. Không đặt lệnh này làm Pre-deploy Command hoặc cron; chỉ chạy với database đã chọn và sao lưu khi quyết định nhập dữ liệu thật.
