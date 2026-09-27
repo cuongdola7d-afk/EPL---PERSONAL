@@ -124,6 +124,7 @@ function PlayerPage({ season, onSeasonChange }) {
               <PlayerCard
                 key={`${player.id}-${player.clubId}`}
                 player={player}
+                season={season}
                 positionLabel={POSITIONS.find((item) => item.value === player.position)?.label ?? player.position}
               />
             ))}

@@ -4,6 +4,8 @@ import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
 import StandingsPage from './components/StandingsPage.jsx'
 import FantasyReplayPage from './components/FantasyReplayPage.jsx'
+import PlayerDetailPage from './components/PlayerDetailPage.jsx'
+import { parsePlayerDetailHash } from './utils/playerRoute.js'
 import './App.css'
 
 const PAGES = {
@@ -40,15 +42,19 @@ const PAGES = {
 
 function pageFromHash() {
   const name = window.location.hash.slice(1)
-  return PAGES[name] ? name : 'clubs'
+  return parsePlayerDetailHash(window.location.hash) ? 'players' : PAGES[name] ? name : 'clubs'
 }
 
 function App() {
   const [page, setPage] = useState(pageFromHash)
-  const [season, setSeason] = useState(2024)
+  const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ?? 2024)
+  const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
 
   useEffect(() => {
     function handleHashChange() {
+      const detail = parsePlayerDetailHash(window.location.hash)
+      setPlayerDetail(detail)
+      if (detail) setSeason(detail.season)
       setPage(pageFromHash())
       window.scrollTo(0, 0)
     }
@@ -80,7 +86,7 @@ function App() {
       </header>
 
       <main>
-        <section className="hero" aria-labelledby="hero-title">
+        {!playerDetail && <section className="hero" aria-labelledby="hero-title">
           <div className="container hero-inner">
             <div className="hero-copy">
               <p className="eyebrow"><span className="eyebrow-line" /> PremierHub / {current.label}</p>
@@ -101,10 +107,12 @@ function App() {
               <span className="hero-art-caption">THE BEAUTIFUL GAME</span>
             </div>
           </div>
-        </section>
+        </section>}
 
-        <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
-          {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})} />
+        {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
+          playerId={playerDetail.playerId} season={playerDetail.season} /> :
+          <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
+            {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})} />}
       </main>
 
       <footer className="site-footer">

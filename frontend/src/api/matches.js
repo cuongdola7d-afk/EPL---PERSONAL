@@ -1,6 +1,6 @@
 import { fetchApiJson, fetchApiList } from './request.js'
 
-function isValidMatch(match) {
+export function isValidMatch(match) {
   return match !== null &&
     Number.isInteger(match.id) &&
     Number.isInteger(match.homeClubId) &&

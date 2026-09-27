@@ -2,6 +2,8 @@ package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
 import com.premierhub.web.dto.PlayerResponse;
+import com.premierhub.web.dto.PlayerMatchResponse;
+import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 import static com.premierhub.web.ErrorResponseAssertions.expectError;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +52,21 @@ class PlayerControllerTest {
                 .andExpect(jsonPath("$.name").value("Bukayo Saka"));
         expectError(mockMvc.perform(get("/api/players/999")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/players/999");
+    }
+
+    @Test
+    void matchHistoryIsScopedByPlayerAndSeasonAndUnknownPlayerReturns404() throws Exception {
+        when(service.player(2, 2024)).thenReturn(Optional.of(saka));
+        when(service.playerMatches(2, 2024)).thenReturn(List.of(new PlayerMatchResponse(
+                new MatchResponse(1208021, 1, "Arsenal", 3, "Fulham", 1,
+                        LocalDate.of(2024, 8, 16), "FINISHED", 1, 0), 1, null, null)));
+        mockMvc.perform(get("/api/players/2/matches").param("season", "2024"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].match.id").value(1208021))
+                .andExpect(jsonPath("$[0].clubId").value(1))
+                .andExpect(jsonPath("$[0].stats").value(org.hamcrest.Matchers.nullValue()));
+        expectError(mockMvc.perform(get("/api/players/999/matches").param("season", "2026")),
+                HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "/api/players/999/matches");
     }
 
     @Test

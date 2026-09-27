@@ -6,9 +6,11 @@ import com.premierhub.web.dto.MatchDetailResponse;
 import com.premierhub.web.dto.MatchPlayerStatResponse;
 import com.premierhub.web.dto.InferredMatchStatsResponse;
 import com.premierhub.web.dto.PlayerResponse;
+import com.premierhub.web.dto.PlayerMatchResponse;
 import com.premierhub.web.dto.StandingResponse;
 import com.premierhub.web.error.InvalidFilterException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
@@ -19,7 +21,10 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class FootballQueries {
@@ -97,6 +102,49 @@ public class FootballQueries {
 
     public Optional<PlayerResponse> player(int id, int season, LocalDate asOf) {
         return players(season, null, null, asOf).stream().filter(player -> player.id() == id).findFirst();
+    }
+
+    public List<PlayerMatchResponse> playerMatches(int id, int season) {
+        validateSeason(season);
+        Set<Integer> fixtureIdsWithStats = Set.copyOf(jdbc.queryForList("""
+                SELECT s.fixture_id FROM fixture_player_stats s
+                JOIN fixtures f ON f.id = s.fixture_id
+                WHERE s.player_id = ? AND f.league_id = ? AND f.season_year = ?
+                """, Integer.class, id, LEAGUE_ID, season));
+        Map<Integer, Integer> fixtureClubs = new HashMap<>();
+        if (season == 2026) {
+            jdbc.query("""
+                    SELECT f.id, m.club_id FROM fixtures f
+                    JOIN manual_player_memberships m ON m.league_id=f.league_id
+                      AND m.season_year=f.season_year AND m.club_id IN (f.home_club_id, f.away_club_id)
+                    WHERE m.player_id=? AND f.league_id=? AND f.season_year=?
+                      AND m.start_date<=f.match_date
+                      AND (m.end_date IS NULL OR m.end_date>f.match_date)
+                    """, (RowCallbackHandler) rs -> fixtureClubs.put(rs.getInt("id"), rs.getInt("club_id")),
+                    id, LEAGUE_ID, season);
+        } else {
+            jdbc.query("""
+                    SELECT f.id, ps.club_id FROM fixtures f
+                    JOIN player_season_stats ps ON ps.league_id=f.league_id
+                      AND ps.season_year=f.season_year AND ps.club_id IN (f.home_club_id, f.away_club_id)
+                    WHERE ps.player_id=? AND f.league_id=? AND f.season_year=?
+                    """, (RowCallbackHandler) rs -> fixtureClubs.put(rs.getInt("id"), rs.getInt("club_id")),
+                    id, LEAGUE_ID, season);
+        }
+        List<MatchResponse> fixtures = matches(season, null, null, null);
+        return fixtures.stream().filter(match -> fixtureIdsWithStats.contains(match.id()) ||
+                fixtureClubs.containsKey(match.id())).map(match -> {
+            if (!fixtureIdsWithStats.contains(match.id())) {
+                return new PlayerMatchResponse(match, fixtureClubs.get(match.id()), null, null);
+            }
+            MatchDetailResponse detail = matchDetail(match.id(), season).orElseThrow();
+            MatchPlayerStatResponse stats = java.util.stream.Stream.concat(
+                    detail.homePlayers().stream(), detail.awayPlayers().stream())
+                    .filter(row -> row.playerId() == id).findFirst().orElse(null);
+            return new PlayerMatchResponse(match,
+                    stats == null ? fixtureClubs.get(match.id()) : stats.clubId(),
+                    stats, detail.evidenceStatus());
+        }).toList();
     }
 
     private static PlayerResponse playerResponse(ResultSet rs) throws SQLException {

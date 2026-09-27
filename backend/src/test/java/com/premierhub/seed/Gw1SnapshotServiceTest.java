@@ -35,6 +35,14 @@ class Gw1SnapshotServiceTest {
         assertEquals(10, first.inserted().get("fixture_score_evidence"));
         assertEquals(10, first.verifiedFixtures());
 
+        var firstFixture = queries.matches(2024, null, 1, null).getFirst();
+        var firstPlayer = queries.matchDetail(firstFixture.id(), 2024).orElseThrow().homePlayers().getFirst();
+        var history = queries.playerMatches(firstPlayer.playerId(), 2024);
+        assertEquals(1, history.size());
+        assertEquals(firstFixture.id(), history.getFirst().match().id());
+        assertEquals(firstPlayer.playerId(), history.getFirst().stats().playerId());
+        assertEquals("VERIFIED", history.getFirst().evidenceStatus());
+
         var mvc = MockMvcBuilders.webAppContextSetup(context).build();
         mvc.perform(get("/api/clubs").param("season", "2024"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(20));

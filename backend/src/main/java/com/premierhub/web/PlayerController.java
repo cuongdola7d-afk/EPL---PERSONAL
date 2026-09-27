@@ -2,6 +2,7 @@ package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
 import com.premierhub.web.dto.PlayerResponse;
+import com.premierhub.web.dto.PlayerMatchResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -41,5 +42,13 @@ public class PlayerController {
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         return (asOf == null ? service.player(id, season) : service.player(id, season, asOf))
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
+    }
+
+    @GetMapping("/{id}/matches")
+    public List<PlayerMatchResponse> getMatches(@PathVariable @Positive int id,
+                                                @RequestParam(defaultValue = "2024") int season) {
+        service.player(id, season)
+                .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
+        return service.playerMatches(id, season);
     }
 }

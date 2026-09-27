@@ -46,6 +46,32 @@ class ManualRosterImportTest {
     }
 
     @Test
+    void matchHistoryUsesMembershipOnFixtureDateWithoutInventingPlayerStats() throws Exception {
+        seedClubs();
+        importer.importFile(EXAMPLE);
+        jdbc.update("""
+                INSERT INTO fixtures (id, league_id, season_year, home_club_id, away_club_id,
+                  gameweek, match_date, status, provider_status, home_goals, away_goals,
+                  payload_hash, synced_at) VALUES
+                  (901, 39, 2026, 1000000057, 1000000061, 1, '2026-09-14',
+                   'FINISHED', 'FINISHED', 1, 0, 'test', CURRENT_TIMESTAMP),
+                  (902, 39, 2026, 1000000057, 1000000061, 2, '2026-09-16',
+                   'SCHEDULED', 'TIMED', NULL, NULL, 'test', CURRENT_TIMESTAMP)
+                """);
+        var rows = queries.playerMatches(2000000002, 2026);
+        assertEquals(2, rows.size());
+        assertEquals(1000000057, rows.get(0).clubId());
+        assertEquals(1000000061, rows.get(1).clubId());
+        assertTrue(rows.stream().allMatch(row -> row.stats() == null));
+        assertEquals(null, rows.get(1).match().homeGoals());
+        mvc.perform(get("/api/players/2000000002/matches").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].clubId").value(1000000057))
+                .andExpect(jsonPath("$[1].clubId").value(1000000061))
+                .andExpect(jsonPath("$[1].match.homeGoals").value(nullValue()));
+    }
+
+    @Test
     void sampleFileImportsOnceApiPreservesNullStatsAndTransferHistory() throws Exception {
         seedClubs();
         var first = importer.importFile(EXAMPLE);
