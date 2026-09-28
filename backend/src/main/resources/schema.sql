@@ -113,8 +113,8 @@ CREATE TABLE IF NOT EXISTS fixture_player_stats (
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
 
--- Manually verified 2026/27 fixture statistics and their source are kept apart
--- from API-Football raw rows and the 2024/25 v1 scoring rules.
+-- Manually entered 2026/27 fixture statistics are kept apart from
+-- API-Football raw rows and the 2024/25 v1 scoring rules.
 CREATE TABLE IF NOT EXISTS manual_fixture_player_stats (
     fixture_id INTEGER NOT NULL,
     player_id INTEGER NOT NULL,
@@ -129,8 +129,6 @@ CREATE TABLE IF NOT EXISTS manual_fixture_player_stats (
     assists INTEGER,
     yellow_cards INTEGER,
     red_cards INTEGER,
-    source_url VARCHAR(1024) NOT NULL,
-    checked_at VARCHAR(30) NOT NULL,
     PRIMARY KEY (fixture_id, player_id),
     FOREIGN KEY (fixture_id) REFERENCES fixtures(id),
     FOREIGN KEY (player_id) REFERENCES players(id),

@@ -22,14 +22,14 @@ class ManualMatchStatsCsvReaderTest {
         return path;
     }
 
-    private String row(String status, String rating, String minutes, String source) {
+    private String row(String status, String rating, String minutes) {
         return "2026,901,2000000001," + status + "," + rating + "," + minutes
-                + ",,,,," + source + ",2026-09-27T12:00:00Z";
+                + ",,,,";
     }
 
     @Test
     void duplicateKeysAndUnsupportedSeasonAreRejected() throws Exception {
-        String played = row("PLAYED", "7.25", "90", "https://example.test/901");
+        String played = row("PLAYED", "7.25", "90");
         assertTrue(assertThrows(IllegalArgumentException.class,
                 () -> reader.read(file(played, played))).getMessage().contains("Duplicate"));
         assertTrue(assertThrows(IllegalArgumentException.class,
@@ -40,26 +40,29 @@ class ManualMatchStatsCsvReaderTest {
     @Test
     void didNotPlayNeedsConfirmedZeroMinutesAndNoRatingOrPositiveEvents() throws Exception {
         assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> reader.read(file(row("DID_NOT_PLAY", "7.2", "0", "https://example.test/901"))))
+                () -> reader.read(file(row("", "", ""))))
+                .getMessage().contains("status must be PLAYED or DID_NOT_PLAY"));
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> reader.read(file(row("DID_NOT_PLAY", "7.2", "0"))))
                 .getMessage().contains("DID_NOT_PLAY requires"));
         assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> reader.read(file(row("DID_NOT_PLAY", "", "", "https://example.test/901"))))
+                () -> reader.read(file(row("DID_NOT_PLAY", "", ""))))
                 .getMessage().contains("DID_NOT_PLAY requires"));
         assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> reader.read(file(row("PLAYED", "", "0", "https://example.test/901"))))
+                () -> reader.read(file(row("PLAYED", "", "0"))))
                 .getMessage().contains("PLAYED minutes"));
-        assertEquals(1, reader.read(file(row("PLAYED", "", "", "https://example.test/901"))).size());
+        assertEquals(1, reader.read(file(row("PLAYED", "", ""))).size());
     }
 
     @Test
-    void rejectsInvalidRatingAndSourceWithoutInventingMissingCounts() throws Exception {
+    void rejectsInvalidRatingAndExtraColumnsWithoutInventingMissingCounts() throws Exception {
         assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> reader.read(file(row("PLAYED", "10.1", "90", "https://example.test/901"))))
+                () -> reader.read(file(row("PLAYED", "10.1", "90"))))
                 .getMessage().contains("rating"));
         assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> reader.read(file(row("PLAYED", "7.2", "90", "not-a-url"))))
-                .getMessage().contains("source_url"));
-        var parsed = reader.read(file(row("PLAYED", "7.2", "90", "https://example.test/901"))).getFirst();
+                () -> reader.read(file(row("PLAYED", "7.2", "90") + ",old-url,old-timestamp")))
+                .getMessage().contains("10 columns"));
+        var parsed = reader.read(file(row("PLAYED", "7.2", "90"))).getFirst();
         assertEquals(null, parsed.goals());
         assertEquals(0, parsed.rating().compareTo(new java.math.BigDecimal("7.20")));
     }

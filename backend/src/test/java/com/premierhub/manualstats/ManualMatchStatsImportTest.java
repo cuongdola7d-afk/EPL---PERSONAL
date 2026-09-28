@@ -29,8 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ManualMatchStatsImportTest {
     private static final Path ROSTER = Path.of("src/test/resources/manual-players-2026-example.csv");
     private static final Path EXAMPLE = Path.of("src/test/resources/manual-match-stats-2026-example.csv");
-    private static final String SOURCE = "https://example.test/fixture/901";
-    private static final String CHECKED = "2026-09-27T12:00:00Z";
 
     @Autowired JdbcTemplate jdbc;
     @Autowired ManualRosterImporter rosters;
@@ -72,7 +70,7 @@ class ManualMatchStatsImportTest {
     private String row(int fixture, int player, String status, String rating,
                        String minutes, String goals) {
         return "2026," + fixture + "," + player + "," + status + "," + rating + ","
-                + minutes + "," + goals + ",0,0,0," + SOURCE + "," + CHECKED;
+                + minutes + "," + goals + ",0,0,0";
     }
 
     @Test
@@ -88,11 +86,6 @@ class ManualMatchStatsImportTest {
                 + "WHERE player_id=2000000002", BigDecimal.class).compareTo(BigDecimal.ZERO));
         assertEquals(0, jdbc.queryForObject("SELECT fantasy_points FROM manual_fixture_player_stats "
                 + "WHERE player_id=2000000001", BigDecimal.class).compareTo(new BigDecimal("7.25")));
-        assertEquals(SOURCE, jdbc.queryForObject("SELECT source_url FROM manual_fixture_player_stats "
-                + "WHERE player_id=2000000001", String.class));
-        assertEquals(CHECKED, jdbc.queryForObject("SELECT checked_at FROM manual_fixture_player_stats "
-                + "WHERE player_id=2000000001", String.class));
-
         mvc.perform(get("/api/players/2000000001/matches").param("season", "2026"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].match.id").value(901))

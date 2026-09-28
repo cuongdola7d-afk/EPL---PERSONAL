@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.Date;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -50,10 +48,6 @@ public class ManualMatchStatsImporter {
             if (!fixture.status().equals("FINISHED")) {
                 throw invalid(row, "fixture_id is not FINISHED");
             }
-            if (Instant.parse(row.checkedAt()).atZone(ZoneOffset.UTC).toLocalDate()
-                    .isBefore(fixture.date())) {
-                throw invalid(row, "checked_at is before the fixture date");
-            }
             List<Integer> clubIds = jdbc.queryForList("""
                     SELECT m.club_id FROM manual_player_memberships m
                     JOIN player_season_stats ps ON ps.league_id=m.league_id
@@ -76,16 +70,14 @@ public class ManualMatchStatsImporter {
             }
             List<Saved> existing = jdbc.query("""
                     SELECT league_id, season_year, club_id, participation_status, rating,
-                           fantasy_points, minutes, goals, assists, yellow_cards, red_cards,
-                           source_url, checked_at
+                           fantasy_points, minutes, goals, assists, yellow_cards, red_cards
                     FROM manual_fixture_player_stats WHERE fixture_id=? AND player_id=?
                     """, (rs, index) -> new Saved(rs.getInt("league_id"), rs.getInt("season_year"),
                     rs.getInt("club_id"), rs.getString("participation_status"),
                     rs.getBigDecimal("rating"), rs.getBigDecimal("fantasy_points"),
                     rs.getObject("minutes", Integer.class), rs.getObject("goals", Integer.class),
                     rs.getObject("assists", Integer.class), rs.getObject("yellow_cards", Integer.class),
-                    rs.getObject("red_cards", Integer.class), rs.getString("source_url"),
-                    rs.getString("checked_at")), row.fixtureId(), row.playerId());
+                    rs.getObject("red_cards", Integer.class)), row.fixtureId(), row.playerId());
             if (!existing.isEmpty() && !same(existing.getFirst(), row, clubId)) {
                 throw invalid(row, "conflicting saved player-match row; existing data was not overwritten");
             }
@@ -98,12 +90,11 @@ public class ManualMatchStatsImporter {
             jdbc.update("""
                     INSERT INTO manual_fixture_player_stats
                     (fixture_id, player_id, league_id, season_year, club_id, participation_status,
-                     rating, fantasy_points, minutes, goals, assists, yellow_cards, red_cards,
-                     source_url, checked_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     rating, fantasy_points, minutes, goals, assists, yellow_cards, red_cards)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, row.fixtureId(), row.playerId(), LEAGUE, SEASON, item.clubId(),
                     row.status(), row.rating(), row.fantasyPoints(), row.minutes(), row.goals(),
-                    row.assists(), row.yellowCards(), row.redCards(), row.sourceUrl(), row.checkedAt());
+                    row.assists(), row.yellowCards(), row.redCards());
             inserted++;
         }
         return new Result(rows.size(), inserted);
@@ -118,8 +109,7 @@ public class ManualMatchStatsImporter {
                 && Objects.equals(saved.goals(), row.goals())
                 && Objects.equals(saved.assists(), row.assists())
                 && Objects.equals(saved.yellowCards(), row.yellowCards())
-                && Objects.equals(saved.redCards(), row.redCards())
-                && saved.sourceUrl().equals(row.sourceUrl()) && saved.checkedAt().equals(row.checkedAt());
+                && Objects.equals(saved.redCards(), row.redCards());
     }
 
     private static boolean sameDecimal(BigDecimal saved, BigDecimal incoming) {
@@ -135,7 +125,7 @@ public class ManualMatchStatsImporter {
                            LocalDate date, String status) { }
     private record Saved(int league, int season, int clubId, String status, BigDecimal rating,
                          BigDecimal fantasyPoints, Integer minutes, Integer goals, Integer assists,
-                         Integer yellowCards, Integer redCards, String sourceUrl, String checkedAt) { }
+                         Integer yellowCards, Integer redCards) { }
     private record Validated(ManualMatchStatsCsvReader.Row row, int clubId, boolean insert) { }
     public record Result(int rows, int inserted) { }
 }
