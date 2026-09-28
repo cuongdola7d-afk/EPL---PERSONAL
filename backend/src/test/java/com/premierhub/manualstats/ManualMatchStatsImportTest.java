@@ -107,12 +107,27 @@ class ManualMatchStatsImportTest {
     }
 
     @Test
+    void oneBatchCanImportMultipleFinishedFixturesAndRerunWithoutDuplicates() throws Exception {
+        seed();
+        Path batch = csv(row(901, 2000000001, "PLAYED", "7.20", "90", "1"),
+                row(904, 2000000001, "PLAYED", "6.40", "75", "0"));
+
+        assertEquals(2, importer.importFile(batch).inserted());
+        assertEquals(0, importer.importFile(batch).inserted());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats WHERE fixture_id=901", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats WHERE fixture_id=904", Integer.class));
+    }
+
+    @Test
     void invalidFixtureOrMembershipLeavesWholeFileUntouched() throws Exception {
         seed();
         Path scheduled = csv(row(901, 2000000001, "PLAYED", "7.20", "90", "1"),
                 row(902, 2000000002, "PLAYED", "6.50", "45", "0"));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> importer.importFile(scheduled))
-                .getMessage().contains("not FINISHED"));
+        String error = assertThrows(IllegalArgumentException.class, () -> importer.importFile(scheduled))
+                .getMessage();
+        assertTrue(error.contains("CSV line 3"));
+        assertTrue(error.contains("fixture_id=902"));
+        assertTrue(error.contains("not FINISHED"));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats", Integer.class));
         assertTrue(assertThrows(IllegalArgumentException.class,
                 () -> importer.importFile(csv(row(900, 2000000001, "PLAYED", "7.20", "90", "1"))))

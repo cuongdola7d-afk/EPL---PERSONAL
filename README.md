@@ -309,7 +309,7 @@ Lệnh kiểm tra cả file trước khi ghi, chạy một transaction rồi tho
 
 ## CSV thống kê cầu thủ–trận 2026/27 (nhập tay)
 
-Sao chép `backend/data/manual-match-stats-2026-template.csv` thành một file CSV UTF-8 cho từng trận hoặc Gameweek. Header cố định:
+Sao chép `backend/data/manual-match-stats-2026-gameweek-template.csv` thành **một file CSV UTF-8 cho cả Gameweek**. Template chỉ có header; điền các dòng đã kiểm chứng trước khi chạy importer:
 
 ```csv
 season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red_cards
@@ -317,17 +317,16 @@ season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red
 
 Mỗi dòng là **một cặp `(fixture_id, player_id)`**. Lấy `fixture_id` từ `/api/matches?season=2026&round=...` và `player_id` từ roster đã nhập; không suy ID từ tên. Một cầu thủ có thể xuất hiện ở hai fixture khác nhau trong cùng file, nhưng cùng cặp không được lặp. `status` chỉ nhận `PLAYED` hoặc `DID_NOT_PLAY`. `rating` là số thập phân 0–10, tối đa hai chữ số sau dấu chấm; để trống nếu chưa biết. Các chỉ số đếm cũng để trống nếu chưa biết, **không tự điền 0**. `PLAYED` cho phép để trống phút nếu nguồn chưa nêu, nhưng nếu điền phải lớn hơn 0. `DID_NOT_PLAY` chỉ dùng khi nguồn xác nhận cầu thủ không vào sân: `rating` trống, `minutes=0`, các chỉ số khác trống hoặc 0. Nếu nguồn không xác nhận tình trạng ra sân, chưa đưa cầu thủ đó vào file.
 
-Người nhập tự kiểm chứng trạng thái và từng chỉ số trước khi điền; CSV không lưu đường dẫn nguồn hay thời điểm kiểm tra. CSV này không hỗ trợ trường được đặt trong dấu nháy kép hoặc tab. File giả ở `backend/src/test/resources/manual-match-stats-2026-example.csv` chỉ dùng cho H2 test, không phải thống kê thật. File `backend/data/manual-match-stats-2026-1000560580-DRAFT.csv` chỉ có ID; các trường chưa kiểm chứng còn trống và **không được chạy qua importer**.
+Quy trình ngắn: lấy các fixture `FINISHED` của vòng từ `/api/matches?season=2026&matchweek=N`; đối chiếu `player_id` và khoảng thuộc CLB vào ngày từng trận, **liệt kê cầu thủ thiếu roster để bổ sung trước**, không tự cấp ID. Người dùng cung cấp rating hoặc ảnh rating; đội hình, phút, bàn, kiến tạo và thẻ được đối chiếu từ nguồn công khai trước khi điền. Giữ trống chỉ số chưa biết, không tự gán `DID_NOT_PLAY`. CSV không lưu đường dẫn nguồn hay thời điểm kiểm tra, và không hỗ trợ dấu nháy kép hoặc tab. File giả ở `backend/src/test/resources/manual-match-stats-2026-example.csv` chỉ dùng cho H2 test.
 
-Importer chỉ nhận fixture Premier League `season=2026` đã `FINISHED`, và đối chiếu cầu thủ với khoảng thuộc CLB trong `manual_player_memberships` vào **ngày trận đấu**. Dữ liệu nhập tay vào bảng riêng `manual_fixture_player_stats`; không sửa `fixture_player_stats` thô hoặc điểm v1 của 2024/25. Với dòng `PLAYED`, `fantasy_points` bằng `rating` nếu đã có rating, nếu chưa có thì `NULL`; với `DID_NOT_PLAY` đã được người nhập xác nhận, điểm là `0`. Đây mới là dữ liệu nền cho Fantasy 2026/27, chưa có UI Fantasy mới. API `/api/players/{id}/matches?season=2026` đọc rating và chỉ số nhập tay ở `stats`; `stats.score` v1 để `null` cho dòng này.
+Importer nhận nhiều `fixture_id` trong một file, không đặt giới hạn số trận; một Gameweek Premier League thường có 10 trận. Mỗi dòng được kiểm tra với fixture Premier League `season=2026` đã `FINISHED` và khoảng thuộc CLB trong `manual_player_memberships` vào **ngày trận đấu**. Lỗi đầu tiên ghi số dòng, `fixture_id` và `player_id`; toàn batch dùng một transaction nên một dòng lỗi làm cả file không được ghi. Dữ liệu nhập tay vào bảng riêng `manual_fixture_player_stats`; không sửa `fixture_player_stats` thô hoặc điểm v1 của 2024/25. Với dòng `PLAYED`, `fantasy_points` bằng `rating` nếu đã có rating, nếu chưa có thì `NULL`; với `DID_NOT_PLAY` đã được xác nhận, điểm là `0`. API `/api/players/{id}/matches?season=2026` đọc rating và chỉ số nhập tay ở `stats`; `stats.score` v1 vẫn là `null`.
 
-Để thử trên **bản sao H2 cô lập**, tắt backend local trước, tạo file CSV đã điền rồi chạy từ `backend/`:
+Để thử trên **bản sao H2 cô lập**, dùng executable JAR đã build sau lần đổi mã gần nhất. Tắt backend local, tạo file CSV đã điền rồi chạy từ `backend/` (ví dụ GW6):
 
 ```powershell
-Copy-Item -LiteralPath premierhub-local.mv.db -Destination target/manual-match-check.mv.db
-$env:PREMIERHUB_JDBC_URL='jdbc:h2:file:./target/manual-match-check;MODE=MySQL;DATABASE_TO_LOWER=TRUE'
-.\mvnw.cmd -q -DskipTests package
-java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/manual-match-stats-2026-GW1.csv
+Copy-Item -LiteralPath premierhub-local.mv.db -Destination target/manual-match-GW6.mv.db
+$env:PREMIERHUB_JDBC_URL='jdbc:h2:file:./target/manual-match-GW6;MODE=MySQL;DATABASE_TO_LOWER=TRUE'
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/manual-match-stats-2026-GW6.csv
 ```
 
-Lệnh chạy một lần rồi thoát; log `MANUAL_MATCH_STATS ... inserted=N`. Chạy lại **cùng file** phải báo `inserted=0`. Nếu một dòng sai hoặc trùng khóa đã lưu nhưng khác nội dung trong 10 cột, toàn file bị từ chối và không ghi dở dang. Không đặt lệnh này làm Pre-deploy Command hoặc cron; chỉ chạy với database đã chọn và sao lưu khi quyết định nhập dữ liệu thật.
+Lệnh chạy một lần rồi thoát; log `MANUAL_MATCH_STATS ... inserted=N`. Chạy lại **cùng file** phải báo `inserted=0`. Dòng đã lưu nhưng khác nội dung bị báo xung đột, không ghi đè. Chỉ build/test một lần khi đổi mã, không lặp theo từng CSV. Không đặt lệnh nhập làm Pre-deploy Command hoặc cron.
