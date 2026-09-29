@@ -70,6 +70,16 @@ class PlayerControllerTest {
     }
 
     @Test
+    void pastSeasonMemberCanReadHistoryAfterMembershipEnds() throws Exception {
+        when(service.hasPlayerInSeason(2, 2026)).thenReturn(true);
+        when(service.playerMatches(2, 2026)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/players/2/matches").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
     void validPositionAndCombinedFiltersStillReturnPlayers() throws Exception {
         when(service.players(2024, null, " forward ")).thenReturn(List.of(saka));
         when(service.players(2024, "Arsenal", "Forward")).thenReturn(List.of(saka));

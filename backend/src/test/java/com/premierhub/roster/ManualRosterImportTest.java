@@ -69,6 +69,15 @@ class ManualRosterImportTest {
                 .andExpect(jsonPath("$[0].clubId").value(1000000057))
                 .andExpect(jsonPath("$[1].clubId").value(1000000061))
                 .andExpect(jsonPath("$[1].match.homeGoals").value(nullValue()));
+        jdbc.update("""
+                UPDATE manual_player_memberships SET end_date='2026-09-17'
+                WHERE season_year=2026 AND player_id=2000000002 AND club_id=1000000061
+                """);
+        assertTrue(queries.player(2000000002, 2026).isEmpty());
+        mvc.perform(get("/api/players/2000000002/matches").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].clubId").value(1000000057));
     }
 
     @Test

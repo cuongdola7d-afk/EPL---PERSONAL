@@ -47,8 +47,14 @@ public class PlayerController {
     @GetMapping("/{id}/matches")
     public List<PlayerMatchResponse> getMatches(@PathVariable @Positive int id,
                                                 @RequestParam(defaultValue = "2024") int season) {
-        service.player(id, season)
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
+        if (season == 2026) {
+            if (!service.hasPlayerInSeason(id, season)) {
+                throw new ResourceNotFoundException("Player not found: " + id);
+            }
+        } else {
+            service.player(id, season)
+                    .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
+        }
         return service.playerMatches(id, season);
     }
 }

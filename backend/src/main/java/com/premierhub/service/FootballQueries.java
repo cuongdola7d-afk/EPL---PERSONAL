@@ -104,6 +104,15 @@ public class FootballQueries {
         return players(season, null, null, asOf).stream().filter(player -> player.id() == id).findFirst();
     }
 
+    public boolean hasPlayerInSeason(int id, int season) {
+        validateSeason(season);
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM player_season_stats
+                WHERE league_id=? AND season_year=? AND player_id=?
+                """, Integer.class, LEAGUE_ID, season, id);
+        return count != null && count > 0;
+    }
+
     public List<PlayerMatchResponse> playerMatches(int id, int season) {
         validateSeason(season);
         Map<Integer, MatchPlayerStatResponse> manualStats = new HashMap<>();

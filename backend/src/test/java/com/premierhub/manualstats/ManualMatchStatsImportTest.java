@@ -33,6 +33,7 @@ class ManualMatchStatsImportTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired ManualRosterImporter rosters;
     @Autowired ManualMatchStatsImporter importer;
+    @Autowired ManualMatchStatsPatchImporter patchImporter;
     @Autowired MockMvc mvc;
     @TempDir Path temp;
 
@@ -171,5 +172,60 @@ class ManualMatchStatsImportTest {
         assertTrue(assertThrows(IllegalArgumentException.class, () -> importer.importFile(EXAMPLE))
                 .getMessage().contains("provider fixture_player_stats"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats", Integer.class));
+    }
+
+    @Test
+    void patchFillsOnlyNullsAndSecondRunChangesNothing() throws Exception {
+        seed();
+        importer.importFile(csv("2026,901,2000000001,PLAYED,,,,,,"));
+        Path patch = csv("2026,901,2000000001,PLAYED,7.25,90,1,0,0,0");
+
+        var first = patchImporter.fillMissing(patch, 901);
+        assertEquals(1, first.updatedRows());
+        assertEquals(7, first.filledCells());
+        var second = patchImporter.fillMissing(patch, 901);
+        assertEquals(0, second.updatedRows());
+        assertEquals(0, second.filledCells());
+        assertEquals(0, jdbc.queryForObject("SELECT fantasy_points FROM manual_fixture_player_stats "
+                + "WHERE fixture_id=901 AND player_id=2000000001", BigDecimal.class)
+                .compareTo(new BigDecimal("7.25")));
+        mvc.perform(get("/api/players/2000000001/matches").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].stats.minutes").value(90))
+                .andExpect(jsonPath("$[0].stats.rating").value("7.25"));
+    }
+
+    @Test
+    void patchConflictOrAnotherFixtureDoesNotWriteAnyRow() throws Exception {
+        seed();
+        importer.importFile(csv("2026,901,2000000001,PLAYED,7.25,,,,,",
+                "2026,901,2000000002,PLAYED,6.50,,,,,"));
+        Path conflict = csv("2026,901,2000000001,PLAYED,7.25,75,,,,",
+                "2026,904,2000000001,PLAYED,8.00,90,,,,");
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> patchImporter.fillMissing(conflict, 901)).getMessage().contains("another fixture"));
+        Path sameFixtureConflict = csv("2026,901,2000000001,PLAYED,7.25,90,,,,",
+                "2026,901,2000000002,PLAYED,8.00,45,,,,");
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> patchImporter.fillMissing(sameFixtureConflict, 901)).getMessage().contains("rating conflicts"));
+        assertEquals(null, jdbc.queryForObject("SELECT minutes FROM manual_fixture_player_stats "
+                + "WHERE fixture_id=901 AND player_id=2000000001", Integer.class));
+        assertEquals(null, jdbc.queryForObject("SELECT minutes FROM manual_fixture_player_stats "
+                + "WHERE fixture_id=901 AND player_id=2000000002", Integer.class));
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> patchImporter.fillMissing(csv("2026,901,999999999,PLAYED,,45,,,,"), 901))
+                .getMessage().contains("existing manual player-match row is required"));
+    }
+
+    @Test
+    void patchCanFillStatisticsWithoutInventingMissingRating() throws Exception {
+        seed();
+        importer.importFile(csv("2026,901,2000000001,PLAYED,,,,,,"));
+        var result = patchImporter.fillMissing(csv("2026,901,2000000001,PLAYED,,1,0,0,0,0"), 901);
+        assertEquals(5, result.filledCells());
+        assertEquals(null, jdbc.queryForObject("SELECT rating FROM manual_fixture_player_stats "
+                + "WHERE fixture_id=901 AND player_id=2000000001", BigDecimal.class));
+        assertEquals(null, jdbc.queryForObject("SELECT fantasy_points FROM manual_fixture_player_stats "
+                + "WHERE fixture_id=901 AND player_id=2000000001", BigDecimal.class));
     }
 }
