@@ -1,0 +1,139 @@
+fixture_id,club_id,player_name,status,rating,goals,assists,yellow_cards,red_cards,notes
+1000560542,1000000057,David Raya,PLAYED,7.0,,,,,
+1000560542,1000000057,Cristhian Mosquera,PLAYED,6.8,,,,,
+1000560542,1000000057,Myles Lewis-Skelly,PLAYED,7.5,,,,,
+1000560542,1000001076,Milan van Ewijk,PLAYED,5.4,,,,,
+1000560542,1000001076,Matt Grimes,PLAYED,7.0,,,,,
+1000560542,1000001076,Carl Rushworth,PLAYED,7.0,,,,,
+1000560542,1000001076,Frank Onyeka,PLAYED,6.3,,,,,
+1000560542,1000001076,Arnaud Amenda,PLAYED,7.1,,,,,
+1000560542,1000001076,Jay Dasilva,PLAYED,6.0,,,,,
+1000560543,1000000322,Lewie Coyle,PLAYED,7.1,,,,,
+1000560543,1000000322,Ryan Giles,PLAYED,7.3,,,,,
+1000560543,1000000322,Elliot Stroud,PLAYED,7.0,,,,,
+1000560543,1000000322,Matt Crooks,PLAYED,7.1,,,1,,
+1000560543,1000000322,Oli McBurnie,PLAYED,6.7,,,,,
+1000560543,1000000322,Mohamed Belloumi,PLAYED,6.8,,,,,
+1000560543,1000000322,Lucas Herrington,PLAYED,7.0,,,,,
+1000560543,1000000322,Paddy McNair,PLAYED,6.7,,,,,
+1000560543,1000000322,Cody Drameh,PLAYED,6.7,,,,,
+1000560543,1000000322,Liam Millar,PLAYED,6.6,,,1,,
+1000560543,1000000322,Matt Targett,PLAYED,6.8,,,,,
+1000560543,1000000066,Senne Lammens,PLAYED,6.7,,,,,
+1000560543,1000000066,Ayden Heaven,PLAYED,6.3,,,,,
+1000560544,1000000349,Kjell Scherpen,PLAYED,6.6,,,,,
+1000560544,1000000349,Leif Davis,PLAYED,6.9,,,,,
+1000560544,1000000349,Jacob Greaves,PLAYED,6.9,,,,,
+1000560544,1000000349,Issa Diop,PLAYED,5.9,,,,,
+1000560544,1000000349,Dara O'Shea,PLAYED,7.5,,,,,
+1000560544,1000000349,Daizen Maeda,PLAYED,8.3,,,,,
+1000560544,1000000349,Abdul Fatawu Issahaku,PLAYED,7.6,,,,,
+1000560544,1000000349,Kasey McAteer,PLAYED,6.6,,,,,
+1000560544,1000000349,Chuba Akpom,PLAYED,6.5,,,,,
+1000560544,1000000349,Abdoul Ouattara,PLAYED,6.8,,,,,
+1000560544,1000000349,Sindre Walle Egeli,PLAYED,6.5,,,,,
+1000560544,1000000071,Robin Roefs,PLAYED,6.4,,,,,
+1000560544,1000000071,Thomas Meunier,PLAYED,6.8,,,,,
+1000560544,1000000071,Daniel Ballard,PLAYED,6.1,,,1,,
+1000560544,1000000071,Luke O'Nien,PLAYED,6.2,,,1,,
+1000560544,1000000071,Reinildo Mandava,PLAYED,6.6,,,,,
+1000560544,1000000071,Trai Hume,PLAYED,6.5,,,,,
+1000560544,1000000071,Noah Sadiki,PLAYED,6.8,,,,,
+1000560544,1000000071,Enzo Le Fée,PLAYED,6.3,,,,,
+1000560544,1000000071,Brian Brobbey,PLAYED,6.1,,,,,
+1000560544,1000000071,Chemsdine Talbi,PLAYED,6.3,,,,,
+1000560544,1000000071,Omar Alderete,PLAYED,6.1,,,,,
+1000560544,1000000071,Wilson Isidor,PLAYED,6.2,,,,,
+1000560544,1000000071,Chris Rigg,PLAYED,6.4,,,,,
+1000560544,1000000071,Habib Diarra,PLAYED,6.5,,,,,
+1000560545,1000000351,Matz Sels,PLAYED,6.5,,,,,
+1000560545,1000000351,Neco Williams,PLAYED,6.6,,,,,
+1000560545,1000000351,Ibrahim Sangaré,PLAYED,6.8,,,,,
+1000560545,1000000351,Morgan Gibbs-White,PLAYED,7.0,,,,,
+1000560545,1000000351,Igor Jesus,PLAYED,6.9,,,,,
+1000560545,1000000351,Nikola Milenković,PLAYED,6.5,,,,,
+1000560545,1000000351,Dan Ndoye,PLAYED,6.5,,,,,
+1000560545,1000000351,Jair,PLAYED,6.5,,,1,,
+1000560545,1000000351,Ola Aina,PLAYED,6.9,,,1,,
+1000560545,1000000351,Chris Wood,PLAYED,6.5,,,,,
+1000560545,1000000351,Luca Netz,PLAYED,6.2,,,,,
+1000560545,1000000351,Xaver Schlager,PLAYED,6.4,,,,,
+1000560545,1000000351,Arnaud Kalimuendo,PLAYED,,,,,,No rating visible in screenshot
+1000560545,1000000341,Jayden Bogle,PLAYED,6.6,,,,,
+1000560545,1000000341,Harry Wilson,PLAYED,6.8,,,,,
+1000560545,1000000341,Dominic Calvert-Lewin,PLAYED,6.0,,,1,,
+1000560545,1000000341,Ethan Ampadu,PLAYED,6.9,,,,,
+1000560545,1000000341,Brenden Aaronson,PLAYED,6.7,,,,,
+1000560545,1000000341,Tarik Muharemović,PLAYED,6.9,,,,,
+1000560545,1000000341,Noah Okafor,PLAYED,6.7,,,,,
+1000560545,1000000341,Sean Longstaff,PLAYED,6.6,,,,,
+1000560546,1000000062,Jordan Pickford,PLAYED,8.2,,,,,
+1000560546,1000000062,Vitaliy Mykolenko,PLAYED,7.2,,,,,
+1000560546,1000000062,Tyrique George,PLAYED,7.4,,,,,
+1000560546,1000000062,Hayden Hackney,PLAYED,7.1,,,,,
+1000560546,1000000062,James Tarkowski,PLAYED,7.0,,,,,
+1000560546,1000000062,Merlin Röhl,PLAYED,7.4,,,,,
+1000560546,1000000062,James Garner,PLAYED,6.7,,,,,
+1000560546,1000000062,Beto,PLAYED,6.5,,,,,
+1000560546,1000000062,Brennan Johnson,PLAYED,6.5,,,,,
+1000560546,1000000062,Carlos Alcaraz,PLAYED,,,,,,No rating visible in screenshot
+1000560546,1000000354,Daniel Muñoz,PLAYED,5.9,,,,,
+1000560546,1000000354,Jaydee Canvot,PLAYED,6.8,,,,,
+1000560546,1000000354,Dwight McNeil,PLAYED,6.5,,,,,
+1000560546,1000000354,Adam Wharton,PLAYED,6.8,,,,,
+1000560546,1000000354,Chris Richards,PLAYED,6.8,,,,,
+1000560546,1000000354,Dean Henderson,PLAYED,6.9,,,,,
+1000560546,1000000354,Eddie Nketiah,PLAYED,7.0,,,,,
+1000560546,1000000354,Jean-Philippe Mateta,PLAYED,5.9,,,,,
+1000560546,1000000354,Tyrick Mitchell,PLAYED,6.4,,,,,
+1000560546,1000000354,Chadi Riad,PLAYED,6.4,,,,,
+1000560546,1000000354,Yéremy Pino,PLAYED,6.6,,,,,
+1000560546,1000000354,Jørgen Strand Larsen,PLAYED,6.1,,,,,
+1000560546,1000000354,Evann Guessand,PLAYED,6.3,,,,,
+1000560546,1000000354,Takehiro Tomiyasu,PLAYED,6.6,,,,,
+1000560542,1000000057,Kepa Arrizabalaga,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000000057,Ethan Nwaneri,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000000057,Max Dowman,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000000057,Viktor Gyökeres,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000001076,Ben Wilson,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000001076,Joel Latibeaudiere,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000001076,Liam Kitching,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000001076,Tatsuhiro Sakamoto,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560542,1000001076,Josh Eccles,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000322,Dillon Phillips,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000322,Lucas Gourna-Douath,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000322,Kieran Dowell,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000322,Jens Hjertø-Dahl,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000066,Karl Darlow,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000066,Leny Yoro,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000066,Lisandro Martínez,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560543,1000000066,Joshua Zirkzee,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000349,Christian Walton,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000349,Darnell Furlong,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000349,Cédric Kipré,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000349,Cameron Humphreys,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000071,Melker Ellborg,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000071,Nordi Mukiele,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000071,Jocelin Ta Bi,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560544,1000000071,Romaine Mundle,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000351,John Victor,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000351,Ousmane Diomande,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000351,Zach Abbott,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000351,Nicolás Domínguez,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000351,Callum Hudson-Odoi,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Lucas Perri,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Jayden Lienou,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Nico Elvedi,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Alfie Cresswell,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Ao Tanaka,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Daniel James,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560545,1000000341,Lukas Nmecha,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000062,Mark Travers,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000062,Nathan Patterson,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000062,Michael Keane,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000062,Jake O'Brien,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000062,Tyler Dibling,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000354,Walter Benítez,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000354,Borna Sosa,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000354,Óscar Mingueza,DID_NOT_PLAY,,,,,,Visible among unused substitutes
+1000560546,1000000354,Will Hughes,DID_NOT_PLAY,,,,,,Visible among unused substitutes
