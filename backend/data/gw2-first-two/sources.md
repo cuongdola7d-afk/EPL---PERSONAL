@@ -1,38 +1,47 @@
-# GW2 2026/27: hai trận đầu — dữ liệu chờ rating
+# GW2 2026/27: hai trận FINISHED đầu tiên
 
-**Trạng thái: DRAFT, chưa nhập H2 hoặc MySQL production.** SofaScore không hiển thị `rating` cho 4 người `PLAYED` vào sân cuối trận. Importer cho phép ô này trống, nhưng chưa nhập trước khi người dùng xác nhận cách xử lý.
+**Đã nhập MySQL production ngày 2026-09-30.** Phạm vi chỉ gồm hai trận dưới đây; không nhập lại roster toàn mùa, GW1, derby GW4, batch GW5 hoặc mùa 2024/25. Không tự thu thập rating SofaScore từ nay về sau.
 
-## Phạm vi và nguồn
-
-| Fixture PremierHub | Trận / ngày | Danh sách trận, phút, bàn, kiến tạo, thẻ | Rating SofaScore đã xác minh |
+| Fixture PremierHub | Trận / ngày | Đội hình và thống kê trận | Rating |
 | --- | --- | --- | --- |
-| `1000560555` | Crystal Palace 1–4 Manchester City, 2026-08-28 | [StatMuse](https://www.statmuse.com/fc/match/8-28-2026-cry-vs-mci-112781) | [Lineups SofaScore](https://widgets.sofascore.com/embed/lineups?id=16363252&widgetTheme=light), 30/32 người ra sân có rating |
-| `1000560552` | Liverpool 2–2 Nottingham Forest, 2026-08-29 | [StatMuse](https://www.statmuse.com/fc/match/-112774) | [Lineups SofaScore](https://widgets.sofascore.com/embed/lineups?id=16363254&widgetTheme=light), 29/31 người ra sân có rating |
+| `1000560555` | Crystal Palace 1–4 Manchester City, 2026-08-28 | [StatMuse](https://www.statmuse.com/fc/match/8-28-2026-cry-vs-mci-112781) | Ảnh đội hình và dự bị do người dùng gửi trong cuộc trò chuyện; 30 rating hiển thị |
+| `1000560552` | Liverpool 2–2 Nottingham Forest, 2026-08-29 | [StatMuse](https://www.statmuse.com/fc/match/-112774) | Ảnh đội hình và dự bị do người dùng gửi trong cuộc trò chuyện; 29 rating hiển thị |
 
-Fixture ID, kết quả và thứ tự được lấy từ [API PremierHub `season=2026&matchweek=2&status=FINISHED`](https://epl-personal-production.up.railway.app/api/matches?season=2026&matchweek=2&status=FINISHED) ngày 2026-09-30. Kết quả API là trận `1000560555` ngày 28/08 rồi `1000560552` ngày 29/08.
-
-SofaScore còn xác nhận tỷ số, bàn và thay người ở [trận Palace–City](https://www.sofascore.com/football/match/manchester-city-crystal-palace/hr) và [trận Liverpool–Forest](https://www.sofascore.com/football/match/liverpool-fc-nottingham-forest/osU). Các rating của StatMuse **không** được dùng làm Fantasy rating.
+Fixture ID, kết quả và thứ tự được lấy từ [API PremierHub `season=2026&matchweek=2&status=FINISHED`](https://epl-personal-production.up.railway.app/api/matches?season=2026&matchweek=2&status=FINISHED). Ảnh người dùng xác nhận từng giá trị trong 59 rating đã có ở `sofascore-ratings.csv`; chỉ sau khi đối chiếu khớp tên, trận và giá trị, chúng mới được đưa vào CSV cuối. Rating của StatMuse không được dùng làm Fantasy rating. Chỉ số phút, bàn, kiến tạo và thẻ trong CSV cuối là dữ liệu StatMuse đã thu thập trước khi có yêu cầu dừng thu thập rating SofaScore.
 
 ## File dữ liệu
 
-- `lineups.csv`: đủ 80 người (11 đá chính, người dự bị vào sân, người dự bị không vào sân cho từng đội). `source_name` và `statmuse_player_id` giúp kiểm tra ghép danh tính; `name` và `player_id` là của PremierHub.
-- `sofascore-ratings.csv`: 80 danh tính SofaScore kèm ID nguồn và 59 rating đang hiển thị trong widget Lineups; ô trống được giữ nguyên. Đây là bảng đối chiếu nguồn để so với rating người dùng sẽ gửi.
-- `manual-match-stats-2026-GW2-first-two-DRAFT.csv`: đúng 10 cột importer, 80 dòng; 63 `PLAYED`, 17 `DID_NOT_PLAY`. StatMuse cung cấp đủ phút, bàn, kiến tạo, thẻ cho 63 người ra sân. SofaScore có rating cho 59 người; 4 ô còn thiếu để trống. 17 người dự bị không vào sân được ghi 0 phút/sự kiện vì có tên trong danh sách dự bị và không có thống kê ra sân hoặc sự kiện thay vào; rating để trống.
-- `manual-players-2026-GW2-first-two-DRAFT.csv`: 80 khoảng `[ngày trận, ngày kế tiếp)` cho đúng CLB ngày trận. Không kéo dài membership tới 30/09 khi chưa có bằng chứng liên tục. Đây là **khoảng đề xuất**, chưa nhập.
-- `missing.csv`: đúng fixture, CLB, `player_id`, tên và trường `rating` cần người dùng hỗ trợ; 4 dòng.
+- `lineups.csv`: 80 cầu thủ của bốn đội, gồm đá chính, dự bị vào sân và dự bị không vào sân; ghi cả tên nguồn, tên PremierHub và ID đối chiếu.
+- `sofascore-ratings.csv`: bảng đối chiếu 80 danh tính nguồn, với 59 rating cũ nay khớp ảnh người dùng. Không dùng file này để tự thu thập rating cho trận khác.
+- `manual-match-stats-2026-GW2-first-two.csv`: **file đã nhập**, đúng 10 cột, 80 dòng; 63 `PLAYED`, 17 `DID_NOT_PLAY`. Có 59 rating do ảnh người dùng xác nhận, 4 rating `PLAYED` trống vì ảnh không hiện điểm, 17 rating `DID_NOT_PLAY` trống. Không điền 0 cho rating thiếu.
+- `manual-players-2026-GW2-first-two.csv`: **file đã nhập**, 80 khoảng `[ngày trận, ngày kế tiếp)` chứng minh CLB tại ngày trận. Không kéo dài đến 30/09 khi chưa có bằng chứng liên tục.
+- Hai file `*-DRAFT.csv` giữ lại bản làm việc trước khi ảnh được xác nhận. Các ô rating trong DRAFT vẫn trống; không dùng DRAFT để nhập lại.
+- `missing.csv`: bốn cầu thủ đã vào sân nhưng ảnh không hiển thị `rating`; ghi rõ fixture, CLB, ID, tên và trường còn thiếu.
 
-Hai trận: Palace–City 32 người `PLAYED`, 8 `DID_NOT_PLAY`, 30 rating SofaScore xác minh; Liverpool–Forest 31 `PLAYED`, 9 `DID_NOT_PLAY`, 29 rating xác minh. Palace có 1 bàn do Gianluigi Donnarumma phản lưới; không gán bàn này cho cầu thủ Palace. Tổng bàn ghi cho cầu thủ là 0–4 và 2–2, khớp với tỷ số khi tính bàn phản lưới.
+Palace–City có 32 người `PLAYED` và 8 `DID_NOT_PLAY`; Liverpool–Forest có 31 và 9. 17 người dự bị không vào sân được ghi 0 phút/sự kiện vì danh sách dự bị và sự kiện thay người cho thấy họ không vào sân. Palace có một bàn do Gianluigi Donnarumma phản lưới; không gán bàn đó cho cầu thủ Palace. Bàn của cầu thủ trong CSV là 0–4 và 2–2.
 
-## Rating và danh tính cần chú ý
+## Bốn rating không hiển thị
 
-Rating trong CSV lấy từ trường `statistics.rating` của widget Lineups SofaScore đúng event, không lấy `ratingVersions.alternative`. [Bài tường thuật Liverpool–Forest](https://www.sofascore.com/news/liverpool-2-2-nottingham-forest-williams-steals-the-spotlight) ghi khác widget hiện tại ở bốn người: Víctor Muñoz 7.3 so với widget **7.4**; Dominik Szoboszlai 7.2 so với **7.1**; Ola Aina 7.2 so với **7.1**; Matz Sels 7.1 so với **7.0**. CSV dùng widget hiện tại gắn trực tiếp với trận. [Bài Palace–City](https://www.sofascore.com/news/crystal-palace-1-4-man-city-cherki-hits-8-6) và widget cùng ghi Rayan Cherki 8.6. Không suy từ điểm trung bình đội.
+| Fixture | Cầu thủ | `player_id` | Trường |
+| --- | --- | --- | --- |
+| `1000560555` | Kaden Braithwaite | `2000004024` | `rating` |
+| `1000560555` | Vitor Reis | `2000004013` | `rating` |
+| `1000560552` | Callum Hudson-Odoi | `2000020077` | `rating` |
+| `1000560552` | Nicolás Domínguez | `2000020076` | `rating` |
 
-ID của 79 người đã có được đối chiếu theo CSV GW1 và roster đã nhập, rồi so tên với danh sách StatMuse. Các tên nguồn khác tên PremierHub được ghi cả hai ở `lineups.csv`: Alisson / Alisson Becker; Jair Cunha / Jair; John / John Victor; Yeremi Pino / Yéremy Pino; và các dấu/phiên âm tương ứng. Daniel Muñoz `2000020095` thuộc Palace ngày GW1/GW2 dù snapshot 30/09 đặt anh ở Forest; file GW2 giữ `MID` đã lưu cho Palace. Tyrick Mitchell, Yéremy Pino, Anan Khalaili và Ola Aina cũng giữ vị trí mùa 2026 đã lưu trong GW1, không xử lý danh sách lệch FPL.
+Ảnh do người dùng cung cấp cho thấy cả bốn vào sân rất muộn và không có số rating cạnh tên; các ô này và `fantasy_points` tương ứng được lưu `NULL`. Nếu có rating bổ sung về sau, cần người dùng cung cấp; không tự tìm SofaScore hoặc đoán giá trị. Với bốn người không có rating, các trường còn lại vẫn lấy từ StatMuse và đã được nhập.
 
-Claudio Echeverri có tên trong danh sách dự bị Man City ngày 28/08 trên StatMuse, nhưng chưa có trong CSV roster đã nhập; [FPL snapshot 30/09](../roster-2026-09-30/fpl-bootstrap-static.json) ghi `element_type=3` (MID), dù lúc đó trạng thái là unavailable. `2000030256` là **ID mới tạm chọn** nối sau dải batch roster; cần kiểm tra trực tiếp `players` production trước khi nhập, không hợp nhất với ID khác. Khoảng của anh chỉ là 28/08–29/08. Dữ liệu ngày 30/09 không được dùng làm bằng chứng membership GW2.
+## Danh tính và khoảng CLB
 
-API `players?season=2026&asOf=2026-08-28` và `...2026-08-29` hiện trả không có ai trong bốn đội tại ngày trận. Vì vậy cần nạp các khoảng ngày trận trước CSV thống kê. Không sửa, xóa hoặc lùi ngày các khoảng đã có; GW1, GW4–GW5 và mùa 2024/25 nằm ngoài batch này.
+79 ID đã có được đối chiếu với CSV GW1 và roster hiện có; `lineups.csv` giữ tên nguồn khác tên PremierHub như Alisson/Alisson Becker, Jair Cunha/Jair, John/John Victor và Yeremi Pino/Yéremy Pino. Daniel Muñoz `2000020095` thuộc Palace tại ngày trận dù snapshot 30/09 đặt anh ở Forest; vị trí `MID` lịch sử được giữ. Tyrick Mitchell, Yéremy Pino, Anan Khalaili và Ola Aina cũng giữ nguyên vị trí mùa 2026 đã lưu. Không hợp nhất ID hay sửa vị trí lịch sử.
 
-## Bước còn chờ
+Claudio Echeverri nằm trong danh sách dự bị Man City ngày 28/08 của StatMuse. Anh chưa có trong production trước batch; ID mới `2000030256` được kiểm tra là còn trống trước khi nhập. [FPL snapshot 30/09](../roster-2026-09-30/fpl-bootstrap-static.json) cho vị trí MID, còn trận ngày 28/08 chứng minh membership Man City chỉ cho khoảng 28/08–29/08. File không suy ra membership liên tục từ snapshot 30/09.
 
-Người dùng sẽ gửi rating SofaScore; dừng thu thập rating ở đây. Đối chiếu dữ liệu người dùng với 59 rating trong `sofascore-ratings.csv` và xử lý bốn người trong `missing.csv`: Kaden Braithwaite và Vitor Reis (`1000560555`), Callum Hudson-Odoi và Nicolás Domínguez (`1000560552`). Widget SofaScore liệt kê họ vào sân nhưng trường `statistics.rating` vắng mặt; **không tự điền 0**. Sau khi chốt rating hoặc xác nhận giữ ô trống có căn cứ, bỏ hậu tố `DRAFT`, kiểm tra H2 trên bản sao production, sao lưu MySQL, nhập mỗi CSV một lần, nhập lại xác nhận thêm 0 và kiểm tra API lịch sử cầu thủ bốn đội. Không commit/push tự động.
+## Kiểm tra và sao lưu
+
+- Tạo bản H2 từ đủ 14 bảng MySQL production trước khi nhập; importer H2 thêm 1 player, 1 player–club, 80 khoảng ngày và 80 dòng trận. H2 cho từng trận 40 dòng: fixture `1000560555` có 32 `PLAYED`, 30 rating; fixture `1000560552` có 31 `PLAYED`, 29 rating.
+- Sao lưu MySQL bằng `mysqldump --single-transaction` trước khi nhập: `backend/local-backups/gw2-first-two/premierhub-before-gw2-first-two-20260930-223112.sql` (bị Git ignore, 567674 byte, SHA-256 `CA99DE9FCB082ECA6DAD69E468B33C9F8BEB20357EA61EE667C6044C079F97A0`, 14 bảng).
+- Production: roster nhập 1 player, 1 player–club, 80 khoảng; stats nhập 80 dòng. Chạy lại cả hai file: mọi bộ đếm thêm/cập nhật đều 0.
+- Chạy API backend hiện tại trên `127.0.0.1:18080` với MySQL production rồi tắt sau kiểm tra. Cả 80 endpoint `/api/players/{id}/matches?season=2026` trả đúng fixture, CLB, phút, bàn, kiến tạo, thẻ và rating như CSV. URL triển khai công khai không trả phản hồi trong môi trường kiểm tra này, nên chưa xác nhận được kết quả qua bản đang triển khai. Endpoint `/api/matches/{id}/details` của code hiện tại vẫn trả mảng `homePlayers` và `awayPlayers` trống cho dữ liệu manual; yêu cầu lần này chỉ kiểm tra API lịch sử cầu thủ.
+
+Không commit hoặc push tự động.
