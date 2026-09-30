@@ -1,8 +1,9 @@
 export const SEASONS = { 2024: '2024/25', 2026: '2026/27' }
 
-// Only the imported 2024 GW1 snapshot currently includes player-match statistics.
 export function canOpenMatchStats(season, match) {
-  return season === 2024 && match.matchweek === 1 && match.status === 'FINISHED'
+  if (match.status !== 'FINISHED') return false
+  return (season === 2024 && match.matchweek === 1) ||
+    (season === 2026 && match.hasManualStats === true)
 }
 
 export function hasMatchScore(match) {

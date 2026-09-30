@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Date;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -119,31 +120,23 @@ public class FootballQueries {
         if (season == 2026) {
             jdbc.query("""
                     SELECT m.fixture_id, m.player_id, m.club_id, m.minutes, m.goals, m.assists,
-                           m.yellow_cards, m.red_cards, m.rating, p.name, ps.position
+                           m.yellow_cards, m.red_cards, m.rating, m.fantasy_points,
+                           m.participation_status, p.name AS player_name, ps.position
                     FROM manual_fixture_player_stats m
+                    JOIN fixtures f ON f.id=m.fixture_id AND f.league_id=m.league_id
+                      AND f.season_year=m.season_year
+                    JOIN manual_player_memberships membership ON membership.league_id=m.league_id
+                      AND membership.season_year=m.season_year AND membership.player_id=m.player_id
+                      AND membership.club_id=m.club_id AND membership.start_date<=f.match_date
+                      AND (membership.end_date IS NULL OR membership.end_date>f.match_date)
                     JOIN players p ON p.id=m.player_id
                     JOIN player_season_stats ps ON ps.league_id=m.league_id
                       AND ps.season_year=m.season_year AND ps.player_id=m.player_id
                       AND ps.club_id=m.club_id
                     WHERE m.league_id=? AND m.season_year=? AND m.player_id=?
-                    """, (RowCallbackHandler) rs -> {
-                String position = switch (rs.getString("position")) {
-                    case "GOALKEEPER" -> "G";
-                    case "DEFENDER" -> "D";
-                    case "MIDFIELDER" -> "M";
-                    case "FORWARD" -> "F";
-                    default -> null;
-                };
-                var rating = rs.getBigDecimal("rating");
-                manualStats.put(rs.getInt("fixture_id"), new MatchPlayerStatResponse(
-                        rs.getInt("player_id"), rs.getString("name"), rs.getInt("club_id"),
-                        position, rs.getObject("minutes", Integer.class),
-                        rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class),
-                        rs.getObject("yellow_cards", Integer.class),
-                        rs.getObject("red_cards", Integer.class),
-                        rating == null ? null : rating.toPlainString(),
-                        null, null, null, null, null, null));
-            }, LEAGUE_ID, season, id);
+                      AND m.club_id IN (f.home_club_id, f.away_club_id)
+                    """, (RowCallbackHandler) rs -> manualStats.put(rs.getInt("fixture_id"),
+                    manualPlayerStat(rs)), LEAGUE_ID, season, id);
         }
         Set<Integer> fixtureIdsWithStats = Set.copyOf(jdbc.queryForList("""
                 SELECT s.fixture_id FROM fixture_player_stats s
@@ -204,7 +197,19 @@ public class FootballQueries {
         return jdbc.query("""
                 SELECT f.id, f.home_club_id, home.name AS home_name, f.away_club_id,
                        away.name AS away_name, f.gameweek, f.match_date, f.status,
-                       f.home_goals, f.away_goals FROM fixtures f
+                       f.home_goals, f.away_goals,
+                       EXISTS (SELECT 1 FROM manual_fixture_player_stats ms
+                               JOIN manual_player_memberships membership
+                                 ON membership.league_id=ms.league_id
+                                AND membership.season_year=ms.season_year
+                                AND membership.player_id=ms.player_id
+                                AND membership.club_id=ms.club_id
+                                AND membership.start_date<=f.match_date
+                                AND (membership.end_date IS NULL OR membership.end_date>f.match_date)
+                               WHERE ms.fixture_id=f.id AND ms.league_id=f.league_id
+                                 AND ms.season_year=f.season_year
+                                 AND ms.club_id IN (f.home_club_id, f.away_club_id)) AS has_manual_stats
+                FROM fixtures f
                 JOIN clubs home ON home.id = f.home_club_id
                 JOIN clubs away ON away.id = f.away_club_id
                 WHERE f.league_id = ? AND f.season_year = ?
@@ -222,6 +227,31 @@ public class FootballQueries {
 
     public Optional<MatchDetailResponse> matchDetail(int id, int season) {
         return match(id, season).map(match -> {
+            if (season == 2026) {
+                List<MatchPlayerStatResponse> players = jdbc.query("""
+                        SELECT m.player_id, p.name AS player_name, m.club_id, ps.position,
+                               m.participation_status, m.rating, m.fantasy_points,
+                               m.minutes, m.goals, m.assists, m.yellow_cards, m.red_cards
+                        FROM manual_fixture_player_stats m
+                        JOIN fixtures f ON f.id=m.fixture_id AND f.league_id=m.league_id
+                          AND f.season_year=m.season_year
+                        JOIN manual_player_memberships membership ON membership.league_id=m.league_id
+                          AND membership.season_year=m.season_year AND membership.player_id=m.player_id
+                          AND membership.club_id=m.club_id AND membership.start_date<=f.match_date
+                          AND (membership.end_date IS NULL OR membership.end_date>f.match_date)
+                        JOIN player_season_stats ps ON ps.league_id=m.league_id
+                          AND ps.season_year=m.season_year AND ps.player_id=m.player_id
+                          AND ps.club_id=m.club_id
+                        JOIN players p ON p.id=m.player_id
+                        WHERE m.fixture_id=? AND m.league_id=? AND m.season_year=?
+                          AND m.club_id IN (f.home_club_id, f.away_club_id)
+                        ORDER BY m.club_id, p.name, m.player_id
+                        """, (rs, row) -> manualPlayerStat(rs), id, LEAGUE_ID, season);
+                return new MatchDetailResponse(match,
+                        players.stream().filter(player -> player.clubId() == match.homeClubId()).toList(),
+                        players.stream().filter(player -> player.clubId() == match.awayClubId()).toList(),
+                        players.isEmpty() ? "MISSING" : "MANUAL_VERIFIED", null);
+            }
             List<MatchPlayerStatResponse> rawPlayers = jdbc.query("""
                     SELECT s.player_id, p.name AS player_name, s.club_id, s.position,
                            s.minutes, s.goals, s.assists, s.yellow_cards, s.red_cards,
@@ -289,7 +319,28 @@ public class FootballQueries {
                 rs.getString("home_name"), rs.getInt("away_club_id"), rs.getString("away_name"),
                 rs.getInt("gameweek"), rs.getDate("match_date").toLocalDate(),
                 rs.getString("status"), (Integer) rs.getObject("home_goals"),
-                (Integer) rs.getObject("away_goals"));
+                (Integer) rs.getObject("away_goals"), rs.getBoolean("has_manual_stats"));
+    }
+
+    private static MatchPlayerStatResponse manualPlayerStat(ResultSet rs) throws SQLException {
+        BigDecimal rating = rs.getBigDecimal("rating");
+        return new MatchPlayerStatResponse(rs.getInt("player_id"), rs.getString("player_name"),
+                rs.getInt("club_id"), shortPosition(rs.getString("position")),
+                rs.getObject("minutes", Integer.class), rs.getObject("goals", Integer.class),
+                rs.getObject("assists", Integer.class), rs.getObject("yellow_cards", Integer.class),
+                rs.getObject("red_cards", Integer.class),
+                rating == null ? null : rating.toPlainString(), null, null, null, null,
+                null, null, rs.getString("participation_status"), rs.getBigDecimal("fantasy_points"));
+    }
+
+    private static String shortPosition(String position) {
+        return switch (position) {
+            case "GOALKEEPER" -> "G";
+            case "DEFENDER" -> "D";
+            case "MIDFIELDER" -> "M";
+            case "FORWARD" -> "F";
+            default -> null;
+        };
     }
 
     private static String blankToNull(String value) {

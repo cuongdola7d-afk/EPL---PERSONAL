@@ -7,6 +7,7 @@ const STATS = [
   ['shotsOn', 'Sút trúng đích'], ['passesKey', 'Chuyền quyết định'],
   ['tackles', 'Tắc bóng'], ['saves', 'Cứu thua'],
 ]
+const MANUAL_STATS = STATS.slice(0, 5)
 
 const POSITIONS = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' }
 
@@ -40,15 +41,25 @@ function PlayerScore({ score, inferred }) {
 }
 
 function PlayerStats({ player }) {
+  const manual = player.participationStatus !== null && player.participationStatus !== undefined
   return (
     <article className="match-player">
       <div className="match-player-heading">
         <strong>{player.playerName}</strong>
         <span>{POSITIONS[player.position] ?? player.position ?? 'Chưa có dữ liệu'}</span>
       </div>
-      <PlayerScore score={player.score} inferred={player.inferred} />
+      {manual ? (
+        <div className="match-player-score manual">
+          <p className="match-player-participation">
+            {player.participationStatus === 'PLAYED' ? 'Đã thi đấu' : 'Dự bị không vào sân'}
+          </p>
+          <p className="match-score-total">Điểm Fantasy: {player.fantasyPoints ?? 'Chưa được chấm'}</p>
+          <p className="match-score-note">Rating SofaScore: {player.rating ??
+            (player.participationStatus === 'DID_NOT_PLAY' ? 'Không áp dụng' : 'Chưa được chấm')}</p>
+        </div>
+      ) : <PlayerScore score={player.score} inferred={player.inferred} />}
       <dl className="match-player-stats">
-        {STATS.map(([field, label]) => {
+        {(manual ? MANUAL_STATS : STATS).map(([field, label]) => {
           const inferredValue = player.inferred?.[field]
           const isInferred = player[field] === null && inferredValue !== null && inferredValue !== undefined
           return (
@@ -113,6 +124,8 @@ function MatchDetail({ matchId, onClose, season = 2024 }) {
         <p className="match-evidence-error" role="alert">Bằng chứng trận không khớp: {detail.evidenceError}. Điểm vẫn tạm tính.</p>
       )}
       {status === 'success' && detail.evidenceStatus === 'VERIFIED' && <p className="match-evidence-verified">Thống kê trận đã được xác minh.</p>}
+      {status === 'success' && detail.evidenceStatus === 'MANUAL_VERIFIED' &&
+        <p className="match-evidence-verified">Thống kê cầu thủ đã nhập và đối chiếu.</p>}
       {noStats && <p className="match-detail-empty">Trận này chưa có thống kê cầu thủ được lưu.</p>}
       {status === 'success' && !noStats && (
         <div className="match-detail-teams">

@@ -47,7 +47,7 @@ function MatchPage({ season, onSeasonChange }) {
             <p className="section-description">Premier League {SEASONS[season]} · {filters.matchweek ? `Gameweek ${filters.matchweek}` : 'Tất cả vòng đã lưu'}.</p>
             <p className="section-description">{season === 2024
               ? 'Dữ liệu trận đấu hiện có: Gameweek 1 với thống kê cầu thủ đã xác minh.'
-              : 'Lịch đấu và kết quả cơ bản. Chưa có thống kê cầu thủ hoặc điểm Fantasy mùa 2026/27.'}</p>
+              : 'Trận đã kết thúc và đã nhập thống kê có chi tiết cầu thủ cùng điểm Fantasy.'}</p>
           </div>
           {status === 'success' && (
             <p className="result-count" aria-live="polite"><strong>{matches.length}</strong> trận đấu</p>

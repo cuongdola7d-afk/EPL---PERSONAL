@@ -147,6 +147,8 @@
 .match-player-heading span { color: #62747a; font-size: .8rem; }
 .match-player-score { margin-top: 14px; padding: 13px; border-radius: 8px; background: #f3f6f0; }
 .match-player-score.complete { background: #edf6df; }
+.match-player-score.manual { background: #edf6df; }
+.match-player-participation { margin: 0 0 6px; color: #3c685b; font-size: .74rem; font-weight: 800; }
 .match-score-total { margin: 0; color: #183b3e; font-size: 1rem; font-weight: 850; }
 .match-score-note { margin: 4px 0 0; color: #796845; font-size: .75rem; }
 .match-score-parts { margin: 10px 0 0; padding: 0; list-style: none; }

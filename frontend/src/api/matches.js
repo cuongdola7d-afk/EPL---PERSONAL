@@ -10,6 +10,7 @@ export function isValidMatch(match) {
     Number.isInteger(match.matchweek) &&
     typeof match.date === 'string' &&
     typeof match.status === 'string' &&
+    (match.hasManualStats === undefined || typeof match.hasManualStats === 'boolean') &&
     (match.homeGoals === null || Number.isInteger(match.homeGoals)) &&
     (match.awayGoals === null || Number.isInteger(match.awayGoals))
 }
@@ -36,7 +37,12 @@ export async function fetchMatchDetail(id, signal, season) {
       (part.points === null || Number.isInteger(part.points)))
   const isValidPlayer = (player) => player !== null && Number.isInteger(player.playerId) &&
     typeof player.playerName === 'string' && Number.isInteger(player.clubId) &&
-    isValidScore(player.score) &&
+    ((player.participationStatus === null || player.participationStatus === undefined)
+      ? isValidScore(player.score)
+      : ['PLAYED', 'DID_NOT_PLAY'].includes(player.participationStatus) &&
+        player.score === null &&
+        (player.fantasyPoints === null || typeof player.fantasyPoints === 'number') &&
+        (player.rating === null || typeof player.rating === 'string')) &&
     (player.inferred === null || (player.inferred !== null &&
       ['minutes', 'goals', 'assists'].every((field) =>
         player.inferred[field] === null || Number.isInteger(player.inferred[field]))))

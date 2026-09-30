@@ -2,10 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { canOpenMatchStats, hasMatchScore } from './seasons.js'
 
-test('only the verified 2024 GW1 dataset offers player statistics', () => {
+test('verified 2024 GW1 and finished 2026 matches with manual rows offer player statistics', () => {
   assert.equal(canOpenMatchStats(2024, { matchweek: 1, status: 'FINISHED' }), true)
-  assert.equal(canOpenMatchStats(2026, { matchweek: 1, status: 'FINISHED' }), false)
+  assert.equal(canOpenMatchStats(2026, { matchweek: 1, status: 'FINISHED', hasManualStats: true }), true)
+  assert.equal(canOpenMatchStats(2026, { matchweek: 2, status: 'FINISHED', hasManualStats: false }), false)
   assert.equal(canOpenMatchStats(2026, { matchweek: 6, status: 'SCHEDULED' }), false)
+  assert.equal(canOpenMatchStats(2026, { matchweek: 6, status: 'SCHEDULED', hasManualStats: true }), false)
   assert.equal(canOpenMatchStats(2024, { matchweek: 2, status: 'FINISHED' }), false)
 })
 
