@@ -19,8 +19,6 @@ import java.util.Set;
 /** Strict UTF-8 CSV for manually verified player identities. No quoted fields. */
 public final class ManualRosterCsvReader {
     private static final String HEADER = "season,club_id,player_id,name,fantasy_position,start_date,end_date";
-    private static final int FIRST_MANUAL_ID = 2_000_000_000;
-    private static final int LAST_MANUAL_ID = 2_099_999_999;
 
     public record Row(int line, int season, int clubId, int playerId, String name,
                       String position, LocalDate startDate, LocalDate endDate) { }
@@ -65,8 +63,8 @@ public final class ManualRosterCsvReader {
             }
             if (season != 2026) throw invalid(lineNumber, "Only season 2026 is supported");
             if (clubId <= 0) throw invalid(lineNumber, "club_id must be positive");
-            if (playerId < FIRST_MANUAL_ID || playerId > LAST_MANUAL_ID) {
-                throw invalid(lineNumber, "player_id must be in 2000000000..2099999999");
+            if (playerId <= 0) {
+                throw invalid(lineNumber, "player_id must be positive");
             }
             if (name.isEmpty() || name.length() > 200) throw invalid(lineNumber, "name must contain 1..200 characters");
             String position = switch (code) {

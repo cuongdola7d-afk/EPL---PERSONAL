@@ -1,0 +1,46 @@
+{
+  "status": "production_database_verified",
+  "clubs": [
+    {
+      "club": "Man Utd",
+      "club_id": 1000000066,
+      "before": 26,
+      "prepared": 30,
+      "new_ids": 4,
+      "after": 30
+    },
+    {
+      "club": "Newcastle",
+      "club_id": 1000000067,
+      "before": 0,
+      "prepared": 28,
+      "new_ids": 7,
+      "after": 28
+    },
+    {
+      "club": "Nott'm Forest",
+      "club_id": 1000000351,
+      "before": 0,
+      "prepared": 24,
+      "new_ids": 2,
+      "after": 24
+    },
+    {
+      "club": "Spurs",
+      "club_id": 1000000073,
+      "before": 0,
+      "prepared": 29,
+      "new_ids": 6,
+      "after": 29
+    },
+    {
+      "club": "Sunderland",
+      "club_id": 1000000071,
+      "before": 0,
+      "prepared": 22,
+      "new_ids": 4,
+      "after": 22
+    }
+  ],
+  "import_result": "MANUAL_ROSTER season=2026 rows=133 playersInserted=23 membershipsInserted=41 intervalsInserted=107 intervalsUpdated=0"
+}

@@ -1,0 +1,46 @@
+{
+  "status": "production_database_verified",
+  "clubs": [
+    {
+      "club": "Arsenal",
+      "club_id": 1000000057,
+      "before": 24,
+      "prepared": 24,
+      "new_ids": 0,
+      "after": 24
+    },
+    {
+      "club": "Aston Villa",
+      "club_id": 1000000058,
+      "before": 0,
+      "prepared": 27,
+      "new_ids": 7,
+      "after": 27
+    },
+    {
+      "club": "Bournemouth",
+      "club_id": 1000001044,
+      "before": 0,
+      "prepared": 26,
+      "new_ids": 6,
+      "after": 26
+    },
+    {
+      "club": "Brentford",
+      "club_id": 1000000402,
+      "before": 0,
+      "prepared": 28,
+      "new_ids": 9,
+      "after": 28
+    },
+    {
+      "club": "Brighton",
+      "club_id": 1000000397,
+      "before": 0,
+      "prepared": 30,
+      "new_ids": 10,
+      "after": 30
+    }
+  ],
+  "import_result": "MANUAL_ROSTER season=2026 rows=135 playersInserted=32 membershipsInserted=41 intervalsInserted=111 intervalsUpdated=0"
+}

@@ -42,7 +42,8 @@ class ManualRosterCsvReaderTest {
     void rejectsBadPositionIdSeasonAndUnsupportedCsvQuotes() {
         for (String row : new String[] {
                 "2026,1000000057,2000000001,Example Player,WING,2026-08-01,",
-                "2026,1000000057,42,Example Player,GK,2026-08-01,",
+                "2026,1000000057,0,Example Player,GK,2026-08-01,",
+                "2026,1000000057,-1,Example Player,GK,2026-08-01,",
                 "2024,1000000057,2000000001,Example Player,GK,2026-08-01,",
                 "2026,1000000057,2000000001,\"Example Player\",GK,2026-08-01,",
                 "2026,1000000057,2000000001,Example Player,GK,2026-02-30,",

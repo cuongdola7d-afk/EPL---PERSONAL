@@ -144,6 +144,56 @@ class ManualRosterImportTest {
     }
 
     @Test
+    void existingProviderIdIsReusedWithoutChangingLegacySeason() throws Exception {
+        seedClubs();
+        Path file = temp.resolve("reuse-provider-id.csv");
+        Files.writeString(file, "season,club_id,player_id,name,fantasy_position,start_date,end_date\n"
+                + "2026,1000000057,101,Legacy Player,MID,2026-09-30,\n", StandardCharsets.UTF_8);
+        var result = importer.importFile(file);
+        assertEquals(0, result.playersInserted());
+        assertEquals(1, result.intervalsInserted());
+        assertEquals("MIDFIELDER", queries.player(101, 2026, LocalDate.of(2026, 9, 30))
+                .orElseThrow().position());
+        assertTrue(queries.player(101, 2026, LocalDate.of(2026, 9, 29)).isEmpty());
+        assertEquals("FORWARD", queries.player(101, 2024).orElseThrow().position());
+        assertEquals(1, queries.player(101, 2024).orElseThrow().goals());
+        var again = importer.importFile(file);
+        assertEquals(0, again.playersInserted());
+        assertEquals(0, again.membershipsInserted());
+        assertEquals(0, again.intervalsInserted());
+        assertEquals(0, again.intervalsUpdated());
+    }
+
+    @Test
+    void separatePeriodsForSameClubCannotSilentlyDisagreeOnSeasonPosition() throws Exception {
+        seedClubs();
+        Path file = temp.resolve("conflicting-positions.csv");
+        Files.writeString(file, "season,club_id,player_id,name,fantasy_position,start_date,end_date\n"
+                + "2026,1000000057,2000000001,Example Player,DEF,2026-08-21,2026-08-22\n"
+                + "2026,1000000057,2000000001,Example Player,MID,2026-09-30,\n", StandardCharsets.UTF_8);
+        var error = assertThrows(IllegalArgumentException.class, () -> importer.importFile(file));
+        assertTrue(error.getMessage().contains("different position"));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM players", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM manual_player_memberships", Integer.class));
+    }
+
+    @Test
+    void newIdOutsideManualRangeRollsBackWholeBatch() throws Exception {
+        seedClubs();
+        for (int id : new int[] {102, 2_100_000_000}) {
+            Path file = temp.resolve("invalid-new-id.csv");
+            Files.writeString(file, "season,club_id,player_id,name,fantasy_position,start_date,end_date\n"
+                    + "2026,1000000057,2000000001,Example Keeper,GK,2026-09-30,\n"
+                    + "2026,1000000057," + id + ",Unknown Player,MID,2026-09-30,\n",
+                    StandardCharsets.UTF_8);
+            var error = assertThrows(IllegalArgumentException.class, () -> importer.importFile(file));
+            assertTrue(error.getMessage().contains("new player_id must be in"));
+            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM players", Integer.class));
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM manual_player_memberships", Integer.class));
+        }
+    }
+
+    @Test
     void unknownClubRollsBackEarlierRowsAndDoesNotGuessFromName() throws Exception {
         seedClubs();
         Path file = temp.resolve("unknown-club.csv");

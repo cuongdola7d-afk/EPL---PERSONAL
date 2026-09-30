@@ -1,0 +1,113 @@
+{
+  "clubs": {
+    "before": 40,
+    "after": 40,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "adf981b1f5206214521710714c8e47c880e72857b371cb5eda1965324245198c",
+    "after_sha256": "adf981b1f5206214521710714c8e47c880e72857b371cb5eda1965324245198c"
+  },
+  "fixture_player_stats": {
+    "before": 400,
+    "after": 400,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "66e9096635b3bf3f9b33053f9763d91bf2c9d501d53a37a3d6a13bc426e79a6f",
+    "after_sha256": "66e9096635b3bf3f9b33053f9763d91bf2c9d501d53a37a3d6a13bc426e79a6f"
+  },
+  "fixture_score_evidence": {
+    "before": 10,
+    "after": 10,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "e4d9490011c174417ec8c6f35e7dace80b1a3724ae2e398617d0cbd94a4bfc38",
+    "after_sha256": "e4d9490011c174417ec8c6f35e7dace80b1a3724ae2e398617d0cbd94a4bfc38"
+  },
+  "fixtures": {
+    "before": 390,
+    "after": 390,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "100c81b901b2310e2db6928fff72ecedfc5ebfe49d062f8da4c146b372ae1b77",
+    "after_sha256": "100c81b901b2310e2db6928fff72ecedfc5ebfe49d062f8da4c146b372ae1b77"
+  },
+  "football_data_fixtures": {
+    "before": 380,
+    "after": 380,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "6bd988ab1a72ee6fb27556b89b27bfb2732c763b4764bc8c40d5784f803ddd33",
+    "after_sha256": "6bd988ab1a72ee6fb27556b89b27bfb2732c763b4764bc8c40d5784f803ddd33"
+  },
+  "football_data_teams": {
+    "before": 20,
+    "after": 20,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "68c64e8ef1b2c72cdcb7c37cf93f887d4aa4cc4b61ab833bc852cd3e56a0ba3c",
+    "after_sha256": "68c64e8ef1b2c72cdcb7c37cf93f887d4aa4cc4b61ab833bc852cd3e56a0ba3c"
+  },
+  "manual_fixture_player_stats": {
+    "before": 520,
+    "after": 520,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "b2d47b17415667994db514a6aa64014124d451e923a90a7366d8c51e45905dec",
+    "after_sha256": "b2d47b17415667994db514a6aa64014124d451e923a90a7366d8c51e45905dec"
+  },
+  "manual_player_memberships": {
+    "before": 550,
+    "after": 934,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "b87e817f6d8a5fbb33c868e6ba0e3a894a8e9358d1c183afd3289cc80619dffd",
+    "after_sha256": "4604b2d88c274904952f484d56fb6393194300be8301490fb3eb7d88999eb850"
+  },
+  "player_season_stats": {
+    "before": 501,
+    "after": 651,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "9309c11587b47a0c84cba18acf88b00783a5c3f65b87b323c394cba5db7034da",
+    "after_sha256": "8208b99167287dc5ce86c2ac5a0f2d5aff9f7935af48717aaff28cfb553324da"
+  },
+  "players": {
+    "before": 869,
+    "after": 980,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "ccd04fb45f7683baf8b6dc31b5f04b575860376cda8d02c380080a1449fa8967",
+    "after_sha256": "94b593db2e68e791fab375a3db00d1161c896c9704211ed0fc94c118a5567557"
+  },
+  "season_clubs": {
+    "before": 40,
+    "after": 40,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "d9cb59e41caf52557f434599ab1e1c299f0ff8ee0929f517e28f8c8e833b8b98",
+    "after_sha256": "d9cb59e41caf52557f434599ab1e1c299f0ff8ee0929f517e28f8c8e833b8b98"
+  },
+  "seasons": {
+    "before": 2,
+    "after": 2,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "5ba933dfa899c649cf300c7b7484fe330158af4fe7f5dcf9fd7e640c38965c63",
+    "after_sha256": "5ba933dfa899c649cf300c7b7484fe330158af4fe7f5dcf9fd7e640c38965c63"
+  },
+  "standings": {
+    "before": 40,
+    "after": 40,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "1ef3f9457b1329039d356706b743bdf911a8842027ed0cbcd0d107b8495c855c",
+    "after_sha256": "1ef3f9457b1329039d356706b743bdf911a8842027ed0cbcd0d107b8495c855c"
+  },
+  "sync_states": {
+    "before": 0,
+    "after": 0,
+    "all_existing_rows_unchanged": true,
+    "before_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "summary": {
+    "current_players": 534,
+    "clubs": 20,
+    "new_ids": 111,
+    "new_intervals": 384,
+    "overlaps": 0,
+    "unit_integration_tests": 12,
+    "h2_second_import_all_zero": true
+  },
+  "backup": {
+    "file": "backend/local-backups/roster-2026-09-30/before-import-20260930T034149Z.sql",
+    "sha256": "6398bd8d4be7d912ee6366a55ab387ac1072420839b6d0caabfe77eecb5b16af"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "status": "production_database_verified",
+  "clubs": [
+    {
+      "club": "Hull City",
+      "club_id": 1000000322,
+      "before": 0,
+      "prepared": 34,
+      "new_ids": 15,
+      "after": 34
+    },
+    {
+      "club": "Ipswich Town",
+      "club_id": 1000000349,
+      "before": 0,
+      "prepared": 26,
+      "new_ids": 7,
+      "after": 26
+    },
+    {
+      "club": "Leeds",
+      "club_id": 1000000341,
+      "before": 0,
+      "prepared": 22,
+      "new_ids": 7,
+      "after": 22
+    },
+    {
+      "club": "Liverpool",
+      "club_id": 1000000064,
+      "before": 25,
+      "prepared": 31,
+      "new_ids": 5,
+      "after": 31
+    },
+    {
+      "club": "Man City",
+      "club_id": 1000000065,
+      "before": 25,
+      "prepared": 26,
+      "new_ids": 1,
+      "after": 26
+    }
+  ],
+  "import_result": "MANUAL_ROSTER season=2026 rows=139 playersInserted=35 membershipsInserted=39 intervalsInserted=89 intervalsUpdated=0"
+}

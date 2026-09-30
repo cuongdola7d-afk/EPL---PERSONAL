@@ -283,6 +283,14 @@ Tài liệu chính thức: [Competition v4 và bộ lọc mùa](https://docs.foo
 
 ## Danh sách cầu thủ 2026/27 nhập thủ công
 
+Đợt mở rộng roster ngày 30/09/2026 được ghi tại
+[`backend/data/roster-2026-09-30/README.md`](backend/data/roster-2026-09-30/README.md),
+gồm bốn batch, đối chiếu ID với production, nguồn FPL và danh sách cần xác nhận.
+CSV reader chấp nhận ID dương đã tồn tại trong database (kể cả ID provider từ mùa 2024/25);
+chỉ **ID mới** bắt buộc thuộc dải `2000000000..2099999999`.
+Khi tái sử dụng ID cũ, giữ nguyên tên đang lưu và kiểm tra danh tính trước khi nhập.
+Importer không tự ghép cầu thủ chỉ dựa vào tên.
+
 Mẫu trống ở `backend/data/manual-players-2026-template.csv`. Tạo file UTF-8 với đúng header và một dòng cho mỗi cặp cầu thủ–CLB:
 
 ```csv
@@ -290,7 +298,7 @@ season,club_id,player_id,name,fantasy_position,start_date,end_date
 2026,1000000057,2000000001,Tên cầu thủ đã kiểm chứng,GK,2026-08-01,
 ```
 
-Ví dụ trên chỉ minh họa **định dạng**, không xác nhận cầu thủ đó thuộc Arsenal và không được nhập nguyên mẫu vào dữ liệu thật. `club_id` lấy từ `GET /api/clubs?season=2026` trên backend đọc cùng database. `player_id` do chúng ta cấp thủ công, ổn định qua các mùa và lần chuyển CLB, trong khoảng `2000000000..2099999999`; không tạo ID từ tên. Vị trí Fantasy chỉ nhận `GK`, `DEF`, `MID`, `FWD`; API giữ cách ghi hiện có `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, `FORWARD`. Tên không được chứa dấu phẩy, dấu nháy kép hoặc tab vì file CSV này không hỗ trợ trường được quote. File phải có ít nhất một dòng dữ liệu.
+Ví dụ trên chỉ minh họa **định dạng**, không xác nhận cầu thủ đó thuộc Arsenal và không được nhập nguyên mẫu vào dữ liệu thật. `club_id` lấy từ `GET /api/clubs?season=2026` trên backend đọc cùng database. `player_id` giữ ổn định qua các mùa và lần chuyển CLB: tái sử dụng ID đã có trong database; chỉ cấp ID thủ công mới trong khoảng `2000000000..2099999999` cho người chưa tồn tại. Không tạo ID từ tên. Vị trí Fantasy chỉ nhận `GK`, `DEF`, `MID`, `FWD`; API giữ cách ghi hiện có `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, `FORWARD`. Tên không được chứa dấu phẩy, dấu nháy kép hoặc tab vì file CSV này không hỗ trợ trường được quote. File phải có ít nhất một dòng dữ liệu.
 
 `start_date` bắt buộc theo `YYYY-MM-DD`; `end_date` để trống nếu vẫn thuộc CLB. Khoảng hiệu lực là **[start_date, end_date)**: ngày kết thúc không còn thuộc CLB cũ và có thể là ngày bắt đầu ở CLB mới. Khi chuyển đội, giữ **cùng `player_id` và `name`**, nhập lại dòng CLB cũ với `end_date` được điền và thêm dòng CLB mới với `start_date` đúng ngày đó. Phải nhập cả hai dòng trong cùng file nếu dòng cũ đang mở; chỉ thêm dòng mới sẽ bị từ chối vì hai khoảng chồng nhau. Có thể nhập thêm đợt mới cho cùng CLB nếu ngày bắt đầu khác và các khoảng không chồng nhau. Khóa thời gian là `(season, player_id, club_id, start_date)`. Lệnh kiểm tra cả các khoảng đã lưu trước khi ghi, từ chối trùng/chồng lấn, ID dùng cho tên khác, vị trí khác của cặp cầu thủ–CLB, CLB không thuộc mùa 2026/27 và vị trí sai. Lệnh không xóa lịch sử hoặc ghi đè thống kê.
 

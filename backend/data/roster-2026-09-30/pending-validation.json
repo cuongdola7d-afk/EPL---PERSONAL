@@ -1,0 +1,170 @@
+[
+  {
+    "fpl_id": 52,
+    "name": "Alysson",
+    "club": "Aston Villa",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 160,
+    "name": "Alejandro Garnacho",
+    "club": "Aston Villa",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 606,
+    "name": "Triston Rowe",
+    "club": "Aston Villa",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 573,
+    "name": "Juanlu Sánchez",
+    "club": "Bournemouth",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 86,
+    "name": "Keane Lewis-Potter",
+    "club": "Brentford",
+    "reason": "Existing season position differs: DEFENDER / FPL MID"
+  },
+  {
+    "fpl_id": 125,
+    "name": "Georginio Rutter",
+    "club": "Brighton",
+    "reason": "Existing season position differs: MIDFIELDER / FPL FWD"
+  },
+  {
+    "fpl_id": 135,
+    "name": "Zadok Yohanna",
+    "club": "Brighton",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 42,
+    "name": "Evann Guessand",
+    "club": "Crystal Palace",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 204,
+    "name": "Tyrick Mitchell",
+    "club": "Crystal Palace",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 207,
+    "name": "Óscar Mingueza",
+    "club": "Crystal Palace",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 211,
+    "name": "Yéremy Pino",
+    "club": "Crystal Palace",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 588,
+    "name": "Anan Khalaili",
+    "club": "Crystal Palace",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 209,
+    "name": "Brennan Johnson",
+    "club": "Everton",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 242,
+    "name": "Tyrique George",
+    "club": "Everton",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 562,
+    "name": "Daizen Maeda",
+    "club": "Ipswich Town",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 592,
+    "name": "Abdoul Ouattara",
+    "club": "Ipswich Town",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 330,
+    "name": "Jayden Bogle",
+    "club": "Leeds",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 336,
+    "name": "Noah Okafor",
+    "club": "Leeds",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 337,
+    "name": "Brenden Aaronson",
+    "club": "Leeds",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 338,
+    "name": "Ethan Ampadu",
+    "club": "Leeds",
+    "reason": "Existing season position differs: DEFENDER / FPL MID"
+  },
+  {
+    "fpl_id": 454,
+    "name": "Anthony Elanga",
+    "club": "Newcastle",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 457,
+    "name": "Jacob Murphy",
+    "club": "Newcastle",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 473,
+    "name": "Ola Aina",
+    "club": "Nott'm Forest",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 514,
+    "name": "Mathys Tel",
+    "club": "Spurs",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 601,
+    "name": "Luca Williams-Barnett",
+    "club": "Spurs",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  },
+  {
+    "fpl_id": 534,
+    "name": "Trai Hume",
+    "club": "Sunderland",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 539,
+    "name": "Luke O'Nien",
+    "club": "Sunderland",
+    "reason": "Existing season position differs: MIDFIELDER / FPL DEF"
+  },
+  {
+    "fpl_id": 547,
+    "name": "Romaine Mundle",
+    "club": "Sunderland",
+    "reason": "Existing season position differs: FORWARD / FPL MID"
+  }
+]

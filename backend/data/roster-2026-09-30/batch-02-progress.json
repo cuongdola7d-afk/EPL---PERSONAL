@@ -1,0 +1,46 @@
+{
+  "status": "production_database_verified",
+  "clubs": [
+    {
+      "club": "Chelsea",
+      "club_id": 1000000061,
+      "before": 25,
+      "prepared": 27,
+      "new_ids": 2,
+      "after": 27
+    },
+    {
+      "club": "Coventry City",
+      "club_id": 1000001076,
+      "before": 25,
+      "prepared": 30,
+      "new_ids": 3,
+      "after": 30
+    },
+    {
+      "club": "Crystal Palace",
+      "club_id": 1000000354,
+      "before": 0,
+      "prepared": 24,
+      "new_ids": 8,
+      "after": 24
+    },
+    {
+      "club": "Everton",
+      "club_id": 1000000062,
+      "before": 0,
+      "prepared": 20,
+      "new_ids": 3,
+      "after": 20
+    },
+    {
+      "club": "Fulham",
+      "club_id": 1000000063,
+      "before": 0,
+      "prepared": 26,
+      "new_ids": 5,
+      "after": 26
+    }
+  ],
+  "import_result": "MANUAL_ROSTER season=2026 rows=127 playersInserted=21 membershipsInserted=29 intervalsInserted=77 intervalsUpdated=0"
+}
