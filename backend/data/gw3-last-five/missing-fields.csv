@@ -1,0 +1,158 @@
+fixture_id,club,player_id,name,field
+1000560568,Fulham FC,2000030136,Alex Iwobi,rating
+1000560568,Fulham FC,2000030086,Antonee Robinson,rating
+1000560568,Fulham FC,2000030138,Bernd Leno,rating
+1000560568,Fulham FC,2729,Joachim Andersen,rating
+1000560568,Fulham FC,2000030084,Timothy Castagne,rating
+1000560568,Fulham FC,2000030087,Calvin Bassey,rating
+1000560568,Fulham FC,2000030093,Oscar Bobb,rating
+1000560568,Fulham FC,2000030092,Shea Charles,rating
+1000560568,Fulham FC,2000030083,Joshua King,rating
+1000560568,Fulham FC,2000030082,Gonzalo García,rating
+1000560568,Fulham FC,2000030091,César Palacios,rating
+1000560568,Fulham FC,2000030085,Rodrigo Muniz,rating
+1000560568,Fulham FC,2000030195,Hugo Larsson,rating
+1000560568,Fulham FC,2000030089,Sander Berge,rating
+1000560568,Fulham FC,2000030088,Ryan Sessegnon,rating
+1000560568,Fulham FC,2000030142,Emile Smith Rowe,rating
+1000560568,Crystal Palace FC,2000020100,Dean Henderson,rating
+1000560568,Crystal Palace FC,2000020101,Eddie Nketiah,rating
+1000560568,Crystal Palace FC,2000020103,Tyrick Mitchell,rating
+1000560568,Crystal Palace FC,2000030182,Axel Disasi,rating
+1000560568,Crystal Palace FC,2000020099,Chris Richards,rating
+1000560568,Crystal Palace FC,2000020098,Adam Wharton,rating
+1000560568,Crystal Palace FC,2000020105,Yéremy Pino,rating
+1000560568,Crystal Palace FC,2000016001,Daichi Kamada,rating
+1000560568,Crystal Palace FC,2000020096,Jaydee Canvot,rating
+1000560568,Crystal Palace FC,2000030188,Quinten Timber,rating
+1000560568,Crystal Palace FC,2000016002,Anan Khalaili,rating
+1000560568,Crystal Palace FC,2000020117,Will Hughes,rating
+1000560568,Crystal Palace FC,2000020106,Jørgen Strand Larsen,rating
+1000560568,Crystal Palace FC,2000030189,Darío Osorio,rating
+1000560568,Crystal Palace FC,2000020116,Óscar Mingueza,rating
+1000560568,Crystal Palace FC,2000030187,Ben Chilwell,rating
+1000560569,Hull City AFC,2000010005,John Egan,rating
+1000560569,Hull City AFC,2000020008,Oli McBurnie,rating
+1000560569,Hull City AFC,2000010004,Regan Slater,rating
+1000560569,Hull City AFC,2000020005,Ryan Giles,rating
+1000560569,Hull City AFC,2000010002,Semi Ajayi,rating
+1000560569,Hull City AFC,2000010003,Nobel Mendy,rating
+1000560569,Hull City AFC,2000020016,Lucas Gourna-Douath,rating
+1000560569,Hull City AFC,2000010001,Konstantinos Tzolakis,rating
+1000560569,Hull City AFC,2000020004,Lewie Coyle,rating
+1000560569,Hull City AFC,2000020009,Mohamed Belloumi,rating
+1000560569,Hull City AFC,2000020006,Elliot Stroud,rating
+1000560569,Hull City AFC,2000030211,Sorba Thomas,rating
+1000560569,Hull City AFC,2000020018,Jens Hjertø-Dahl,rating
+1000560569,Hull City AFC,2000030210,Brooke Norton-Cuffy,rating
+1000560569,Hull City AFC,2000020010,Lucas Herrington,rating
+1000560569,Hull City AFC,2000030207,Mohamed-Ali Cho,rating
+1000560569,Aston Villa FC,2000030061,Emiliano Buendía,rating
+1000560569,Aston Villa FC,2000030064,Ian Maatsen,rating
+1000560569,Aston Villa FC,2000030059,John McGinn,rating
+1000560569,Aston Villa FC,2000030058,Matty Cash,rating
+1000560569,Aston Villa FC,2000030068,Ross Barkley,rating
+1000560569,Aston Villa FC,2000030065,Tyrone Mings,rating
+1000560569,Aston Villa FC,2000030056,Victor Lindelöf,rating
+1000560569,Aston Villa FC,2000030122,Boubacar Kamara,rating
+1000560569,Aston Villa FC,283058,Nicolas Jackson,rating
+1000560569,Aston Villa FC,2000030124,Zion Suzuki,rating
+1000560569,Aston Villa FC,2000030123,George Hemmings,rating
+1000560569,Aston Villa FC,2000030063,Matteo Ruggeri,rating
+1000560569,Aston Villa FC,2000030060,Alejandro Garnacho,rating
+1000560569,Aston Villa FC,2000030147,Tammy Abraham,rating
+1000560569,Aston Villa FC,18846,Aaron Wan-Bissaka,rating
+1000560569,Aston Villa FC,2000030062,Alysson,rating
+1000560571,Newcastle United FC,2000030070,Anthony Elanga,rating
+1000560571,Newcastle United FC,2000030129,Harvey Barnes,rating
+1000560571,Newcastle United FC,2000030071,Joe Willock,rating
+1000560571,Newcastle United FC,2000030072,Yoane Wissa,rating
+1000560571,Newcastle United FC,2000030130,Sven Botman,rating
+1000560571,Newcastle United FC,2000030128,Lewis Hall,rating
+1000560571,Newcastle United FC,2000030078,Lewis Miley,rating
+1000560571,Newcastle United FC,2000030106,Nico González,rating
+1000560571,Newcastle United FC,2000030131,Malick Thiaw,rating
+1000560571,Newcastle United FC,2000030081,Amar Dedić,rating
+1000560571,Newcastle United FC,2000030074,Lukáš Horníček,rating
+1000560571,Newcastle United FC,158694,Valentino Livramento,rating
+1000560571,Newcastle United FC,2000030080,Sean Steur,rating
+1000560571,Newcastle United FC,2000030238,Matias Fernandez-Pardo,rating
+1000560571,Newcastle United FC,2000030076,Jacob Murphy,rating
+1000560571,Newcastle United FC,2000030079,Jacob Ramsey,rating
+1000560571,AFC Bournemouth,2000030108,Adam Smith,rating
+1000560571,AFC Bournemouth,2000030031,Marcus Tavernier,rating
+1000560571,AFC Bournemouth,2000030036,Tyler Adams,rating
+1000560571,AFC Bournemouth,2000030110,Alex Scott,rating
+1000560571,AFC Bournemouth,2000030039,Justin Kluivert,rating
+1000560571,AFC Bournemouth,2000030030,Đorđe Petrović,rating
+1000560571,AFC Bournemouth,2000030109,James Hill,rating
+1000560571,AFC Bournemouth,2000030032,Evanilson,rating
+1000560571,AFC Bournemouth,2000030111,Adrien Truffert,rating
+1000560571,AFC Bournemouth,2000030035,António Silva,rating
+1000560571,AFC Bournemouth,2000030033,Rayan,rating
+1000560571,AFC Bournemouth,2000030037,Lewis Cook,rating
+1000560571,AFC Bournemouth,2000030115,David Brooks,rating
+1000560571,AFC Bournemouth,1125,Ryan Christie,rating
+1000560571,AFC Bournemouth,2000030034,Ben Gannon-Doak,rating
+1000560571,AFC Bournemouth,2000030040,Daniel Jebbison,rating
+1000560567,Everton FC,2000020091,James Garner,rating
+1000560567,Everton FC,2000020089,James Tarkowski,rating
+1000560567,Everton FC,2000015005,Jarrad Branthwaite,rating
+1000560567,Everton FC,2000020085,Jordan Pickford,rating
+1000560567,Everton FC,2000020086,Vitaliy Mykolenko,rating
+1000560567,Everton FC,2000020093,Brennan Johnson,rating
+1000560567,Everton FC,2000015001,Kiernan Dewsbury-Hall,rating
+1000560567,Everton FC,2000020087,Tyrique George,rating
+1000560567,Everton FC,2000015004,Harrison Armstrong,rating
+1000560567,Everton FC,2000015002,Thierno Barry,rating
+1000560567,Everton FC,2000020090,Merlin Röhl,rating
+1000560567,Everton FC,2000030191,Ainsley Maitland-Niles,rating
+1000560567,Everton FC,2000030029,Jack Grealish,rating
+1000560567,Everton FC,2000020088,Hayden Hackney,rating
+1000560567,Manchester United FC,2000006008,Bruno Fernandes,rating
+1000560567,Manchester United FC,2000006018,Bryan Mbeumo,rating
+1000560567,Manchester United FC,2000006002,Diogo Dalot,rating
+1000560567,Manchester United FC,2000006005,Harry Maguire,rating
+1000560567,Manchester United FC,2000006021,Luke Shaw,rating
+1000560567,Manchester United FC,2000006009,Marcus Rashford,rating
+1000560567,Manchester United FC,2000006017,Youri Tielemans,rating
+1000560567,Manchester United FC,2000006006,Lisandro Martinez,rating
+1000560567,Manchester United FC,2000006010,Matheus Cunha,rating
+1000560567,Manchester United FC,2000006025,Kobbie Mainoo,rating
+1000560567,Manchester United FC,2000006001,Senne Lammens,rating
+1000560567,Manchester United FC,2000006003,Noussair Mazraoui,rating
+1000560567,Manchester United FC,2000006013,Patrick Dorgu,rating
+1000560567,Manchester United FC,2000006014,Leny Yoro,rating
+1000560567,Manchester United FC,2000006016,Andrey Santos,rating
+1000560567,Manchester United FC,2000006024,Benjamin Sesko,rating
+1000560570,Arsenal FC,2000001004,Ben White,rating
+1000560570,Arsenal FC,2000001007,Bukayo Saka,rating
+1000560570,Arsenal FC,2000001014,Christos Tzolis,rating
+1000560570,Arsenal FC,2000001001,David Raya,rating
+1000560570,Arsenal FC,2000001023,Declan Rice,rating
+1000560570,Arsenal FC,2000001013,Ezri Konsa,rating
+1000560570,Arsenal FC,2000001006,Gabriel Magalhaes,rating
+1000560570,Arsenal FC,2000001018,Kai Havertz,rating
+1000560570,Arsenal FC,2000001008,Martin Odegaard,rating
+1000560570,Arsenal FC,2000001024,Myles Lewis-Skelly,rating
+1000560570,Arsenal FC,2000001020,Riccardo Calafiori,rating
+1000560570,Arsenal FC,2000001005,Piero Hincapie,rating
+1000560570,Arsenal FC,2000001012,Viktor Gyokeres,rating
+1000560570,Arsenal FC,2000001015,Noni Madueke,rating
+1000560570,Arsenal FC,2000001017,Mikel Merino,rating
+1000560570,Arsenal FC,2000001021,Martin Zubimendi,rating
+1000560570,Chelsea FC,2000005009,Cole Palmer,rating
+1000560570,Chelsea FC,2000005001,Emiliano Martinez,rating
+1000560570,Chelsea FC,2000005008,Joao Pedro,rating
+1000560570,Chelsea FC,2000005012,Morgan Rogers,rating
+1000560570,Chelsea FC,2000005007,Pedro Neto,rating
+1000560570,Chelsea FC,2000005017,Reece James,rating
+1000560570,Chelsea FC,2000005025,Romeo Lavia,rating
+1000560570,Chelsea FC,2000005003,Wesley Fofana,rating
+1000560570,Chelsea FC,2000005022,Josh Acheampong,rating
+1000560570,Chelsea FC,2000005005,Maxence Lacroix,rating
+1000560570,Chelsea FC,2000005014,Jorrel Hato,rating
+1000560570,Chelsea FC,2000005013,Danny Welbeck,rating
+1000560570,Chelsea FC,2000005019,Malo Gusto,rating
+1000560570,Chelsea FC,2000005020,Pep Chavarria,rating
+1000560570,Chelsea FC,2000005024,Estevao,rating
