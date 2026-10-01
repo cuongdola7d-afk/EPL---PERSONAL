@@ -1,0 +1,6 @@
+fixture_id,match_date,home_club,away_club,lineup_rows,existing_production_rows,draft_missing_rows,ratings_needed
+1000560591,2026-09-18,Brentford FC,Chelsea FC,40,20,20,16
+1000560584,2026-09-19,Everton FC,Ipswich Town FC,40,0,40,31
+1000560586,2026-09-19,Brighton & Hove Albion FC,Arsenal FC,40,0,40,32
+1000560587,2026-09-19,Tottenham Hotspur FC,Aston Villa FC,40,0,40,32
+1000560588,2026-09-19,Newcastle United FC,Hull City AFC,40,0,40,30

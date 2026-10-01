@@ -1,0 +1,6 @@
+fixture_id,match_date,home_club,away_club,lineup_rows,existing_production_rows,draft_missing_rows,ratings_needed
+1000560589,2026-09-19,Nottingham Forest FC,Coventry City FC,40,0,40,29
+1000560582,2026-09-20,AFC Bournemouth,Liverpool FC,40,20,20,16
+1000560583,2026-09-20,Fulham FC,Manchester United FC,40,20,20,16
+1000560585,2026-09-20,Leeds United FC,Crystal Palace FC,40,0,40,29
+1000560590,2026-09-20,Manchester City FC,Sunderland AFC,40,20,20,14
