@@ -4,7 +4,7 @@
 
 `player_season_profiles` lưu hồ sơ theo khóa `(league_id, season_year, player_id, club_id)` và tham chiếu `player_season_stats`. Importer chỉ nhận Premier League 2026/27 (`league_id=39`, `season_year=2026`). Nó không tạo hoặc sửa cầu thủ, membership, thống kê trận, hay dữ liệu 2024/25.
 
-CSV gồm `player_id,club_id,nationality,birth_date,height_cm,preferred_foot,shirt_number,fc27_overall`. Ô trống được lưu là SQL `NULL`, không phải 0. Ngày có dạng `YYYY-MM-DD`; chân thuận là `LEFT`, `RIGHT` hoặc `BOTH`; chiều cao là 100–250 cm, số áo và OVR là 1–99 khi có giá trị. `fc27_overall` chỉ chứa OVR cơ bản đã xác minh từ EA SPORTS FC 27. Mức **72 cho Max Dowman chỉ là đề xuất ước tính của PremierHub**, không ghi vào cột này.
+CSV gồm `player_id,club_id,nationality,birth_date,height_cm,preferred_foot,shirt_number,fc27_overall`. Ô trống được lưu là SQL `NULL`, không phải 0. Ngày có dạng `YYYY-MM-DD`; chân thuận là `LEFT`, `RIGHT` hoặc `BOTH`; chiều cao là 100–250 cm, số áo và OVR là 1–99 khi có giá trị. `fc27_overall` thường chứa OVR cơ bản đã xác minh từ EA SPORTS FC 27. Theo chỉ định của người dùng, riêng Max Dowman được ghi **72** vào cột này như ước tính PremierHub, dù chưa có rating EA được xác minh; nguồn của ngoại lệ được ghi trong `sources.md` của Arsenal.
 
 Mỗi lần nhập phải cung cấp ngày chốt membership. Importer kiểm tra cầu thủ có đúng một membership hiệu lực tại ngày đó, thuộc `club_id` trong CSV và có dòng `player_season_stats` cùng mùa. Nó đọc, kiểm tra toàn bộ file trước khi chèn trong một transaction; ID trùng hoặc hồ sơ đã lưu khác bất kỳ trường nào làm lệnh thất bại và không ghi đè. Nhập lại cùng nội dung thêm 0.
 
@@ -30,8 +30,16 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 ## Hai batch ngày 02/10/2026
 
 - CSV: `backend/data/manchester-united-profiles-2026-10-02/players.csv` (30 người) và `backend/data/arsenal-profiles-2026-10-02/players.csv` (24 người). Không có batch nào khác được nhập.
-- H2 cô lập: thêm 30 + 24; chạy lại cả hai thêm 0. Kết quả 54 hồ sơ, 52 OVR có số, hai OVR `NULL`; test còn xác nhận từ chối ID trùng, OVR 0, membership hết hiệu lực và xung đột.
+- H2 cô lập với CSV hiện tại: thêm 30 + 24; chạy lại cả hai thêm 0. Kết quả 54 hồ sơ, 53 OVR có số (gồm Dowman 72), một OVR `NULL`; test còn xác nhận từ chối ID trùng, OVR 0, membership hết hiệu lực và xung đột.
 - Backend `mvn package` sau thay đổi: 224 test qua, 0 lỗi; JAR được build thành công. Trên Windows của workspace này, thư mục tạm Java cho JUnit được đặt trong `backend/target/test-tmp` để các test dùng `@TempDir` có quyền ghi.
 - Production trước ghi: xác nhận Railway MySQL host `altaria.proxy.rlwy.net`, database `railway`; 54 cặp ID/CLB trong hai CSV khớp chính xác membership đang hiệu lực ngày 02/10/2026. Trước đó bảng hồ sơ chưa tồn tại, `players` có 984 dòng và `manual_fixture_player_stats` có 2.000 dòng.
 - Bản sao lưu SQL mới, Git ignored: `backend/local-backups/player-profiles-2026-10-02/premierhub-before-profiles-20261002-131254.sql` (756.207 byte; SHA-256 `1DBD7DA78FCD9C89E34E27B2EE334D07407CF8DBF72C9E6D9F83DA78D6B61783`).
-- Production nhập MU thêm 30, Arsenal thêm 24; chạy lại mỗi CSV thêm 0, kể cả khi chạy lại bằng JAR build cuối. Đọc MySQL khớp từng ô của 54 dòng CSV: MU 30/29 OVR, Arsenal 24/23 OVR. Hai OVR `NULL` là Bendito Mantato (`2000030235`) và Max Dowman (`2000001025`). Carlos Baleba (`2000006019`) có `club_id=1000000066`. `players` vẫn 984 dòng, `manual_fixture_player_stats` vẫn 2.000 dòng và mùa 2024/25 vẫn hiện diện.
+- Production ban đầu nhập MU thêm 30, Arsenal thêm 24; chạy lại mỗi CSV thêm 0, kể cả khi chạy lại bằng JAR build cuối. Sau đó người dùng yêu cầu ghi 72 trực tiếp cho Max Dowman vào `fc27_overall` trong Arsenal CSV và MySQL. Vì thế 54 hồ sơ có 53 OVR số (52 từ EA, một ước tính PremierHub), và chỉ Bendito Mantato (`2000030235`) còn `NULL`. Carlos Baleba (`2000006019`) có `club_id=1000000066`. `players` vẫn 984 dòng, `manual_fixture_player_stats` vẫn 2.000 dòng và mùa 2024/25 vẫn hiện diện.
+- Trước khi cập nhật Dowman, đã sao lưu production vào `backend/local-backups/player-profiles-2026-10-02/premierhub-before-dowman72-20261002-134022.sql` (761.735 byte; SHA-256 `A298DA08EAFEDF5DC7FA91F3DDDFA111A10538533E58D1407ADBCAA2CC2AF1AB`). Chỉ cập nhật một dòng `(39,2026,2000001025,1000000057)` từ `NULL` thành 72; chạy lại importer Arsenal trên production thêm 0. Không tạo bảng ước tính riêng.
+
+## Liverpool và Manchester City ngày 02/10/2026
+
+- `backend/data/liverpool-profiles-2026-10-02/players.csv`: 31 ID hiện hành, 29 OVR EA được xác minh, hai OVR `NULL` (Jayden Danns, Wellity Lucky).
+- `backend/data/manchester-city-profiles-2026-10-02/players.csv`: 26 ID hiện hành, 22 OVR EA được xác minh, bốn OVR `NULL` (Allan Andrade Elias, Floyd Samba, Kaden Braithwaite, Ryan McAidoo).
+- Cả 57 ID/CLB khớp membership production ngày 02/10/2026; mỗi người đúng một dòng và đủ năm trường SofaScore. File `sources.md` của từng CLB ghi URL hồ sơ cùng trường hợp EA còn nhãn CLB cũ.
+- H2 cô lập nhập 31 + 26 và nhập lại thêm 0; backend `mvn package` qua 225 test, 0 lỗi. Hai batch này hiện chỉ là dữ liệu local để review, chưa nhập production.
