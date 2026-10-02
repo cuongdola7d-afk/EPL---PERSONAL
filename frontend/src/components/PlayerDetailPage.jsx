@@ -1,71 +1,107 @@
 import { useEffect, useState } from 'react'
 import { fetchPlayer, fetchPlayerMatches } from '../api/players.js'
+import { ESTIMATED_OVR_PLAYER_IDS, GROUP_LABEL } from '../fantasy/lineup.js'
 import { getInitials } from '../utils/initials.js'
 import { effectiveStat, matchRating, matchResult, matchState, seasonSummary } from '../utils/playerDetail.js'
 import { SEASONS, hasMatchScore } from '../utils/seasons.js'
+import './PlayerDetailPage.css'
 
 const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
-const metric = (value) => value === null ? 'Chưa có dữ liệu' : String(value)
-const ratingLabel = (value) => value === null ? 'Chưa có dữ liệu' : value.toFixed(1)
+const numberLabel = (value) => value == null ? '—' : String(value)
+const ratingTier = (rating) => rating == null ? 'na' : rating >= 9 ? 'blue' : rating >= 7 ? 'green' : rating >= 5 ? 'orange' : 'red'
+const isHome = (row) => row.clubId === row.match.homeClubId
+const resultLabel = { W: 'Thắng', D: 'Hòa', L: 'Thua' }
+const footLabel = { LEFT: 'Chân trái', RIGHT: 'Chân phải', BOTH: 'Hai chân' }
+const pendingLabel = { SCHEDULED: 'Chưa diễn ra', POSTPONED: 'Hoãn', SUSPENDED: 'Tạm dừng', LIVE: 'Đang diễn ra' }
 
-function MatchRow({ row }) {
+function Empty({ title, children }) {
+  return <div className="pd-empty"><strong>{title}</strong><p>{children}</p></div>
+}
+
+function MatchCard({ row }) {
   const state = matchState(row)
   const result = matchResult(row)
-  const score = hasMatchScore(row.match) ? `${row.match.homeGoals} – ${row.match.awayGoals}` : 'Chưa có tỉ số'
-  const pendingLabels = { SCHEDULED: 'Trận chưa đá', POSTPONED: 'Trận bị hoãn', CANCELLED: 'Trận bị hủy', SUSPENDED: 'Trận tạm dừng', LIVE: 'Trận đang diễn ra', AWARDED: 'Trận xử thắng' }
-  const detail = state === 'upcoming' ? (pendingLabels[row.match.status] ?? 'Trận chưa kết thúc') : state === 'missing' ? 'Thiếu thống kê cầu thủ' :
-    state === 'did-not-play' ? 'Không ra sân' : 'Đã thi đấu'
-  const value = (field) => state === 'upcoming' || state === 'missing' ? null : effectiveStat(row, field)
-  return (
-    <li className="profile-match-row">
-      <div className="profile-match-main">
-        <span className="profile-match-date">GW{row.match.matchweek} · {dateLabel(row.match.date)}</span>
-        <strong>{row.match.homeClub} <span className="profile-score">{score}</span> {row.match.awayClub}</strong>
-        <span className={`profile-match-state state-${state}`}>{detail}</span>
-      </div>
-      <div className="profile-match-numbers">
-        <div className="profile-match-result"><span>Kết quả</span><b className={`result-${result ?? 'unknown'}`}>{result ?? '—'}</b></div>
-        <div><span>Đánh giá</span><b>{ratingLabel(state === 'played' ? matchRating(row) : null)}</b></div>
-        <div><span>Phút</span><b>{metric(value('minutes'))}</b></div>
-        <div><span>Bàn</span><b>{metric(value('goals'))}</b></div>
-        <div><span>Kiến tạo</span><b>{metric(value('assists'))}</b></div>
-        <div><span>Vàng</span><b>{metric(value('yellowCards'))}</b></div>
-        <div><span>Đỏ</span><b>{metric(value('redCards'))}</b></div>
-      </div>
-    </li>
-  )
+  const rating = state === 'played' ? matchRating(row) : null
+  const score = hasMatchScore(row.match) ? `${row.match.homeGoals} – ${row.match.awayGoals}` : '—'
+  const stats = [
+    ['Phút', 'minutes', '′'], ['Bàn', 'goals', '⚽'], ['Kiến tạo', 'assists', '↗'],
+    ['Thẻ vàng', 'yellowCards', '▪'], ['Thẻ đỏ', 'redCards', '▪'],
+  ]
+  return <li className="pd-match-card">
+    <div className="pd-match-main">
+      <div className="pd-match-meta"><span className="pd-gw">GW{row.match.matchweek}</span><span>{dateLabel(row.match.date)}</span>
+        <span className={`pd-result pd-result-${result ?? 'unknown'}`}>{result ? resultLabel[result] : 'Chưa rõ'}</span></div>
+      <div className="pd-teams"><span className={isHome(row) ? 'pd-my-club' : ''}>{row.match.homeClub}</span><b className="pd-score">{score}</b><span className={!isHome(row) ? 'pd-my-club' : ''}>{row.match.awayClub}</span></div>
+      <span className="pd-match-note">{state === 'missing' ? 'Chưa có thống kê cầu thủ cho trận này' : state === 'did-not-play' ? 'Không ra sân' : rating === null ? 'Đã ra sân · chưa được chấm điểm' : 'Đã ra sân'}</span>
+    </div>
+    {state === 'played' ? <div className="pd-match-right">
+      <span className={`pd-rating pd-rating-${ratingTier(rating)}`} aria-label={`Đánh giá: ${rating == null ? 'chưa có' : rating.toFixed(1)}`}>{rating == null ? '—' : rating.toFixed(1)}</span>
+      <div className="pd-stat-pills">{stats.map(([label, field, symbol]) => <span key={field} className={`pd-stat-pill pd-stat-pill-${field}`} title={label} aria-label={`${label}: ${numberLabel(effectiveStat(row, field))}`}><span aria-hidden="true">{symbol}</span> {numberLabel(effectiveStat(row, field))}<small>{label}</small></span>)}</div>
+    </div> : <span className="pd-dnp">{state === 'did-not-play' ? 'DNP' : 'Chưa có dữ liệu'}</span>}
+  </li>
+}
+
+function MatchesTab({ rows, season }) {
+  if (!rows.length) return <Empty title="Chưa có trận đã hoàn thành">Chưa có trận Premier League đã hoàn thành thuộc thời gian cầu thủ ở CLB trong mùa {SEASONS[season]}.</Empty>
+  return <>
+    <div className="pd-panel-head"><div><h2>Trận đã đấu</h2><p>Premier League · {SEASONS[season]} · {rows.length} trận của CLB</p></div></div>
+    <div className="pd-legend"><span>Đánh giá</span><span><i className="pd-legend-dot pd-rating-blue" /> 9+</span><span><i className="pd-legend-dot pd-rating-green" /> 7–8.9</span><span><i className="pd-legend-dot pd-rating-orange" /> 5–6.9</span><span><i className="pd-legend-dot pd-rating-red" /> dưới 5</span><span>— chưa được chấm</span></div>
+    <ul className="pd-match-list">{rows.map((row) => <MatchCard key={row.match.id} row={row} />)}</ul>
+    <p className="pd-note">Một trận của CLB không xác nhận cầu thủ đã ra sân. DNP là không ra sân; cầu thủ đã chơi nhưng chưa được chấm vẫn có rating trống.</p>
+  </>
+}
+
+function FixtureCard({ row, featured = false }) {
+  const home = isHome(row)
+  const opponent = home ? row.match.awayClub : row.match.homeClub
+  return <div className={featured ? 'pd-next-featured' : 'pd-next-row'}>
+    {featured && <span className="pd-next-tag">TRẬN TIẾP THEO</span>}
+    <div className="pd-next-content"><span className="pd-club-initials" aria-hidden="true">{getInitials(opponent)}</span><div><strong>{opponent}</strong><span>{home ? 'Sân nhà' : 'Sân khách'} · GW{row.match.matchweek}</span></div><div className="pd-next-date"><strong>{dateLabel(row.match.date)}</strong><small>{pendingLabel[row.match.status] ?? row.match.status}</small></div></div>
+  </div>
+}
+
+function NextTab({ rows, season }) {
+  if (!rows.length) return <Empty title="Chưa có lịch thi đấu sắp tới">Hiện chưa có fixture sắp tới thuộc thời gian cầu thủ ở CLB trong mùa {SEASONS[season]}.</Empty>
+  return <><div className="pd-panel-head"><div><h2>Trận sắp tới</h2><p>Premier League · {SEASONS[season]} · lịch thi đấu có thể thay đổi</p></div></div>
+    <FixtureCard row={rows[0]} featured />
+    {rows.slice(1).map((row) => <FixtureCard key={row.match.id} row={row} />)}
+    <p className="pd-note">Đây là lịch của CLB trong thời gian membership đã lưu, không phải xác nhận cầu thủ sẽ ra sân.</p>
+  </>
 }
 
 function SeasonTab({ rows, season }) {
   const summary = seasonSummary(rows)
-  if (!rows.some((row) => row.stats)) {
-    return <div className="profile-empty"><h2>Chưa có thống kê cầu thủ–trận</h2><p>Mùa {SEASONS[season]} chưa có dữ liệu từng trận cho cầu thủ này. Chỉ số mùa và biểu đồ sẽ xuất hiện khi dữ liệu được nhập.</p></div>
-  }
-  const items = [
-    ['Số trận đã thi đấu', summary.appearances],
-    ['Phút trung bình / trận', summary.averageMinutes === null ? null : Math.round(summary.averageMinutes)],
-    ['Tổng bàn thắng', summary.goals],
-    ['Tổng kiến tạo', summary.assists],
-    ['Đánh giá trung bình', summary.averageRating === null ? null : summary.averageRating.toFixed(1)],
+  if (!rows.some((row) => row.stats)) return <Empty title="Chưa có thống kê mùa">Chưa có thống kê cầu thủ theo trận cho mùa {SEASONS[season]}.</Empty>
+  const metrics = [
+    ['Số trận ra sân', summary.appearances], ['Tổng số phút', summary.totalMinutes],
+    ['Bàn thắng', summary.goals], ['Kiến tạo', summary.assists],
+    ['Thẻ vàng', summary.yellowCards], ['Thẻ đỏ', summary.redCards],
   ]
-  return <div className="profile-season">
-    <p className="profile-context">Premier League · {SEASONS[season]} · Chỉ tính các trận có thống kê cầu thủ đã lưu.</p>
-    <div className="profile-metrics">{items.map(([label, value]) =>
-      <div className="profile-metric" key={label}><span>{label}</span><strong>{metric(value)}</strong></div>)}</div>
-    <h2>Điểm đánh giá từng trận</h2>
-    {summary.ratedMatches.length ? <div className="profile-chart" role="img" aria-label={`Biểu đồ điểm đánh giá ${summary.ratedMatches.map(({ row, rating }) => `GW${row.match.matchweek}: ${rating.toFixed(1)}`).join(', ')}`}>
-      {summary.ratedMatches.map(({ row, rating }) => <div className="profile-chart-item" key={row.match.id}>
-        <span className="profile-chart-score">{rating.toFixed(1)}</span>
-        <div className="profile-chart-track"><span style={{ height: `${Math.min(100, rating * 10)}%` }} /></div>
-        <strong>GW{row.match.matchweek}</strong><small>{dateLabel(row.match.date)}</small>
-      </div>)}
-    </div> : <p className="profile-chart-empty">Chưa có điểm đánh giá trận từ nguồn dữ liệu đã lưu.</p>}
-    <p className="profile-context">Chỉ số thiếu được để trống; điểm đánh giá là giá trị provider đã lưu, không phải điểm Fantasy.</p>
-  </div>
+  const rated = [...summary.ratedMatches].sort((a, b) => a.row.match.date.localeCompare(b.row.match.date))
+  return <><div className="pd-panel-head"><div><h2>Tổng kết mùa</h2><p>Premier League · {SEASONS[season]}</p></div></div>
+    <div className="pd-season-top"><span className={`pd-rating pd-season-rating pd-rating-${ratingTier(summary.averageRating)}`}>{summary.averageRating == null ? '—' : summary.averageRating.toFixed(1)}</span><div><strong>Đánh giá trung bình</strong><p>{rated.length} trận có điểm đánh giá</p>
+      {rated.length > 0 && <div className="pd-spark" role="img" aria-label={`Đánh giá theo trận: ${rated.map(({ row, rating }) => `GW${row.match.matchweek} ${rating.toFixed(1)}`).join(', ')}`}>{rated.map(({ row, rating }) => <span key={row.match.id} className={`pd-rating-${ratingTier(rating)}`} style={{ height: `${Math.max(8, rating * 10)}%` }} title={`GW${row.match.matchweek}: ${rating.toFixed(1)}`} />)}</div>}</div></div>
+    <div className="pd-metric-grid">{metrics.map(([label, value]) => <div className="pd-metric" key={label}><span>{label}</span><strong>{numberLabel(value)}</strong></div>)}</div>
+    <p className="pd-note">Tổng chỉ số để trống nếu một trận đã ra sân còn thiếu chỉ số đó. Đánh giá trận là rating đã lưu, không phải điểm Fantasy.</p>
+  </>
+}
+
+function InfoTab({ player, season }) {
+  const estimated = ESTIMATED_OVR_PLAYER_IDS.has(player.id)
+  const details = [
+    [season === 2026 ? 'OVR FC 27' : 'OVR', player.fc27Overall, estimated ? 'Ước tính PremierHub · chưa đủ điều kiện Fantasy' : player.fc27Overall == null ? 'Chưa có OVR' : 'Chỉ số đang lưu'],
+    ['Quốc tịch', player.nationality], ['Ngày sinh', player.birthDate ? dateLabel(player.birthDate) : null],
+    ['Chân thuận', footLabel[player.preferredFoot] ?? null], ['Chiều cao', player.heightCm == null ? null : `${player.heightCm} cm`],
+    ['Số áo', player.shirtNumber == null ? null : `#${player.shirtNumber}`],
+  ]
+  return <><div className="pd-panel-head"><div><h2>Thông tin cầu thủ</h2><p>Hồ sơ theo mùa {SEASONS[season]}</p></div></div>
+    <div className="pd-info-grid">{details.map(([label, value, note]) => <div className="pd-info-item" key={label}><span>{label}</span><strong className={value == null ? 'pd-unknown' : ''}>{value == null ? 'Chưa có dữ liệu' : value}</strong>{note && <small>{note}</small>}</div>)}</div>
+  </>
 }
 
 function PlayerDetailPage({ playerId, season }) {
   const [tab, setTab] = useState('matches')
+  const [theme, setTheme] = useState('light')
   const [reloadKey, setReloadKey] = useState(0)
   const [data, setData] = useState({ status: 'loading', player: null, rows: [], error: '' })
 
@@ -78,31 +114,25 @@ function PlayerDetailPage({ playerId, season }) {
   }, [playerId, season, reloadKey])
 
   const { status, player, rows, error } = data
-  return <section className="profile-page"><div className="container">
-    <a className="profile-back" href="#players">← Danh sách cầu thủ</a>
-    {status === 'loading' && <div className="state-panel" role="status">Đang tải chi tiết cầu thủ...</div>}
-    {status === 'error' && <div className="state-panel state-error" role="alert"><h2>Không thể tải cầu thủ</h2><p>{error}</p><button type="button" onClick={() => { setData({ status: 'loading', player: null, rows: [], error: '' }); setReloadKey((value) => value + 1) }}>Thử lại</button></div>}
+  const finished = rows.filter((row) => row.match.status === 'FINISHED').sort((a, b) => b.match.date.localeCompare(a.match.date))
+  const next = rows.filter((row) => ['SCHEDULED', 'POSTPONED', 'SUSPENDED', 'LIVE'].includes(row.match.status)).sort((a, b) => a.match.date.localeCompare(b.match.date))
+  const tabs = [['matches', 'Trận đã đấu', finished.length], ['next', 'Trận sắp tới', next.length], ['season', 'Mùa giải', null], ['info', 'Thông tin', null]]
+  const estimated = player && ESTIMATED_OVR_PLAYER_IDS.has(player.id)
+
+  return <section className="player-detail-page" data-theme={theme}><div className="pd-wrap">
+    <div className="pd-topbar"><a className="pd-back" href="#players">← Danh sách cầu thủ</a><button className="pd-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button></div>
+    {status === 'loading' && <div className="pd-card pd-loading" role="status">Đang tải chi tiết cầu thủ...</div>}
+    {status === 'error' && <div className="pd-card pd-empty" role="alert"><strong>Không thể tải cầu thủ</strong><p>{error}</p><button type="button" onClick={() => { setData({ status: 'loading', player: null, rows: [], error: '' }); setReloadKey((value) => value + 1) }}>Thử lại</button></div>}
     {status === 'success' && <>
-      <div className="profile-header">
-        <div className="profile-avatar" aria-label="Ảnh đại diện chưa có; hiển thị chữ viết tắt">{getInitials(player.name)}</div>
-        <div className="profile-identity"><p className="profile-eyebrow">Premier League · {SEASONS[season]} · Cầu thủ #{player.id}</p>
-          <div className="profile-title"><h1>{player.name}</h1><span className="profile-availability">Tình trạng: Chưa cập nhật</span></div>
-          <p className="profile-club">{player.club} <span>· {player.position}</span></p>
-          {season === 2026 && <p className="profile-source">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Danh sách cầu thủ được nhập thủ công.</p>}
-        </div>
+      <header className="pd-card pd-hero"><div className="pd-avatar" aria-label="Chữ viết tắt tên cầu thủ">{getInitials(player.name)}</div><div className="pd-identity"><p>PREMIER LEAGUE · {SEASONS[season]} · #{player.id}</p><h1>{player.name}</h1><div className="pd-hero-chips"><span className="pd-chip">{player.club}</span><span className={`pd-chip pd-position pd-position-${player.position}`}>{GROUP_LABEL[player.position] ?? player.position}</span></div></div><div className="pd-hero-ovr"><span>{numberLabel(player.fc27Overall)}</span><small>{estimated ? 'OVR ước tính' : season === 2026 ? 'OVR FC 27' : 'OVR'}</small></div></header>
+      <nav className="pd-tabs" role="tablist" aria-label="Thông tin cầu thủ">{tabs.map(([key, label, count]) => <button key={key} type="button" role="tab" id={`pd-tab-${key}`} aria-controls={`pd-panel-${key}`} aria-selected={tab === key} onClick={() => setTab(key)}>{label}{count !== null && <span className="pd-tab-count">{count}</span>}</button>)}</nav>
+      <div className="pd-card pd-panel" role="tabpanel" id={`pd-panel-${tab}`} aria-labelledby={`pd-tab-${tab}`}>
+        {tab === 'matches' && <MatchesTab rows={finished} season={season} />}
+        {tab === 'next' && <NextTab rows={next} season={season} />}
+        {tab === 'season' && <SeasonTab rows={finished} season={season} />}
+        {tab === 'info' && <InfoTab player={player} season={season} />}
       </div>
-      <div className="profile-content">
-        <div className="profile-tabs" role="tablist" aria-label="Thông tin cầu thủ">
-          <button type="button" role="tab" id="tab-matches" aria-controls="panel-matches" aria-selected={tab === 'matches'} onClick={() => setTab('matches')}>Matches</button>
-          <button type="button" role="tab" id="tab-season" aria-controls="panel-season" aria-selected={tab === 'season'} onClick={() => setTab('season')}>Season</button>
-        </div>
-        {tab === 'matches' ? <div role="tabpanel" id="panel-matches" aria-labelledby="tab-matches" className="profile-panel">
-          <div className="profile-panel-head"><div><h2>Trận đấu Premier League</h2><p>{SEASONS[season]} · {rows.length} trận trong lịch sử đã lưu</p></div></div>
-          {!rows.some((row) => row.stats) && <p className="profile-empty-inline">Chưa có thống kê cầu thủ–trận cho mùa này. Lịch thi đấu bên dưới chỉ cho biết trận của CLB, không xác nhận cầu thủ đã ra sân.</p>}
-          {rows.length ? <ul className="profile-match-list">{rows.map((row) => <MatchRow key={row.match.id} row={row} />)}</ul>
-            : <div className="profile-empty"><h3>Chưa có trận đấu</h3><p>Chưa có fixture Premier League thuộc thời gian cầu thủ ở CLB trong mùa này.</p></div>}
-        </div> : <div role="tabpanel" id="panel-season" aria-labelledby="tab-season" className="profile-panel"><SeasonTab rows={rows} season={season} /></div>}
-      </div>
+      <p className="pd-footer">Lịch thi đấu và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Hồ sơ và thống kê hiển thị theo dữ liệu PremierHub đã lưu.</p>
     </>}
   </div></section>
 }

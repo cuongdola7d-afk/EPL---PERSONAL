@@ -97,6 +97,13 @@ class PlayerProfileImportTest {
         var roster = queries.players(2026, null, null, AS_OF);
         assertEquals(72, roster.stream().filter(player -> player.id() == 2000001025)
                 .findFirst().orElseThrow().fc27Overall());
+        var saka = roster.stream().filter(player -> player.id() == 2000001007)
+                .findFirst().orElseThrow();
+        assertEquals("England", saka.nationality());
+        assertEquals(LocalDate.of(2001, 9, 5), saka.birthDate());
+        assertEquals(178, saka.heightCm());
+        assertEquals("LEFT", saka.preferredFoot());
+        assertEquals(7, saka.shirtNumber());
         assertEquals(null, roster.stream().filter(player -> player.id() == 2000030235)
                 .findFirst().orElseThrow().fc27Overall());
         assertEquals(1, roster.stream().filter(player -> player.id() == 2000001025).count());

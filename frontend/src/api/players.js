@@ -11,7 +11,11 @@ export function isValidPlayer(player) {
     (player.goals === null || typeof player.goals === 'number') &&
     (player.assists === null || typeof player.assists === 'number') &&
     (player.fc27Overall === undefined || player.fc27Overall === null ||
-      (Number.isInteger(player.fc27Overall) && player.fc27Overall >= 1 && player.fc27Overall <= 99))
+      (Number.isInteger(player.fc27Overall) && player.fc27Overall >= 1 && player.fc27Overall <= 99)) &&
+    ['nationality', 'birthDate'].every((field) => player[field] === undefined || player[field] === null || typeof player[field] === 'string') &&
+    (player.heightCm === undefined || player.heightCm === null || (Number.isInteger(player.heightCm) && player.heightCm > 0)) &&
+    (player.preferredFoot === undefined || player.preferredFoot === null || ['LEFT', 'RIGHT', 'BOTH'].includes(player.preferredFoot)) &&
+    (player.shirtNumber === undefined || player.shirtNumber === null || (Number.isInteger(player.shirtNumber) && player.shirtNumber >= 0))
 }
 
 export function playerPath(filters, season) {

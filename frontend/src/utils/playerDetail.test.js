@@ -31,9 +31,21 @@ test('unfinished and missing statistics stay distinct; season totals are not fab
   const played = { match: finished, clubId: 10, evidenceStatus: 'VERIFIED', stats: { minutes: 90, goals: null, assists: 1, rating: '7.2', inferred: { goals: null } } }
   const summary = seasonSummary([played, missing, upcoming])
   assert.equal(summary.appearances, 1)
+  assert.equal(summary.totalMinutes, 90)
   assert.equal(summary.averageMinutes, 90)
   assert.equal(summary.goals, null)
   assert.equal(summary.assists, 1)
+  assert.equal(summary.yellowCards, null)
+  assert.equal(summary.redCards, null)
   assert.equal(summary.averageRating, 7.2)
   assert.equal(summary.ratedMatches.length, 1)
+})
+
+test('manual participation keeps an ungraded appearance separate from a DNP', () => {
+  const played = { match: finished, clubId: 10, stats: { participationStatus: 'PLAYED', minutes: null, goals: 0, assists: 0, yellowCards: 0, redCards: 0, rating: null } }
+  const dnp = { match: finished, clubId: 10, stats: { participationStatus: 'DID_NOT_PLAY', minutes: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, rating: null } }
+  assert.equal(matchState(played), 'played')
+  assert.equal(matchState(dnp), 'did-not-play')
+  assert.equal(seasonSummary([played, dnp]).appearances, 1)
+  assert.equal(seasonSummary([played, dnp]).totalMinutes, null)
 })

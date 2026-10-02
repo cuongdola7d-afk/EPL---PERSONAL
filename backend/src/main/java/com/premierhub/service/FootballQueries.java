@@ -69,7 +69,9 @@ public class FootballQueries {
             LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneOffset.UTC) : asOf;
             return jdbc.query("""
                     SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
-                           ps.goals, ps.assists, profile.fc27_overall
+                           ps.goals, ps.assists, profile.fc27_overall, profile.nationality,
+                           profile.birth_date, profile.height_cm, profile.preferred_foot,
+                           profile.shirt_number
                     FROM manual_player_memberships membership
                     JOIN player_season_stats ps ON ps.league_id=membership.league_id
                         AND ps.season_year=membership.season_year AND ps.player_id=membership.player_id
@@ -91,7 +93,9 @@ public class FootballQueries {
         }
         return jdbc.query("""
                 SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
-                       ps.goals, ps.assists, NULL AS fc27_overall FROM player_season_stats ps
+                       ps.goals, ps.assists, NULL AS fc27_overall, NULL AS nationality,
+                       NULL AS birth_date, NULL AS height_cm, NULL AS preferred_foot,
+                       NULL AS shirt_number FROM player_season_stats ps
                 JOIN players p ON p.id = ps.player_id JOIN clubs c ON c.id = ps.club_id
                 WHERE ps.league_id = ? AND ps.season_year = ?
                   AND (? IS NULL OR LOWER(c.name) = LOWER(?))
@@ -189,10 +193,14 @@ public class FootballQueries {
     }
 
     private static PlayerResponse playerResponse(ResultSet rs) throws SQLException {
+        Date birthDate = rs.getDate("birth_date");
         return new PlayerResponse(rs.getInt("id"), rs.getString("name"),
                 rs.getInt("club_id"), rs.getString("club_name"), rs.getString("position"),
                 rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class),
-                rs.getObject("fc27_overall", Integer.class));
+                rs.getObject("fc27_overall", Integer.class), rs.getString("nationality"),
+                birthDate == null ? null : birthDate.toLocalDate(),
+                rs.getObject("height_cm", Integer.class), rs.getString("preferred_foot"),
+                rs.getObject("shirt_number", Integer.class));
     }
 
     public List<MatchResponse> matches(int season, String club, Integer matchweek, String status) {

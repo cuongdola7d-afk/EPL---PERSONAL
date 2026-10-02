@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PlayerController.class)
 class PlayerControllerTest {
     private final PlayerResponse saka = new PlayerResponse(2, "Bukayo Saka", 1,
-            "Arsenal", "FORWARD", 12, 10, null);
+            "Arsenal", "FORWARD", 12, 10, null, null, null, null, null, null);
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,13 +47,19 @@ class PlayerControllerTest {
     void currentSeasonExposesOverallWithoutInventingMissingRatings() throws Exception {
         LocalDate asOf = LocalDate.of(2026, 10, 2);
         when(service.players(2026, null, null, asOf)).thenReturn(List.of(
-                new PlayerResponse(2, "Bukayo Saka", 1, "Arsenal", "FORWARD", null, null, 88),
+                new PlayerResponse(2, "Bukayo Saka", 1, "Arsenal", "FORWARD", null, null, 88,
+                        "England", LocalDate.of(2001, 9, 5), 178, "LEFT", 7),
                 new PlayerResponse(3, "Bendito Mantato", 4, "Manchester United", "FORWARD",
-                        null, null, null)));
+                        null, null, null, null, null, null, null, null)));
 
         mockMvc.perform(get("/api/players").param("season", "2026").param("asOf", "2026-10-02"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].fc27Overall").value(88))
+                .andExpect(jsonPath("$[0].nationality").value("England"))
+                .andExpect(jsonPath("$[0].birthDate").value("2001-09-05"))
+                .andExpect(jsonPath("$[0].heightCm").value(178))
+                .andExpect(jsonPath("$[0].preferredFoot").value("LEFT"))
+                .andExpect(jsonPath("$[0].shirtNumber").value(7))
                 .andExpect(jsonPath("$[1].fc27Overall").value(org.hamcrest.Matchers.nullValue()));
     }
 
