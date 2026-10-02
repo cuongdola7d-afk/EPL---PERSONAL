@@ -132,7 +132,7 @@ function FantasyPage() {
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
       <header className="fantasy-head">
-        <div><p className="fantasy-kicker">PREMIERHUB · FANTASY 2026/27</p><h1 id="fantasy-heading">Đội hình của bạn</h1>
+        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">Đội hình của bạn</h1>
           <p>Chọn 11 cầu thủ · tổng điểm theo OVR FC 27</p></div>
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>

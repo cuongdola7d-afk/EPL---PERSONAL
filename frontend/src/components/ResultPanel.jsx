@@ -5,7 +5,7 @@ function ResultPanel({ status, error, count, itemName, emptyMessage, onRetry, on
         <div className="state-panel">
           <span className="spinner" aria-hidden="true" />
           <h3>Đang tải {itemName}...</h3>
-          <p>PremierHub đang lấy dữ liệu từ API.</p>
+          <p>prismaXI đang lấy dữ liệu từ API.</p>
         </div>
       )}
 

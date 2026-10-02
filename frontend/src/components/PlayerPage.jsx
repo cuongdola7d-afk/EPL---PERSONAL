@@ -60,7 +60,7 @@ function PlayerPage({ season, onSeasonChange }) {
         {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button" aria-pressed={season === Number(year)} onClick={() => onSeasonChange(Number(year))}>{label}</button>)}
       </div></div>
 
-      <header className="pp-hero"><div><p>PREMIERHUB / CẦU THỦ</p><h1 id="players-heading">Cầu thủ</h1><span>Premier League {SEASONS[season]}</span></div><div className="pp-hero-art" aria-hidden="true"><i /><i /></div></header>
+      <header className="pp-hero"><div><p>prismaXI / CẦU THỦ</p><h1 id="players-heading">Cầu thủ</h1><span>Premier League {SEASONS[season]}</span></div><div className="pp-hero-art" aria-hidden="true"><i /><i /></div></header>
 
       <div className="pp-filters" role="group" aria-label="Bộ lọc cầu thủ">
         <div className="pp-search"><span aria-hidden="true">⌕</span><input ref={searchRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(PAGE_SIZE) }} placeholder="Tìm cầu thủ theo tên" aria-label="Tìm cầu thủ theo tên" />

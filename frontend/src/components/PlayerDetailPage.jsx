@@ -93,7 +93,7 @@ function SeasonTab({ rows, season }) {
 function InfoTab({ player, season }) {
   const estimated = ESTIMATED_OVR_PLAYER_IDS.has(player.id)
   const details = [
-    [season === 2026 ? 'OVR FC 27' : 'OVR', player.fc27Overall, estimated ? 'Ước tính PremierHub · chưa đủ điều kiện Fantasy' : player.fc27Overall == null ? 'Chưa có OVR' : 'Chỉ số đang lưu'],
+    [season === 2026 ? 'OVR FC 27' : 'OVR', player.fc27Overall, estimated ? 'Ước tính prismaXI · chưa đủ điều kiện Fantasy' : player.fc27Overall == null ? 'Chưa có OVR' : 'Chỉ số đang lưu'],
     ['Quốc tịch', player.nationality], ['Ngày sinh', player.birthDate ? dateLabel(player.birthDate) : null],
     ['Chân thuận', footLabel[player.preferredFoot] ?? null], ['Chiều cao', player.heightCm == null ? null : `${player.heightCm} cm`],
     ['Số áo', player.shirtNumber == null ? null : `#${player.shirtNumber}`],
@@ -136,7 +136,7 @@ function PlayerDetailPage({ playerId, season }) {
         {tab === 'season' && <SeasonTab rows={finished} season={season} />}
         {tab === 'info' && <InfoTab player={player} season={season} />}
       </div>
-      <p className="pd-footer">Lịch thi đấu và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Hồ sơ và thống kê hiển thị theo dữ liệu PremierHub đã lưu.</p>
+      <p className="pd-footer">Lịch thi đấu và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Hồ sơ và thống kê hiển thị theo dữ liệu prismaXI đã lưu.</p>
     </>}
   </div></section>
 }

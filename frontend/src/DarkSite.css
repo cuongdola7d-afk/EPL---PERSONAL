@@ -2,6 +2,10 @@
 .fantasy-page[data-theme='light'], .player-detail-page[data-theme='light'] { color-scheme: light; }
 .app-shell { --site-bg: #0a171d; --site-card: #14272f; --site-subtle: #193038; --site-line: #ffffff1a; --site-text: #eaf5f2; --site-muted: #a1bac0; --site-accent: #46e2b5; background: var(--site-bg); color: var(--site-text); }
 .app-shell .site-header { background: #0d222b; border-bottom-color: var(--site-line); }
+.app-shell .brand-accent, .app-shell .hero h1 em, .app-shell .hero-link span { color: var(--site-accent); }
+.app-shell .eyebrow { color: var(--site-accent); }
+.app-shell .eyebrow-line, .app-shell .pitch-ring { background: var(--site-accent); }
+.app-shell .hero-link, .app-shell .pitch-center { border-color: var(--site-accent); }
 .app-shell .site-footer { background: #0d222b; border-top: 1px solid var(--site-line); }
 .app-shell .hero { background: #102832; }
 .app-shell .hero-description, .app-shell .hero-art-caption { color: var(--site-muted); }

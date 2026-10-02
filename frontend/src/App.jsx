@@ -13,13 +13,13 @@ const PAGES = {
   clubs: {
     hasSeasons: true,
     navLabel: 'Câu lạc bộ', label: 'Câu lạc bộ', title: 'Một giải đấu.', highlight: 'Nhiều câu chuyện.',
-    description: 'Bắt đầu khám phá Premier League qua danh sách câu lạc bộ. Tìm tên đội bạn quan tâm từ dữ liệu của PremierHub API.',
+    description: 'Bắt đầu khám phá Premier League qua danh sách câu lạc bộ. Tìm tên đội bạn quan tâm từ dữ liệu của prismaXI.',
     component: ClubPage,
   },
   players: {
     hasSeasons: true,
     navLabel: 'Cầu thủ', label: 'Cầu thủ', title: 'Những gương mặt.', highlight: 'Tạo nên trận đấu.',
-    description: 'Khám phá cầu thủ theo câu lạc bộ và vị trí, cùng số bàn thắng và kiến tạo từ PremierHub API.',
+    description: 'Khám phá cầu thủ theo câu lạc bộ và vị trí, cùng hồ sơ và chỉ số mùa giải từ prismaXI.',
     component: PlayerPage, fullPage: true,
   },
   matches: {
@@ -31,7 +31,7 @@ const PAGES = {
   standings: {
     hasSeasons: true,
     navLabel: 'Bảng xếp hạng', label: 'Bảng xếp hạng', title: 'Mỗi điểm số.', highlight: 'Một vị trí.',
-    description: 'Tra cứu bảng xếp hạng theo mùa giải từ dữ liệu đã lưu tại PremierHub.',
+    description: 'Tra cứu bảng xếp hạng theo mùa giải từ dữ liệu đã lưu tại prismaXI.',
     component: StandingsPage,
   },
   fantasy: {
@@ -66,13 +66,17 @@ function App() {
   const current = PAGES[page]
   const CurrentPage = current.component
 
+  useEffect(() => {
+    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : current.label} | prismaXI`
+  }, [current.label, playerDetail])
+
   return (
     <div className="app-shell">
       <header className="site-header">
         <div className="container header-inner">
-          <a className="brand" href="#clubs" aria-label="PremierHub, trang câu lạc bộ">
-            <span className="brand-mark" aria-hidden="true">P</span>
-            <span>Premier<span className="brand-accent">Hub</span></span>
+          <a className="brand" href="#clubs" aria-label="prismaXI, trang câu lạc bộ">
+            <img className="brand-logo" src="/prismaxi-logo.svg" alt="" width="52" height="47" />
+            <span>prisma<span className="brand-accent">XI</span></span>
           </a>
 
           <nav className="site-nav" aria-label="Điều hướng chính">
@@ -89,7 +93,7 @@ function App() {
         {!playerDetail && !current.fullPage && <section className="hero" aria-labelledby="hero-title">
           <div className="container hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow"><span className="eyebrow-line" /> PremierHub / {current.label}</p>
+              <p className="eyebrow"><span className="eyebrow-line" /> prismaXI / {current.label}</p>
               <h1 id="hero-title">{current.title}<br /><em>{current.highlight}</em></h1>
               <p className="hero-description">{current.description}</p>
               <button
@@ -103,7 +107,7 @@ function App() {
             <div className="hero-art" aria-hidden="true">
               <span className="pitch-ring pitch-ring-one" />
               <span className="pitch-ring pitch-ring-two" />
-              <span className="pitch-center">PH</span>
+              <span className="pitch-center"><img src="/prismaxi-logo.svg" alt="" /></span>
               <span className="hero-art-caption">THE BEAUTIFUL GAME</span>
             </div>
           </div>
@@ -117,7 +121,7 @@ function App() {
 
       <footer className="site-footer">
         <div className="container footer-inner">
-          <span>PremierHub</span>
+          <span className="footer-brand"><img src="/prismaxi-logo.svg" alt="" width="37" height="33" />prismaXI</span>
         </div>
       </footer>
     </div>
