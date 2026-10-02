@@ -1,42 +1,46 @@
-PremierHub 2026/27 — các trường hồ sơ còn thiếu (chốt roster ngày 2026-10-02)
+PremierHub 2026/27 — theo dõi các trường hồ sơ từng thiếu (chốt roster ngày 2026-10-02)
 
 Phạm vi: 20 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
 Chelsea, Tottenham, Brighton, Brentford, Leeds, Everton, Newcastle United,
 Hull City, Ipswich Town, Nottingham Forest, Sunderland, Crystal Palace,
 Aston Villa, Bournemouth, Fulham và Coventry City; tổng 534 cầu thủ.
-Ô trống trong CSV nhập thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
+Ô trống trong CSV nhập ban đầu thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
+Giá trị sau dấu = do người dùng bổ sung ngày 02/10/2026 và đã cập nhật vào MySQL;
+dấu x ở cuối dòng nghĩa là chưa tìm được thông tin, các ô nêu trên dòng vẫn NULL.
 fc27_overall NULL: chưa xác minh được OVR thẻ cơ bản trên EA SPORTS FC 27;
 cầu thủ vẫn có hồ sơ nhưng chưa đủ điều kiện chọn Fantasy. height_cm NULL:
 hồ sơ SofaScore của đúng cầu thủ không ghi chiều cao. preferred_foot NULL:
 hồ sơ SofaScore của đúng cầu thủ không ghi chân thuận. shirt_number NULL:
 hồ sơ SofaScore của đúng cầu thủ không ghi số áo.
 
-CLB                  player_id   Cầu thủ                         Trường còn thiếu
-Manchester United    2000030235  Bendito Mantato                 fc27_overall
-Liverpool            2000003025  Jayden Danns                   fc27_overall
-Liverpool            2000030229  Wellity Lucky                  fc27_overall
-Manchester City      2000004019  Allan Andrade Elias            fc27_overall
-Manchester City      2000030232  Floyd Samba                    fc27_overall
-Manchester City      2000004024  Kaden Braithwaite              fc27_overall
-Manchester City      2000004023  Ryan McAidoo                   fc27_overall
-Chelsea              2000005021  Mahdi Nicoll-Jazuli            fc27_overall
-Tottenham            2000030248  James Rowswell                 fc27_overall
-Brighton             2000030174  José María Andrés Baixauli     fc27_overall
-Brighton             2000030170  Nehemiah Oriola                fc27_overall
-Brighton             2000030176  Younes Ibrahim                 height_cm, fc27_overall
-Leeds                2000020081  Alfie Cresswell                height_cm
-Everton              2000030192  Braiden Graham                 fc27_overall
-Newcastle United     2000030243  Kyran Thompson                 height_cm, fc27_overall
-Newcastle United     2000030239  Mason Miley                    height_cm, fc27_overall
-Newcastle United     2000030242  Michael Mills                  height_cm, preferred_foot, fc27_overall
-Newcastle United     2000030240  Miodrag Pivas                  fc27_overall
-Newcastle United     2000030241  Vakhtang Salia                 fc27_overall
-Aston Villa          2000030151  James Wright                   fc27_overall
-Aston Villa          2000030149  Leon Goretzka                  fc27_overall
-Coventry City        2000030180  George Shepherd                height_cm, preferred_foot, shirt_number, fc27_overall
-Fulham               2000030194  Macaulay Zepa                  height_cm, shirt_number, fc27_overall
+CLB                  player_id   Cầu thủ                         Bổ sung / còn thiếu
+Manchester United    2000030235  Bendito Mantato                 fc27_overall = 62
+Liverpool            2000003025  Jayden Danns                   fc27_overall = 63
+Liverpool            2000030229  Wellity Lucky                  fc27_overall x
+Manchester City      2000004019  Allan Andrade Elias            fc27_overall = 74
+Manchester City      2000030232  Floyd Samba                    fc27_overall = 64
+Manchester City      2000004024  Kaden Braithwaite              fc27_overall = 65
+Manchester City      2000004023  Ryan McAidoo                   fc27_overall = 66
+Chelsea              2000005021  Mahdi Nicoll-Jazuli            fc27_overall x
+Tottenham            2000030248  James Rowswell                 fc27_overall = 61
+Brighton             2000030174  José María Andrés Baixauli     fc27_overall = 69
+Brighton             2000030170  Nehemiah Oriola                fc27_overall = 60
+Brighton             2000030176  Younes Ibrahim                 height_cm, fc27_overall x
+Leeds                2000020081  Alfie Cresswell                height_cm = 178cm
+Everton              2000030192  Braiden Graham                 fc27_overall x
+Newcastle United     2000030243  Kyran Thompson                 height_cm, fc27_overall x
+Newcastle United     2000030239  Mason Miley                    height_cm, fc27_overall x
+Newcastle United     2000030242  Michael Mills                  height_cm, preferred_foot, fc27_overall x
+Newcastle United     2000030240  Miodrag Pivas                  fc27_overall = 62
+Newcastle United     2000030241  Vakhtang Salia                 fc27_overall x
+Aston Villa          2000030151  James Wright                   fc27_overall = 61
+Aston Villa          2000030149  Leon Goretzka                  fc27_overall = 78
+Coventry City        2000030180  George Shepherd                height_cm, preferred_foot, shirt_number, fc27_overall x
+Fulham               2000030194  Macaulay Zepa                  height_cm, shirt_number, fc27_overall x
 
-Tổng: 23 cầu thủ có ít nhất một trường thiếu; 22 fc27_overall NULL,
-7 height_cm NULL, 2 preferred_foot NULL và 2 shirt_number NULL;
-các trường còn lại đều đã điền. Nguồn và lý do cụ thể
-theo từng người nằm ở sources.md của CLB tương ứng.
+Trước bổ sung: 23 cầu thủ có ít nhất một trường thiếu; 22 fc27_overall NULL,
+7 height_cm NULL, 2 preferred_foot NULL và 2 shirt_number NULL.
+Sau bổ sung: 13 ô đã điền cho 13 người; còn 10 người đánh dấu x với
+10 fc27_overall NULL, 6 height_cm NULL, 2 preferred_foot NULL và
+2 shirt_number NULL. CSV nhập ban đầu và sources.md theo CLB là bản ghi
+tại thời điểm thu thập; các giá trị bổ sung nằm ở player-profile-updates-2026-10-02.csv.
