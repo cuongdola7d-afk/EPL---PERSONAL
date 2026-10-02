@@ -26,6 +26,8 @@ class PlayerProfileImportTest {
     private static final Path ARSENAL = Path.of("data/arsenal-profiles-2026-10-02/players.csv");
     private static final Path LIVERPOOL = Path.of("data/liverpool-profiles-2026-10-02/players.csv");
     private static final Path MAN_CITY = Path.of("data/manchester-city-profiles-2026-10-02/players.csv");
+    private static final Path CHELSEA = Path.of("data/chelsea-profiles-2026-10-02/players.csv");
+    private static final Path TOTTENHAM = Path.of("data/tottenham-profiles-2026-10-02/players.csv");
     private JdbcTemplate jdbc;
     private PlayerProfileImporter importer;
 
@@ -39,12 +41,13 @@ class PlayerProfileImportTest {
         importer = new PlayerProfileImporter(jdbc,
                 new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
         jdbc.update("INSERT INTO seasons (league_id, season_year) VALUES (39, 2026)");
-        for (int clubId : List.of(1000000066, 1000000057, 1000000064, 1000000065)) {
+        for (int clubId : List.of(1000000066, 1000000057, 1000000064, 1000000065,
+                1000000061, 1000000073)) {
             jdbc.update("INSERT INTO clubs (id, name) VALUES (?, ?)", clubId, "Test club " + clubId);
             jdbc.update("INSERT INTO season_clubs (league_id, season_year, club_id) VALUES (39, 2026, ?)", clubId);
         }
         PlayerProfileCsvReader reader = new PlayerProfileCsvReader();
-        for (Path file : List.of(UNITED, ARSENAL, LIVERPOOL, MAN_CITY)) {
+        for (Path file : List.of(UNITED, ARSENAL, LIVERPOOL, MAN_CITY, CHELSEA, TOTTENHAM)) {
             for (var row : reader.read(file)) {
                 jdbc.update("INSERT INTO players (id, name) VALUES (?, ?)", row.playerId(), "Player " + row.playerId());
                 jdbc.update("""
@@ -69,6 +72,17 @@ class PlayerProfileImportTest {
         assertEquals(57, count("SELECT COUNT(*) FROM player_season_profiles"));
         assertEquals(51, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NOT NULL"));
         assertEquals(6, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NULL"));
+    }
+
+    @Test
+    void importsChelseaAndTottenhamBatchesIdempotently() throws Exception {
+        assertEquals(27, importer.importFile(CHELSEA, AS_OF).inserted());
+        assertEquals(29, importer.importFile(TOTTENHAM, AS_OF).inserted());
+        assertEquals(0, importer.importFile(CHELSEA, AS_OF).inserted());
+        assertEquals(0, importer.importFile(TOTTENHAM, AS_OF).inserted());
+        assertEquals(56, count("SELECT COUNT(*) FROM player_season_profiles"));
+        assertEquals(54, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NOT NULL"));
+        assertEquals(2, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NULL"));
     }
 
     @Test

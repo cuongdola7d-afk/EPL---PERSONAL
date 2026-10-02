@@ -42,4 +42,12 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 - `backend/data/liverpool-profiles-2026-10-02/players.csv`: 31 ID hiện hành, 29 OVR EA được xác minh, hai OVR `NULL` (Jayden Danns, Wellity Lucky).
 - `backend/data/manchester-city-profiles-2026-10-02/players.csv`: 26 ID hiện hành, 22 OVR EA được xác minh, bốn OVR `NULL` (Allan Andrade Elias, Floyd Samba, Kaden Braithwaite, Ryan McAidoo).
 - Cả 57 ID/CLB khớp membership production ngày 02/10/2026; mỗi người đúng một dòng và đủ năm trường SofaScore. File `sources.md` của từng CLB ghi URL hồ sơ cùng trường hợp EA còn nhãn CLB cũ.
-- H2 cô lập nhập 31 + 26 và nhập lại thêm 0; backend `mvn package` qua 225 test, 0 lỗi. Hai batch này hiện chỉ là dữ liệu local để review, chưa nhập production.
+- H2 cô lập nhập 31 + 26 và nhập lại thêm 0; backend `mvn package` qua 225 test, 0 lỗi.
+- Trước khi nhập production đã xác nhận đúng Railway MySQL `railway`, kiểm tra 57/57 cặp ID/CLB có membership hiện hành và dòng mùa hợp lệ; bảng hồ sơ chưa có dòng Liverpool/Man City. Bản sao lưu SQL Git ignored: `backend/local-backups/player-profiles-2026-10-02/premierhub-before-liverpool-city-20261002-135010.sql` (762.922 byte; SHA-256 `C9446F3ACE3226C574F6F7724A32FFF9775298FB4C934114D5B0B0845D190392`).
+- Production nhập Liverpool 31 và Manchester City 26; chạy lại mỗi CSV thêm 0. Đọc lại MySQL khớp từng ô của 57 dòng CSV. Tổng bốn CLB đã nhập: 111 hồ sơ, 104 OVR số, 7 OVR `NULL`; `players` vẫn 984, `manual_fixture_player_stats` vẫn 2.000 và mùa 2024/25 vẫn có trong bảng `seasons`. Chưa commit, push hoặc deploy.
+
+## Chelsea và Tottenham ngày 02/10/2026
+
+- `backend/data/chelsea-profiles-2026-10-02/players.csv`: 27 ID hiện hành, đủ năm trường SofaScore, 26 OVR EA FC 27; Mahdi Nicoll-Jazuli còn OVR `NULL`.
+- `backend/data/tottenham-profiles-2026-10-02/players.csv`: 29 ID hiện hành, đủ năm trường SofaScore, 28 OVR EA FC 27; James Rowswell còn OVR `NULL`.
+- Cả 56 ID/CLB khớp membership production ngày 02/10/2026, không trùng ID; file `sources.md` từng CLB ghi URL hồ sơ và các khác biệt tên/nhãn CLB. H2 cô lập nhập 27 + 29 rồi nhập lại thêm 0. Backend `mvn package` qua 226 test, 0 lỗi. Hai batch này mới được chuẩn bị local, chưa nhập MySQL production.
