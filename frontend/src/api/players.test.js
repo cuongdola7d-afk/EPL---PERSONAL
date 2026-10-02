@@ -13,4 +13,7 @@ test('player response accepts missing 2026 stats without accepting invalid value
   assert.equal(isValidPlayer(player), true)
   assert.equal(isValidPlayer({ ...player, goals: 2, assists: 1 }), true)
   assert.equal(isValidPlayer({ ...player, goals: '0' }), false)
+  assert.equal(isValidPlayer({ ...player, fc27Overall: null }), true)
+  assert.equal(isValidPlayer({ ...player, fc27Overall: 72 }), true)
+  assert.equal(isValidPlayer({ ...player, fc27Overall: '72' }), false)
 })

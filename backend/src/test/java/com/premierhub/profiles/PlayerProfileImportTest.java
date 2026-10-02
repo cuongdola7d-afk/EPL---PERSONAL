@@ -1,5 +1,9 @@
 package com.premierhub.profiles;
 
+import tools.jackson.databind.ObjectMapper;
+import com.premierhub.service.FixtureEvidenceService;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.service.MatchScoringService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -81,6 +85,21 @@ class PlayerProfileImportTest {
                         """, row.playerId(), row.clubId());
             }
         }
+    }
+
+    @Test
+    void currentRosterReturnsStoredOverallAndKeepsMissingOverallNull() throws Exception {
+        importer.importFile(UNITED, AS_OF);
+        importer.importFile(ARSENAL, AS_OF);
+        FootballQueries queries = new FootballQueries(jdbc, new MatchScoringService(),
+                new FixtureEvidenceService(jdbc, new ObjectMapper()));
+
+        var roster = queries.players(2026, null, null, AS_OF);
+        assertEquals(72, roster.stream().filter(player -> player.id() == 2000001025)
+                .findFirst().orElseThrow().fc27Overall());
+        assertEquals(null, roster.stream().filter(player -> player.id() == 2000030235)
+                .findFirst().orElseThrow().fc27Overall());
+        assertEquals(1, roster.stream().filter(player -> player.id() == 2000001025).count());
     }
 
     @Test

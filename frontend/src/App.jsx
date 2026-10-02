@@ -4,6 +4,7 @@ import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
 import StandingsPage from './components/StandingsPage.jsx'
 import FantasyReplayPage from './components/FantasyReplayPage.jsx'
+import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import { parsePlayerDetailHash } from './utils/playerRoute.js'
 import './App.css'
@@ -37,6 +38,10 @@ const PAGES = {
     navLabel: 'Fantasy Replay', label: 'Fantasy Replay · GW1 2024/25', title: 'Chọn 11 cầu thủ.', highlight: 'Xem lại GW1.',
     description: 'Chơi lại Gameweek 1 mùa 2024/25 đã kết thúc với điểm v1 đã xác minh từ 10 trận. Đội hình được lưu trên trình duyệt của bạn.',
     component: FantasyReplayPage,
+  },
+  fantasy: {
+    navLabel: 'Fantasy', label: 'Fantasy · 2026/27', title: 'Đội hình của bạn.', highlight: 'Theo OVR FC 27.',
+    description: 'Chọn 11 cầu thủ từ roster mùa 2026/27.', component: FantasyPage, fullPage: true,
   },
 }
 
@@ -86,7 +91,7 @@ function App() {
       </header>
 
       <main>
-        {!playerDetail && <section className="hero" aria-labelledby="hero-title">
+        {!playerDetail && !current.fullPage && <section className="hero" aria-labelledby="hero-title">
           <div className="container hero-inner">
             <div className="hero-copy">
               <p className="eyebrow"><span className="eyebrow-line" /> PremierHub / {current.label}</p>

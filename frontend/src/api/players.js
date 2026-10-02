@@ -9,7 +9,9 @@ export function isValidPlayer(player) {
     typeof player.club === 'string' &&
     typeof player.position === 'string' &&
     (player.goals === null || typeof player.goals === 'number') &&
-    (player.assists === null || typeof player.assists === 'number')
+    (player.assists === null || typeof player.assists === 'number') &&
+    (player.fc27Overall === undefined || player.fc27Overall === null ||
+      (Number.isInteger(player.fc27Overall) && player.fc27Overall >= 1 && player.fc27Overall <= 99))
 }
 
 export function playerPath(filters, season) {
