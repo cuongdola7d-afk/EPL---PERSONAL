@@ -1,0 +1,37 @@
+# Hồ sơ cầu thủ 2026/27: schema và importer
+
+## Định dạng và quy tắc
+
+`player_season_profiles` lưu hồ sơ theo khóa `(league_id, season_year, player_id, club_id)` và tham chiếu `player_season_stats`. Importer chỉ nhận Premier League 2026/27 (`league_id=39`, `season_year=2026`). Nó không tạo hoặc sửa cầu thủ, membership, thống kê trận, hay dữ liệu 2024/25.
+
+CSV gồm `player_id,club_id,nationality,birth_date,height_cm,preferred_foot,shirt_number,fc27_overall`. Ô trống được lưu là SQL `NULL`, không phải 0. Ngày có dạng `YYYY-MM-DD`; chân thuận là `LEFT`, `RIGHT` hoặc `BOTH`; chiều cao là 100–250 cm, số áo và OVR là 1–99 khi có giá trị. `fc27_overall` chỉ chứa OVR cơ bản đã xác minh từ EA SPORTS FC 27. Mức **72 cho Max Dowman chỉ là đề xuất ước tính của PremierHub**, không ghi vào cột này.
+
+Mỗi lần nhập phải cung cấp ngày chốt membership. Importer kiểm tra cầu thủ có đúng một membership hiệu lực tại ngày đó, thuộc `club_id` trong CSV và có dòng `player_season_stats` cùng mùa. Nó đọc, kiểm tra toàn bộ file trước khi chèn trong một transaction; ID trùng hoặc hồ sơ đã lưu khác bất kỳ trường nào làm lệnh thất bại và không ghi đè. Nhập lại cùng nội dung thêm 0.
+
+Người có `fc27_overall IS NULL` vẫn có hồ sơ cầu thủ nhưng **chưa đủ điều kiện chọn Fantasy**. Lượt này chỉ lưu dữ liệu; giao diện và logic chọn Fantasy chưa được thay đổi. Carlos Baleba giữ membership Manchester United (`club_id=1000000066`); nhãn Brighton trên EA không làm đổi CLB của anh.
+
+## Dùng lại cho CLB tiếp theo
+
+1. Chốt roster từ PremierHub theo `season=2026&asOf=<ngày>`, tạo CSV tám cột cùng file ghi chú URL nguồn như hai batch hiện tại.
+2. Thử importer trên H2 cô lập và chạy lại, kiểm tra OVR trống vẫn là `NULL`, ID/membership và giá trị từng trường.
+3. Trước khi ghi production, xác nhận đúng Railway MySQL của backend, đối chiếu các cặp `player_id,club_id` đang hiệu lực, rồi tạo bản sao lưu SQL mới ngoài Git.
+4. Cung cấp các biến `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD` qua môi trường và chạy từ thư mục `backend/`:
+
+```powershell
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
+  --spring.profiles.active=prod --spring.main.web-application-type=none `
+  --premierhub.player-profiles.enabled=true `
+  --premierhub.player-profiles.file=data/<club-profiles-date>/players.csv `
+  --premierhub.player-profiles.as-of=2026-10-02
+```
+
+5. Chạy lại cùng lệnh để xác nhận `inserted=0`, rồi đọc MySQL so sánh từng ô với CSV và kiểm tra các bảng roster/trận không đổi. `schema.sql` tạo bảng mới bằng `CREATE TABLE IF NOT EXISTS` khi backend khởi động; khi production chưa có bảng, sao lưu phải hoàn tất **trước** lần khởi động importer đầu tiên.
+
+## Hai batch ngày 02/10/2026
+
+- CSV: `backend/data/manchester-united-profiles-2026-10-02/players.csv` (30 người) và `backend/data/arsenal-profiles-2026-10-02/players.csv` (24 người). Không có batch nào khác được nhập.
+- H2 cô lập: thêm 30 + 24; chạy lại cả hai thêm 0. Kết quả 54 hồ sơ, 52 OVR có số, hai OVR `NULL`; test còn xác nhận từ chối ID trùng, OVR 0, membership hết hiệu lực và xung đột.
+- Backend `mvn package` sau thay đổi: 224 test qua, 0 lỗi; JAR được build thành công. Trên Windows của workspace này, thư mục tạm Java cho JUnit được đặt trong `backend/target/test-tmp` để các test dùng `@TempDir` có quyền ghi.
+- Production trước ghi: xác nhận Railway MySQL host `altaria.proxy.rlwy.net`, database `railway`; 54 cặp ID/CLB trong hai CSV khớp chính xác membership đang hiệu lực ngày 02/10/2026. Trước đó bảng hồ sơ chưa tồn tại, `players` có 984 dòng và `manual_fixture_player_stats` có 2.000 dòng.
+- Bản sao lưu SQL mới, Git ignored: `backend/local-backups/player-profiles-2026-10-02/premierhub-before-profiles-20261002-131254.sql` (756.207 byte; SHA-256 `1DBD7DA78FCD9C89E34E27B2EE334D07407CF8DBF72C9E6D9F83DA78D6B61783`).
+- Production nhập MU thêm 30, Arsenal thêm 24; chạy lại mỗi CSV thêm 0, kể cả khi chạy lại bằng JAR build cuối. Đọc MySQL khớp từng ô của 54 dòng CSV: MU 30/29 OVR, Arsenal 24/23 OVR. Hai OVR `NULL` là Bendito Mantato (`2000030235`) và Max Dowman (`2000001025`). Carlos Baleba (`2000006019`) có `club_id=1000000066`. `players` vẫn 984 dòng, `manual_fixture_player_stats` vẫn 2.000 dòng và mùa 2024/25 vẫn hiện diện.

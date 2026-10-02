@@ -53,6 +53,25 @@ CREATE TABLE IF NOT EXISTS manual_player_memberships (
         REFERENCES player_season_stats(league_id, season_year, player_id, club_id)
 );
 
+CREATE TABLE IF NOT EXISTS player_season_profiles (
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    club_id INTEGER NOT NULL,
+    nationality VARCHAR(100),
+    birth_date DATE,
+    height_cm INTEGER,
+    preferred_foot VARCHAR(5),
+    shirt_number INTEGER,
+    fc27_overall INTEGER,
+    PRIMARY KEY (league_id, season_year, player_id, club_id),
+    FOREIGN KEY (league_id, season_year, player_id, club_id)
+        REFERENCES player_season_stats(league_id, season_year, player_id, club_id),
+    CHECK (height_cm IS NULL OR height_cm BETWEEN 100 AND 250),
+    CHECK (shirt_number IS NULL OR shirt_number BETWEEN 1 AND 99),
+    CHECK (fc27_overall IS NULL OR fc27_overall BETWEEN 1 AND 99)
+);
+
 CREATE TABLE IF NOT EXISTS fixtures (
     id INTEGER PRIMARY KEY,
     league_id INTEGER NOT NULL,
