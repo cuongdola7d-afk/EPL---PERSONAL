@@ -129,7 +129,7 @@ Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). �
 - Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Mỗi cầu thủ có thêm `score` gồm `status` (`COMPLETE`/`PROVISIONAL`), `confirmedPoints` và `parts` giải thích từng khoản điểm. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê và điểm; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
 - BXH: `GET /api/standings`; chỉ số lấy từ BXH nhà cung cấp và được đọc lại từ database theo mỗi request.
 
-Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). CLB, trận đấu và BXH có dữ liệu cơ bản cho cả mùa 2024/25 và 2026/27; API cầu thủ đọc danh sách 2026/27 sau khi nhập CSV thủ công, còn Fantasy Replay hiện chỉ có 2024/25. Bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. API cầu thủ mùa 2026/27 mặc định trả CLB hiện tại; dùng `asOf` để xem CLB tại một ngày cũ khi cầu thủ chuyển đội.
+Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). CLB, trận đấu và BXH có dữ liệu cơ bản cho cả mùa 2024/25 và 2026/27; API cầu thủ đọc danh sách 2026/27 sau khi nhập CSV thủ công. Bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. API cầu thủ mùa 2026/27 mặc định trả CLB hiện tại; dùng `asOf` để xem CLB tại một ngày cũ khi cầu thủ chuyển đội.
 
 Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
 
@@ -215,7 +215,7 @@ Sau deploy, thử `https://<railway-domain>/api/clubs?season=2024`, `/api/player
 
 Snapshot `backend/src/main/resources/data/gw1-2024-snapshot.json` được xuất từ H2 local đã kiểm chứng; ứng dụng production đọc snapshot đóng trong JAR, **không cần file H2 local hoặc API-Football key**. Snapshot có 20 CLB, 432 hồ sơ cầu thủ, 63 dòng thống kê mùa, 10 trận, 20 dòng BXH cuối mùa, 400 dòng cầu thủ–trận và 10 bằng chứng tính điểm. Trang Cầu thủ chỉ hiển thị 63 dòng thống kê mùa hiện có; dữ liệu mùa này chưa đầy đủ. Giá trị `NULL` của provider được giữ nguyên. Trang Lịch đấu ghi rõ GW1 2024/25; BXH ghi rõ đó là **BXH cuối mùa 2024/25**, không phải BXH sau GW1.
 
-Trang `/#replay` là **Fantasy Replay · GW1 2024/25**, chơi lại vòng đã kết thúc. Frontend lấy 10 trận qua `/api/matches?season=2024&matchweek=1`, rồi lấy từng `/api/matches/{id}/details?season=2024`; chỉ mở chọn đội khi đủ 10 bằng chứng `VERIFIED` và 400 điểm cầu thủ–trận `COMPLETE`. Danh sách 63 dòng thống kê mùa không được dùng để chọn đội. Chọn đúng 11 người: 1 thủ môn, 3–5 hậu vệ, 2–5 tiền vệ, 1–3 tiền đạo, tối đa 3 cầu thủ mỗi CLB. Nút **Xem kết quả** cộng điểm v1 đã lưu; đội hình lưu bằng `localStorage` của trình duyệt, không cần tài khoản. Bản này chưa có ngân sách, đội trưởng, chuyển nhượng, bonus hay điểm giữ sạch lưới.
+Trang `/#fantasy` dùng roster và OVR FC 27 của mùa 2026/27 tại ngày `2026-10-02`. Người chơi chọn 11 cầu thủ theo một trong bốn sơ đồ, tối đa ba người mỗi CLB; nút **Xem kết quả** hiển thị tổng OVR đội hình. Đội hình lưu trong `localStorage`, không cần tài khoản. Cầu thủ thiếu OVR và Max Dowman (OVR 72 là mức ước tính của PremierHub) vẫn có trong danh sách nhưng chưa thể chọn Fantasy.
 
 Nhập vào một database **đã tạo hoặc đang dùng** (không xóa bảng/dòng cũ). Dùng đúng JDBC URL và credentials của database mà **web service Railway** sử dụng:
 
@@ -269,15 +269,15 @@ Sau khi khởi động backend local với cùng H2, kiểm tra:
 - `/api/matches?season=2026`: 380 trận, 330 trận chưa có tỉ số tại thời điểm kiểm chứng.
 - `/api/standings?season=2026`: 20 dòng TOTAL hiện tại.
 - `/api/players?season=2026`: mảng rỗng trước khi nhập danh sách thủ công; chi tiết trận 2026 chưa có thống kê cầu thủ.
-- Các API `season=2024` và Replay GW1 vẫn dùng dữ liệu/điểm cũ.
+- Các API `season=2024` vẫn dùng dữ liệu/điểm cũ.
 
 Ngày 27/09/2026 đã nhập cache kiểm chứng vào Railway MySQL production: 20 CLB, 380 trận (50 `FINISHED`) và 20 dòng BXH; 330 trận chưa kết thúc giữ tỉ số `NULL`. Nhập lại tạo thêm 0 CLB và 0 trận. Schema chỉ tạo thêm hai bảng ánh xạ, không xóa bảng cũ; bản sao lưu SQL trước khi nhập được lưu local ngoài Git. Không thiết lập Cron hoặc Pre-deploy Command để tự nhập lại. Thống kê cầu thủ–trận 2026 sẽ nhập thủ công ở bước sau.
 
 Frontend đã có bộ chọn mùa **2024/25 / 2026/27** ở CLB, Lịch đấu và BXH. Lựa chọn mùa được giữ khi chuyển giữa ba trang trong phiên hiện tại; đổi mùa sẽ xóa bộ lọc và đóng chi tiết trận cũ. API CLB (kể cả tìm kiếm), lịch đấu, chi tiết trận và BXH nhận đúng `season`. Lịch đấu mặc định GW1; có thể chọn tất cả vòng đã lưu hoặc GW1–38 cho 2026/27 (2024/25 mới có GW1).
 
-BXH ghi rõ **cuối mùa 2024/25** hoặc **hiện tại 2026/27 theo lần đồng bộ gần nhất**. Các trang dữ liệu 2026/27 có attribution và liên kết football-data.org. Trận chưa đá không hiển thị tỉ số giả. Vì 2026/27 chưa có thống kê cầu thủ, toàn bộ trận mùa này chưa có nút mở thống kê; nút hiện có chỉ dành cho trận đã kết thúc thuộc GW1 2024/25. Trang Cầu thủ và Fantasy Replay vẫn dùng 2024/25; Replay cố định GW1.
+BXH ghi rõ **cuối mùa 2024/25** hoặc **hiện tại 2026/27 theo lần đồng bộ gần nhất**. Các trang dữ liệu 2026/27 có attribution và liên kết football-data.org. Trận chưa đá không hiển thị tỉ số giả. Trang Cầu thủ hỗ trợ cả hai mùa; Fantasy chỉ dùng 2026/27.
 
-Kiểm tra local bằng backend đọc H2 ở cổng 8080 và `npm run dev` trong `frontend/`, mở `http://localhost:5173/`. Thử chuyển mùa trên ba trang: 2026/27 có 20 CLB, GW1 có 10 trận, BXH có 20 đội; chọn GW6 để xem trận chưa đá. Chuyển về 2024/25 và mở chi tiết GW1 để thấy dữ liệu đã xác minh. Sau khi phát hành backend và frontend, kiểm tra lại các URL production `/api/clubs?season=2026`, `/api/matches?season=2026&matchweek=1`, `/api/matches?season=2026&matchweek=6`, `/api/standings?season=2026` và trang `/#replay`. Frontend không tự gọi nhà cung cấp hoặc đồng bộ database.
+Kiểm tra local bằng backend đọc H2 ở cổng 8080 và `npm run dev` trong `frontend/`, mở `http://localhost:5173/`. Thử chuyển mùa trên ba trang: 2026/27 có 20 CLB, GW1 có 10 trận, BXH có 20 đội; chọn GW6 để xem trận chưa đá. Chuyển về 2024/25 và mở chi tiết GW1 để thấy dữ liệu đã xác minh. Sau khi phát hành backend và frontend, kiểm tra lại các URL production `/api/clubs?season=2026`, `/api/matches?season=2026&matchweek=1`, `/api/matches?season=2026&matchweek=6`, `/api/standings?season=2026` và trang `/#fantasy`. Frontend không tự gọi nhà cung cấp hoặc đồng bộ database.
 
 Tài liệu chính thức: [Competition v4 và bộ lọc mùa](https://docs.football-data.org/general/v4/competition.html), [trạng thái và header X-Auth-Token](https://docs.football-data.org/general/v4/lookup_tables.html), [Free 10 request/phút và ý nghĩa null](https://docs.football-data.org/general/v4/policies.html).
 
