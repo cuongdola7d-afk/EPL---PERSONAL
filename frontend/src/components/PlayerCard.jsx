@@ -28,17 +28,21 @@ function PlayerCard({ player, season, view }) {
   const tier = player.fc27Overall == null ? 'na' : player.fc27Overall >= 85 ? 'gold' :
     player.fc27Overall >= 78 ? 'green' : player.fc27Overall >= 70 ? 'blue' : 'silver'
   const color = clubColor(player.club)
+  const matchStats = <div className="pp-player-stats" title={season === 2026 ? 'Cộng từ các trận đã có thống kê' : 'Thống kê mùa'}>
+    <span><strong>{player.goals ?? '—'}</strong><small>Bàn thắng</small></span>
+    <span><strong>{player.assists ?? '—'}</strong><small>Kiến tạo</small></span>
+  </div>
   const overall = <div className="pp-overall-wrap"><span className={`pp-overall pp-overall-${tier}`}>{player.fc27Overall ?? '—'}</span>{view === 'grid' && <small>{estimated ? 'ước tính' : player.fc27Overall == null ? 'chưa có' : 'overall'}</small>}</div>
   const avatar = <span className="pp-avatar" style={{ '--pp-club-color': color, '--pp-position-color': POSITION_COLORS[player.position] ?? '#5cd697' }} aria-hidden="true">{getInitials(player.name)}{view === 'grid' && <span className={`pp-position pp-position-${positionCode}`}>{positionCode}</span>}</span>
 
-  return <a className={`pp-player pp-player-${view}`} href={playerDetailHash(player.id, season)} aria-label={`Xem hồ sơ ${player.name}, ${player.club}, ${player.fc27Overall == null ? 'chưa có OVR' : `OVR ${player.fc27Overall}${estimated ? ' ước tính' : ''}`}`}>
+  return <a className={`pp-player pp-player-${view}`} href={playerDetailHash(player.id, season)} aria-label={`Xem hồ sơ ${player.name}, ${player.club}, ${player.fc27Overall == null ? 'chưa có OVR' : `OVR ${player.fc27Overall}${estimated ? ' ước tính' : ''}`}, ${player.goals == null ? 'chưa có số bàn thắng' : `${player.goals} bàn thắng`}, ${player.assists == null ? 'chưa có số kiến tạo' : `${player.assists} kiến tạo`}`}>
     {view === 'grid' ? <>
       <div className="pp-player-top">{avatar}{overall}</div>
       <div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span></div>
-      <div className="pp-player-go">Xem hồ sơ <span aria-hidden="true">→</span></div>
+      <div className="pp-player-footer">{matchStats}<div className="pp-player-go">Xem hồ sơ <span aria-hidden="true">→</span></div></div>
     </> : <>
       {avatar}<div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span></div>
-      <span className={`pp-position pp-position-${positionCode}`}>{positionLabel}</span>{overall}<span className="pp-list-arrow" aria-hidden="true">→</span>
+      <span className={`pp-position pp-position-${positionCode}`}>{positionLabel}</span>{matchStats}{overall}<span className="pp-list-arrow" aria-hidden="true">→</span>
     </>}
   </a>
 }

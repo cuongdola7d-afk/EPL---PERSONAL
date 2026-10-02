@@ -3,9 +3,9 @@ import test from 'node:test'
 import { matchesPlayerSearch, sortPlayers } from './playerSort.js'
 
 const players = [
-  { id: 1, name: 'Álvaro', club: 'Arsenal', fc27Overall: null, goals: 0 },
-  { id: 2, name: 'Bruno', club: 'Manchester United', fc27Overall: 85, goals: 3 },
-  { id: 3, name: 'Carlos', club: 'Brighton', fc27Overall: 72, goals: 1 },
+  { id: 1, name: 'Álvaro', club: 'Arsenal', fc27Overall: null, goals: 0, assists: null },
+  { id: 2, name: 'Bruno', club: 'Manchester United', fc27Overall: 85, goals: 3, assists: 1 },
+  { id: 3, name: 'Carlos', club: 'Brighton', fc27Overall: 72, goals: 1, assists: 2 },
 ]
 
 test('FC 27 overall defaults to descending and unknown values stay last in both directions', () => {
@@ -17,6 +17,9 @@ test('FC 27 overall defaults to descending and unknown values stay last in both 
 test('other sort fields and Vietnamese name search work', () => {
   assert.deepEqual(sortPlayers(players, 'name', 'asc').map((player) => player.id), [1, 2, 3])
   assert.deepEqual(sortPlayers(players, 'goals', 'desc').map((player) => player.id), [2, 3, 1])
+  assert.deepEqual(sortPlayers(players, 'goals', 'asc').map((player) => player.id), [1, 3, 2])
+  assert.deepEqual(sortPlayers(players, 'assists', 'desc').map((player) => player.id), [3, 2, 1])
+  assert.deepEqual(sortPlayers(players, 'assists', 'asc').map((player) => player.id), [2, 3, 1])
   assert.equal(matchesPlayerSearch('Đặng Văn Lâm', 'dang van'), true)
   assert.equal(matchesPlayerSearch('Álvaro', 'alvaro'), true)
 })

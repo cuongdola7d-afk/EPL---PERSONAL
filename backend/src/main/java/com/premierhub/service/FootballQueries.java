@@ -69,7 +69,7 @@ public class FootballQueries {
             LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneOffset.UTC) : asOf;
             return jdbc.query("""
                     SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
-                           ps.goals, ps.assists, profile.fc27_overall, profile.nationality,
+                           totals.goals, totals.assists, profile.fc27_overall, profile.nationality,
                            profile.birth_date, profile.height_cm, profile.preferred_foot,
                            profile.shirt_number
                     FROM manual_player_memberships membership
@@ -81,13 +81,34 @@ public class FootballQueries {
                     LEFT JOIN player_season_profiles profile ON profile.league_id=membership.league_id
                         AND profile.season_year=membership.season_year
                         AND profile.player_id=membership.player_id AND profile.club_id=membership.club_id
+                    LEFT JOIN (
+                        SELECT stats.league_id, stats.season_year, stats.player_id,
+                               SUM(stats.goals) AS goals, SUM(stats.assists) AS assists
+                        FROM manual_fixture_player_stats stats
+                        JOIN fixtures fixture ON fixture.id=stats.fixture_id
+                            AND fixture.league_id=stats.league_id
+                            AND fixture.season_year=stats.season_year
+                        JOIN manual_player_memberships stats_membership
+                            ON stats_membership.league_id=stats.league_id
+                            AND stats_membership.season_year=stats.season_year
+                            AND stats_membership.player_id=stats.player_id
+                            AND stats_membership.club_id=stats.club_id
+                            AND stats_membership.start_date<=fixture.match_date
+                            AND (stats_membership.end_date IS NULL
+                                 OR stats_membership.end_date>fixture.match_date)
+                        WHERE fixture.status='FINISHED' AND fixture.match_date<=?
+                            AND stats.club_id IN (fixture.home_club_id, fixture.away_club_id)
+                        GROUP BY stats.league_id, stats.season_year, stats.player_id
+                    ) totals ON totals.league_id=membership.league_id
+                        AND totals.season_year=membership.season_year
+                        AND totals.player_id=membership.player_id
                     WHERE membership.league_id=? AND membership.season_year=?
                       AND membership.start_date<=?
                       AND (membership.end_date IS NULL OR membership.end_date>?)
                       AND (? IS NULL OR LOWER(c.name)=LOWER(?))
                       AND (? IS NULL OR ps.position=?)
                     ORDER BY p.name, c.name
-                    """, (rs, row) -> playerResponse(rs), LEAGUE_ID, season,
+                    """, (rs, row) -> playerResponse(rs), Date.valueOf(effectiveDate), LEAGUE_ID, season,
                     Date.valueOf(effectiveDate), Date.valueOf(effectiveDate),
                     blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
         }
