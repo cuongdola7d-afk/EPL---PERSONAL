@@ -7,6 +7,7 @@ import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import { parsePlayerDetailHash } from './utils/playerRoute.js'
 import './App.css'
+import './DarkSite.css'
 
 const PAGES = {
   clubs: {
@@ -19,7 +20,7 @@ const PAGES = {
     hasSeasons: true,
     navLabel: 'Cầu thủ', label: 'Cầu thủ', title: 'Những gương mặt.', highlight: 'Tạo nên trận đấu.',
     description: 'Khám phá cầu thủ theo câu lạc bộ và vị trí, cùng số bàn thắng và kiến tạo từ PremierHub API.',
-    component: PlayerPage,
+    component: PlayerPage, fullPage: true,
   },
   matches: {
     hasSeasons: true,
@@ -46,7 +47,7 @@ function pageFromHash() {
 
 function App() {
   const [page, setPage] = useState(pageFromHash)
-  const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ?? 2024)
+  const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ?? 2026)
   const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
 
   useEffect(() => {

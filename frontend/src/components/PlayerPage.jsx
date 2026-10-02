@@ -1,13 +1,15 @@
-import { useCallback, useState } from 'react'
-import { fetchClubs } from '../api/clubs.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchPlayers } from '../api/players.js'
 import { useApiList } from '../hooks/useApiList.js'
+import { matchesPlayerSearch, sortPlayers } from '../utils/playerSort.js'
+import { SEASONS } from '../utils/seasons.js'
 import PlayerCard from './PlayerCard.jsx'
 import ResultPanel from './ResultPanel.jsx'
-import SeasonPicker from './SeasonPicker.jsx'
-import { SEASONS } from '../utils/seasons.js'
+import './PlayerPage.css'
 
+const PAGE_SIZE = 24
 const POSITIONS = [
+  { value: '', label: 'Tất cả' },
   { value: 'GOALKEEPER', label: 'Thủ môn' },
   { value: 'DEFENDER', label: 'Hậu vệ' },
   { value: 'MIDFIELDER', label: 'Tiền vệ' },
@@ -15,124 +17,72 @@ const POSITIONS = [
 ]
 
 function PlayerPage({ season, onSeasonChange }) {
+  const [query, setQuery] = useState('')
   const [club, setClub] = useState('')
   const [position, setPosition] = useState('')
-  const [sortByGoals, setSortByGoals] = useState(false)
-  const requestClubs = useCallback((signal) => fetchClubs('', signal, season), [season])
-  const requestPlayers = useCallback(
-    (signal) => fetchPlayers({ club, position }, signal, season),
-    [club, position, season],
-  )
-  const clubList = useApiList(requestClubs)
+  const [view, setView] = useState('grid')
+  const [sortBy, setSortBy] = useState('overall')
+  const [direction, setDirection] = useState('desc')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const searchRef = useRef(null)
+  const requestPlayers = useCallback((signal) => fetchPlayers({ club: '', position: '' }, signal, season), [season])
   const { data: players, status, error, reload } = useApiList(requestPlayers)
-  const hasFilters = Boolean(club || position)
-  const visiblePlayers = [...players]
-  if (season === 2024 && sortByGoals) {
-    visiblePlayers.sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
-  }
-  const totals = players.reduce((sum, player) => ({
-    goals: sum.goals + player.goals,
-    assists: sum.assists + player.assists,
-  }), { goals: 0, assists: 0 })
+
+  useEffect(() => {
+    function handleShortcut(event) {
+      if (event.key !== '/' || event.altKey || event.ctrlKey || event.metaKey ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return
+      event.preventDefault()
+      searchRef.current?.focus()
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
+
+  const clubs = [...new Set(players.map((player) => player.club))].sort((a, b) => a.localeCompare(b, 'vi'))
+  const filtered = players.filter((player) =>
+    (!query || matchesPlayerSearch(player.name, query)) && (!club || player.club === club) &&
+    (!position || player.position === position))
+  const sorted = sortPlayers(filtered, sortBy, direction)
+  const shown = sorted.slice(0, visibleCount)
+  const hasFilters = Boolean(query || club || position)
 
   function clearFilters() {
+    setQuery('')
     setClub('')
     setPosition('')
+    setVisibleCount(PAGE_SIZE)
   }
 
-  return (
-    <section className="directory-section" id="directory" aria-labelledby="players-heading">
-      <div className="container">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>02 / PLAYERS</span></p>
-            <h2 id="players-heading">Cầu thủ</h2>
-            <p className="section-description">Cầu thủ Premier League {SEASONS[season]} từ API PremierHub.</p>
-            {season === 2024 ? (
-              <p className="filter-note">Thống kê mùa 2024/25 của trang Cầu thủ mới được lưu một phần. Một số CLB chưa có cầu thủ trong danh sách này; kết quả rỗng không có nghĩa CLB không có cầu thủ.</p>
-            ) : (
-              <p className="filter-note">Danh sách cầu thủ 2026/27 đang được bổ sung và hiện mới có dữ liệu cho một số CLB. Chỉ số chưa có được hiển thị bằng dấu —.</p>
-            )}
-          </div>
-          {status === 'success' && (
-            <p className="result-count" aria-live="polite">
-              <strong>{players.length}</strong> {hasFilters ? 'kết quả' : 'cầu thủ'}
-            </p>
-          )}
+  return <section className="player-directory" id="directory" aria-labelledby="players-heading">
+    <div className="pp-wrap">
+      <div className="pp-top"><div className="pp-seasons" role="group" aria-label="Mùa giải">
+        {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button" aria-pressed={season === Number(year)} onClick={() => onSeasonChange(Number(year))}>{label}</button>)}
+      </div></div>
+
+      <header className="pp-hero"><div><p>PREMIERHUB / CẦU THỦ</p><h1 id="players-heading">Cầu thủ</h1><span>Premier League {SEASONS[season]}</span></div><div className="pp-hero-art" aria-hidden="true"><i /><i /></div></header>
+
+      <div className="pp-filters" role="group" aria-label="Bộ lọc cầu thủ">
+        <div className="pp-search"><span aria-hidden="true">⌕</span><input ref={searchRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(PAGE_SIZE) }} placeholder="Tìm cầu thủ theo tên" aria-label="Tìm cầu thủ theo tên" />
+          {query ? <button type="button" onClick={() => { setQuery(''); setVisibleCount(PAGE_SIZE); searchRef.current?.focus() }}>Xóa</button> : <kbd>/</kbd>}
         </div>
-
-        <SeasonPicker season={season} onChange={onSeasonChange} showAttribution={false} />
-        <div className="search-form filters-form" role="group" aria-label="Bộ lọc cầu thủ">
-          <div className="filter-controls">
-            <div className="filter-field">
-              <label htmlFor="player-club">Câu lạc bộ</label>
-              <select
-                id="player-club"
-                value={club}
-                onChange={(event) => setClub(event.target.value)}
-                disabled={clubList.status !== 'success'}
-              >
-                <option value="">Tất cả câu lạc bộ</option>
-                {clubList.data.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="player-position">Vị trí</label>
-              <select id="player-position" value={position} onChange={(event) => setPosition(event.target.value)}>
-                <option value="">Tất cả vị trí</option>
-                {POSITIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-            </div>
-            {season === 2024 && (
-              <div className="filter-field">
-                <label htmlFor="player-sort">Sắp xếp</label>
-                <select id="player-sort" value={sortByGoals ? 'goals' : 'default'} onChange={(event) => setSortByGoals(event.target.value === 'goals')}>
-                  <option value="default">Thứ tự API</option>
-                  <option value="goals">Bàn thắng giảm dần</option>
-                </select>
-              </div>
-            )}
-            {hasFilters && <button className="clear-button filter-clear" type="button" onClick={clearFilters}>Xóa lọc</button>}
-          </div>
-          {clubList.status === 'loading' && <p className="filter-note">Đang tải danh sách câu lạc bộ...</p>}
-          {clubList.status === 'error' && (
-            <p className="filter-note filter-note-error" role="alert">
-              Không tải được lựa chọn câu lạc bộ. <button type="button" onClick={clubList.reload}>Thử lại</button>
-            </p>
-          )}
+        <div className="pp-filter-row"><div className="pp-position-filters" role="group" aria-label="Vị trí">{POSITIONS.map((item) => <button key={item.value} type="button" aria-pressed={position === item.value} onClick={() => { setPosition(item.value); setVisibleCount(PAGE_SIZE) }}>{item.label}</button>)}</div>
+          <label className="pp-select"><span className="sr-only">Câu lạc bộ</span><select value={club} onChange={(event) => { setClub(event.target.value); setVisibleCount(PAGE_SIZE) }} disabled={status !== 'success'}><option value="">Mọi CLB</option>{clubs.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
+          <span className="pp-filter-spacer" />
+          <label className="pp-select pp-sort-select"><span className="sr-only">Sắp xếp theo</span><select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setVisibleCount(PAGE_SIZE) }}><option value="overall">OVR FC 27</option><option value="name">Tên</option><option value="club">Câu lạc bộ</option><option value="goals">Bàn thắng</option><option value="assists">Kiến tạo</option></select></label>
+          <button className="pp-sort-direction" type="button" onClick={() => setDirection(direction === 'desc' ? 'asc' : 'desc')} aria-label={`Sắp xếp ${direction === 'desc' ? 'giảm dần' : 'tăng dần'}. Bấm để đổi chiều`} title={direction === 'desc' ? 'Giảm dần · bấm để tăng dần' : 'Tăng dần · bấm để giảm dần'}>{direction === 'desc' ? '↓' : '↑'}<span>{direction === 'desc' ? 'Giảm' : 'Tăng'}</span></button>
+          <div className="pp-view-toggle" role="group" aria-label="Kiểu hiển thị"><button type="button" aria-pressed={view === 'grid'} aria-label="Dạng lưới" onClick={() => setView('grid')}>▦</button><button type="button" aria-pressed={view === 'list'} aria-label="Dạng danh sách" onClick={() => setView('list')}>☷</button></div>
         </div>
-
-        {status === 'success' && season === 2024 && (
-          <div className="result-summary" aria-live="polite">
-            <span>Tổng trong kết quả lọc</span>
-            <strong>{totals.goals} <small>bàn thắng</small></strong>
-            <strong>{totals.assists} <small>kiến tạo</small></strong>
-          </div>
-        )}
-
-        <ResultPanel
-          status={status}
-          error={error}
-          count={visiblePlayers.length}
-          itemName="cầu thủ"
-          emptyMessage={hasFilters ? 'Không có cầu thủ khớp với bộ lọc hiện tại.' : 'API hiện chưa có cầu thủ nào.'}
-          onRetry={reload}
-          onClear={hasFilters ? clearFilters : undefined}
-        >
-          <div className="player-grid">
-            {visiblePlayers.map((player) => (
-              <PlayerCard
-                key={`${player.id}-${player.clubId}`}
-                player={player}
-                season={season}
-                positionLabel={POSITIONS.find((item) => item.value === player.position)?.label ?? player.position}
-              />
-            ))}
-          </div>
-        </ResultPanel>
       </div>
-    </section>
-  )
+
+      {status === 'success' && <div className="pp-results"><span><strong>{filtered.length}</strong> cầu thủ{filtered.length !== players.length ? ` trên ${players.length}` : ''}</span>{hasFilters && <button type="button" onClick={clearFilters}>Xóa bộ lọc</button>}</div>}
+      {season === 2024 && <p className="pp-note">Dữ liệu cầu thủ mùa 2024/25 mới được lưu một phần. OVR FC 27 không áp dụng cho mùa này.</p>}
+      <ResultPanel status={status} error={error} count={filtered.length} itemName="cầu thủ" emptyMessage={hasFilters ? 'Không có cầu thủ khớp với bộ lọc hiện tại.' : 'API hiện chưa có cầu thủ nào.'} onRetry={reload} onClear={hasFilters ? clearFilters : undefined}>
+        <div className={view === 'grid' ? 'pp-grid' : 'pp-list'}>{shown.map((player) => <PlayerCard key={`${player.id}-${player.clubId}`} player={player} season={season} view={view} />)}</div>
+        {shown.length < sorted.length && <button className="pp-more" type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>Xem thêm {Math.min(PAGE_SIZE, sorted.length - shown.length)} cầu thủ</button>}
+      </ResultPanel>
+    </div>
+  </section>
 }
 
 export default PlayerPage

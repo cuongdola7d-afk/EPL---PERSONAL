@@ -1,0 +1,59 @@
+:root { color-scheme: dark; background: #0a171d; color: #eaf5f2; }
+.fantasy-page[data-theme='light'], .player-detail-page[data-theme='light'] { color-scheme: light; }
+.app-shell { --site-bg: #0a171d; --site-card: #14272f; --site-subtle: #193038; --site-line: #ffffff1a; --site-text: #eaf5f2; --site-muted: #a1bac0; --site-accent: #46e2b5; background: var(--site-bg); color: var(--site-text); }
+.app-shell .site-header { background: #0d222b; border-bottom-color: var(--site-line); }
+.app-shell .site-footer { background: #0d222b; border-top: 1px solid var(--site-line); }
+.app-shell .hero { background: #102832; }
+.app-shell .hero-description, .app-shell .hero-art-caption { color: var(--site-muted); }
+.app-shell .directory-section { background: radial-gradient(900px 380px at 15% -5%, #10303a, transparent 70%), var(--site-bg); }
+.app-shell .section-heading h2, .app-shell .result-count strong, .app-shell .club-card h3,
+.app-shell .match-team, .app-shell .match-score strong, .app-shell .match-detail-head h3,
+.app-shell .match-detail-team h4, .app-shell .match-player-heading,
+.app-shell .standings-table .standing-club, .app-shell .standings-table .standing-points,
+.app-shell .standing-card h3, .app-shell .standing-card-points strong,
+.app-shell .standing-card-stats dd, .app-shell .state-panel h3 { color: var(--site-text); }
+.app-shell .section-kicker, .app-shell .data-attribution a, .app-shell .filter-note button,
+.app-shell .match-meta > span:first-child, .app-shell .match-player-participation { color: var(--site-accent); }
+.app-shell .section-kicker span, .app-shell .section-description, .app-shell .data-attribution,
+.app-shell .result-count, .app-shell .filter-note, .app-shell .club-card p,
+.app-shell .match-meta, .app-shell .match-no-score, .app-shell .match-stat-unavailable, .app-shell .match-detail-head p:last-child,
+.app-shell .match-detail-team h4 span, .app-shell .match-player-heading span,
+.app-shell .standings-table tbody td, .app-shell .standing-card-points,
+.app-shell .standing-card-stats dt, .app-shell .state-panel p { color: var(--site-muted); }
+.app-shell .season-controls label, .app-shell .search-form label { color: var(--site-text); }
+.app-shell .search-form, .app-shell .club-card, .app-shell .match-card,
+.app-shell .match-player, .app-shell .match-detail-empty,
+.app-shell .standings-table-wrap, .app-shell .standing-card, .app-shell .state-panel,
+.app-shell .match-detail { border-color: var(--site-line); background: var(--site-card); box-shadow: 0 12px 32px #0003; }
+.app-shell .search-input-wrap, .app-shell .filter-field select, .app-shell .filter-field input,
+.app-shell .match-detail-close, .app-shell .match-detail [role='alert'] button,
+.app-shell .refresh-button, .app-shell .match-detail-button { border-color: var(--site-line); background: var(--site-subtle); color: var(--site-text); }
+.app-shell .search-input-wrap input { color: var(--site-text); }
+.app-shell .search-input-wrap input::placeholder, .app-shell .filter-field input::placeholder { color: var(--site-muted); }
+.app-shell .refresh-button:hover:not(:disabled), .app-shell .match-detail-button:hover,
+.app-shell .match-detail-close:hover { border-color: var(--site-accent); background: #20413f; }
+.app-shell .clear-button { color: var(--site-accent); }
+.app-shell .secondary-controls, .app-shell .match-meta, .app-shell .standing-card-head,
+.app-shell .standings-table th, .app-shell .standings-table td,
+.app-shell .match-player-stats div, .app-shell .match-score-parts li { border-color: var(--site-line); }
+.app-shell .result-summary, .app-shell .match-player-score,
+.app-shell .match-player-score.complete, .app-shell .match-player-score.manual { border-color: var(--site-line); background: var(--site-subtle); }
+.app-shell .result-summary > span, .app-shell .result-summary small,
+.app-shell .match-player-stats dt, .app-shell .match-score-parts small { color: var(--site-muted); }
+.app-shell .result-summary strong, .app-shell .match-score-total,
+.app-shell .match-player-stats dd, .app-shell .match-score-parts li { color: var(--site-text); }
+.app-shell .match-status, .app-shell .match-status.finished { background: #46e2b520; color: var(--site-accent); }
+.app-shell .match-detail-team, .app-shell .match-player { color: var(--site-text); }
+.app-shell .match-score-note, .app-shell .inferred-label { color: #e5c689; }
+.app-shell .match-evidence-error { border-color: #ec887755; background: #512b30; color: #ffd2ca; }
+.app-shell .match-evidence-verified { background: #46e2b520; color: var(--site-accent); }
+.app-shell .standings-table thead th { background: var(--site-subtle); color: var(--site-muted); }
+.app-shell .standings-table tbody tr:hover { background: #ffffff0b; }
+.app-shell .standings-table .standing-position { color: var(--site-accent); }
+.app-shell .standing-card-rank, .app-shell .state-symbol { background: #46e2b522; color: var(--site-accent); }
+.app-shell .state-error .state-symbol { background: #ef5b5b30; color: #ff9d9d; }
+.app-shell .spinner { border-color: #32524b; border-top-color: var(--site-accent); }
+.app-shell .state-panel button { border-color: var(--site-accent); background: var(--site-accent); color: #05241c; }
+.app-shell .state-panel button:hover { background: #83f0d1; }
+.app-shell .filter-note-error { color: #ff9d9d; }
+.app-shell .site-nav a:hover, .app-shell .site-nav a.active { color: var(--site-accent); border-bottom-color: var(--site-accent); }

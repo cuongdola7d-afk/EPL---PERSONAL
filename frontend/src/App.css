@@ -96,26 +96,6 @@
 .club-card p { display: flex; align-items: center; gap: 8px; margin: 0; color: #728489; font-size: .84rem; }
 .location-dot { width: 7px; height: 7px; border-radius: 50%; background: #8fbd54; }
 
-.player-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; }
-.player-card { min-width: 0; min-height: 262px; display: flex; flex-direction: column; padding: 21px 22px 0; overflow: hidden; border: 1px solid #dae4de; border-radius: 12px; background: #fff; box-shadow: 0 5px 18px #142b3208; transition: transform .2s ease, box-shadow .2s ease; }
-.player-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px #142b3216; }
-.player-card { text-decoration: none; }
-.player-card:focus-visible { outline: 3px solid #4b8a79; outline-offset: 3px; }
-.player-card-top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
-.player-id { color: #9caeaa; font-size: .68rem; font-weight: 800; letter-spacing: .1em; }
-.player-avatar { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #e6f4d2; color: #316849; font-size: .9rem; font-weight: 900; }
-.player-card:nth-child(3n+2) .player-avatar { background: #e1ecee; color: #2b5969; }
-.player-card:nth-child(3n) .player-avatar { background: #f1eada; color: #825b31; }
-.player-card-main { flex: 1; }
-.position-badge { display: inline-block; margin-bottom: 9px; padding: 4px 8px; border-radius: 4px; background: #eef5e5; color: #487345; font-size: .65rem; font-weight: 800; letter-spacing: .02em; }
-.player-card h3 { margin: 0 0 8px; color: #102c36; font-size: 1.15rem; font-weight: 800; line-height: 1.25; letter-spacing: -.025em; }
-.player-club { display: flex; align-items: center; gap: 8px; margin: 0 0 19px; color: #728489; font-size: .84rem; }
-.player-stats { display: grid; grid-template-columns: repeat(2, 1fr); margin-inline: -22px; border-top: 1px solid #e5ece7; }
-.player-stats div { display: flex; align-items: baseline; gap: 7px; min-width: 0; padding: 13px 19px 15px; }
-.player-stats div + div { border-left: 1px solid #e5ece7; }
-.player-stats strong { color: #173940; font-size: 1.25rem; line-height: 1; }
-.player-stats span { color: #738487; font-size: .68rem; white-space: nowrap; }
-
 .match-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
 .match-card { min-width: 0; padding: 21px 22px 25px; border: 1px solid #dae4de; border-radius: 12px; background: #fff; box-shadow: 0 5px 18px #142b3208; }
 .match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 15px; padding-bottom: 17px; border-bottom: 1px solid #e9eeeb; color: #60787b; font-size: .74rem; font-weight: 700; }
@@ -206,7 +186,6 @@
   .hero-art::before { inset: 27px; }
   .hero-art::after { inset: 57px; }
   .club-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .player-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .match-list { grid-template-columns: 1fr; }
   .match-detail-teams { grid-template-columns: 1fr; }
   .standings-table-wrap { display: none; }
@@ -239,13 +218,11 @@
   .result-summary { gap: 10px 20px; }
   .result-summary > span { flex-basis: 100%; }
   .club-grid { grid-template-columns: 1fr; }
-  .player-grid { grid-template-columns: 1fr; }
   .match-detail { padding: 17px; }
   .match-detail-head { flex-direction: column; }
   .match-detail-close { width: 100%; }
   .standing-cards { grid-template-columns: 1fr; }
   .club-card { min-height: 158px; }
-  .player-card { min-height: 242px; }
   .footer-inner { align-items: start; flex-direction: column; justify-content: center; padding-block: 20px; }
 }
 
@@ -253,5 +230,4 @@
   html { scroll-behavior: auto; }
   .spinner { animation-duration: 1.8s; }
   .club-card { transition: none; }
-  .player-card { transition: none; }
 }
