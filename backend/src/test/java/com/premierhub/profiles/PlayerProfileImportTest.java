@@ -28,6 +28,8 @@ class PlayerProfileImportTest {
     private static final Path MAN_CITY = Path.of("data/manchester-city-profiles-2026-10-02/players.csv");
     private static final Path CHELSEA = Path.of("data/chelsea-profiles-2026-10-02/players.csv");
     private static final Path TOTTENHAM = Path.of("data/tottenham-profiles-2026-10-02/players.csv");
+    private static final Path BRIGHTON = Path.of("data/brighton-profiles-2026-10-02/players.csv");
+    private static final Path BRENTFORD = Path.of("data/brentford-profiles-2026-10-02/players.csv");
     private JdbcTemplate jdbc;
     private PlayerProfileImporter importer;
 
@@ -42,12 +44,13 @@ class PlayerProfileImportTest {
                 new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
         jdbc.update("INSERT INTO seasons (league_id, season_year) VALUES (39, 2026)");
         for (int clubId : List.of(1000000066, 1000000057, 1000000064, 1000000065,
-                1000000061, 1000000073)) {
+                1000000061, 1000000073, 1000000397, 1000000402)) {
             jdbc.update("INSERT INTO clubs (id, name) VALUES (?, ?)", clubId, "Test club " + clubId);
             jdbc.update("INSERT INTO season_clubs (league_id, season_year, club_id) VALUES (39, 2026, ?)", clubId);
         }
         PlayerProfileCsvReader reader = new PlayerProfileCsvReader();
-        for (Path file : List.of(UNITED, ARSENAL, LIVERPOOL, MAN_CITY, CHELSEA, TOTTENHAM)) {
+        for (Path file : List.of(UNITED, ARSENAL, LIVERPOOL, MAN_CITY, CHELSEA, TOTTENHAM,
+                BRIGHTON, BRENTFORD)) {
             for (var row : reader.read(file)) {
                 jdbc.update("INSERT INTO players (id, name) VALUES (?, ?)", row.playerId(), "Player " + row.playerId());
                 jdbc.update("""
@@ -61,6 +64,19 @@ class PlayerProfileImportTest {
                         """, row.playerId(), row.clubId());
             }
         }
+    }
+
+    @Test
+    void importsBrightonAndBrentfordBatchesIdempotently() throws Exception {
+        assertEquals(30, importer.importFile(BRIGHTON, AS_OF).inserted());
+        assertEquals(28, importer.importFile(BRENTFORD, AS_OF).inserted());
+        assertEquals(0, importer.importFile(BRIGHTON, AS_OF).inserted());
+        assertEquals(0, importer.importFile(BRENTFORD, AS_OF).inserted());
+        assertEquals(58, count("SELECT COUNT(*) FROM player_season_profiles"));
+        assertEquals(55, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NOT NULL"));
+        assertEquals(3, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NULL"));
+        assertEquals(1, count("SELECT COUNT(*) FROM player_season_profiles WHERE height_cm IS NULL"));
+        assertEquals(1, count("SELECT COUNT(*) FROM player_season_profiles WHERE player_id=2000030176 AND height_cm IS NULL AND fc27_overall IS NULL"));
     }
 
     @Test

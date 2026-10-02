@@ -53,3 +53,10 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 - Cả 56 ID/CLB khớp membership production ngày 02/10/2026, không trùng ID; file `sources.md` từng CLB ghi URL hồ sơ và các khác biệt tên/nhãn CLB. H2 cô lập nhập 27 + 29 rồi nhập lại thêm 0. Backend `mvn package` qua 226 test, 0 lỗi.
 - Trước khi nhập production đã xác nhận đúng Railway MySQL `railway`, 56/56 cặp ID/CLB có membership và dòng mùa hợp lệ; bảng hồ sơ chưa có Chelsea/Tottenham. Bản sao lưu SQL Git ignored: `backend/local-backups/player-profiles-2026-10-02/premierhub-before-chelsea-tottenham-20261002-141043.sql` (767.072 byte; SHA-256 `F2773EC61259C5163D11538A6FC239BE7899D32CFD98318DD2F2F583973B3CE7`).
 - Production nhập Chelsea 27 và Tottenham 29; chạy lại mỗi CSV thêm 0. Đọc lại MySQL khớp từng ô của 56 dòng CSV. Tổng sáu CLB đã nhập: 167 hồ sơ, 158 OVR số, 9 OVR `NULL`; `players` vẫn 984, `manual_fixture_player_stats` vẫn 2.000 và mùa 2024/25 vẫn có trong `seasons`. Chưa commit, push hoặc deploy.
+
+## Brighton và Brentford: batch local ngày 02/10/2026
+
+- `backend/data/brighton-profiles-2026-10-02/players.csv`: 30 ID hiện hành, 27 OVR EA FC 27. José María Andrés Baixauli (Chema Andrés), Nehemiah Oriola và Younes Ibrahim có OVR `NULL` vì chưa xác minh được hồ sơ cơ bản FC 27 chính thức. SofaScore không ghi chiều cao Younes Ibrahim nên `height_cm` cũng `NULL`.
+- `backend/data/brentford-profiles-2026-10-02/players.csv`: 28 ID hiện hành, đủ năm trường SofaScore và 28 OVR EA FC 27.
+- Cả 58 cặp ID/CLB khớp chính xác membership Railway MySQL hiệu lực ngày 02/10/2026 (truy vấn chỉ đọc), không trùng ID. Production chưa có hồ sơ Brighton/Brentford; không thay đổi roster hay membership theo nhãn CLB trên EA hoặc SofaScore. `sources.md` mỗi CLB ghi URL cá nhân và khác biệt tên/CLB.
+- H2 cô lập nhập 30 + 28 và chạy lại thêm 0; xác nhận 55 OVR có số, 3 OVR `NULL`, một chiều cao `NULL`. Backend `mvn package` qua 227 test, 0 lỗi. **Chưa nhập MySQL production**, chưa commit, push hoặc deploy.
