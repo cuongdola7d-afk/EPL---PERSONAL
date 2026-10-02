@@ -1,8 +1,9 @@
 PremierHub 2026/27 — các trường hồ sơ còn thiếu (chốt roster ngày 2026-10-02)
 
-Phạm vi: 12 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
-Chelsea, Tottenham, Brighton, Brentford, Leeds, Everton, Newcastle United
-và Hull City; tổng 329 cầu thủ.
+Phạm vi: 16 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
+Chelsea, Tottenham, Brighton, Brentford, Leeds, Everton, Newcastle United,
+Hull City, Ipswich Town, Nottingham Forest, Sunderland và Crystal Palace;
+tổng 425 cầu thủ. Bốn batch mới (96 cầu thủ) không có ô còn thiếu.
 Ô trống trong CSV nhập thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
 fc27_overall NULL: chưa xác minh được OVR thẻ cơ bản trên EA SPORTS FC 27;
 cầu thủ vẫn có hồ sơ nhưng chưa đủ điều kiện chọn Fantasy. height_cm NULL:

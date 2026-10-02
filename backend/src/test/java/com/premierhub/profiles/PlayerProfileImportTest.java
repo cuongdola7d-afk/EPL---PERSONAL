@@ -34,6 +34,10 @@ class PlayerProfileImportTest {
     private static final Path EVERTON = Path.of("data/everton-profiles-2026-10-02/players.csv");
     private static final Path NEWCASTLE = Path.of("data/newcastle-united-profiles-2026-10-02/players.csv");
     private static final Path HULL = Path.of("data/hull-city-profiles-2026-10-02/players.csv");
+    private static final Path IPSWICH = Path.of("data/ipswich-town-profiles-2026-10-02/players.csv");
+    private static final Path FOREST = Path.of("data/nottingham-forest-profiles-2026-10-02/players.csv");
+    private static final Path SUNDERLAND = Path.of("data/sunderland-profiles-2026-10-02/players.csv");
+    private static final Path PALACE = Path.of("data/crystal-palace-profiles-2026-10-02/players.csv");
     private JdbcTemplate jdbc;
     private PlayerProfileImporter importer;
 
@@ -49,13 +53,15 @@ class PlayerProfileImportTest {
         jdbc.update("INSERT INTO seasons (league_id, season_year) VALUES (39, 2026)");
         for (int clubId : List.of(1000000066, 1000000057, 1000000064, 1000000065,
                 1000000061, 1000000073, 1000000397, 1000000402,
-                1000000341, 1000000062, 1000000067, 1000000322)) {
+                1000000341, 1000000062, 1000000067, 1000000322,
+                1000000349, 1000000351, 1000000071, 1000000354)) {
             jdbc.update("INSERT INTO clubs (id, name) VALUES (?, ?)", clubId, "Test club " + clubId);
             jdbc.update("INSERT INTO season_clubs (league_id, season_year, club_id) VALUES (39, 2026, ?)", clubId);
         }
         PlayerProfileCsvReader reader = new PlayerProfileCsvReader();
         for (Path file : List.of(UNITED, ARSENAL, LIVERPOOL, MAN_CITY, CHELSEA, TOTTENHAM,
-                BRIGHTON, BRENTFORD, LEEDS, EVERTON, NEWCASTLE, HULL)) {
+                BRIGHTON, BRENTFORD, LEEDS, EVERTON, NEWCASTLE, HULL,
+                IPSWICH, FOREST, SUNDERLAND, PALACE)) {
             for (var row : reader.read(file)) {
                 jdbc.update("INSERT INTO players (id, name) VALUES (?, ?)", row.playerId(), "Player " + row.playerId());
                 jdbc.update("""
@@ -69,6 +75,23 @@ class PlayerProfileImportTest {
                         """, row.playerId(), row.clubId());
             }
         }
+    }
+
+    @Test
+    void importsIpswichForestSunderlandAndPalaceBatchesIdempotently() throws Exception {
+        assertEquals(26, importer.importFile(IPSWICH, AS_OF).inserted());
+        assertEquals(24, importer.importFile(FOREST, AS_OF).inserted());
+        assertEquals(22, importer.importFile(SUNDERLAND, AS_OF).inserted());
+        assertEquals(24, importer.importFile(PALACE, AS_OF).inserted());
+        assertEquals(0, importer.importFile(IPSWICH, AS_OF).inserted());
+        assertEquals(0, importer.importFile(FOREST, AS_OF).inserted());
+        assertEquals(0, importer.importFile(SUNDERLAND, AS_OF).inserted());
+        assertEquals(0, importer.importFile(PALACE, AS_OF).inserted());
+        assertEquals(96, count("SELECT COUNT(*) FROM player_season_profiles"));
+        assertEquals(96, count("SELECT COUNT(*) FROM player_season_profiles WHERE fc27_overall IS NOT NULL"));
+        assertEquals(0, count("SELECT COUNT(*) FROM player_season_profiles WHERE nationality IS NULL OR birth_date IS NULL OR height_cm IS NULL OR preferred_foot IS NULL OR shirt_number IS NULL"));
+        assertEquals(62, jdbc.queryForObject("SELECT fc27_overall FROM player_season_profiles WHERE player_id=2000030255", Integer.class));
+        assertEquals(71, jdbc.queryForObject("SELECT fc27_overall FROM player_season_profiles WHERE player_id=2000030245", Integer.class));
     }
 
     @Test
