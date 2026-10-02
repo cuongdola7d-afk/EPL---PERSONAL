@@ -1,0 +1,28 @@
+PremierHub 2026/27 — các trường hồ sơ còn thiếu (chốt roster ngày 2026-10-02)
+
+Phạm vi: 10 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
+Chelsea, Tottenham, Brighton, Brentford, Leeds và Everton; tổng 267 cầu thủ.
+Ô trống trong CSV nhập thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
+fc27_overall NULL: chưa xác minh được OVR thẻ cơ bản trên EA SPORTS FC 27;
+cầu thủ vẫn có hồ sơ nhưng chưa đủ điều kiện chọn Fantasy. height_cm NULL:
+hồ sơ SofaScore của đúng cầu thủ không ghi chiều cao.
+
+CLB                  player_id   Cầu thủ                         Trường còn thiếu
+Manchester United    2000030235  Bendito Mantato                 fc27_overall
+Liverpool            2000003025  Jayden Danns                   fc27_overall
+Liverpool            2000030229  Wellity Lucky                  fc27_overall
+Manchester City      2000004019  Allan Andrade Elias            fc27_overall
+Manchester City      2000030232  Floyd Samba                    fc27_overall
+Manchester City      2000004024  Kaden Braithwaite              fc27_overall
+Manchester City      2000004023  Ryan McAidoo                   fc27_overall
+Chelsea              2000005021  Mahdi Nicoll-Jazuli            fc27_overall
+Tottenham            2000030248  James Rowswell                 fc27_overall
+Brighton             2000030174  José María Andrés Baixauli     fc27_overall
+Brighton             2000030170  Nehemiah Oriola                fc27_overall
+Brighton             2000030176  Younes Ibrahim                 height_cm, fc27_overall
+Leeds                2000020081  Alfie Cresswell                height_cm
+Everton              2000030192  Braiden Graham                 fc27_overall
+
+Tổng: 14 cầu thủ có ít nhất một trường thiếu; 13 fc27_overall NULL,
+2 height_cm NULL; các trường còn lại đều đã điền. Nguồn và lý do cụ thể
+theo từng người nằm ở sources.md của CLB tương ứng.
