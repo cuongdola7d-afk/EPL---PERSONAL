@@ -1,11 +1,13 @@
 PremierHub 2026/27 — các trường hồ sơ còn thiếu (chốt roster ngày 2026-10-02)
 
-Phạm vi: 10 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
-Chelsea, Tottenham, Brighton, Brentford, Leeds và Everton; tổng 267 cầu thủ.
+Phạm vi: 12 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
+Chelsea, Tottenham, Brighton, Brentford, Leeds, Everton, Newcastle United
+và Hull City; tổng 329 cầu thủ.
 Ô trống trong CSV nhập thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
 fc27_overall NULL: chưa xác minh được OVR thẻ cơ bản trên EA SPORTS FC 27;
 cầu thủ vẫn có hồ sơ nhưng chưa đủ điều kiện chọn Fantasy. height_cm NULL:
-hồ sơ SofaScore của đúng cầu thủ không ghi chiều cao.
+hồ sơ SofaScore của đúng cầu thủ không ghi chiều cao. preferred_foot NULL:
+hồ sơ SofaScore của đúng cầu thủ không ghi chân thuận.
 
 CLB                  player_id   Cầu thủ                         Trường còn thiếu
 Manchester United    2000030235  Bendito Mantato                 fc27_overall
@@ -22,7 +24,12 @@ Brighton             2000030170  Nehemiah Oriola                fc27_overall
 Brighton             2000030176  Younes Ibrahim                 height_cm, fc27_overall
 Leeds                2000020081  Alfie Cresswell                height_cm
 Everton              2000030192  Braiden Graham                 fc27_overall
+Newcastle United     2000030243  Kyran Thompson                 height_cm, fc27_overall
+Newcastle United     2000030239  Mason Miley                    height_cm, fc27_overall
+Newcastle United     2000030242  Michael Mills                  height_cm, preferred_foot, fc27_overall
+Newcastle United     2000030240  Miodrag Pivas                  fc27_overall
+Newcastle United     2000030241  Vakhtang Salia                 fc27_overall
 
-Tổng: 14 cầu thủ có ít nhất một trường thiếu; 13 fc27_overall NULL,
-2 height_cm NULL; các trường còn lại đều đã điền. Nguồn và lý do cụ thể
+Tổng: 19 cầu thủ có ít nhất một trường thiếu; 18 fc27_overall NULL,
+5 height_cm NULL và 1 preferred_foot NULL; các trường còn lại đều đã điền. Nguồn và lý do cụ thể
 theo từng người nằm ở sources.md của CLB tương ứng.

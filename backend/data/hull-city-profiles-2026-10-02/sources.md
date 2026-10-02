@@ -1,0 +1,42 @@
+# Hull City player profile sources — 2026/27
+
+Roster: PremierHub Railway MySQL `manual_player_memberships` active on 2026-10-02, league 39, season 2026, club 1000000322; cross-check endpoint: https://epl-personal-production.up.railway.app/api/players?season=2026&asOf=2026-10-02 . No external roster IDs or club changes were added.
+
+EA team page: https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/hull-city/1952 . OVR values are official FC 27 launch base player items. Individual EA profiles below support every non-NULL OVR, including players EA lists under another club. Nationality, birth date, height, preferred foot and shirt number come only from the linked SofaScore player profiles.
+
+| player_id | PremierHub player | SofaScore profile | EA FC 27 profile | Note |
+| --- | --- | --- | --- | --- |
+| 2000030202 | Abdülkadir Ömür | [SofaScore](https://www.sofascore.com/football/player/abdulkadir-omur/826155) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/abdulkadir-omur/231777) |  |
+| 2000030210 | Brooke Norton-Cuffy | [SofaScore](https://www.sofascore.com/football/player/brooke-norton-cuffy/1087514) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/brooke-norton-cuffy/260653) |  |
+| 2000030200 | Cathal McCarthy | [SofaScore](https://www.sofascore.com/football/player/cathal-mccarthy/1845232) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/cathal-mc-carthy/79579) | SofaScore và EA hiện ghi Kilmarnock; giữ membership Hull của PremierHub, số áo lấy từ SofaScore. |
+| 2000030199 | Charlie Hughes | [SofaScore](https://www.sofascore.com/football/player/charlie-hughes/1138398) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/charlie-hughes/272895) |  |
+| 2000030212 | Christos Mouzakitis | [SofaScore](https://www.sofascore.com/football/player/christos-mouzakitis/1416540) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/christos-mouzakitis/73884) | EA còn ghi Olympiacos; giữ membership Hull của PremierHub. |
+| 2000030204 | Darko Gyabi | [SofaScore](https://www.sofascore.com/football/player/darko-gyabi/1067117) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/darko-gyabi/270209) |  |
+| 2000020015 | Dillon Phillips | [SofaScore](https://www.sofascore.com/football/player/dillon-phillips/377166) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/dillon-phillips/220058) |  |
+| 2000030201 | Eliot Matazo | [SofaScore](https://www.sofascore.com/football/player/eliot-matazo/1046150) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/eliot-matazo/258433) |  |
+| 2000020006 | Elliot Stroud | [SofaScore](https://www.sofascore.com/football/player/stroud-elliot/1383695) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/elliot-stroud/272712) |  |
+| 2000030206 | Hidemasa Morita | [SofaScore](https://www.sofascore.com/football/player/hidemasa-morita/926560) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/hidemasa-morita/242087) |  |
+| 2000030208 | Ilyas Ansah | [SofaScore](https://www.sofascore.com/football/player/ansah-ilyas/1462742) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ilyas-ansah/276372) | EA còn ghi Union Berlin; giữ membership Hull của PremierHub. |
+| 2000030198 | Jack Butland | [SofaScore](https://www.sofascore.com/football/player/jack-butland/98448) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jack-butland/203042) |  |
+| 2000020018 | Jens Hjertø-Dahl | [SofaScore](https://www.sofascore.com/football/player/jens-hjerto-dahl/1427971) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jens-hjert-dahl/274979) |  |
+| 2000030205 | Joe Gelhardt | [SofaScore](https://www.sofascore.com/football/player/joe-gelhardt/945806) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joe-gelhardt/246053) |  |
+| 2000010005 | John Egan | [SofaScore](https://www.sofascore.com/football/player/john-egan/100578) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/john-egan/204936) |  |
+| 2000020017 | Kieran Dowell | [SofaScore](https://www.sofascore.com/football/player/kieran-dowell/784503) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kieran-dowell/226401) |  |
+| 2000010001 | Konstantinos Tzolakis | [SofaScore](https://www.sofascore.com/football/player/konstantinos-tzolakis/953414) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/konstantinos-tzolakis/252552) |  |
+| 2000020004 | Lewie Coyle | [SofaScore](https://www.sofascore.com/football/player/lewie-coyle/827587) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lewie-coyle/224099) |  |
+| 2000020016 | Lucas Gourna-Douath | [SofaScore](https://www.sofascore.com/football/player/lucas-gourna-douath/1012657) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lucas-gourna-douath/257271) |  |
+| 2000020010 | Lucas Herrington | [SofaScore](https://www.sofascore.com/football/player/lucas-herrington/1646783) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lucas-herrington/75145) |  |
+| 2000020007 | Matt Crooks | [SofaScore](https://www.sofascore.com/football/player/matt-crooks/140479) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matt-crooks/202693) |  |
+| 2000020014 | Matt Targett | [SofaScore](https://www.sofascore.com/football/player/matt-targett/368134) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matt-targett/218659) |  |
+| 2000020009 | Mohamed Belloumi | [SofaScore](https://www.sofascore.com/football/player/mohamed-belloumi/1125839) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mohamed-belloumi/277663) |  |
+| 2000030207 | Mohamed-Ali Cho | [SofaScore](https://www.sofascore.com/football/player/mohamed-ali-cho/1063235) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mohamed-ali-cho/256476) | SofaScore hiển thị Mohamed Ali Cho; EA còn ghi OGC Nice. Giữ membership Hull của PremierHub. |
+| 2000010003 | Nobel Mendy | [SofaScore](https://www.sofascore.com/football/player/nobel-mendy/1458073) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/nobel-mendy/276633) |  |
+| 2000020008 | Oli McBurnie | [SofaScore](https://www.sofascore.com/football/player/oli-mcburnie/367228) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/oli-mc-burnie/220031) |  |
+| 2000030203 | Óscar Zambrano | [SofaScore](https://www.sofascore.com/football/player/oscar-zambrano/1145130) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/oscar-zambrano/268599) |  |
+| 2000020011 | Paddy McNair | [SofaScore](https://www.sofascore.com/football/player/paddy-mcnair/592876) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paddy-mc-nair/213697) |  |
+| 2000010004 | Regan Slater | [SofaScore](https://www.sofascore.com/football/player/regan-slater/864474) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/regan-slater/241953) |  |
+| 2000030209 | Robinio Vaz | [SofaScore](https://www.sofascore.com/football/player/robinio-vaz/1514800) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/robinio-vaz/76410) | EA còn ghi AS Roma; giữ membership Hull của PremierHub. |
+| 2000020005 | Ryan Giles | [SofaScore](https://www.sofascore.com/football/player/ryan-giles/931304) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ryan-giles/243608) |  |
+| 2000010002 | Semi Ajayi | [SofaScore](https://www.sofascore.com/football/player/semi-ajayi/307274) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/semi-ajayi/207952) |  |
+| 2000030211 | Sorba Thomas | [SofaScore](https://www.sofascore.com/football/player/sorba-thomas/911039) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/sorba-thomas/260478) | EA còn ghi Stoke City; giữ membership Hull của PremierHub. |
+| 284500 | Tim Iroegbunam | [SofaScore](https://www.sofascore.com/football/player/tim-iroegbunam/1085950) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/tim-iroegbunam/266609) | EA còn ghi Everton; giữ membership Hull của PremierHub. |
