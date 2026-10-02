@@ -1,14 +1,15 @@
 PremierHub 2026/27 — các trường hồ sơ còn thiếu (chốt roster ngày 2026-10-02)
 
-Phạm vi: 16 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
+Phạm vi: 20 CSV hồ sơ Manchester United, Arsenal, Liverpool, Manchester City,
 Chelsea, Tottenham, Brighton, Brentford, Leeds, Everton, Newcastle United,
-Hull City, Ipswich Town, Nottingham Forest, Sunderland và Crystal Palace;
-tổng 425 cầu thủ. Bốn batch mới (96 cầu thủ) không có ô còn thiếu.
+Hull City, Ipswich Town, Nottingham Forest, Sunderland, Crystal Palace,
+Aston Villa, Bournemouth, Fulham và Coventry City; tổng 534 cầu thủ.
 Ô trống trong CSV nhập thành SQL NULL. Không tự thay bằng 0 hoặc OVR dự đoán.
 fc27_overall NULL: chưa xác minh được OVR thẻ cơ bản trên EA SPORTS FC 27;
 cầu thủ vẫn có hồ sơ nhưng chưa đủ điều kiện chọn Fantasy. height_cm NULL:
 hồ sơ SofaScore của đúng cầu thủ không ghi chiều cao. preferred_foot NULL:
-hồ sơ SofaScore của đúng cầu thủ không ghi chân thuận.
+hồ sơ SofaScore của đúng cầu thủ không ghi chân thuận. shirt_number NULL:
+hồ sơ SofaScore của đúng cầu thủ không ghi số áo.
 
 CLB                  player_id   Cầu thủ                         Trường còn thiếu
 Manchester United    2000030235  Bendito Mantato                 fc27_overall
@@ -30,7 +31,12 @@ Newcastle United     2000030239  Mason Miley                    height_cm, fc27_
 Newcastle United     2000030242  Michael Mills                  height_cm, preferred_foot, fc27_overall
 Newcastle United     2000030240  Miodrag Pivas                  fc27_overall
 Newcastle United     2000030241  Vakhtang Salia                 fc27_overall
+Aston Villa          2000030151  James Wright                   fc27_overall
+Aston Villa          2000030149  Leon Goretzka                  fc27_overall
+Coventry City        2000030180  George Shepherd                height_cm, preferred_foot, shirt_number, fc27_overall
+Fulham               2000030194  Macaulay Zepa                  height_cm, shirt_number, fc27_overall
 
-Tổng: 19 cầu thủ có ít nhất một trường thiếu; 18 fc27_overall NULL,
-5 height_cm NULL và 1 preferred_foot NULL; các trường còn lại đều đã điền. Nguồn và lý do cụ thể
+Tổng: 23 cầu thủ có ít nhất một trường thiếu; 22 fc27_overall NULL,
+7 height_cm NULL, 2 preferred_foot NULL và 2 shirt_number NULL;
+các trường còn lại đều đã điền. Nguồn và lý do cụ thể
 theo từng người nằm ở sources.md của CLB tương ứng.
