@@ -117,7 +117,6 @@ function App() {
       <footer className="site-footer">
         <div className="container footer-inner">
           <span>PremierHub</span>
-          <span>Dự án học Full-stack với dữ liệu bóng đá.</span>
         </div>
       </footer>
     </div>

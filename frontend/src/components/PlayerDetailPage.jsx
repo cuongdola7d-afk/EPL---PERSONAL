@@ -70,6 +70,7 @@ function NextTab({ rows, season }) {
 }
 
 function SeasonTab({ rows, season }) {
+  const [activeMatchId, setActiveMatchId] = useState(null)
   const summary = seasonSummary(rows)
   if (!rows.some((row) => row.stats)) return <Empty title="Chưa có thống kê mùa">Chưa có thống kê cầu thủ theo trận cho mùa {SEASONS[season]}.</Empty>
   const metrics = [
@@ -78,9 +79,12 @@ function SeasonTab({ rows, season }) {
     ['Thẻ vàng', summary.yellowCards], ['Thẻ đỏ', summary.redCards],
   ]
   const rated = [...summary.ratedMatches].sort((a, b) => a.row.match.date.localeCompare(b.row.match.date))
+  const activeMatch = rated.find(({ row }) => row.match.id === activeMatchId)
   return <><div className="pd-panel-head"><div><h2>Tổng kết mùa</h2><p>Premier League · {SEASONS[season]}</p></div></div>
     <div className="pd-season-top"><span className={`pd-rating pd-season-rating pd-rating-${ratingTier(summary.averageRating)}`}>{summary.averageRating == null ? '—' : summary.averageRating.toFixed(1)}</span><div><strong>Đánh giá trung bình</strong><p>{rated.length} trận có điểm đánh giá</p>
-      {rated.length > 0 && <div className="pd-spark" role="img" aria-label={`Đánh giá theo trận: ${rated.map(({ row, rating }) => `GW${row.match.matchweek} ${rating.toFixed(1)}`).join(', ')}`}>{rated.map(({ row, rating }) => <span key={row.match.id} className={`pd-rating-${ratingTier(rating)}`} style={{ height: `${Math.max(8, rating * 10)}%` }} title={`GW${row.match.matchweek}: ${rating.toFixed(1)}`} />)}</div>}</div></div>
+      {rated.length > 0 && <div className="pd-spark" aria-label="Đánh giá theo từng trận" onPointerLeave={(event) => { if (event.pointerType === 'mouse' && !event.currentTarget.contains(document.activeElement)) setActiveMatchId(null) }}>{rated.map(({ row, rating }) => <button type="button" key={row.match.id} className={`pd-spark-bar pd-rating-${ratingTier(rating)}`} style={{ height: `${Math.max(8, rating * 10)}%` }} aria-label={`GW${row.match.matchweek}, ${dateLabel(row.match.date)}, ${row.match.homeClub} gặp ${row.match.awayClub}, rating ${rating.toFixed(1)}`} aria-pressed={activeMatchId === row.match.id} onMouseEnter={() => setActiveMatchId(row.match.id)} onFocus={() => setActiveMatchId(row.match.id)} onClick={() => setActiveMatchId(row.match.id)} />)}</div>}
+      {activeMatch && <div className="pd-rating-detail" role="status"><strong>Rating {activeMatch.rating.toFixed(1)}</strong><span>GW{activeMatch.row.match.matchweek} · {dateLabel(activeMatch.row.match.date)} · {activeMatch.row.clubId === activeMatch.row.match.homeClubId ? 'Sân nhà' : 'Sân khách'}</span><span>{activeMatch.row.match.homeClub} <b>{hasMatchScore(activeMatch.row.match) ? `${activeMatch.row.match.homeGoals} – ${activeMatch.row.match.awayGoals}` : 'Chưa có tỉ số'}</b> {activeMatch.row.match.awayClub}</span></div>}
+    </div></div>
     <div className="pd-metric-grid">{metrics.map(([label, value]) => <div className="pd-metric" key={label}><span>{label}</span><strong>{numberLabel(value)}</strong></div>)}</div>
     <p className="pd-note">Tổng chỉ số để trống nếu một trận đã ra sân còn thiếu chỉ số đó. Đánh giá trận là rating đã lưu, không phải điểm Fantasy.</p>
   </>
@@ -101,7 +105,7 @@ function InfoTab({ player, season }) {
 
 function PlayerDetailPage({ playerId, season }) {
   const [tab, setTab] = useState('matches')
-  const [theme, setTheme] = useState('light')
+  const [theme, setTheme] = useState('dark')
   const [reloadKey, setReloadKey] = useState(0)
   const [data, setData] = useState({ status: 'loading', player: null, rows: [], error: '' })
 

@@ -52,7 +52,7 @@ function FantasyPage() {
   const [clubFilter, setClubFilter] = useState('')
   const [message, setMessage] = useState('')
   const [result, setResult] = useState(false)
-  const [theme, setTheme] = useState('light')
+  const [theme, setTheme] = useState('dark')
   const searchRef = useRef(null)
 
   const currentLineup = useMemo(() => status === 'success' ? normalizeLineup(lineup, players) : lineup,
