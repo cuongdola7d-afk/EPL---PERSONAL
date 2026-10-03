@@ -79,3 +79,6 @@ GET {{baseUrl}}/api/standings?limit=abc
 
 ### Health check
 GET {{baseUrl}}/actuator/health
+
+###
+GET {{baseUrl}}/api/players?season=2024&club=Arsenal&position=FORWARD

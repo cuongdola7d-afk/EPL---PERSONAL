@@ -7,6 +7,7 @@ import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
 import { parseMatchRoute } from './utils/matchRoute.js'
+import { SEASONS } from './utils/seasons.js'
 import './App.css'
 import './DarkSite.css'
 
@@ -15,7 +16,7 @@ const PAGES = {
     hasSeasons: true,
     navLabel: 'Câu lạc bộ', label: 'Câu lạc bộ', title: 'Một giải đấu.', highlight: 'Nhiều câu chuyện.',
     description: 'Bắt đầu khám phá Premier League qua danh sách câu lạc bộ. Tìm tên đội bạn quan tâm từ dữ liệu của prismaXI.',
-    component: ClubPage,
+    component: ClubPage, fullPage: true,
   },
   players: {
     hasSeasons: true,
@@ -54,6 +55,8 @@ function App() {
     parsePlayerListHash(window.location.hash)?.season ?? parseMatchRoute(window.location.hash)?.season ?? 2026)
   const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
   const [matchRoute, setMatchRoute] = useState(() => parseMatchRoute(window.location.hash))
+  const [homeState, setHomeState] = useState({ query: '', slide: 0 })
+  const [homeTheme, setHomeTheme] = useState('dark')
 
   useEffect(() => {
     function handleHashChange() {
@@ -77,14 +80,14 @@ function App() {
   const CurrentPage = current.component
 
   useEffect(() => {
-    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : current.label} | prismaXI`
-  }, [current.label, playerDetail])
+    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
+  }, [current.label, playerDetail, page])
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : ''}`} data-home-theme={homeTheme}>
       <header className="site-header">
         <div className="container header-inner">
-          <a className="brand" href="#clubs" aria-label="prismaXI, trang câu lạc bộ">
+          <a className="brand" href="#clubs" aria-label="prismaXI, trang chủ">
             <img className="brand-logo" src="/prismaxi-logo.svg" alt="" width="52" height="47" />
             <span>prisma<span className="brand-accent">XI</span></span>
           </a>
@@ -96,6 +99,18 @@ function App() {
               </a>
             ))}
           </nav>
+          {page === 'clubs' && <div className="cx-header-controls">
+            <label className="cx-season"><span className="sr-only">Mùa giải</span><select aria-label="Mùa giải" value={season}
+              onChange={event => { setSeason(Number(event.target.value)); setHomeState({ query: '', slide: homeState.slide }) }}>
+              {[2026, 2024].map(year => <option value={year} key={year}>{SEASONS[year]}</option>)}
+            </select><span aria-hidden="true">⌄</span></label>
+            <button className="cx-theme-toggle" type="button" aria-label={`Chuyển sang chế độ ${homeTheme === 'dark' ? 'sáng' : 'tối'}`}
+              onClick={() => setHomeTheme(homeTheme === 'dark' ? 'light' : 'dark')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" />
+              </svg>
+            </button>
+          </div>}
         </div>
       </header>
 
@@ -127,12 +142,16 @@ function App() {
           playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
             {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
+            {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
             {...(page === 'matches' ? { matchRoute } : {})} />}
       </main>
 
       <footer className="site-footer">
         <div className="container footer-inner">
           <span className="footer-brand"><img src="/prismaxi-logo.svg" alt="" width="37" height="33" />prismaXI</span>
+          {page === 'clubs' && <><p className="cx-footer-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Danh sách cầu thủ được nhập thủ công.</p>
+            <nav className="cx-footer-links" aria-label="Điều hướng cuối trang">{Object.entries(PAGES).map(([name, item]) =>
+              <a key={name} href={`#${name}`}>{item.navLabel}</a>)}</nav></>}
         </div>
       </footer>
     </div>
