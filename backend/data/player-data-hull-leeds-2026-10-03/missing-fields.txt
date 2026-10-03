@@ -1,0 +1,13 @@
+PrismaXI – Hull City AFC – Leeds United FC 2026/27, roster2026-10-03
+
+THIẾU DỮ LIỆU
+
+Không có ô hồ sơ/OVR/vị trí còn thiếu trong cặp CLB này.
+
+KHÁC NGUỒN, KHÔNG PHẢI Ô THIẾU; GIỮ HỒ SƠ HIỆN CÓ
+
+Darko Gyabi | player_id=2000030204 | birth_date: giữ2004-02-17; EA ghi2004-02-18.
+Regan Slater | player_id=2000010004 | birth_date: giữ1999-09-11; EA ghi1999-09-10.
+Nobel Mendy | player_id=2000010003 | birth_date: giữ2004-08-16; EA ghi2004-09-03.
+
+Nguồn và lý do ghép đúng người: sources.md. Chỉ local; chưa ghi production.

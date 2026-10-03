@@ -1,0 +1,11 @@
+PrismaXI – Ipswich Town FC – Sunderland AFC 2026/27, roster2026-10-03
+
+THIẾU DỮ LIỆU
+
+Không có ô hồ sơ/OVR/vị trí còn thiếu trong cặp CLB này.
+
+KHÁC NGUỒN, KHÔNG PHẢI Ô THIẾU; GIỮ HỒ SƠ HIỆN CÓ
+
+Juan Angulo | player_id=2000030255 | birth_date: giữ2008-01-11; EA ghi2008-01-12.
+
+Nguồn và lý do ghép đúng người: sources.md. Chỉ local; chưa ghi production.

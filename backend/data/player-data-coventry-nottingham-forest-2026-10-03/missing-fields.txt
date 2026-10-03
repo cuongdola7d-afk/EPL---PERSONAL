@@ -1,0 +1,14 @@
+PrismaXI – Coventry City FC – Nottingham Forest FC 2026/27, roster2026-10-03
+
+THIẾU DỮ LIỆU
+
+George Shepherd | player_id=2000030180 | club_id=1000001076
+  Thiếu: height_cm, preferred_foot, shirt_number, fc27_overall, primary_position, eligible_positions.
+  SofaScore đúng CoventryU21/England/DOB2008-12-09 không ghi height/foot/shirt.
+  Chưa tìm EA FC27 đúng người; giữNULL/MISSING, không lấy followers27 làm số áo.
+
+KHÁC NGUỒN, KHÔNG PHẢI Ô THIẾU; GIỮ HỒ SƠ HIỆN CÓ
+
+Sidiki Cherif | player_id=2000002029 | nationality: giữGuinea; EA ghiFrance.
+
+Nguồn và lý do ghép đúng người: sources.md. Chỉ local; chưa ghi production.
