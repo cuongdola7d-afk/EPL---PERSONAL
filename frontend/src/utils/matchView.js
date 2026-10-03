@@ -54,3 +54,26 @@ export function matchRating(player) {
   const value = Number(player.rating)
   return Number.isFinite(value) ? value : null
 }
+
+// The API has no starting-XI flag. This produces a clearly labelled visual estimate.
+export function estimatedPitchPlayers(players, evidenceStatus) {
+  const played = players.filter((player) => matchPlayerState(player) === 'played')
+  const ranked = [...played].sort((a, b) =>
+    (matchPlayerValue(b, 'minutes', evidenceStatus) ?? -1) -
+    (matchPlayerValue(a, 'minutes', evidenceStatus) ?? -1) || a.playerId - b.playerId)
+  const goalkeeper = ranked.find((player) => player.position === 'G')
+  const selected = (goalkeeper ? [goalkeeper, ...ranked.filter((player) => player !== goalkeeper)] : ranked).slice(0, 11)
+  const selectedIds = new Set(selected.map((player) => player.playerId))
+  return { selected, bench: players.filter((player) => !selectedIds.has(player.playerId)) }
+}
+
+export function pitchPositions(players, side) {
+  const positions = ['G', 'D', 'M', 'F']
+  const columns = side === 'home' ? [8, 20, 32, 44] : [92, 80, 68, 56]
+  return positions.flatMap((position, column) => {
+    const group = players.filter((player) => player.position === position)
+    return group.map((player, index) => ({
+      player, x: columns[column], y: (index + 1) * 100 / (group.length + 1),
+    }))
+  })
+}

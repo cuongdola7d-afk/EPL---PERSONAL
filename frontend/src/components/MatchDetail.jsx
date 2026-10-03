@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchMatchDetail } from '../api/matches.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
-import { clubVisual, matchPlayerState, matchPlayerValue, matchRating } from '../utils/matchView.js'
+import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
 
@@ -20,6 +20,13 @@ function Avatar({ name, club }) {
   const initials = name.replace(/\./g, '').split(/\s+/).filter(Boolean)
   const label = initials.length < 2 ? name.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
   return <span className="mx-avatar" style={{ '--mx-club-color': clubVisual(club).color }} aria-hidden="true">{label.toUpperCase()}</span>
+}
+
+function RatingBadge({ player }) {
+  const rating = matchRating(player)
+  return <span className={`mx-pitch-rating mx-rating-${ratingTier(rating)}`} title={rating == null ? 'Chưa có rating' : `Rating ${rating.toFixed(1)}`}>
+    {rating == null ? '—' : rating.toFixed(1)}
+  </span>
 }
 
 function PlayerRow({ player, club, season, evidenceStatus }) {
@@ -64,24 +71,69 @@ function PlayerGroup({ title, rows, club, season, evidenceStatus }) {
   </section>
 }
 
-function TeamPlayers({ match, detail, season }) {
-  const [side, setSide] = useState('home')
-  const club = side === 'home' ? match.homeClub : match.awayClub
-  const players = side === 'home' ? detail.homePlayers : detail.awayPlayers
-  const played = players.filter((player) => matchPlayerState(player) === 'played')
-  const dnp = players.filter((player) => matchPlayerState(player) === 'did-not-play')
-  const unknown = players.filter((player) => matchPlayerState(player) === 'unknown')
-  const props = { club, season, evidenceStatus: detail.evidenceStatus }
-  return <>
-    <div className="mx-team-switch" role="group" aria-label="Chọn đội bóng">
-      <button type="button" aria-pressed={side === 'home'} onClick={() => setSide('home')}>{match.homeClub}</button>
-      <button type="button" aria-pressed={side === 'away'} onClick={() => setSide('away')}>{match.awayClub}</button>
+function PitchNode({ player, club, season, evidenceStatus, x, y }) {
+  const initials = player.playerName.replace(/\./g, '').split(/\s+/).filter(Boolean)
+  const label = initials.length < 2 ? player.playerName.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
+  const marks = EVENTS.filter(([field]) => (matchPlayerValue(player, field, evidenceStatus) ?? 0) > 0)
+  const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
+  return <a className="mx-pitch-node" href={playerDetailHash(player.playerId, season)}
+    style={{ '--mx-x': `${x}%`, '--mx-y': `${y}%`, '--mx-club-color': clubVisual(club).color }}
+    aria-label={`${player.playerName}, ${club}, rating ${matchRating(player) == null ? 'chưa có' : matchRating(player).toFixed(1)}`}>
+    <span className="mx-pitch-avatar">{label.toUpperCase()}
+      {marks.length > 0 && <span className="mx-pitch-marks" aria-hidden="true">
+        {marks.map(([field, symbol]) => <span key={field}>{symbol}{matchPlayerValue(player, field, evidenceStatus) > 1 ? matchPlayerValue(player, field, evidenceStatus) : ''}</span>)}
+      </span>}
+      {minutes != null && minutes < 90 && <span className="mx-pitch-minutes" title="Số phút thi đấu">{minutes}′</span>}
+    </span>
+    <RatingBadge player={player} />
+    <span className="mx-pitch-name" title={player.playerName}>{player.playerName}</span>
+  </a>
+}
+
+function FormationLabel({ players }) {
+  const counts = ['D', 'M', 'F'].map((position) => players.filter((player) => player.position === position).length)
+  return <span>Sơ đồ ước tính {counts.join('–')}</span>
+}
+
+function Lineup({ match, detail, season }) {
+  const home = estimatedPitchPlayers(detail.homePlayers, detail.evidenceStatus)
+  const away = estimatedPitchPlayers(detail.awayPlayers, detail.evidenceStatus)
+  const homeNodes = pitchPositions(home.selected, 'home')
+  const awayNodes = pitchPositions(away.selected, 'away')
+  const teamHeading = (club, players, side) => <div className={`mx-lineup-team mx-lineup-team-${side}`}>
+    <ClubCrest name={club} /><span><strong>{club}</strong><FormationLabel players={players} /></span>
+  </div>
+  return <div className="mx-lineup">
+    <div className="mx-lineup-heading">{teamHeading(match.homeClub, home.selected, 'home')}
+      {teamHeading(match.awayClub, away.selected, 'away')}</div>
+    <div className="mx-pitch" aria-label="Sơ đồ sân bóng ước tính cho hai đội">
+      <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="14" y="14" width="972" height="592" /><path d="M500 14v592" /><circle cx="500" cy="310" r="72" />
+        <rect x="14" y="145" width="165" height="330" /><rect x="14" y="235" width="55" height="150" />
+        <rect x="821" y="145" width="165" height="330" /><rect x="931" y="235" width="55" height="150" />
+        <circle cx="500" cy="310" r="5" className="mx-pitch-center-dot" />
+      </svg>
+      <svg className="mx-pitch-vertical" viewBox="0 0 620 1000" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="14" y="14" width="592" height="972" /><path d="M14 500h592" /><circle cx="310" cy="500" r="72" />
+        <rect x="145" y="14" width="330" height="165" /><rect x="235" y="14" width="150" height="55" />
+        <rect x="145" y="821" width="330" height="165" /><rect x="235" y="931" width="150" height="55" />
+        <circle cx="310" cy="500" r="5" className="mx-pitch-center-dot" />
+      </svg>
+      {homeNodes.map(({ player, x, y }) => <PitchNode key={player.playerId} player={player}
+        club={match.homeClub} season={season} evidenceStatus={detail.evidenceStatus} x={x} y={y} />)}
+      {awayNodes.map(({ player, x, y }) => <PitchNode key={player.playerId} player={player}
+        club={match.awayClub} season={season} evidenceStatus={detail.evidenceStatus} x={x} y={y} />)}
     </div>
-    <p className="mx-detail-note">Dữ liệu hiện lưu trạng thái ra sân và vị trí cầu thủ; chưa lưu đội hình xuất phát hoặc sơ đồ chiến thuật.</p>
-    <PlayerGroup title="Đã thi đấu" rows={played} {...props} />
-    <PlayerGroup title="Không ra sân" rows={dnp} {...props} />
-    {unknown.length > 0 && <PlayerGroup title="Chưa rõ trạng thái" rows={unknown} {...props} />}
-  </>
+    <p className="mx-detail-note">Sân hiển thị tối đa 11 cầu thủ đã thi đấu mỗi đội, ước tính theo số phút và vị trí.
+      API chưa lưu đội hình xuất phát hoặc sơ đồ chiến thuật thực tế; số phút trên thẻ là thời gian thi đấu, không phải phút thay người.
+      Bấm vào cầu thủ để mở hồ sơ.</p>
+    <div className="mx-bench">
+      <PlayerGroup title={`${match.homeClub} · Cầu thủ còn lại`} rows={home.bench} club={match.homeClub}
+        season={season} evidenceStatus={detail.evidenceStatus} />
+      <PlayerGroup title={`${match.awayClub} · Cầu thủ còn lại`} rows={away.bench} club={match.awayClub}
+        season={season} evidenceStatus={detail.evidenceStatus} />
+    </div>
+  </div>
 }
 
 function EventColumn({ club, players, evidenceStatus }) {
@@ -147,7 +199,7 @@ function MatchDetail({ matchId, summary, onClose, season }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [reloadCount, setReloadCount] = useState(0)
-  const [tab, setTab] = useState('players')
+  const [tab, setTab] = useState('lineup')
   const headingRef = useRef(null)
 
   useEffect(() => {
@@ -197,11 +249,11 @@ function MatchDetail({ matchId, summary, onClose, season }) {
         <p>{match.status === 'FINISHED' ? 'Tỉ số đã có, thống kê cầu thủ của trận này chưa được lưu.' : 'Thông tin cầu thủ sẽ hiện khi trận kết thúc và có dữ liệu.'}</p></div>}
     {status === 'success' && !noStats && match.status === 'FINISHED' && <>
       <div className="mx-detail-tabs" role="tablist" aria-label="Chi tiết trận đấu">
-        <button type="button" role="tab" aria-selected={tab === 'players'} onClick={() => setTab('players')}>Cầu thủ</button>
+        <button type="button" role="tab" aria-selected={tab === 'lineup'} onClick={() => setTab('lineup')}>Đội hình</button>
         <button type="button" role="tab" aria-selected={tab === 'overview'} onClick={() => setTab('overview')}>Tổng quan</button>
       </div>
       <section className="mx-detail-panel" role="tabpanel">
-        {tab === 'players' ? <TeamPlayers match={match} detail={detail} season={season} /> :
+        {tab === 'lineup' ? <Lineup match={match} detail={detail} season={season} /> :
           <Overview match={match} detail={detail} />}
       </section>
     </>}
