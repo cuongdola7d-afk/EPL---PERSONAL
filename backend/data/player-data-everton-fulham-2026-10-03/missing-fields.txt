@@ -1,0 +1,26 @@
+PrismaXI – Everton/Fulham 2026/27, roster 2026-10-03
+
+THIẾU DỮ LIỆU (NULL/MISSING)
+
+Everton | 1000000062 | 2000030192 | Braiden Graham
+  Thiếu: fc27_overall, primary_position, eligible_positions.
+  Hồ sơ năm trường đã đủ; chưa tìm được hồ sơ EA FC27 đúng người.
+  Giữ OVR NULL, vị trí MISSING; chưa đủ điều kiện chọn Fantasy.
+
+Fulham | 1000000063 | 2000030194 | Macaulay Zepa
+  Thiếu: height_cm, shirt_number, fc27_overall, primary_position, eligible_positions.
+  SofaScore đúng người Fulham U21, Cameroon, DOB2008-07-07, LEFT không ghi cao/số áo.
+  Không lấy số followers19 làm shirt_number. Chưa có EA FC27 đủ chắc chắn.
+  Giữ các ô NULL, vị trí MISSING; chưa đủ điều kiện chọn Fantasy.
+
+CẦN XÁC NHẬN GIÁ TRỊ ĐÃ CÓ (REVIEW_REQUIRED, KHÔNG PHẢI Ô NULL)
+
+Fulham | 1000000063 | 2000030082 | Gonzalo García
+  Trường: nationality. Đang lưu D Mallorca Yo, chưa xác minh tên quốc gia này.
+  EA đúng người ghi Spain, nhưng không dùng EA thay nguồn hồ sơ SofaScore.
+  Giữ nguyên ô đã có theo yêu cầu. Cần xác nhận giá trị sửa từ đúng SofaScore.
+  DOB2004-03-24, EA ID278399, Fulham khớp; OVR75 và ST/ST đã xác minh.
+
+Các cầu thủ khác không có ô hồ sơ/OVR/vị trí còn thiếu trong batch local.
+File nguồn: sources.md. Mỗi ID roster vẫn có dòng profiles.csv và roster-status.csv.
+positions.csv chỉ có44 người đã xác minh. Chưa ghi production.
