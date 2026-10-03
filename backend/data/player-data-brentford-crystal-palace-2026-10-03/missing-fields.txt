@@ -1,0 +1,5 @@
+PrismaXI – Brentford/Crystal Palace 2026/27, roster 2026-10-03
+
+Brentford: 28/28 hồ sơ, OVR, primary_position và eligible_positions đầy đủ.
+Crystal Palace: 24/24 hồ sơ, OVR, primary_position và eligible_positions đầy đủ.
+Không có trường cần người dùng bổ sung trong batch này. Chưa ghi production.

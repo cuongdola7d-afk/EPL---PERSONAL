@@ -1,0 +1,6 @@
+Brighton – bổ sung 2026-10-03
+Chema Andrés 2000030174: CM.
+Nehemiah Oriola 2000030170: primary LW; eligible LW|LM.
+Younes Ibrahim 2000030176: CAM; OVR60 do người dùng cung cấp.
+Cả ba đủ dữ liệu local; nguồn EA chưa xác minh, nguồn người dùng ghi riêng.
+Batch Brighton–Bournemouth cũ giữ nguyên; bản bổ sung này chưa nhập production.

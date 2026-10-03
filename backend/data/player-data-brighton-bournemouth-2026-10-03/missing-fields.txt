@@ -1,0 +1,23 @@
+PrismaXI – Brighton/Bournemouth 2026/27, roster 2026-10-03
+
+Brighton | 2000030174 | José María Andrés Baixauli (Chema Andrés)
+  Cần bổ sung: primary_position, eligible_positions.
+  Chưa xác minh hồ sơ EA FC 27; kết quả FC 26 không được dùng.
+  Giữ OVR 69 người dùng 02/10, không coi OVR là NULL.
+
+Brighton | 2000030170 | Nehemiah Oriola
+  Cần bổ sung: primary_position, eligible_positions.
+  Chưa tìm thấy hồ sơ EA FC 27 ghép đủ chắc; không suy từ nhóm rộng.
+  Giữ OVR 60 người dùng 02/10, không coi OVR là NULL.
+
+Brighton | 2000030176 | Younes Ibrahim
+  Cần bổ sung: fc27_overall, primary_position, eligible_positions.
+  Chiều cao đã lấy từ đúng SofaScore: 182 cm; năm trường hồ sơ đã đủ.
+  Chưa xác minh hồ sơ EA FC 27 đúng người Egypt, DOB 2008-02-16.
+  OVR để trống/SQL NULL; không đổi thành 0; chưa đủ chọn Fantasy.
+
+Bournemouth: không còn trường dữ liệu thiếu trong batch local (26/26 người).
+Ba người Brighton vẫn có dòng profiles và tracking, trạng thái vị trí MISSING;
+không có dòng incoming trống trong positions.csv vì reader không chấp nhận.
+Nguồn URL EA xác minh OVR 69/60 vẫn chưa có; đây là thiếu nguồn, không thiếu giá trị.
+Chỉ local; chưa cập nhật MySQL production. profile-updates.csv có đúng một ô chiều cao.

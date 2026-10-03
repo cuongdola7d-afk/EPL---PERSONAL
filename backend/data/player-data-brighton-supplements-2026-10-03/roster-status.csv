@@ -1,0 +1,4 @@
+player_id,club_id,name,profile_status,fc27_overall,ovr_source,primary_position,eligible_positions,position_status,missing_fields
+2000030174,1000000397,José María Andrés Baixauli,COMPLETE_5_FIELDS,69,USER_PROVIDED_2026-10-02,CM,CM,USER_PROVIDED,
+2000030170,1000000397,Nehemiah Oriola,COMPLETE_5_FIELDS,60,USER_PROVIDED_2026-10-02,LW,LW|LM,USER_PROVIDED,
+2000030176,1000000397,Younes Ibrahim,COMPLETE_5_FIELDS,60,USER_PROVIDED_2026-10-03,CAM,CAM,USER_PROVIDED,
