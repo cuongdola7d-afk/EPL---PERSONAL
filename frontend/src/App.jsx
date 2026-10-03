@@ -26,7 +26,7 @@ const PAGES = {
     hasSeasons: true,
     navLabel: 'Lịch đấu', label: 'Lịch đấu & Kết quả', title: 'Từng vòng đấu.', highlight: 'Từng khoảnh khắc.',
     description: 'Tra cứu lịch đấu và kết quả mùa 2024/25 hoặc 2026/27, lọc theo đội bóng, Gameweek và trạng thái trận.',
-    component: MatchPage,
+    component: MatchPage, fullPage: true,
   },
   standings: {
     hasSeasons: true,

@@ -1,120 +1,105 @@
-import { useCallback, useState } from 'react'
-import { fetchClubs } from '../api/clubs.js'
+import { useCallback, useMemo, useState } from 'react'
 import { fetchMatches } from '../api/matches.js'
 import { useApiList } from '../hooks/useApiList.js'
+import { preferredMatchweek } from '../utils/matchView.js'
+import { SEASONS } from '../utils/seasons.js'
 import MatchCard from './MatchCard.jsx'
 import MatchDetail from './MatchDetail.jsx'
-import ResultPanel from './ResultPanel.jsx'
-import SeasonPicker from './SeasonPicker.jsx'
-import { SEASONS, canOpenMatchStats } from '../utils/seasons.js'
+import './MatchPage.css'
 
-const EMPTY_FILTERS = { club: '', matchweek: '', status: '' }
+const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', {
+  weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+}).format(new Date(`${date}T00:00:00Z`))
 
 function MatchPage({ season, onSeasonChange }) {
-  const [draftClub, setDraftClub] = useState('')
-  const [draftWeek, setDraftWeek] = useState('1')
-  const [draftStatus, setDraftStatus] = useState('')
-  const [filters, setFilters] = useState({ ...EMPTY_FILTERS, matchweek: '1' })
+  const [week, setWeek] = useState(null)
+  const [filter, setFilter] = useState('all')
+  const [club, setClub] = useState('')
   const [selectedMatchId, setSelectedMatchId] = useState(null)
-  const requestClubs = useCallback((signal) => fetchClubs('', signal, season), [season])
-  const requestMatches = useCallback((signal) => fetchMatches({ ...filters, season }, signal), [filters, season])
-  const clubList = useApiList(requestClubs)
+  const requestMatches = useCallback((signal) => fetchMatches({ season }, signal), [season])
   const { data: matches, status, error, reload } = useApiList(requestMatches)
-  const hasFilters = Boolean(filters.club || filters.matchweek || filters.status)
-  const gameweeks = season === 2024 ? [1] : Array.from({ length: 38 }, (_, index) => index + 1)
 
-  function applyFilters(event) {
-    event.preventDefault()
+  const weeks = useMemo(() => [...new Set(matches.map((match) => match.matchweek))].sort((a, b) => a - b), [matches])
+  const currentWeek = week ?? preferredMatchweek(matches)
+  const clubs = useMemo(() => [...new Set(matches.flatMap((match) => [match.homeClub, match.awayClub]))].sort(), [matches])
+  const weekMatches = matches.filter((match) => match.matchweek === currentWeek &&
+    (!club || match.homeClub === club || match.awayClub === club))
+  const finished = weekMatches.filter((match) => match.status === 'FINISHED').length
+  const visible = weekMatches.filter((match) => filter === 'all' ||
+    (filter === 'finished' ? match.status === 'FINISHED' : match.status !== 'FINISHED'))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
+  const selectedMatch = matches.find((match) => match.id === selectedMatchId)
+  const weekIndex = weeks.indexOf(currentWeek)
+
+  function changeWeek(next) {
+    setWeek(next)
     setSelectedMatchId(null)
-    setFilters({ club: draftClub, matchweek: draftWeek, status: draftStatus })
   }
 
-  function clearFilters() {
-    setDraftClub('')
-    setDraftWeek('')
-    setDraftStatus('')
-    setSelectedMatchId(null)
-    setFilters(EMPTY_FILTERS)
-  }
+  return <section className="mx-page" id="directory" aria-label="Lịch đấu và kết quả">
+    <div className="mx-wrap">
+      <div className="mx-season-switch" role="group" aria-label="Mùa giải">
+        {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button"
+          aria-pressed={season === Number(year)} onClick={() => onSeasonChange(Number(year))}>{label}</button>)}
+      </div>
 
-  return (
-    <section className="directory-section" id="directory" aria-labelledby="matches-heading">
-      <div className="container">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">KHÁM PHÁ GIẢI ĐẤU <span>03 / MATCHES</span></p>
-            <h2 id="matches-heading">Lịch đấu &amp; Kết quả</h2>
-            <p className="section-description">Premier League {SEASONS[season]} · {filters.matchweek ? `Gameweek ${filters.matchweek}` : 'Tất cả vòng đã lưu'}.</p>
-            <p className="section-description">{season === 2024
-              ? 'Dữ liệu trận đấu hiện có: Gameweek 1 với thống kê cầu thủ đã xác minh.'
-              : 'Trận đã kết thúc và đã nhập thống kê có chi tiết cầu thủ cùng điểm Fantasy.'}</p>
+      {selectedMatchId !== null ? <MatchDetail key={selectedMatchId} matchId={selectedMatchId}
+        summary={selectedMatch} season={season} onClose={() => setSelectedMatchId(null)} /> : <>
+        <header className="mx-hero">
+          <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+            <circle cx="100" cy="100" r="80" /><circle cx="100" cy="100" r="46" />
+            <circle cx="100" cy="100" r="6" fill="currentColor" /><path d="M100 20v160" />
+          </svg>
+          <h1>Lịch đấu</h1><p>Premier League {SEASONS[season]} · kết quả và các trận sắp tới</p>
+        </header>
+
+        <div className="mx-filters">
+          <div className="mx-round-nav">
+            <button type="button" aria-label="Vòng trước" disabled={weekIndex <= 0}
+              onClick={() => changeWeek(weeks[weekIndex - 1])}>‹</button>
+            <select value={currentWeek} aria-label="Chọn vòng đấu"
+              onChange={(event) => changeWeek(Number(event.target.value))}>
+              {(weeks.length ? weeks : [currentWeek]).map((item) => <option key={item} value={item}>Gameweek {item}</option>)}
+            </select>
+            <button type="button" aria-label="Vòng sau" disabled={weekIndex < 0 || weekIndex >= weeks.length - 1}
+              onClick={() => changeWeek(weeks[weekIndex + 1])}>›</button>
           </div>
-          {status === 'success' && (
-            <p className="result-count" aria-live="polite"><strong>{matches.length}</strong> trận đấu</p>
-          )}
+          <div className="mx-status-filters" role="group" aria-label="Lọc trạng thái trận">
+            {[
+              ['all', 'Tất cả', weekMatches.length],
+              ['finished', 'Đã kết thúc', finished],
+              ['upcoming', 'Chưa kết thúc', weekMatches.length - finished],
+            ].map(([value, label, count]) => <button key={value} type="button"
+              aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}<span>{count}</span></button>)}
+          </div>
+          <select className="mx-club-filter" value={club} aria-label="Lọc theo câu lạc bộ"
+            onChange={(event) => setClub(event.target.value)}>
+            <option value="">Tất cả CLB</option>
+            {clubs.map((name) => <option key={name} value={name}>{name}</option>)}
+          </select>
         </div>
 
-        <SeasonPicker season={season} onChange={onSeasonChange} />
-        <form className="search-form" onSubmit={applyFilters}>
-          <div className="filter-controls match-filters">
-            <div className="filter-field">
-              <label htmlFor="match-club">Câu lạc bộ</label>
-              <select id="match-club" value={draftClub} onChange={(event) => setDraftClub(event.target.value)} disabled={clubList.status !== 'success'}>
-                <option value="">Tất cả câu lạc bộ</option>
-                {clubList.data.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="match-week">Gameweek</label>
-              <select id="match-week" value={draftWeek} onChange={(event) => setDraftWeek(event.target.value)}>
-                <option value="">Tất cả vòng đã lưu</option>
-                {gameweeks.map((week) => <option key={week} value={week}>Gameweek {week}</option>)}
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="match-status">Trạng thái</label>
-              <select id="match-status" value={draftStatus} onChange={(event) => setDraftStatus(event.target.value)}>
-                <option value="">Tất cả trạng thái</option>
-                <option value="FINISHED">Đã kết thúc</option>
-                <option value="SCHEDULED">Chưa diễn ra</option>
-                <option value="POSTPONED">Bị hoãn</option>
-                <option value="CANCELLED">Đã hủy</option>
-                <option value="SUSPENDED">Tạm dừng</option>
-                <option value="LIVE">Đang diễn ra</option>
-                <option value="AWARDED">Kết quả xử lý</option>
-              </select>
-            </div>
-            <button className="search-button filter-apply" type="submit">Áp dụng</button>
-            {hasFilters && <button className="clear-button filter-clear" type="button" onClick={clearFilters}>Xóa lọc</button>}
-          </div>
-          {clubList.status === 'loading' && <p className="filter-note">Đang tải danh sách câu lạc bộ...</p>}
-          {clubList.status === 'error' && (
-            <p className="filter-note filter-note-error" role="alert">
-              Không tải được lựa chọn câu lạc bộ. <button type="button" onClick={clubList.reload}>Thử lại</button>
-            </p>
-          )}
-        </form>
-
-        <ResultPanel
-          status={status}
-          error={error}
-          count={matches.length}
-          itemName="trận đấu"
-          emptyMessage={hasFilters ? 'Không có trận đấu khớp với bộ lọc hiện tại.' : 'API hiện chưa có trận đấu nào.'}
-          onRetry={reload}
-          onClear={hasFilters ? clearFilters : undefined}
-        >
-          <div className="match-list">
-            {matches.map((match) => <MatchCard key={match.id} match={match}
-              onOpen={canOpenMatchStats(season, match) ? setSelectedMatchId : undefined} />)}
-          </div>
-        </ResultPanel>
-        {selectedMatchId !== null && (
-          <MatchDetail key={selectedMatchId} matchId={selectedMatchId} season={season} onClose={() => setSelectedMatchId(null)} />
-        )}
-      </div>
-    </section>
-  )
+        {status === 'loading' && <div className="mx-skeletons" role="status" aria-label="Đang tải lịch đấu">
+          {Array.from({ length: 4 }, (_, index) => <div key={index} />)}
+        </div>}
+        {status === 'error' && <div className="mx-empty" role="alert"><strong>Không tải được lịch đấu</strong>
+          <p>{error}</p><button type="button" onClick={reload}>Thử lại</button></div>}
+        {status === 'success' && <>
+          <div className="mx-count">Gameweek {currentWeek} · <strong>{visible.length}</strong> trận</div>
+          {visible.length === 0 ? <div className="mx-empty"><strong>Không có trận nào</strong>
+            <p>Thử đổi vòng đấu hoặc bộ lọc.</p><button type="button" onClick={() => { setFilter('all'); setClub('') }}>Xem tất cả</button>
+          </div> : <div className="mx-match-list">
+            {visible.map((match, index) => <div key={match.id}>
+              {(index === 0 || visible[index - 1].date !== match.date) &&
+                <h2 className="mx-date-heading">{dateLabel(match.date)}</h2>}
+              <MatchCard match={match} onOpen={setSelectedMatchId} />
+            </div>)}
+          </div>}
+          <p className="mx-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>
+        </>}
+      </>}
+    </div>
+  </section>
 }
 
 export default MatchPage
