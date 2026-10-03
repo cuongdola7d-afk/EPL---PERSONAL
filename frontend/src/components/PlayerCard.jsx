@@ -28,7 +28,7 @@ function PlayerCard({ player, season, view }) {
   const tier = player.fc27Overall == null ? 'na' : player.fc27Overall >= 85 ? 'gold' :
     player.fc27Overall >= 78 ? 'green' : player.fc27Overall >= 70 ? 'blue' : 'silver'
   const color = clubColor(player.club)
-  const matchStats = <div className="pp-player-stats" title={season === 2026 ? 'Cộng từ các trận đã có thống kê' : 'Thống kê mùa'}>
+  const matchStats = <div className="pp-player-stats" title={season === 2026 ? 'Tổng từ các trận đã nhập; cần đủ chỉ số ở mỗi trận đã ra sân' : 'Thống kê mùa'}>
     <span><strong>{player.goals ?? '—'}</strong><small>Bàn thắng</small></span>
     <span><strong>{player.assists ?? '—'}</strong><small>Kiến tạo</small></span>
   </div>

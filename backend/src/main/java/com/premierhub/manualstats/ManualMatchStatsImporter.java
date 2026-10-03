@@ -19,11 +19,14 @@ public class ManualMatchStatsImporter {
     private static final int SEASON = 2026;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
+    private final ManualSeasonStatsService seasonStats;
     private final ManualMatchStatsCsvReader reader = new ManualMatchStatsCsvReader();
 
-    public ManualMatchStatsImporter(JdbcTemplate jdbc, TransactionTemplate transactions) {
+    public ManualMatchStatsImporter(JdbcTemplate jdbc, TransactionTemplate transactions,
+                                    ManualSeasonStatsService seasonStats) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.seasonStats = seasonStats;
     }
 
     public Result importFile(Path file) throws IOException {
@@ -97,6 +100,7 @@ public class ManualMatchStatsImporter {
                     row.assists(), row.yellowCards(), row.redCards());
             inserted++;
         }
+        if (inserted > 0) seasonStats.rebuildLatestComplete();
         return new Result(rows.size(), inserted);
     }
 

@@ -207,6 +207,8 @@ class ManualMatchDetailTest {
     void playerDirectoryTotalsUseSavedMatchesWithoutInventingMissingValues() throws Exception {
         jdbc.update("UPDATE manual_player_memberships SET start_date=DATE '2026-08-01' "
                 + "WHERE player_id=2000004007 AND club_id=1000000065");
+        jdbc.update("UPDATE manual_fixture_player_stats SET goals=NULL, assists=NULL "
+                + "WHERE fixture_id=1000560555 AND player_id=2000020095");
         JsonNode players = getJson("/api/players?season=2026&asOf=2026-08-28");
         JsonNode scorer = findPlayer(players, 2000004007);
         assertEquals(2, scorer.path("goals").asInt());
@@ -237,6 +239,32 @@ class ManualMatchDetailTest {
         JsonNode missing = getJson("/api/players?season=2026&asOf=2026-08-28");
         assertTrue(findPlayer(missing, 2000004007).path("goals").isNull());
         assertTrue(findPlayer(missing, 2000004007).path("assists").isNull());
+        JsonNode incompleteSeason = getJson("/api/players?season=2026&asOf=2026-08-29");
+        assertTrue(findPlayer(incompleteSeason, 2000004007).path("goals").isNull());
+        assertTrue(findPlayer(incompleteSeason, 2000004007).path("assists").isNull());
+    }
+
+    @Test
+    void currentDirectoryUsesMaterializedZeroForPlayerWithoutMatchRows() throws Exception {
+        jdbc.update("INSERT INTO players (id, name) VALUES (9998, 'Unused roster player')");
+        jdbc.update("""
+                INSERT INTO player_season_stats
+                (league_id, season_year, player_id, club_id, position,
+                 appearances, minutes, goals, assists)
+                VALUES (39, 2026, 9998, 1000000354, 'FORWARD', 0, 0, 0, 0)
+                """);
+        jdbc.update("""
+                INSERT INTO manual_player_memberships
+                (league_id, season_year, player_id, club_id, start_date, end_date)
+                VALUES (39, 2026, 9998, 1000000354, DATE '2026-08-28', NULL)
+                """);
+        JsonNode current = getJson("/api/players?season=2026");
+        assertEquals(0, findPlayer(current, 9998).path("goals").asInt());
+        assertEquals(0, findPlayer(current, 9998).path("assists").asInt());
+
+        JsonNode historical = getJson("/api/players?season=2026&asOf=2026-08-28");
+        assertTrue(findPlayer(historical, 9998).path("goals").isNull());
+        assertTrue(findPlayer(historical, 9998).path("assists").isNull());
     }
 
     private void fixture(int id, int season, int home, int away, String date, int week, String status) {

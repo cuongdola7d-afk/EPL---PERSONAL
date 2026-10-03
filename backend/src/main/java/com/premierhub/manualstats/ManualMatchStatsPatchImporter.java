@@ -18,11 +18,14 @@ import java.util.Objects;
 public class ManualMatchStatsPatchImporter {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
+    private final ManualSeasonStatsService seasonStats;
     private final ManualMatchStatsCsvReader reader = new ManualMatchStatsCsvReader();
 
-    public ManualMatchStatsPatchImporter(JdbcTemplate jdbc, TransactionTemplate transactions) {
+    public ManualMatchStatsPatchImporter(JdbcTemplate jdbc, TransactionTemplate transactions,
+                                         ManualSeasonStatsService seasonStats) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.seasonStats = seasonStats;
     }
 
     public Result fillMissing(Path file, int fixtureId) throws IOException {
@@ -93,6 +96,7 @@ public class ManualMatchStatsPatchImporter {
                     """, row.rating(), row.rating(), row.minutes(), row.goals(), row.assists(),
                     row.yellowCards(), row.redCards(), row.fixtureId(), row.playerId());
         }
+        if (filledCells > 0) seasonStats.rebuildLatestComplete();
         return new Result(rows.size(), changes.size(), filledCells);
     }
 

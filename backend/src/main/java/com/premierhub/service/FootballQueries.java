@@ -69,7 +69,11 @@ public class FootballQueries {
             LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneOffset.UTC) : asOf;
             return jdbc.query("""
                     SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
-                           totals.goals, totals.assists, profile.fc27_overall, profile.nationality,
+                           CASE WHEN ?=1 AND totals.player_id IS NULL
+                               THEN ps.goals ELSE totals.goals END AS goals,
+                           CASE WHEN ?=1 AND totals.player_id IS NULL
+                               THEN ps.assists ELSE totals.assists END AS assists,
+                           profile.fc27_overall, profile.nationality,
                            profile.birth_date, profile.height_cm, profile.preferred_foot,
                            profile.shirt_number
                     FROM manual_player_memberships membership
@@ -83,7 +87,14 @@ public class FootballQueries {
                         AND profile.player_id=membership.player_id AND profile.club_id=membership.club_id
                     LEFT JOIN (
                         SELECT stats.league_id, stats.season_year, stats.player_id,
-                               SUM(stats.goals) AS goals, SUM(stats.assists) AS assists
+                               CASE WHEN COUNT(CASE WHEN stats.participation_status='PLAYED'
+                                   AND stats.goals IS NULL THEN 1 END)>0 THEN NULL
+                                   ELSE SUM(CASE WHEN stats.participation_status='PLAYED'
+                                       THEN stats.goals ELSE 0 END) END AS goals,
+                               CASE WHEN COUNT(CASE WHEN stats.participation_status='PLAYED'
+                                   AND stats.assists IS NULL THEN 1 END)>0 THEN NULL
+                                   ELSE SUM(CASE WHEN stats.participation_status='PLAYED'
+                                       THEN stats.assists ELSE 0 END) END AS assists
                         FROM manual_fixture_player_stats stats
                         JOIN fixtures fixture ON fixture.id=stats.fixture_id
                             AND fixture.league_id=stats.league_id
@@ -108,7 +119,8 @@ public class FootballQueries {
                       AND (? IS NULL OR LOWER(c.name)=LOWER(?))
                       AND (? IS NULL OR ps.position=?)
                     ORDER BY p.name, c.name
-                    """, (rs, row) -> playerResponse(rs), Date.valueOf(effectiveDate), LEAGUE_ID, season,
+                    """, (rs, row) -> playerResponse(rs), asOf == null ? 1 : 0,
+                    asOf == null ? 1 : 0, Date.valueOf(effectiveDate), LEAGUE_ID, season,
                     Date.valueOf(effectiveDate), Date.valueOf(effectiveDate),
                     blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
         }

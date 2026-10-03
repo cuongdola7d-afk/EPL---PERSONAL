@@ -77,7 +77,7 @@ function PlayerPage({ season, onSeasonChange }) {
 
       {status === 'success' && <div className="pp-results"><span><strong>{filtered.length}</strong> cầu thủ{filtered.length !== players.length ? ` trên ${players.length}` : ''}</span>{hasFilters && <button type="button" onClick={clearFilters}>Xóa bộ lọc</button>}</div>}
       {season === 2024 && <p className="pp-note">Dữ liệu cầu thủ mùa 2024/25 mới được lưu một phần. OVR FC 27 không áp dụng cho mùa này.</p>}
-      {season === 2026 && <p className="pp-note">Bàn thắng và kiến tạo được cộng từ các trận đã có thống kê. Dấu — nghĩa là chưa có số liệu xác nhận.</p>}
+      {season === 2026 && <p className="pp-note">Bàn thắng và kiến tạo được cộng từ các trận đã nhập. Dấu — nghĩa là chưa có trận được ghi nhận hoặc còn thiếu chỉ số ở một trận đã ra sân.</p>}
       <ResultPanel status={status} error={error} count={filtered.length} itemName="cầu thủ" emptyMessage={hasFilters ? 'Không có cầu thủ khớp với bộ lọc hiện tại.' : 'API hiện chưa có cầu thủ nào.'} onRetry={reload} onClear={hasFilters ? clearFilters : undefined}>
         <div className={view === 'grid' ? 'pp-grid' : 'pp-list'}>{shown.map((player) => <PlayerCard key={`${player.id}-${player.clubId}`} player={player} season={season} view={view} />)}</div>
         {shown.length < sorted.length && <button className="pp-more" type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>Xem thêm {Math.min(PAGE_SIZE, sorted.length - shown.length)} cầu thủ</button>}

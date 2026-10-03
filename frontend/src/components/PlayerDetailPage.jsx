@@ -69,10 +69,11 @@ function NextTab({ rows, season }) {
   </>
 }
 
-function SeasonTab({ rows, season }) {
+function SeasonTab({ rows, season, player }) {
   const [activeMatchId, setActiveMatchId] = useState(null)
   const summary = seasonSummary(rows)
-  if (!rows.some((row) => row.stats)) return <Empty title="Chưa có thống kê mùa">Chưa có thống kê cầu thủ theo trận cho mùa {SEASONS[season]}.</Empty>
+  const hasMatchStats = rows.some((row) => row.stats)
+  if (!hasMatchStats && !(season === 2026 && player.goals === 0 && player.assists === 0)) return <Empty title="Chưa có thống kê mùa">Chưa có thống kê cầu thủ theo trận cho mùa {SEASONS[season]}.</Empty>
   const metrics = [
     ['Số trận ra sân', summary.appearances], ['Tổng số phút', summary.totalMinutes],
     ['Bàn thắng', summary.goals], ['Kiến tạo', summary.assists],
@@ -133,7 +134,7 @@ function PlayerDetailPage({ playerId, season }) {
       <div className="pd-card pd-panel" role="tabpanel" id={`pd-panel-${tab}`} aria-labelledby={`pd-tab-${tab}`}>
         {tab === 'matches' && <MatchesTab rows={finished} season={season} />}
         {tab === 'next' && <NextTab rows={next} season={season} />}
-        {tab === 'season' && <SeasonTab rows={finished} season={season} />}
+        {tab === 'season' && <SeasonTab rows={finished} season={season} player={player} />}
         {tab === 'info' && <InfoTab player={player} season={season} />}
       </div>
       <p className="pd-footer">Lịch thi đấu và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Hồ sơ và thống kê hiển thị theo dữ liệu prismaXI đã lưu.</p>
