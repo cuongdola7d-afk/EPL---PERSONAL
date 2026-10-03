@@ -25,6 +25,10 @@ public class ApiCorsConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/fantasy/2026/validate")
+                .allowedOrigins(allowedOrigins.toArray(String[]::new))
+                .allowedMethods("POST")
+                .allowedHeaders("Accept", "Content-Type");
         registry.addMapping("/api/**")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("GET")

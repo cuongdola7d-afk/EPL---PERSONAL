@@ -88,3 +88,19 @@
 @media (max-width: 900px) { .fantasy-main { grid-template-columns: 1fr; }.fantasy-summary { grid-template-columns: 1fr 1fr; }.fantasy-averages { grid-column: 1 / -1; grid-row: 2; } }
 @media (max-width: 560px) { .fantasy-page { padding-top: 20px; }.fantasy-summary { gap: 8px; }.fantasy-summary > .fantasy-card { min-height: 120px; padding: 12px; }.fantasy-total-body { gap: 8px; }.fantasy-ring { width: 52px; height: 52px; }.fantasy-ring::before { inset: 6px; }.fantasy-ring span { font-size: .62rem; }.fantasy-total-body strong, .fantasy-clubs > strong { font-size: 1.45rem; }.fantasy-primary { margin-left: 0; }.fantasy-pitch { min-height: 460px; }.fantasy-slot { width: 50px; }.fantasy-slot .fantasy-avatar { width: 38px; height: 38px; font-size: .7rem; }.fantasy-slot-name { max-width: 50px; font-size: .54rem; }.fantasy-slot > .fantasy-position { font-size: .52rem; }.fantasy-sheet { max-height: 95vh; }.fantasy-overlay { align-items: flex-end; padding: 0; }.fantasy-sheet { border-radius: 26px 26px 0 0; } }
 @media (prefers-reduced-motion: reduce) { .fantasy-page * { transition: none !important; } }
+.fantasy-unassigned { padding: 16px; margin-bottom: 12px; }
+.fantasy-unassigned h2 { margin: 0; font-size: 1rem; }
+.fantasy-unassigned p, .fantasy-unassigned small { color: var(--f-muted); font-size: .78rem; }
+.fantasy-unassigned > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; }
+.fantasy-unassigned small { display: block; margin-top: 4px; }
+.fantasy-unassigned button { flex: none; }
+.fantasy-filters > span { color: var(--f-muted); font-size: .75rem; }
+.fantasy-candidate .fantasy-eligible, .fantasy-candidate .fantasy-pick-issue { white-space: normal; overflow: visible; }
+.fantasy-candidate .fantasy-pick-issue { color: var(--f-accent); }
+.fantasy-primary:disabled { opacity: .65; cursor: wait; }
+@media (max-width: 560px) {
+  .fantasy-candidate { gap: 6px; grid-template-columns: 32px minmax(0, 1fr) auto auto; }
+  .fantasy-candidate .fantasy-avatar { width: 32px; height: 32px; }
+  .fantasy-candidate button { min-width: 55px; padding: 6px; }
+  .fantasy-unassigned > div { flex-wrap: wrap; }
+}

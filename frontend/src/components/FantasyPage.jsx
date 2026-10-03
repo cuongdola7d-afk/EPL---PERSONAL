@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { fetchFantasyPlayers } from '../api/fantasy.js'
+import { checkFantasyLineup, fetchFantasyPlayers } from '../api/fantasy.js'
 import { useApiList } from '../hooks/useApiList.js'
 import { getInitials } from '../utils/initials.js'
-import { ESTIMATED_OVR_PLAYER_IDS, FANTASY_STORAGE_KEY, FORMATIONS, GROUP_LABEL, formationSlots,
-  movePicks, normalizeLineup, pickError, validateLineup } from '../fantasy/lineup.js'
+import { FANTASY_STORAGE_KEY, FORMATIONS, GROUP_LABEL, MAX_OVR, fitsSlot, formationSlots,
+  lineupIssues, movePicks, normalizeLineup, pickError, playerDataError, validateLineup } from '../fantasy/lineup.js'
 import ResultPanel from './ResultPanel.jsx'
 import './FantasyPage.css'
 
@@ -48,10 +48,11 @@ function FantasyPage() {
   const [lineup, setLineup] = useState(readSavedLineup)
   const [activeKey, setActiveKey] = useState(null)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('')
   const [clubFilter, setClubFilter] = useState('')
   const [message, setMessage] = useState('')
   const [result, setResult] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const checkVersion = useRef(0)
   const [theme, setTheme] = useState('dark')
   const searchRef = useRef(null)
 
@@ -59,17 +60,20 @@ function FantasyPage() {
     [status, lineup, players])
   const formation = FORMATIONS[currentLineup?.formation] ? currentLineup.formation : '4-2-1-3'
   const picks = currentLineup?.picks ?? {}
+  const unassigned = currentLineup?.unassigned ?? []
   const slots = useMemo(() => formationSlots(formation), [formation])
   const byId = useMemo(() => new Map(players.map((player) => [player.id, player])), [players])
-  const selected = slots.map((slot) => byId.get(picks[slot.key])).filter(Boolean)
-  const total = selected.reduce((sum, player) => sum + player.fc27Overall, 0)
+  const selectedIds = [...new Set([...Object.values(picks), ...unassigned])]
+  const selected = selectedIds.map(id => byId.get(id)).filter(Boolean)
+  const total = selected.reduce((sum, player) => sum + (player.fc27Overall ?? 0), 0)
+  const issues = lineupIssues(formation, picks, players, unassigned)
   const clubCounts = selected.reduce((counts, player) => counts.set(player.clubId,
     { name: player.club, count: (counts.get(player.clubId)?.count ?? 0) + 1 }), new Map())
   const activeSlot = slots.find((slot) => slot.key === activeKey)
   const clubs = useMemo(() => [...new Map(players.map((player) => [player.clubId,
     { id: player.clubId, name: player.club }])).values()].sort((a, b) => a.name.localeCompare(b.name, 'vi')), [players])
   const candidates = players.filter((player) =>
-    (!filter || player.position === filter) && (!clubFilter || player.clubId === Number(clubFilter)) &&
+    fitsSlot(player, activeSlot) && (!clubFilter || player.clubId === Number(clubFilter)) &&
     `${player.name} ${player.club}`.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi')))
     .sort((a, b) => (b.fc27Overall ?? -1) - (a.fc27Overall ?? -1) || a.name.localeCompare(b.name, 'vi'))
 
@@ -79,9 +83,9 @@ function FantasyPage() {
 
   useEffect(() => {
     if (status !== 'success') return
-    try { window.localStorage.setItem(FANTASY_STORAGE_KEY, JSON.stringify({ formation, picks })) }
+    try { window.localStorage.setItem(FANTASY_STORAGE_KEY, JSON.stringify(currentLineup)) }
     catch { /* Fantasy vẫn dùng được nếu trình duyệt chặn localStorage. */ }
-  }, [status, formation, picks])
+  }, [status, currentLineup])
 
   useEffect(() => {
     if (!activeKey) return undefined
@@ -91,49 +95,64 @@ function FantasyPage() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [activeKey])
 
+  useEffect(() => () => { checkVersion.current++ }, [])
+
   function openPicker(key) {
-    const slot = slots.find((item) => item.key === key)
     setActiveKey(key)
-    setFilter(slot.group)
     setClubFilter('')
     setSearch('')
     setMessage('')
   }
 
   function choose(player) {
-    const issue = pickError(player, activeSlot, picks, players)
+    const issue = pickError(player, activeSlot, picks, players, unassigned)
     if (issue) { setMessage(issue); return }
-    setLineup({ formation, picks: { ...picks, [activeKey]: player.id } })
+    checkVersion.current++
+    setLineup({ formation, picks: { ...picks, [activeKey]: player.id }, unassigned })
     setActiveKey(null)
     setResult(false)
     setMessage('')
   }
 
   function remove(key) {
+    checkVersion.current++
     const next = { ...picks }
     delete next[key]
-    setLineup({ formation, picks: next })
+    setLineup({ formation, picks: next, unassigned })
     setResult(false)
     setMessage('')
   }
 
   function changeFormation(nextFormation) {
-    setLineup({ formation: nextFormation, picks: movePicks(formation, nextFormation, picks) })
+    checkVersion.current++
+    setLineup(movePicks(formation, nextFormation, picks, players, unassigned))
+    setActiveKey(null)
     setResult(false)
     setMessage('')
   }
 
-  function showResult() {
-    const issue = validateLineup(formation, picks, players)
+  async function showResult() {
+    const issue = validateLineup(formation, picks, players, unassigned)
     setMessage(issue)
-    setResult(!issue)
+    setResult(false)
+    if (issue) return
+    const version = ++checkVersion.current
+    setChecking(true)
+    try {
+      const checked = await checkFantasyLineup(formation, picks)
+      if (version !== checkVersion.current) return
+      setMessage(checked.issues.map(item => item.message).join(' '))
+      setResult(checked.valid ? checked : false)
+    } catch (error) {
+      if (version === checkVersion.current) setMessage(error.message)
+    } finally { setChecking(false) }
   }
 
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
       <header className="fantasy-head">
         <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">Đội hình của bạn</h1>
-          <p>Chọn 11 cầu thủ · tổng điểm theo OVR FC 27</p></div>
+          <p>11 cầu thủ · tối đa 3/CLB · OVR tối đa 860. Điểm trận tính từ rating.</p></div>
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
@@ -141,9 +160,10 @@ function FantasyPage() {
         emptyMessage="Chưa có cầu thủ trong roster mùa 2026/27." onRetry={reload}>
         <div className="fantasy-summary">
           <div className="fantasy-card fantasy-total"><span className="fantasy-label">Tổng overall</span>
-            <div className="fantasy-total-body"><span className="fantasy-ring" style={{ '--progress': `${Math.min(100, total / 990 * 100)}%` }}><span>{selected.length}/11</span></span>
-              <strong>{total}<small> / 990</small></strong></div>
-            <p>{selected.length < 11 ? `Còn ${11 - selected.length} vị trí cần chọn` : 'Đội hình đã đủ 11 người'}</p>
+            <div className="fantasy-total-body"><span className="fantasy-ring" style={{ '--progress': `${Math.min(100, total / MAX_OVR * 100)}%` }}><span>{selectedIds.length}/11</span></span>
+              <strong>{total}<small> / {MAX_OVR}</small></strong></div>
+            <p>{unassigned.length ? `${Object.keys(picks).length}/11 đã xếp · ${unassigned.length} cần thay` :
+              selected.length < 11 ? `Còn ${11 - selected.length} vị trí cần chọn` : 'Đội hình đã đủ 11 người'}</p>
           </div>
           <div className="fantasy-card fantasy-averages"><span className="fantasy-label">Overall trung bình theo tuyến</span>
             {GROUPS.map((group) => { const ratings = selected.filter((player) => player.position === group).map((player) => player.fc27Overall)
@@ -160,11 +180,25 @@ function FantasyPage() {
             {Object.keys(FORMATIONS).map((name) => <button type="button" key={name} aria-pressed={formation === name}
               onClick={() => changeFormation(name)}>{name}</button>)}
           </div>
-          <button className="fantasy-clear" type="button" onClick={() => { setLineup({ formation, picks: {} }); setResult(false); setMessage('') }}>Xóa hết</button>
-          <button className="fantasy-primary" type="button" onClick={showResult}>Xem kết quả</button>
+          <button className="fantasy-clear" type="button" onClick={() => { checkVersion.current++; setLineup({ formation, picks: {}, unassigned: [] }); setResult(false); setMessage('') }}>Xóa hết</button>
+          <button className="fantasy-primary" type="button" disabled={checking} onClick={showResult}>{checking ? 'Đang kiểm tra…' : 'Kiểm tra đội hình'}</button>
         </div>
         {message && <p className="fantasy-message" role="alert">{message}</p>}
-        {result && <p className="fantasy-result" role="status">Đội hình {formation} đạt <strong>{total} OVR</strong> từ 11 cầu thủ.</p>}
+        {currentLineup?.notices?.map(notice => <p className="fantasy-message" role="alert" key={notice}>{notice}</p>)}
+        {Object.keys(picks).length > 0 && issues.filter(issue => !issue.startsWith('Chọn đủ')).length > 0 &&
+          <p className="fantasy-message" role="alert">{issues.filter(issue => !issue.startsWith('Chọn đủ')).join(' ')}</p>}
+        {unassigned.length > 0 && <div className="fantasy-card fantasy-unassigned" role="region" aria-label="Cầu thủ cần thay">
+          <h2>Cầu thủ cần thay hoặc chưa xếp được ({unassigned.length})</h2>
+          <p>Lựa chọn vẫn được giữ. Đổi sơ đồ phù hợp hoặc bỏ người cần thay trước khi chọn người khác.</p>
+          {unassigned.map(id => { const player = byId.get(id)
+            return <div key={id}><span><strong>{player?.name ?? `Cầu thủ #${id}`}</strong> · {player?.eligiblePositions?.join('/') || 'Chưa có vị trí'}
+              <small>{playerDataError(player) || `Không có ô phù hợp còn trống trong sơ đồ ${formation}.`}</small></span>
+              <button className="fantasy-clear" type="button" onClick={() => {
+                checkVersion.current++; setLineup({ formation, picks, unassigned: unassigned.filter(value => value !== id) }); setResult(false)
+              }}>Bỏ {player?.name ?? `#${id}`}</button></div>
+          })}
+        </div>}
+        {result && <p className="fantasy-result" role="status">Đội hình {formation} hợp lệ: <strong>{result.totalOvr}/{MAX_OVR} OVR</strong>. OVR dùng để chọn đội; điểm trận lấy từ rating đã nhập.</p>}
         <div className="fantasy-main">
           <div className="fantasy-pitch" aria-label="Sân bóng với đội hình đã chọn"><Pitch />
             {slots.map((slot) => { const player = byId.get(picks[slot.key])
@@ -197,21 +231,22 @@ function FantasyPage() {
         <label className="fantasy-search"><span className="visually-hidden">Tìm theo tên cầu thủ hoặc CLB</span><span aria-hidden="true">⌕</span>
           <input ref={searchRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tên cầu thủ hoặc CLB" /></label>
         <div className="fantasy-filters">
-          {['', ...GROUPS.slice().reverse()].map((group) => <button type="button" key={group} aria-pressed={filter === group}
-            onClick={() => setFilter(group)}>{group ? GROUP_LABEL[group] : 'Mọi vị trí'}</button>)}
+          <span>Chỉ cầu thủ được chơi ô {activeSlot.position}</span>
           <select value={clubFilter} onChange={(event) => setClubFilter(event.target.value)} aria-label="Lọc câu lạc bộ">
             <option value="">Mọi CLB</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}
           </select>
         </div>
-        <div className="fantasy-results">{candidates.length ? candidates.map((player) => { const issue = pickError(player, activeSlot, picks, players)
+        <div className="fantasy-results">{candidates.length ? candidates.map((player) => { const issue = pickError(player, activeSlot, picks, players, unassigned)
           return <div className="fantasy-candidate" key={player.id}><PlayerAvatar player={player} small />
-            <div><strong>{player.name}</strong><small>{player.club} · {GROUP_LABEL[player.position]}</small></div>
+            <div><strong>{player.name}</strong><small>{player.club} · Chính: {player.primaryPosition}</small>
+              <small className="fantasy-eligible">Được chơi: {player.eligiblePositions.join(' / ')}</small>
+              {issue && <small className="fantasy-pick-issue">{issue}</small>}</div>
             <span className={player.fc27Overall == null ? 'fantasy-no-rating' : `fantasy-rating fantasy-rating-${ratingTier(player.fc27Overall)}`}>
               {player.fc27Overall ?? '—'}</span>
             <button type="button" disabled={Boolean(issue)} title={issue || undefined} onClick={() => choose(player)}>
-              {issue ? (ESTIMATED_OVR_PLAYER_IDS.has(player.id) ? 'OVR ước tính' : player.fc27Overall == null ? 'Thiếu OVR' : player.position !== activeSlot.group ? 'Sai vị trí' : issue.includes('CLB') ? 'Đủ 3/CLB' : 'Đã chọn') : 'Chọn'}</button>
+              {issue ? (issue.includes('CLB') ? 'Đủ 3/CLB' : issue.includes('OVR') ? 'Vượt OVR' : issue.includes('Đã giữ') ? 'Đủ 11' : 'Đã chọn') : 'Chọn'}</button>
           </div> }) : <p className="fantasy-no-results">Không tìm thấy cầu thủ. Thử đổi từ khóa hoặc bộ lọc.</p>}</div>
-        <div className="fantasy-sheet-foot"><span>{candidates.length} cầu thủ · {players.filter((player) => player.fc27Overall == null).length} chưa có OVR</span>
+        <div className="fantasy-sheet-foot"><span>{candidates.length} phù hợp · {players.filter(player => playerDataError(player)).length} thiếu OVR/vị trí</span>
           {picks[activeKey] != null && <button type="button" onClick={() => { remove(activeKey); setActiveKey(null) }}>Bỏ chọn vị trí này</button>}</div>
       </div>
     </div>}
