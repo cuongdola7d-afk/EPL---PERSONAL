@@ -5,7 +5,8 @@ import MatchPage from './components/MatchPage.jsx'
 import StandingsPage from './components/StandingsPage.jsx'
 import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
-import { parsePlayerDetailHash } from './utils/playerRoute.js'
+import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
+import { parseMatchRoute } from './utils/matchRoute.js'
 import './App.css'
 import './DarkSite.css'
 
@@ -40,22 +41,31 @@ const PAGES = {
   },
 }
 
-function pageFromHash() {
-  const name = window.location.hash.slice(1)
-  return parsePlayerDetailHash(window.location.hash) ? 'players' : PAGES[name] ? name : 'clubs'
+function pageFromHash(hash) {
+  const name = hash.slice(1)
+  if (parsePlayerDetailHash(hash) || parsePlayerListHash(hash)) return 'players'
+  if (parseMatchRoute(hash)) return 'matches'
+  return PAGES[name] ? name : 'clubs'
 }
 
 function App() {
-  const [page, setPage] = useState(pageFromHash)
-  const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ?? 2026)
+  const [page, setPage] = useState(() => pageFromHash(window.location.hash))
+  const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ??
+    parsePlayerListHash(window.location.hash)?.season ?? parseMatchRoute(window.location.hash)?.season ?? 2026)
   const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
+  const [matchRoute, setMatchRoute] = useState(() => parseMatchRoute(window.location.hash))
 
   useEffect(() => {
     function handleHashChange() {
       const detail = parsePlayerDetailHash(window.location.hash)
+      const playerList = parsePlayerListHash(window.location.hash)
+      const match = parseMatchRoute(window.location.hash)
       setPlayerDetail(detail)
-      if (detail) setSeason(detail.season)
-      setPage(pageFromHash())
+      setMatchRoute(match)
+      if (detail?.season || playerList?.season || match?.season) {
+        setSeason(detail?.season ?? playerList?.season ?? match?.season)
+      }
+      setPage(pageFromHash(window.location.hash))
       window.scrollTo(0, 0)
     }
 
@@ -114,9 +124,10 @@ function App() {
         </section>}
 
         {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
-          playerId={playerDetail.playerId} season={playerDetail.season} /> :
+          playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
-            {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})} />}
+            {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
+            {...(page === 'matches' ? { matchRoute } : {})} />}
       </main>
 
       <footer className="site-footer">

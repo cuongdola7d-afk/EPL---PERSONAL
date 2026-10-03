@@ -37,7 +37,7 @@ function PlayerRow({ player, club, season, evidenceStatus }) {
     ? `Fantasy: ${player.fantasyPoints == null ? 'chưa được chấm' : player.fantasyPoints}`
     : player.score?.status === 'COMPLETE' ? `Điểm v1: ${player.score.confirmedPoints}`
       : player.score ? `Tạm tính v1: ${player.score.confirmedPoints}` : null
-  return <div className="mx-player-entry"><a className="mx-player-row" href={playerDetailHash(player.playerId, season)}>
+  return <div className="mx-player-entry"><a className="mx-player-row" href={playerDetailHash(player.playerId, season, window.location.hash)}>
     <span className="mx-player-identity"><Avatar name={player.playerName} club={club} />
       <span><strong>{player.playerName}</strong><small><span className={`mx-position mx-position-${player.position}`}>
         {POSITIONS[player.position] ?? player.position ?? '—'}</span>{state === 'played' && rating == null ? ' · chưa có rating' : ''}
@@ -76,7 +76,7 @@ function PitchNode({ player, club, season, evidenceStatus, x, y }) {
   const label = initials.length < 2 ? player.playerName.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
   const marks = EVENTS.filter(([field]) => (matchPlayerValue(player, field, evidenceStatus) ?? 0) > 0)
   const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
-  return <a className="mx-pitch-node" href={playerDetailHash(player.playerId, season)}
+  return <a className="mx-pitch-node" href={playerDetailHash(player.playerId, season, window.location.hash)}
     style={{ '--mx-x': `${x}%`, '--mx-y': `${y}%`, '--mx-club-color': clubVisual(club).color }}
     aria-label={`${player.playerName}, ${club}, rating ${matchRating(player) == null ? 'chưa có' : matchRating(player).toFixed(1)}`}>
     <span className="mx-pitch-avatar">{label.toUpperCase()}
@@ -90,23 +90,18 @@ function PitchNode({ player, club, season, evidenceStatus, x, y }) {
   </a>
 }
 
-function FormationLabel({ players }) {
-  const counts = ['D', 'M', 'F'].map((position) => players.filter((player) => player.position === position).length)
-  return <span>Sơ đồ ước tính {counts.join('–')}</span>
-}
-
 function Lineup({ match, detail, season }) {
   const home = estimatedPitchPlayers(detail.homePlayers, detail.evidenceStatus)
   const away = estimatedPitchPlayers(detail.awayPlayers, detail.evidenceStatus)
   const homeNodes = pitchPositions(home.selected, 'home')
   const awayNodes = pitchPositions(away.selected, 'away')
-  const teamHeading = (club, players, side) => <div className={`mx-lineup-team mx-lineup-team-${side}`}>
-    <ClubCrest name={club} /><span><strong>{club}</strong><FormationLabel players={players} /></span>
+  const teamHeading = (club, side) => <div className={`mx-lineup-team mx-lineup-team-${side}`}>
+    <ClubCrest name={club} /><span><strong>{club}</strong><span>Sơ đồ 4-3-3</span></span>
   </div>
   return <div className="mx-lineup">
-    <div className="mx-lineup-heading">{teamHeading(match.homeClub, home.selected, 'home')}
-      {teamHeading(match.awayClub, away.selected, 'away')}</div>
-    <div className="mx-pitch" aria-label="Sơ đồ sân bóng ước tính cho hai đội">
+    <div className="mx-lineup-heading">{teamHeading(match.homeClub, 'home')}
+      {teamHeading(match.awayClub, 'away')}</div>
+    <div className="mx-pitch" aria-label="Sơ đồ sân bóng hai đội">
       <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
         <rect x="14" y="14" width="972" height="592" /><path d="M500 14v592" /><circle cx="500" cy="310" r="72" />
         <rect x="14" y="145" width="165" height="330" /><rect x="14" y="235" width="55" height="150" />
@@ -124,13 +119,10 @@ function Lineup({ match, detail, season }) {
       {awayNodes.map(({ player, x, y }) => <PitchNode key={player.playerId} player={player}
         club={match.awayClub} season={season} evidenceStatus={detail.evidenceStatus} x={x} y={y} />)}
     </div>
-    <p className="mx-detail-note">Sân hiển thị tối đa 11 cầu thủ đã thi đấu mỗi đội, ước tính theo số phút và vị trí.
-      API chưa lưu đội hình xuất phát hoặc sơ đồ chiến thuật thực tế; số phút trên thẻ là thời gian thi đấu, không phải phút thay người.
-      Bấm vào cầu thủ để mở hồ sơ.</p>
     <div className="mx-bench">
-      <PlayerGroup title={`${match.homeClub} · Cầu thủ còn lại`} rows={home.bench} club={match.homeClub}
+      <PlayerGroup title={`Dự bị · ${match.homeClub}`} rows={home.bench} club={match.homeClub}
         season={season} evidenceStatus={detail.evidenceStatus} />
-      <PlayerGroup title={`${match.awayClub} · Cầu thủ còn lại`} rows={away.bench} club={match.awayClub}
+      <PlayerGroup title={`Dự bị · ${match.awayClub}`} rows={away.bench} club={match.awayClub}
         season={season} evidenceStatus={detail.evidenceStatus} />
     </div>
   </div>

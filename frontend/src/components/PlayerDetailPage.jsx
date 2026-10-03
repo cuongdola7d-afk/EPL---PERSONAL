@@ -104,7 +104,7 @@ function InfoTab({ player, season }) {
   </>
 }
 
-function PlayerDetailPage({ playerId, season }) {
+function PlayerDetailPage({ playerId, season, backHash }) {
   const [tab, setTab] = useState('matches')
   const [theme, setTheme] = useState('dark')
   const [reloadKey, setReloadKey] = useState(0)
@@ -123,9 +123,11 @@ function PlayerDetailPage({ playerId, season }) {
   const next = rows.filter((row) => ['SCHEDULED', 'POSTPONED', 'SUSPENDED', 'LIVE'].includes(row.match.status)).sort((a, b) => a.match.date.localeCompare(b.match.date))
   const tabs = [['matches', 'Trận đã đấu', finished.length], ['next', 'Trận sắp tới', next.length], ['season', 'Mùa giải', null], ['info', 'Thông tin', null]]
   const estimated = player && ESTIMATED_OVR_PLAYER_IDS.has(player.id)
+  const backLabel = backHash?.startsWith('#matches/') ? 'Trở lại trận đấu' :
+    backHash === '#fantasy' ? 'Trở lại Fantasy' : 'Danh sách cầu thủ'
 
   return <section className="player-detail-page" data-theme={theme}><div className="pd-wrap">
-    <div className="pd-topbar"><a className="pd-back" href="#players">← Danh sách cầu thủ</a><button className="pd-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button></div>
+    <div className="pd-topbar"><a className="pd-back" href={backHash ?? '#players'}>← {backLabel}</a><button className="pd-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button></div>
     {status === 'loading' && <div className="pd-card pd-loading" role="status">Đang tải chi tiết cầu thủ...</div>}
     {status === 'error' && <div className="pd-card pd-empty" role="alert"><strong>Không thể tải cầu thủ</strong><p>{error}</p><button type="button" onClick={() => { setData({ status: 'loading', player: null, rows: [], error: '' }); setReloadKey((value) => value + 1) }}>Thử lại</button></div>}
     {status === 'success' && <>

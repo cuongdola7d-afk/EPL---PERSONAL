@@ -13,7 +13,7 @@
   font-family: "Be Vietnam Pro", Inter, system-ui, sans-serif;
 }
 .mx-page * { box-sizing: border-box; }
-.mx-wrap { max-width: 900px; margin: 0 auto; }
+.mx-wrap { max-width: 1020px; margin: 0 auto; }
 .mx-page button, .mx-page select { font: inherit; }
 .mx-page button:focus-visible, .mx-page select:focus-visible, .mx-page a:focus-visible { outline: 2px solid var(--mx-accent); outline-offset: 2px; }
 .mx-season-switch { display: inline-flex; gap: 4px; margin-bottom: 15px; padding: 4px; border: 1px solid var(--mx-line); border-radius: 999px; background: var(--mx-card); }
@@ -83,14 +83,14 @@
 .mx-detail-tabs { display: flex; gap: 4px; margin-bottom: 14px; padding: 5px; border: 1px solid var(--mx-line); border-radius: 999px; background: var(--mx-card); }
 .mx-detail-tabs button { flex: 1; min-width: 0; padding: 10px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--mx-muted); font-weight: 700; }
 .mx-detail-tabs button[aria-selected='true'] { background: var(--mx-accent); color: #05241c; }
-.mx-detail-panel { padding: 18px; border: 1px solid var(--mx-line); border-radius: 24px; background: var(--mx-card); box-shadow: 0 16px 36px #0003; }
+.mx-detail-panel { padding: 24px; border: 1px solid var(--mx-line); border-radius: 24px; background: var(--mx-card); box-shadow: 0 16px 36px #0003; }
 .mx-lineup-heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 12px; }
 .mx-lineup-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mx-lineup-team-away { flex-direction: row-reverse; text-align: right; }
 .mx-lineup-team > span:last-child { min-width: 0; }
 .mx-lineup-team strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
 .mx-lineup-team span span { display: block; color: var(--mx-muted); font-size: .7rem; }
-.mx-pitch { position: relative; aspect-ratio: 1000 / 620; overflow: hidden; border: 1px solid #ffffff3d; border-radius: 20px; background: repeating-linear-gradient(90deg, #ffffff09 0 10%, transparent 10% 20%), #2a7a43; }
+.mx-pitch { position: relative; aspect-ratio: 1000 / 720; overflow: hidden; border: 1px solid #ffffff3d; border-radius: 20px; background: repeating-linear-gradient(90deg, #ffffff09 0 10%, transparent 10% 20%), #2a7a43; }
 .mx-pitch svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: #ffffff8c; stroke-width: 3; pointer-events: none; }
 .mx-pitch .mx-pitch-center-dot { fill: #ffffffb5; stroke: none; }
 .mx-pitch-vertical { display: none; }
@@ -104,7 +104,7 @@
 .mx-pitch-marks { position: absolute; top: -7px; right: -17px; display: flex; flex-direction: column; gap: 1px; align-items: flex-start; }
 .mx-pitch-marks span, .mx-pitch-minutes { padding: 1px 3px; border-radius: 999px; background: #fff; color: #18343b; box-shadow: 0 2px 5px #0004; font-size: .61rem; font-weight: 800; line-height: 1.15; white-space: nowrap; }
 .mx-pitch-minutes { position: absolute; top: -5px; left: -17px; }
-.mx-bench { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 15px; }
+.mx-bench { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 24px; }
 .mx-bench .mx-player-group { min-width: 0; }
 .mx-bench .mx-player-group h4 { margin-top: 5px; }
 .mx-bench .mx-player-row { align-items: flex-start; }
@@ -189,7 +189,7 @@
   .mx-lineup-team .mx-crest { width: 34px; height: 34px; font-size: .59rem; }
   .mx-lineup-team strong { max-width: 115px; font-size: .72rem; }
   .mx-lineup-team span span { font-size: .6rem; }
-  .mx-pitch { aspect-ratio: 620 / 1000; background: repeating-linear-gradient(180deg, #ffffff09 0 10%, transparent 10% 20%), #2a7a43; }
+  .mx-pitch { aspect-ratio: 620 / 1180; background: repeating-linear-gradient(180deg, #ffffff09 0 10%, transparent 10% 20%), #2a7a43; }
   .mx-pitch-horizontal { display: none; }
   .mx-pitch svg.mx-pitch-vertical { display: block; }
   .mx-pitch-node { left: var(--mx-y); top: var(--mx-x); width: 60px; }

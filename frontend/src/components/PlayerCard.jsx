@@ -22,7 +22,7 @@ function clubColor(name) {
   return COLORS.find(([part]) => name.toLowerCase().includes(part))?.[1] ?? '#487783'
 }
 
-function PlayerCard({ player, season, view }) {
+function PlayerCard({ player, season, view, returnHash }) {
   const [positionCode, positionLabel] = POSITION[player.position] ?? [player.position, player.position]
   const estimated = ESTIMATED_OVR_PLAYER_IDS.has(player.id)
   const tier = player.fc27Overall == null ? 'na' : player.fc27Overall >= 85 ? 'gold' :
@@ -35,7 +35,7 @@ function PlayerCard({ player, season, view }) {
   const overall = <div className="pp-overall-wrap"><span className={`pp-overall pp-overall-${tier}`}>{player.fc27Overall ?? '—'}</span>{view === 'grid' && <small>{estimated ? 'ước tính' : player.fc27Overall == null ? 'chưa có' : 'overall'}</small>}</div>
   const avatar = <span className="pp-avatar" style={{ '--pp-club-color': color, '--pp-position-color': POSITION_COLORS[player.position] ?? '#5cd697' }} aria-hidden="true">{getInitials(player.name)}{view === 'grid' && <span className={`pp-position pp-position-${positionCode}`}>{positionCode}</span>}</span>
 
-  return <a className={`pp-player pp-player-${view}`} href={playerDetailHash(player.id, season)} aria-label={`Xem hồ sơ ${player.name}, ${player.club}, ${player.fc27Overall == null ? 'chưa có OVR' : `OVR ${player.fc27Overall}${estimated ? ' ước tính' : ''}`}, ${player.goals == null ? 'chưa có số bàn thắng' : `${player.goals} bàn thắng`}, ${player.assists == null ? 'chưa có số kiến tạo' : `${player.assists} kiến tạo`}`}>
+  return <a className={`pp-player pp-player-${view}`} href={playerDetailHash(player.id, season, returnHash)} aria-label={`Xem hồ sơ ${player.name}, ${player.club}, ${player.fc27Overall == null ? 'chưa có OVR' : `OVR ${player.fc27Overall}${estimated ? ' ước tính' : ''}`}, ${player.goals == null ? 'chưa có số bàn thắng' : `${player.goals} bàn thắng`}, ${player.assists == null ? 'chưa có số kiến tạo' : `${player.assists} kiến tạo`}`}>
     {view === 'grid' ? <>
       <div className="pp-player-top">{avatar}{overall}</div>
       <div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span></div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchPlayers } from '../api/players.js'
 import { useApiList } from '../hooks/useApiList.js'
 import { matchesPlayerSearch, sortPlayers } from '../utils/playerSort.js'
+import { parsePlayerListHash, playerListHash } from '../utils/playerRoute.js'
 import { SEASONS } from '../utils/seasons.js'
 import PlayerCard from './PlayerCard.jsx'
 import ResultPanel from './ResultPanel.jsx'
@@ -17,16 +18,24 @@ const POSITIONS = [
 ]
 
 function PlayerPage({ season, onSeasonChange }) {
-  const [query, setQuery] = useState('')
-  const [club, setClub] = useState('')
-  const [position, setPosition] = useState('')
-  const [view, setView] = useState('grid')
-  const [sortBy, setSortBy] = useState('overall')
-  const [direction, setDirection] = useState('desc')
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const initial = useRef(parsePlayerListHash(window.location.hash))
+  const [query, setQuery] = useState(initial.current?.query ?? '')
+  const [club, setClub] = useState(initial.current?.club ?? '')
+  const [position, setPosition] = useState(initial.current?.position ?? '')
+  const [view, setView] = useState(initial.current?.view ?? 'grid')
+  const [sortBy, setSortBy] = useState(initial.current?.sortBy ?? 'overall')
+  const [direction, setDirection] = useState(initial.current?.direction ?? 'desc')
+  const [visibleCount, setVisibleCount] = useState(initial.current?.visibleCount ?? PAGE_SIZE)
   const searchRef = useRef(null)
   const requestPlayers = useCallback((signal) => fetchPlayers({ club: '', position: '' }, signal, season), [season])
   const { data: players, status, error, reload } = useApiList(requestPlayers)
+  const returnHash = playerListHash({ season, query, club, position, view, sortBy, direction, visibleCount })
+
+  useEffect(() => {
+    if (parsePlayerListHash(window.location.hash) && window.location.hash !== returnHash) {
+      window.history.replaceState(window.history.state, '', returnHash)
+    }
+  }, [returnHash])
 
   useEffect(() => {
     function handleShortcut(event) {
@@ -79,7 +88,7 @@ function PlayerPage({ season, onSeasonChange }) {
       {season === 2024 && <p className="pp-note">Dữ liệu cầu thủ mùa 2024/25 mới được lưu một phần. OVR FC 27 không áp dụng cho mùa này.</p>}
       {season === 2026 && <p className="pp-note">Bàn thắng và kiến tạo được cộng từ các trận đã nhập. Dấu — nghĩa là chưa có trận được ghi nhận hoặc còn thiếu chỉ số ở một trận đã ra sân.</p>}
       <ResultPanel status={status} error={error} count={filtered.length} itemName="cầu thủ" emptyMessage={hasFilters ? 'Không có cầu thủ khớp với bộ lọc hiện tại.' : 'API hiện chưa có cầu thủ nào.'} onRetry={reload} onClear={hasFilters ? clearFilters : undefined}>
-        <div className={view === 'grid' ? 'pp-grid' : 'pp-list'}>{shown.map((player) => <PlayerCard key={`${player.id}-${player.clubId}`} player={player} season={season} view={view} />)}</div>
+        <div className={view === 'grid' ? 'pp-grid' : 'pp-list'}>{shown.map((player) => <PlayerCard key={`${player.id}-${player.clubId}`} player={player} season={season} view={view} returnHash={returnHash} />)}</div>
         {shown.length < sorted.length && <button className="pp-more" type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>Xem thêm {Math.min(PAGE_SIZE, sorted.length - shown.length)} cầu thủ</button>}
       </ResultPanel>
     </div>

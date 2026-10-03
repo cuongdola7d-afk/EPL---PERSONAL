@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { effectiveStat, matchRating, matchResult, matchState, seasonSummary } from './playerDetail.js'
-import { parsePlayerDetailHash, playerDetailHash } from './playerRoute.js'
+import { parsePlayerDetailHash, parsePlayerListHash, playerDetailHash, playerListHash } from './playerRoute.js'
 
 const finished = { id: 1, homeClubId: 10, awayClubId: 20, homeGoals: 2, awayGoals: 1, status: 'FINISHED', matchweek: 1, date: '2024-08-16' }
 
@@ -9,6 +9,17 @@ test('player URL retains id and season and rejects malformed routes', () => {
   assert.deepEqual(parsePlayerDetailHash(playerDetailHash(123, 2026)), { playerId: 123, season: 2026 })
   assert.equal(parsePlayerDetailHash('#players/0?season=2024'), null)
   assert.equal(parsePlayerDetailHash('#players/123?season=2025'), null)
+})
+
+test('player detail can return to the exact previous match or player list', () => {
+  const match = '#matches/123?season=2026&week=4&filter=finished&club=Arsenal+FC'
+  assert.deepEqual(parsePlayerDetailHash(playerDetailHash(45, 2026, match)),
+    { playerId: 45, season: 2026, backHash: match })
+  const list = playerListHash({ season: 2026, query: 'Saka', view: 'list', visibleCount: 24 })
+  assert.equal(parsePlayerListHash(list).query, 'Saka')
+  assert.equal(parsePlayerDetailHash(playerDetailHash(45, 2026, list)).backHash, list)
+  assert.deepEqual(parsePlayerDetailHash('#players/45?season=2026&from=https%3A%2F%2Fevil.test'),
+    { playerId: 45, season: 2026 })
 })
 
 test('verified inference is used without replacing missing raw values', () => {

@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchMatches } from '../api/matches.js'
 import { useApiList } from '../hooks/useApiList.js'
 import { preferredMatchweek } from '../utils/matchView.js'
+import { matchDetailHash, matchListHash } from '../utils/matchRoute.js'
 import { SEASONS } from '../utils/seasons.js'
 import MatchCard from './MatchCard.jsx'
 import MatchDetail from './MatchDetail.jsx'
@@ -11,11 +12,11 @@ const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', {
   weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
 }).format(new Date(`${date}T00:00:00Z`))
 
-function MatchPage({ season, onSeasonChange }) {
-  const [week, setWeek] = useState(null)
-  const [filter, setFilter] = useState('all')
-  const [club, setClub] = useState('')
-  const [selectedMatchId, setSelectedMatchId] = useState(null)
+function MatchPage({ season, onSeasonChange, matchRoute }) {
+  const [week, setWeek] = useState(matchRoute?.week ?? null)
+  const [filter, setFilter] = useState(matchRoute?.filter ?? 'all')
+  const [club, setClub] = useState(matchRoute?.club ?? '')
+  const selectedMatchId = matchRoute?.matchId ?? null
   const requestMatches = useCallback((signal) => fetchMatches({ season }, signal), [season])
   const { data: matches, status, error, reload } = useApiList(requestMatches)
 
@@ -31,20 +32,42 @@ function MatchPage({ season, onSeasonChange }) {
   const selectedMatch = matches.find((match) => match.id === selectedMatchId)
   const weekIndex = weeks.indexOf(currentWeek)
 
+  useEffect(() => {
+    if (!matchRoute) return
+    setWeek(matchRoute.week)
+    setFilter(matchRoute.filter)
+    setClub(matchRoute.club)
+  }, [matchRoute?.week, matchRoute?.filter, matchRoute?.club])
+
   function changeWeek(next) {
     setWeek(next)
-    setSelectedMatchId(null)
+  }
+
+  function openMatch(id) {
+    const state = { season, week: currentWeek, filter, club }
+    window.history.replaceState(window.history.state, '', matchListHash(state))
+    window.location.hash = matchDetailHash(id, state)
+  }
+
+  function closeMatch() {
+    window.location.hash = matchListHash({ season, week: currentWeek, filter, club })
+  }
+
+  function changeSeason(next) {
+    if (next === season) return
+    onSeasonChange(next)
+    window.location.hash = matchListHash({ season: next })
   }
 
   return <section className="mx-page" id="directory" aria-label="Lịch đấu và kết quả">
     <div className="mx-wrap">
       <div className="mx-season-switch" role="group" aria-label="Mùa giải">
         {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button"
-          aria-pressed={season === Number(year)} onClick={() => onSeasonChange(Number(year))}>{label}</button>)}
+          aria-pressed={season === Number(year)} onClick={() => changeSeason(Number(year))}>{label}</button>)}
       </div>
 
       {selectedMatchId !== null ? <MatchDetail key={selectedMatchId} matchId={selectedMatchId}
-        summary={selectedMatch} season={season} onClose={() => setSelectedMatchId(null)} /> : <>
+        summary={selectedMatch} season={season} onClose={closeMatch} /> : <>
         <header className="mx-hero">
           <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
             <circle cx="100" cy="100" r="80" /><circle cx="100" cy="100" r="46" />
@@ -92,7 +115,7 @@ function MatchPage({ season, onSeasonChange }) {
             {visible.map((match, index) => <div key={match.id}>
               {(index === 0 || visible[index - 1].date !== match.date) &&
                 <h2 className="mx-date-heading">{dateLabel(match.date)}</h2>}
-              <MatchCard match={match} onOpen={setSelectedMatchId} />
+              <MatchCard match={match} onOpen={openMatch} />
             </div>)}
           </div>}
           <p className="mx-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>

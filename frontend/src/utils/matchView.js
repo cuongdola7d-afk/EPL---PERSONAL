@@ -70,8 +70,12 @@ export function estimatedPitchPlayers(players, evidenceStatus) {
 export function pitchPositions(players, side) {
   const positions = ['G', 'D', 'M', 'F']
   const columns = side === 'home' ? [8, 20, 32, 44] : [92, 80, 68, 56]
+  const slots = [1, 4, 3, 3]
+  const remaining = [...players]
   return positions.flatMap((position, column) => {
-    const group = players.filter((player) => player.position === position)
+    const group = remaining.filter((player) => player.position === position).slice(0, slots[column])
+    for (const player of group) remaining.splice(remaining.indexOf(player), 1)
+    while (group.length < slots[column] && remaining.length) group.push(remaining.shift())
     return group.map((player, index) => ({
       player, x: columns[column], y: (index + 1) * 100 / (group.length + 1),
     }))

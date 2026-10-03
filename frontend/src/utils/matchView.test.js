@@ -36,4 +36,5 @@ test('pitch estimate selects eleven unique played players and keeps substitutes 
   const nodes = pitchPositions(selected, 'home')
   assert.equal(nodes.length, 11)
   assert.ok(nodes.every(({ x, y }) => x > 0 && x < 50 && y > 0 && y < 100))
+  assert.deepEqual([8, 20, 32, 44].map((x) => nodes.filter((node) => node.x === x).length), [1, 4, 3, 3])
 })
