@@ -10,6 +10,13 @@
 - Nếu cầu thủ không có dòng trận nào trong phạm vi gameweek đã kiểm tra đầy đủ, hoặc chỉ có `DID_NOT_PLAY`, cả bốn tổng là 0. Bảng mùa có khóa `(league_id, season_year, player_id, club_id)`, nên cầu thủ chuyển CLB có tổng riêng theo từng CLB.
 - Chạy lại cùng gameweek và cùng dữ liệu phải báo `updated=0`. Khi importer trận hoặc patch hoàn tất một gameweek, nó tự tái tính đến gameweek đầy đủ mới nhất trong cùng transaction.
 
+## Checklist cho mỗi gameweek tiếp theo
+
+1. Hoàn tất CSV của cả 10 trận, kiểm tra mỗi trận có 40 dòng hợp lệ (20 mỗi CLB) và nhập vào `manual_fixture_player_stats`. Không coi việc thu thập hoặc nhập một phần vòng là đã hoàn tất.
+2. Sau khi nhập đủ 400 dòng và cả 10 fixture `FINISHED`, tái tính `player_season_stats` từ GW1 đến hết gameweek mới bằng lệnh bên dưới với `through-gameweek` tương ứng. Importer tự làm bước này khi vòng vừa đầy đủ; vẫn kiểm tra kết quả thực tế.
+3. Đọc lại MySQL: xác nhận số trận, 400 dòng của vòng mới và các tổng `appearances`, `minutes`, `goals`, `assists` của mùa 2026/27. Ghi tên cầu thủ và trường nào vẫn `NULL` do dòng `PLAYED` thiếu dữ liệu; không biến `NULL` thành 0.
+4. Chạy lại cùng lệnh; chỉ chốt vòng khi báo `updated=0`. Giữ nguyên thống kê trận, roster, membership và mùa 2024/25.
+
 ## Chạy lệnh
 
 Từ `backend/`, sau khi xác nhận đúng database và tạo SQL backup, cung cấp ba biến môi trường `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD` rồi chạy:

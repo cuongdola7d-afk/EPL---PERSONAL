@@ -74,6 +74,13 @@ Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Stand
 5. Xem diff và kết quả test trước commit; chỉ commit khi người dùng yêu cầu hoặc đã cho phép rõ ràng. Không tự push.
 6. Báo cáo ngắn gọn phần đã làm, kết quả kiểm tra và bài thực hành tiếp theo.
 
+## Quy trình thống kê trận mùa 2026/27
+
+- Sau mỗi vòng Premier League 2026/27 đã thu thập đủ 10 trận, nhập và kiểm tra đúng 40 dòng thống kê cầu thủ cho từng trận (400 dòng cả vòng) trong `manual_fixture_player_stats`.
+- Ngay sau khi vòng hoàn chỉnh, tái tính các cột `appearances`, `minutes`, `goals`, `assists` của `player_season_stats` từ GW1 đến hết vòng vừa nhập; không dừng ở bảng thống kê theo trận. Importer có cơ chế tự tái tính khi vòng đủ dữ liệu, nhưng vẫn phải đọc lại MySQL để xác nhận.
+- Chạy lại thao tác tái tính để xác nhận `updated=0`, đối chiếu tổng số trận và số dòng theo trận, rồi báo rõ các chỉ số `PLAYED` còn thiếu. Chỉ số chưa xác minh giữ SQL `NULL`; `DID_NOT_PLAY` không cộng vào tổng. Không sửa dữ liệu mùa 2024/25.
+- Cách chạy và quy tắc kiểm tra chi tiết ở `docs/player-season-stats-2026.md`.
+
 ## Lệnh kiểm tra
 
 Chạy từ thư mục `backend/`:
