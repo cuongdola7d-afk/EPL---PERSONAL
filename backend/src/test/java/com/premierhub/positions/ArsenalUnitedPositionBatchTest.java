@@ -24,8 +24,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -87,10 +85,10 @@ class ArsenalUnitedPositionBatchTest {
 
         PlayerPositionImporter importer = new PlayerPositionImporter(jdbc,
                 new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
-        assertEquals(new PlayerPositionImporter.Result(46, 46, 0), importer.importFile(CSV));
-        assertEquals(new PlayerPositionImporter.Result(46, 0, 0), importer.importFile(CSV));
-        assertEquals(46, jdbc.queryForObject("SELECT COUNT(*) FROM player_specific_positions", Integer.class));
-        assertEquals(90, jdbc.queryForObject("SELECT COUNT(*) FROM player_eligible_positions", Integer.class));
+        assertEquals(new PlayerPositionImporter.Result(54, 54, 0), importer.importFile(CSV));
+        assertEquals(new PlayerPositionImporter.Result(54, 0, 0), importer.importFile(CSV));
+        assertEquals(54, jdbc.queryForObject("SELECT COUNT(*) FROM player_specific_positions", Integer.class));
+        assertEquals(103, jdbc.queryForObject("SELECT COUNT(*) FROM player_eligible_positions", Integer.class));
         assertEquals(54, jdbc.queryForObject("SELECT COUNT(*) FROM player_season_stats WHERE season_year=2026", Integer.class));
         assertEquals(2, jdbc.queryForObject("SELECT goals FROM player_season_stats WHERE season_year=2026 AND player_id=2000001007", Integer.class));
         assertEquals(4, jdbc.queryForObject("SELECT goals FROM player_season_stats WHERE season_year=2024 AND player_id=2000001007", Integer.class));
@@ -102,13 +100,26 @@ class ArsenalUnitedPositionBatchTest {
         var saka = players.stream().filter(player -> player.id() == 2000001007).findFirst().orElseThrow();
         var amad = players.stream().filter(player -> player.id() == 2000006015).findFirst().orElseThrow();
         var rice = players.stream().filter(player -> player.id() == 2000001023).findFirst().orElseThrow();
+        var shaw = players.stream().filter(player -> player.id() == 2000006021).findFirst().orElseThrow();
+        var baleba = players.stream().filter(player -> player.id() == 2000006019).findFirst().orElseThrow();
+        var dowman = players.stream().filter(player -> player.id() == 2000001025).findFirst().orElseThrow();
+        var mantato = players.stream().filter(player -> player.id() == 2000030235).findFirst().orElseThrow();
+        var tyler = players.stream().filter(player -> player.id() == 2000030236).findFirst().orElseThrow();
         assertEquals("RW", saka.primaryPosition());
         assertEquals(java.util.List.of("RW", "RM"), saka.eligiblePositions());
         assertEquals("RM", amad.primaryPosition());
         assertEquals(java.util.List.of("RM", "RB", "RW"), amad.eligiblePositions());
-        assertEquals("MISSING", rice.positionStatus());
-        assertNull(rice.primaryPosition());
-        assertFalse(rice.eligiblePositions().contains("CM"));
+        assertEquals("CM", rice.primaryPosition());
+        assertEquals(java.util.List.of("CM"), rice.eligiblePositions());
+        assertEquals(java.util.List.of("LB"), shaw.eligiblePositions());
+        assertEquals(UNITED, baleba.clubId());
+        assertEquals("CM", baleba.primaryPosition());
+        assertEquals("CAM", dowman.primaryPosition());
+        assertEquals(java.util.List.of("CAM", "LM", "RM", "LW", "RW"), dowman.eligiblePositions());
+        assertEquals("ST", mantato.primaryPosition());
+        assertEquals(java.util.List.of("ST"), mantato.eligiblePositions());
+        assertEquals("CAM", tyler.primaryPosition());
+        assertEquals(java.util.List.of("CAM", "CM"), tyler.eligiblePositions());
 
         var mvc = MockMvcBuilders.standaloneSetup(new PlayerController(queries)).build();
         mvc.perform(get("/api/players").param("season", "2026").param("asOf", "2026-10-02"))
@@ -124,8 +135,14 @@ class ArsenalUnitedPositionBatchTest {
         mvc.perform(get("/api/players/2000001023").param("season", "2026")
                         .param("asOf", "2026-10-02"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.primaryPosition").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.eligiblePositions").isEmpty())
-                .andExpect(jsonPath("$.positionStatus").value("MISSING"));
+                .andExpect(jsonPath("$.primaryPosition").value("CM"))
+                .andExpect(jsonPath("$.eligiblePositions[0]").value("CM"))
+                .andExpect(jsonPath("$.positionStatus").value("VERIFIED"));
+        mvc.perform(get("/api/players/2000001025").param("season", "2026")
+                        .param("asOf", "2026-10-02"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryPosition").value("CAM"))
+                .andExpect(jsonPath("$.eligiblePositions[4]").value("RW"))
+                .andExpect(jsonPath("$.positionStatus").value("VERIFIED"));
     }
 }
