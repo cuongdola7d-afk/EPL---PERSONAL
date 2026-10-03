@@ -1,31 +1,19 @@
-PrismaXI – Aston Villa/Newcastle, mùa 2026/27, roster 2026-10-03
-Ô trống giữ SQL NULL; không điền 0 hoặc suy vị trí từ nhóm rộng.
+PrismaXI – Aston Villa/Newcastle, mùa 2026/27, cập nhật 2026-10-03
 
-Aston Villa | 2000030151 | James Wright
-  Cần bổ sung: primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 61 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
+Sau bổ sung người dùng: 55/55 hồ sơ đủ sáu trường; 55/55 có primary/eligible.
+Không còn trường dữ liệu NULL/MISSING trong batch local.
 
-Aston Villa | 2000030149 | Leon Goretzka
-  Cần bổ sung: primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 78 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
+Nguồn chính thức vẫn chưa xác minh: EA FC 27 của bảy người dưới đây.
+Vị trí nguồn người dùng 03/10; ba OVR cũ giữ nguyên, bốn OVR 60 mới do người dùng đặt:
+2000030151 | James Wright | GK | OVR 61 (người dùng 02/10)
+2000030149 | Leon Goretzka | CM | OVR 78 (người dùng 02/10)
+2000030240 | Miodrag Pivas | CB | OVR 62 (người dùng 02/10)
+2000030243 | Kyran Thompson | RW/RM | 183 cm | OVR 60 (người dùng 03/10)
+2000030239 | Mason Miley | CM/RB | 181 cm | OVR 60 (người dùng 03/10)
+2000030242 | Michael Mills | ST | 179 cm | LEFT | OVR 60 (người dùng 03/10)
+2000030241 | Vakhtang Salia | ST | OVR 60 (người dùng 03/10)
 
-Newcastle | 2000030243 | Kyran Thompson
-  Cần bổ sung: height_cm, fc27_overall, primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao.
-
-Newcastle | 2000030239 | Mason Miley
-  Cần bổ sung: height_cm, fc27_overall, primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao.
-
-Newcastle | 2000030242 | Michael Mills
-  Cần bổ sung: height_cm, preferred_foot, fc27_overall, primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao. Hồ sơ SofaScore không ghi chân thuận.
-
-Newcastle | 2000030240 | Miodrag Pivas
-  Cần bổ sung: primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 62 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
-
-Newcastle | 2000030241 | Vakhtang Salia
-  Cần bổ sung: fc27_overall, primary_position, eligible_positions
-  Lý do: Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL.
-
+Chiều cao Kyran/Mason/Michael và chân thuận Michael là người dùng bổ sung,
+không gắn nhãn SofaScore đã xác minh. Đây là ghi chú nguồn còn thiếu;
+không phải các ô dữ liệu còn NULL. sources.md ghi nguồn theo từng người/trường.
+Chỉ local; chưa cập nhật MySQL production. profile-updates.csv có đúng tám ô bổ sung.

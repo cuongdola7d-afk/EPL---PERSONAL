@@ -7,17 +7,21 @@ Ngày chuẩn bị: 2026-10-03. Đây là batch local, chưa ghi MySQL productio
 - ID/CLB lấy từ API PremierHub `season=2026&asOf=2026-10-03`, với đúng tên CLB.
   Có 27 Aston Villa và 28 Newcastle; không giới hạn 25 người. Cùng 55 cặp ID/CLB
   với hai CSV hồ sơ ngày 02/10; không thêm cầu thủ từ danh sách EA hoặc SofaScore.
-- Hồ sơ hiện có lấy nguyên sáu trường từ API. Năm trường SofaScore đã đủ thì tái
-  sử dụng nguồn cũ, không thu thập lại. Đã đọc lại đúng hồ sơ SofaScore của Kyran
-  Thompson, Mason Miley và Michael Mills cho các trường còn thiếu: không có chiều
-  cao; Michael còn không có chân thuận. Các số đứng dưới tên là số người theo dõi,
-  không phải chiều cao (Kyran: 174 followers). Không điền 174 vào height_cm.
-- `profiles.csv` có toàn bộ 55 người, đúng header PlayerProfileCsvReader; ô trống
-  tương ứng SQL NULL. Không thay giá trị đã có hoặc giá trị người dùng cung cấp.
-  James Wright 61, Leon Goretzka 78 và Miodrag Pivas 62 đã có trên API, nguồn là
-  `backend/data/player-profile-updates-2026-10-02.csv` và file `.md` tương ứng.
-  Không gắn nhãn EA chính thức cho ba OVR này khi chưa xác minh được trang FC 27.
-- Nguồn vị trí là Position và Alt Positions trên đúng trang EA SPORTS FC 27
+- Hồ sơ ban đầu lấy sáu trường đang có từ API; trường đã đủ giữ nguyên nguồn cũ.
+  Đã mở lại SofaScore cho Kyran Thompson, Mason Miley và Michael Mills, nguồn
+  không ghi các trường còn thiếu. Sau đó người dùng cung cấp dữ liệu ngày 03/10
+  như bảng bổ sung dưới đây. Các giá trị mới không được ghi là SofaScore xác minh.
+- profiles.csv là bản cuối 55 người sau bổ sung: đủ sáu trường. OVR James Wright
+  61, Leon Goretzka 78, Miodrag Pivas 62 giữ nguyên nguồn người dùng 02/10.
+  Bốn OVR 60 mới là mức người dùng đặt, lưu trực tiếp fc27_overall theo yêu cầu;
+  không phải OVR EA FC 27 đã xác minh. Không dùng bảng ước tính riêng.
+- Importer hồ sơ hiện tại chỉ chèn và báo xung đột khi dữ liệu đã lưu khác CSV.
+  profile-updates.csv ghi riêng đúng tám ô NULL được bổ sung, định dạng
+  player_id,club_id,field,value giống bản bổ sung 02/10. File này là bản kê thay
+  đổi để cập nhật có điều kiện khi được phép ghi production, không phải đầu vào
+  PlayerProfileCsvReader. Không chạy profiles.csv cuối vào production còn chứa
+  NULL để mong importer tự ghi đè; phải áp dụng tám ô đã review trước. Hiện chỉ local.
+- Với 48 người đã có nguồn EA, vị trí lấy từ Position và Alt Positions trên EA SPORTS FC 27
   dưới đây, đọc ngày 03/10. Trang ghi dữ liệu Gold/Silver/Bronze lúc phát hành;
   không lấy thẻ sự kiện hoặc FC 26. Cả 48 OVR đọc được đều khớp hồ sơ hiện có.
 - Ghép theo URL/EA ID đã lưu, tên/biến thể tên, quốc tịch, tuổi và dấu hiệu CLB.
@@ -28,12 +32,26 @@ Ngày chuẩn bị: 2026-10-03. Đây là batch local, chưa ghi MySQL productio
 - Nico González dùng hồ sơ Tây Ban Nha, EA ID 255069, tuổi 24/ngày sinh 2002-01-03;
   không ghép người Argentina EA ID 240690. Valentino Livramento = Tino Livramento.
   Nhãn CLB EA khác PremierHub không thay membership.
-- Chỉ ánh xạ CDM → CM cho vị trí chính và phụ, gộp mã trùng sau ánh xạ. Không suy
+- Với dữ liệu EA, chỉ ánh xạ CDM → CM cho vị trí chính và phụ, gộp mã trùng sau ánh xạ. Không suy
   quyền chơi từ nhóm rộng; không thêm vị trí mà Alt Positions không ghi.
-- `positions.csv` có 48 người xác minh được. Reader yêu cầu incoming primary và
-  eligible có dữ liệu, nên bảy người MISSING chỉ nằm trong `roster-status.csv` và
-  `missing-fields.txt`, không tạo dòng vị trí giả. expected_* trống vì API chưa có
-  vị trí cho 55 người. Mọi ID vẫn có đúng một dòng hồ sơ và một dòng tracking.
+- positions.csv cuối có đủ 55 người: 48 nguồn EA và bảy nguồn người dùng.
+  Vị trí đầu tiên người dùng ghi là primary, eligible đúng tập họ cung cấp;
+  không thêm vị trí khác. expected_* giữ trống theo snapshot API chưa có vị trí.
+  roster-status.csv đủ 55 người, 48 VERIFIED và bảy USER_PROVIDED, không còn MISSING.
+
+## Bổ sung từ người dùng ngày 03/10/2026
+
+Nguồn là tin nhắn trong cuộc trao đổi này; chưa xác minh thêm EA/SofaScore.
+
+| player_id | Cầu thủ | Primary | Eligible | Hồ sơ/OVR bổ sung |
+| --- | --- | --- | --- | --- |
+| 2000030151 | James Wright | GK | GK | Giữ OVR 61 |
+| 2000030149 | Leon Goretzka | CM | CM | Giữ OVR 78 |
+| 2000030240 | Miodrag Pivas | CB | CB | Giữ OVR 62 |
+| 2000030243 | Kyran Thompson | RW | RW, RM | height_cm=183; fc27_overall=60 |
+| 2000030239 | Mason Miley | CM | CM, RB | height_cm=181; fc27_overall=60 |
+| 2000030242 | Michael Mills | ST | ST | height_cm=179; preferred_foot=LEFT; fc27_overall=60 |
+| 2000030241 | Vakhtang Salia | ST | ST | fc27_overall=60 |
 
 ## URL roster và hồ sơ tái sử dụng
 
@@ -44,19 +62,17 @@ Ngày chuẩn bị: 2026-10-03. Đây là batch local, chưa ghi MySQL productio
 
 | CLB | Roster/hồ sơ | Quốc tịch | Ngày sinh | Chiều cao | Chân thuận | Số áo | OVR số | OVR EA xác minh | Vị trí có nguồn | MISSING vị trí |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Aston Villa | 27 | 27 | 27 | 27 | 27 | 27 | 27 | 25 | 25 | 2 |
-| Newcastle | 28 | 28 | 28 | 25 | 27 | 28 | 24 | 23 | 23 | 5 |
-| Tổng | 55 | 55 | 55 | 52 | 54 | 55 | 51 | 48 | 48 | 7 |
+| Aston Villa | 27 | 27 | 27 | 27 | 27 | 27 | 27 | 25 | 27 | 0 |
+| Newcastle | 28 | 28 | 28 | 28 | 28 | 28 | 28 | 23 | 28 | 0 |
+| Tổng | 55 | 55 | 55 | 55 | 55 | 55 | 55 | 48 | 55 | 0 |
 
-## Các trường còn thiếu
+## Trạng thái thiếu dữ liệu và nguồn
 
-- **James Wright (`2000030151`, Aston Villa): `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 61 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
-- **Leon Goretzka (`2000030149`, Aston Villa): `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 78 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
-- **Kyran Thompson (`2000030243`, Newcastle): `height_cm`, `fc27_overall`, `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao.
-- **Mason Miley (`2000030239`, Newcastle): `height_cm`, `fc27_overall`, `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao.
-- **Michael Mills (`2000030242`, Newcastle): `height_cm`, `preferred_foot`, `fc27_overall`, `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL. Hồ sơ SofaScore không ghi chiều cao. Hồ sơ SofaScore không ghi chân thuận.
-- **Miodrag Pivas (`2000030240`, Newcastle): `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. Giữ OVR 62 do người dùng bổ sung; thiếu URL EA xác minh, không phải thiếu giá trị OVR.
-- **Vakhtang Salia (`2000030241`, Newcastle): `fc27_overall`, `primary_position`, `eligible_positions`. Chưa xác minh được hồ sơ EA FC 27 cho Position/Alt Positions. OVR giữ NULL.
+Không còn trường dữ liệu MISSING trong batch local sau bổ sung của người dùng.
+EA FC 27 vẫn chưa có URL hồ sơ xác minh cho bảy người trong bảng bổ sung;
+quyền vị trí mới của họ được ghi rõ nguồn người dùng, không giả định nguồn EA.
+Ba chiều cao, chân thuận Michael và bốn OVR 60 là người dùng bổ sung.
+Đây là thiếu xác minh nguồn chính thức, không phải các ô dữ liệu còn NULL.
 
 Đã tìm trên miền EA bằng tên James Wright, Leon Goretzka, Kyran Thompson,
 Mason Miley, Michael Mills, Miodrag Pivas và Vakhtang Salia, kèm FC 27/ratings và
@@ -70,9 +86,9 @@ chính/phụ hoặc OVR từ FC 26, diễn đàn hay trang bên thứ ba.
 SofaScore là URL hồ sơ gốc đã dùng cho năm trường. Chỉ ba người có ô hồ sơ còn
 thiếu được đọc lại. EA ghi Position; Alt Positions nguyên bản để kiểm tra ánh xạ.
 `—` ở Alt là không có vị trí phụ trên trang. Ghi chú nguồn cũ được giữ để nhận dạng;
-với ba OVR người dùng, giá trị API mới thay thế trạng thái NULL của snapshot cũ.
+ba OVR người dùng 02/10 đã có trên API; bốn OVR 60 và vị trí mới từ người dùng 03/10 chỉ có local.
 
-| CLB | player_id | Tên PremierHub | OVR hiện có | Nguồn OVR | SofaScore | EA FC 27 | EA chính; phụ | Nhập chính; tập | Ghi chú |
+| CLB | player_id | Tên PremierHub | OVR bản cuối local | Nguồn OVR | SofaScore | EA FC 27 | EA chính; phụ | Nhập chính; tập | Ghi chú |
 | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- |
 | Aston Villa | 18846 | Aaron Wan-Bissaka | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/aaron-wan-bissaka/863653) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/aaron-wan-bissaka/229880) | RB; RM | RB; RB, RM |  |
 | Aston Villa | 162714 | Amadou Onana | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/amadou-onana/923973) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/amadou-onana/257057) | CDM; CM | CM; CM | CDM → CM, gộp mã trùng. |
@@ -84,12 +100,12 @@ với ba OVR người dùng, giá trị API mới thay thế trạng thái NULL 
 | Aston Villa | 2000030123 | George Hemmings | 65 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/george-hemmings/1398204) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/george-hemmings/82350) | CDM; CM, CAM | CM; CM, CAM | CDM → CM, gộp mã trùng. |
 | Aston Villa | 2000030064 | Ian Maatsen | 79 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/ian-maatsen/976263) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ian-maatsen/248465) | LB; LM | LB; LB, LM |  |
 | Aston Villa | 2000030150 | Ibrahim Mbaye | 76 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/ibrahim-mbaye/1590918) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ibrahim-mbaye/74449) | RW; LW, RM, LM | RW; RW, LW, RM, LM | EA ghi Paris SG; giữ CLB PremierHub. |
-| Aston Villa | 2000030151 | James Wright | 61 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/wright-james/1138445) | — | — | MISSING | Chưa xác minh trang EA FC 27. OVR 61 đã được người dùng bổ sung 02/10, khác snapshot hồ sơ cũ. |
+| Aston Villa | 2000030151 | James Wright | 61 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/wright-james/1138445) | — | — | GK; GK | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Giữ OVR 61 nguồn người dùng 02/10. |
 | Aston Villa | 2000030146 | Johan Manzambi | 80 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/johan-manzambi/1518931) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/johan-manzambi/276694) | CM; CDM, CAM | CM; CM, CAM | CDM → CM, gộp mã trùng. |
 | Aston Villa | 2000030059 | John McGinn | 83 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/john-mcginn/250223) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/john-mc-ginn/210881) | RM; LM, CAM, RW | RM; RM, LM, CAM, RW |  |
 | Aston Villa | 2000030057 | João Gomes | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/joao-gomes/1015267) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joao-gomes/273463) | CDM; CM | CM; CM | CDM → CM, gộp mã trùng. |
 | Aston Villa | 2000030067 | Lamare Bogarde | 74 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/lamare-bogarde/1089388) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lamare-bogarde/264209) | CDM; CM, RB | CM; CM, RB | CDM → CM, gộp mã trùng. |
-| Aston Villa | 2000030149 | Leon Goretzka | 78 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/leon-goretzka/184661) | — | — | MISSING | Chưa xác minh trang EA FC 27. OVR 78 đã được người dùng bổ sung 02/10, khác snapshot hồ sơ cũ. |
+| Aston Villa | 2000030149 | Leon Goretzka | 78 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/leon-goretzka/184661) | — | — | CM; CM | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Giữ OVR 78 nguồn người dùng 02/10. |
 | Aston Villa | 2000030069 | Marco Bizot | 77 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/marco-bizot/100390) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/marco-bizot/200110) | GK; — | GK; GK |  |
 | Aston Villa | 2000030063 | Matteo Ruggeri | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/matteo-ruggeri/965011) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matteo-ruggeri/259584) | LB; LM | LB; LB, LM |  |
 | Aston Villa | 2000030058 | Matty Cash | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/matty-cash/833956) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matty-cash/227174) | RB; RM | RB; RB, RM |  |
@@ -111,21 +127,21 @@ với ba OVR người dùng, giá trị API mới thay thế trạng thái NULL 
 | Newcastle | 2000030079 | Jacob Ramsey | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/jacob-ramsey/975937) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jacob-ramsey/246923) | CM; LW, CAM, LM | CM; CM, LW, CAM, LM |  |
 | Newcastle | 2000030071 | Joe Willock | 76 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/joe-willock/888550) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joe-willock/237329) | CM; CAM | CM; CM, CAM |  |
 | Newcastle | 723 | Joelinton | 80 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/joelinton/560128) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joelinton/223334) | CM; CDM | CM; CM | CDM → CM, gộp mã trùng. |
-| Newcastle | 2000030243 | Kyran Thompson | NULL | MISSING | [SofaScore](https://www.sofascore.com/football/player/kyran-thompson/2219229) | — | — | MISSING | Chưa xác minh trang EA FC 27. SofaScore đọc lại vẫn không ghi chiều cao. |
+| Newcastle | 2000030243 | Kyran Thompson | 60 | USER_PROVIDED_2026-10-03 | [SofaScore](https://www.sofascore.com/football/player/kyran-thompson/2219229) | — | — | RW; RW, RM | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Bổ sung cùng nguồn: height_cm=183, fc27_overall=60. |
 | Newcastle | 2000030128 | Lewis Hall | 83 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/lewis-hall/1136730) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lewis-hall/266127) | LB; — | LB; LB |  |
 | Newcastle | 2000030078 | Lewis Miley | 77 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/lewis-miley/1400650) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lewis-miley/274246) | CM; RB, CDM, RM | CM; CM, RB, RM | CDM → CM, gộp mã trùng. |
 | Newcastle | 2000030074 | Lukáš Horníček | 77 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/lukas-hornicek/963744) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lukas-hornicek/258936) | GK; — | GK; GK |  |
 | Newcastle | 2000030131 | Malick Thiaw | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/malick-thiaw/1014286) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/malick-thiaw/256261) | CB; — | CB; CB |  |
 | Newcastle | 2000030237 | Mark Gillespie | 62 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/mark-gillespie/108508) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mark-gillespie/198039) | GK; — | GK; GK |  |
-| Newcastle | 2000030239 | Mason Miley | NULL | MISSING | [SofaScore](https://www.sofascore.com/football/player/mason-miley/1947565) | — | — | MISSING | Chưa xác minh trang EA FC 27. SofaScore đọc lại vẫn không ghi chiều cao. |
+| Newcastle | 2000030239 | Mason Miley | 60 | USER_PROVIDED_2026-10-03 | [SofaScore](https://www.sofascore.com/football/player/mason-miley/1947565) | — | — | CM; CM, RB | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Bổ sung cùng nguồn: height_cm=181, fc27_overall=60. |
 | Newcastle | 2000030238 | Matias Fernandez-Pardo | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/fernandez-matias/1149144) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matias-fernandez-pardo/276048) | ST; LM, LW | ST; ST, LM, LW | SofaScore dùng Matías Fernández-Pardo; EA còn ghi Lille. Giữ membership Newcastle của PremierHub. EA ghi LOSC Lille; giữ CLB PremierHub. |
-| Newcastle | 2000030242 | Michael Mills | NULL | MISSING | [SofaScore](https://www.sofascore.com/football/player/michael-mills/1936217) | — | — | MISSING | Chưa xác minh trang EA FC 27. SofaScore đọc lại vẫn không ghi chiều cao. SofaScore đọc lại vẫn không ghi chân thuận. |
-| Newcastle | 2000030240 | Miodrag Pivas | 62 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/miodrag-pivas/1129829) | — | — | MISSING | Chưa xác minh trang EA FC 27. OVR 62 đã được người dùng bổ sung 02/10, khác snapshot hồ sơ cũ. |
+| Newcastle | 2000030242 | Michael Mills | 60 | USER_PROVIDED_2026-10-03 | [SofaScore](https://www.sofascore.com/football/player/michael-mills/1936217) | — | — | ST; ST | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Bổ sung cùng nguồn: height_cm=179, preferred_foot=LEFT, fc27_overall=60. |
+| Newcastle | 2000030240 | Miodrag Pivas | 62 | USER_PROVIDED_2026-10-02 | [SofaScore](https://www.sofascore.com/football/player/miodrag-pivas/1129829) | — | — | CB; CB | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Giữ OVR 62 nguồn người dùng 02/10. |
 | Newcastle | 18911 | Nick Pope | 78 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/nick-pope/162653) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/nick-pope/203841) | GK; — | GK; GK |  |
 | Newcastle | 2000030106 | Nico González | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/nico-gonzalez/954056) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/nico-gonzalez/255069) | CDM; CM | CM; CM | EA có hai cầu thủ trùng tên; chọn hồ sơ người Tây Ban Nha, tiền vệ của Manchester City (EA ID 255069), khớp SofaScore/ngày sinh; không dùng hồ sơ người Argentina (EA ID 240690). Giữ membership Newcastle. CDM → CM, gộp mã trùng. EA ghi Manchester City; giữ CLB PremierHub. |
 | Newcastle | 2000030080 | Sean Steur | 72 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/sean-steur/1859920) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/sean-steur/77152) | CM; CDM, CAM | CM; CM, CAM | CDM → CM, gộp mã trùng. |
 | Newcastle | 2000030130 | Sven Botman | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/sven-botman/910046) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/sven-botman/251809) | CB; — | CB; CB |  |
-| Newcastle | 2000030241 | Vakhtang Salia | NULL | MISSING | [SofaScore](https://www.sofascore.com/football/player/vakhtang-salia/1426358) | — | — | MISSING | Chưa xác minh trang EA FC 27. |
+| Newcastle | 2000030241 | Vakhtang Salia | 60 | USER_PROVIDED_2026-10-03 | [SofaScore](https://www.sofascore.com/football/player/vakhtang-salia/1426358) | — | — | ST; ST | Vị trí do người dùng cung cấp 03/10/2026; chưa xác minh EA FC 27. Bổ sung cùng nguồn: fc27_overall=60. |
 | Newcastle | 158694 | Valentino Livramento | 81 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/tino-livramento/980634) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/tino-livramento/262118) | RB; LB, RM, LM | RB; RB, LB, RM, LM | SofaScore và EA dùng tên Tino Livramento; cùng ngày sinh và Newcastle xác nhận người. |
 | Newcastle | 2000030073 | William Osula | 75 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/william-osula/1122603) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/william-osula/270519) | ST; — | ST; ST |  |
 | Newcastle | 2000030072 | Yoane Wissa | 80 | EA_FC27_EXISTING_PROFILE | [SofaScore](https://www.sofascore.com/football/player/yoane-wissa/805123) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/yoane-wissa/234824) | ST; — | ST; ST |  |
