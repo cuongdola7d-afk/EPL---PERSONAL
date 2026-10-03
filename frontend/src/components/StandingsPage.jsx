@@ -3,6 +3,7 @@ import { fetchStandings } from '../api/standings.js'
 import { useApiList } from '../hooks/useApiList.js'
 import ResultPanel from './ResultPanel.jsx'
 import SeasonPicker from './SeasonPicker.jsx'
+import { standingBand } from '../utils/clubView.js'
 
 const STATS = [
   { key: 'played', short: 'Tr', label: 'Trận' },
@@ -53,7 +54,7 @@ function StandingsPage({ season, onSeasonChange }) {
               </thead>
               <tbody>
                 {standings.map((row) => (
-                  <tr key={row.clubId}>
+                  <tr key={row.clubId} className={standingBand(row.position, season)}>
                     <td className="standing-position">{row.position}</td>
                     <th scope="row" className="standing-club">{row.clubName}</th>
                     {STATS.map((stat) => <td key={stat.key}>{row[stat.key]}</td>)}
@@ -66,7 +67,7 @@ function StandingsPage({ season, onSeasonChange }) {
 
           <div className="standing-cards">
             {standings.map((row) => (
-              <article className="standing-card" key={row.clubId}>
+              <article className={`standing-card ${standingBand(row.position, season)}`} key={row.clubId}>
                 <div className="standing-card-head">
                   <span className="standing-card-rank">{row.position}</span>
                   <h3>{row.clubName}</h3>

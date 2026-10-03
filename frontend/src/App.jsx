@@ -5,11 +5,14 @@ import MatchPage from './components/MatchPage.jsx'
 import StandingsPage from './components/StandingsPage.jsx'
 import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
+import ClubDetailPage from './components/ClubDetailPage.jsx'
+import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
 import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
 import { parseMatchRoute } from './utils/matchRoute.js'
 import { SEASONS } from './utils/seasons.js'
 import './App.css'
 import './DarkSite.css'
+import './components/StandingsBands.css'
 
 const PAGES = {
   clubs: {
@@ -52,9 +55,10 @@ function pageFromHash(hash) {
 function App() {
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
   const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ??
-    parsePlayerListHash(window.location.hash)?.season ?? parseMatchRoute(window.location.hash)?.season ?? 2026)
+    parsePlayerListHash(window.location.hash)?.season ?? parseMatchRoute(window.location.hash)?.season ?? parseClubRoute(window.location.hash)?.season ?? 2026)
   const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
   const [matchRoute, setMatchRoute] = useState(() => parseMatchRoute(window.location.hash))
+  const [clubRoute, setClubRoute] = useState(() => parseClubRoute(window.location.hash))
   const [homeState, setHomeState] = useState({ query: '', slide: 0 })
   const [homeTheme, setHomeTheme] = useState('dark')
 
@@ -63,10 +67,12 @@ function App() {
       const detail = parsePlayerDetailHash(window.location.hash)
       const playerList = parsePlayerListHash(window.location.hash)
       const match = parseMatchRoute(window.location.hash)
+      const club = parseClubRoute(window.location.hash)
       setPlayerDetail(detail)
       setMatchRoute(match)
-      if (detail?.season || playerList?.season || match?.season) {
-        setSeason(detail?.season ?? playerList?.season ?? match?.season)
+      setClubRoute(club)
+      if (detail?.season || playerList?.season || match?.season || club?.season) {
+        setSeason(detail?.season ?? playerList?.season ?? match?.season ?? club?.season)
       }
       setPage(pageFromHash(window.location.hash))
       window.scrollTo(0, 0)
@@ -80,8 +86,8 @@ function App() {
   const CurrentPage = current.component
 
   useEffect(() => {
-    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
-  }, [current.label, playerDetail, page])
+    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
+  }, [current.label, playerDetail, clubRoute, page])
 
   return (
     <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : ''}`} data-home-theme={homeTheme}>
@@ -101,7 +107,12 @@ function App() {
           </nav>
           {page === 'clubs' && <div className="cx-header-controls">
             <label className="cx-season"><span className="sr-only">Mùa giải</span><select aria-label="Mùa giải" value={season}
-              onChange={event => { setSeason(Number(event.target.value)); setHomeState({ query: '', slide: homeState.slide }) }}>
+              onChange={event => {
+                const next = Number(event.target.value)
+                setSeason(next)
+                if (clubRoute) window.location.hash = clubDetailHash(clubRoute.clubId, { ...parseClubRoute(window.location.hash), season: next })
+                else setHomeState({ query: '', slide: homeState.slide })
+              }}>
               {[2026, 2024].map(year => <option value={year} key={year}>{SEASONS[year]}</option>)}
             </select><span aria-hidden="true">⌄</span></label>
             <button className="cx-theme-toggle" type="button" aria-label={`Chuyển sang chế độ ${homeTheme === 'dark' ? 'sáng' : 'tối'}`}
@@ -140,6 +151,7 @@ function App() {
 
         {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
           playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
+          clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
           <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
             {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}

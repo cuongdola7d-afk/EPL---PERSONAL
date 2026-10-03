@@ -186,7 +186,7 @@ function Scorers({ match, detail }) {
   </div>)}</div>
 }
 
-function MatchDetail({ matchId, summary, onClose, season }) {
+function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đấu' }) {
   const [detail, setDetail] = useState(null)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -217,7 +217,7 @@ function MatchDetail({ matchId, summary, onClose, season }) {
     detail.homePlayers.length === 0 && detail.awayPlayers.length === 0
 
   return <div className="mx-detail" aria-busy={status === 'loading'}>
-    <button className="mx-back" type="button" onClick={onClose}>‹ <span>Lịch đấu</span></button>
+    <button className="mx-back" type="button" onClick={onClose}>‹ <span>{backLabel}</span></button>
     {match && <header className="mx-detail-hero">
       <div className="mx-detail-meta"><span className="mx-gw">GW{match.matchweek}</span>
         <time dateTime={match.date}>{dateLabel(match.date)}</time><MatchStatus status={match.status} /></div>

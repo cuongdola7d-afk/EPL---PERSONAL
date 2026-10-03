@@ -1,3 +1,5 @@
+import { parseClubRoute } from './clubRoute.js'
+
 const VALID_FILTERS = new Set(['all', 'finished', 'upcoming'])
 
 export function matchListHash({ season, week, filter = 'all', club = '' }) {
@@ -8,8 +10,9 @@ export function matchListHash({ season, week, filter = 'all', club = '' }) {
   return `#matches?${params}`
 }
 
-export function matchDetailHash(id, state) {
-  return matchListHash(state).replace('#matches?', `#matches/${encodeURIComponent(id)}?`)
+export function matchDetailHash(id, state, fromHash) {
+  const hash = matchListHash(state).replace('#matches?', `#matches/${encodeURIComponent(id)}?`)
+  return parseClubRoute(fromHash ?? '') ? `${hash}&from=${encodeURIComponent(fromHash)}` : hash
 }
 
 export function parseMatchRoute(hash) {
@@ -27,5 +30,6 @@ export function parseMatchRoute(hash) {
     matchId: match[1] == null ? null : Number(match[1]),
     season: seasonText == null ? null : Number(seasonText),
     week, filter, club: params.get('club') ?? '',
+    ...(parseClubRoute(params.get('from') ?? '') ? { backHash: params.get('from') } : {}),
   }
 }

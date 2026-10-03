@@ -1,6 +1,7 @@
 import { ESTIMATED_OVR_PLAYER_IDS } from '../fantasy/lineup.js'
 import { getInitials } from '../utils/initials.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
+import { FOOT_LABEL } from '../utils/clubView.js'
 
 const POSITION = {
   GOALKEEPER: ['GK', 'Thủ môn'], DEFENDER: ['DEF', 'Hậu vệ'],
@@ -38,10 +39,10 @@ function PlayerCard({ player, season, view, returnHash }) {
   return <a className={`pp-player pp-player-${view}`} href={playerDetailHash(player.id, season, returnHash)} aria-label={`Xem hồ sơ ${player.name}, ${player.club}, ${player.fc27Overall == null ? 'chưa có OVR' : `OVR ${player.fc27Overall}${estimated ? ' ước tính' : ''}`}, ${player.goals == null ? 'chưa có số bàn thắng' : `${player.goals} bàn thắng`}, ${player.assists == null ? 'chưa có số kiến tạo' : `${player.assists} kiến tạo`}`}>
     {view === 'grid' ? <>
       <div className="pp-player-top">{avatar}{overall}</div>
-      <div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span></div>
+      <div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span>{season === 2026 && <small className="pp-foot">Chân thuận: {FOOT_LABEL[player.preferredFoot] ?? 'Chưa có dữ liệu'}</small>}</div>
       <div className="pp-player-footer">{matchStats}<div className="pp-player-go">Xem hồ sơ <span aria-hidden="true">→</span></div></div>
     </> : <>
-      {avatar}<div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span></div>
+      {avatar}<div className="pp-player-identity"><strong>{player.name}</strong><span><i style={{ background: color }} />{player.club}</span>{season === 2026 && <small className="pp-foot">Chân thuận: {FOOT_LABEL[player.preferredFoot] ?? 'Chưa có dữ liệu'}</small>}</div>
       <span className={`pp-position pp-position-${positionCode}`}>{positionLabel}</span>{matchStats}{overall}<span className="pp-list-arrow" aria-hidden="true">→</span>
     </>}
   </a>

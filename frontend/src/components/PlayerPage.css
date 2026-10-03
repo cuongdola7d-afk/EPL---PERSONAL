@@ -111,3 +111,4 @@
 @media (max-width: 520px) { .pp-grid { grid-template-columns: 1fr; } }
 @media (max-width: 380px) { .pp-player-list .pp-player-stats small { display: none; } }
 @media (prefers-reduced-motion: reduce) { .pp-player { transition: none; } }
+.pp-foot { display: block; color: var(--pp-muted, #8aa6ae); font-size: 12px; margin-top: 7px; }

@@ -124,6 +124,7 @@ function PlayerDetailPage({ playerId, season, backHash }) {
   const tabs = [['matches', 'Trận đã đấu', finished.length], ['next', 'Trận sắp tới', next.length], ['season', 'Mùa giải', null], ['info', 'Thông tin', null]]
   const estimated = player && ESTIMATED_OVR_PLAYER_IDS.has(player.id)
   const backLabel = backHash?.startsWith('#matches/') ? 'Trở lại trận đấu' :
+    backHash?.startsWith('#clubs/') ? 'Trở lại câu lạc bộ' :
     backHash === '#fantasy' ? 'Trở lại Fantasy' : 'Danh sách cầu thủ'
 
   return <section className="player-detail-page" data-theme={theme}><div className="pd-wrap">

@@ -1,7 +1,9 @@
 package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
+import com.premierhub.service.ClubStatisticsService;
 import com.premierhub.web.dto.ClubResponse;
+import com.premierhub.web.dto.ClubStatisticsResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -25,6 +27,9 @@ class ClubControllerTest {
 
     @MockitoBean
     private FootballQueries service;
+
+    @MockitoBean
+    private ClubStatisticsService statistics;
 
     @Test
     void getAllReturnsJsonArray() throws Exception {
@@ -54,6 +59,21 @@ class ClubControllerTest {
 
         expectError(mockMvc.perform(get("/api/clubs/999")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/clubs/999");
+    }
+
+    @Test
+    void statisticsReturnsNullableRatingsAndRequiresClubInSeason() throws Exception {
+        when(service.club(1, 2026)).thenReturn(Optional.of(arsenal));
+        when(statistics.statistics(1, 2026)).thenReturn(
+                new ClubStatisticsResponse(1, 2026, null, 0, 0, List.of()));
+        mockMvc.perform(get("/api/clubs/1/statistics").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.season").value(2026))
+                .andExpect(jsonPath("$.averageRating").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.ratedAppearances").value(0));
+        when(service.club(999, 2026)).thenReturn(Optional.empty());
+        expectError(mockMvc.perform(get("/api/clubs/999/statistics")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/clubs/999/statistics");
     }
 
     @Test

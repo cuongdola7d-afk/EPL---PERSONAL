@@ -1,4 +1,5 @@
 import { parseMatchRoute } from './matchRoute.js'
+import { parseClubRoute } from './clubRoute.js'
 
 const POSITIONS = new Set(['', 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'])
 const SORTS = new Set(['overall', 'name', 'club', 'goals', 'assists'])
@@ -37,7 +38,7 @@ export function parsePlayerListHash(hash) {
 
 function safeBackHash(hash) {
   if (typeof hash !== 'string') return null
-  const valid = parseMatchRoute(hash) || parsePlayerListHash(hash) ||
+  const valid = parseMatchRoute(hash) || parseClubRoute(hash) || parsePlayerListHash(hash) ||
     ['#clubs', '#standings', '#fantasy'].includes(hash)
   return valid ? hash : null
 }

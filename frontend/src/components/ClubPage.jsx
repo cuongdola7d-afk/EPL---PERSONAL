@@ -8,6 +8,7 @@ import { matchDetailHash, matchListHash } from '../utils/matchRoute.js'
 import { homeFixturePreview, vietnamToday, fixtureDateLabel } from '../utils/homeView.js'
 import { SEASONS, hasMatchScore } from '../utils/seasons.js'
 import { MAX_OVR } from '../fantasy/lineup.js'
+import { standingBand } from '../utils/clubView.js'
 import ClubCard, { HomeCrest } from './ClubCard.jsx'
 import HomeHero from './HomeHero.jsx'
 import { ArrowIcon, SearchIcon, FantasyArtwork } from './HomeArtwork.jsx'
@@ -87,7 +88,7 @@ export default function ClubPage({ season, homeState, onHomeStateChange }) {
             <caption className="sr-only">Sáu vị trí đầu Premier League {SEASONS[season]}</caption>
             <thead><tr><th scope="col">#</th><th scope="col">Đội</th><th scope="col">Trận</th>
               <th scope="col" title="Hiệu số bàn thắng">Hiệu số</th><th scope="col">Điểm</th></tr></thead>
-            <tbody>{table.map(row => <tr key={row.clubId}><td>{row.position}</td>
+            <tbody>{table.map(row => <tr key={row.clubId} className={standingBand(row.position, season)}><td>{row.position}</td>
               <th scope="row"><HomeCrest name={row.clubName} /><span>{row.clubName}</span></th>
               <td>{row.played}</td><td>{row.goalDifference > 0 ? '+' : ''}{row.goalDifference}</td><td>{row.points}</td></tr>)}</tbody>
           </table></div>}

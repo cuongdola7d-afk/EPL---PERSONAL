@@ -1,6 +1,8 @@
 package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
+import com.premierhub.service.ClubStatisticsService;
+import com.premierhub.web.dto.ClubStatisticsResponse;
 import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.NotBlank;
@@ -17,9 +19,11 @@ import java.util.List;
 @RequestMapping("/api/clubs")
 public class ClubController {
     private final FootballQueries service;
+    private final ClubStatisticsService statistics;
 
-    public ClubController(FootballQueries service) {
+    public ClubController(FootballQueries service, ClubStatisticsService statistics) {
         this.service = service;
+        this.statistics = statistics;
     }
 
     @GetMapping
@@ -39,5 +43,13 @@ public class ClubController {
             @RequestParam @NotBlank(message = "keyword must not be blank") String keyword,
             @RequestParam(defaultValue = "2024") int season) {
         return service.clubs(season, keyword);
+    }
+
+    @GetMapping("/{id}/statistics")
+    public ClubStatisticsResponse getStatistics(@PathVariable @Positive int id,
+                                                @RequestParam(defaultValue = "2026") int season) {
+        service.club(id, season)
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found: " + id));
+        return statistics.statistics(id, season);
     }
 }

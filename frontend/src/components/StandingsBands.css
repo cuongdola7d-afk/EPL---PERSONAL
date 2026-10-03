@@ -1,0 +1,6 @@
+.rank-champions { --rank-band: #4285f4; }
+.rank-europa { --rank-band: #ff963e; }
+.rank-relegation { --rank-band: #f26368; }
+.rank-champions > :first-child, .rank-europa > :first-child, .rank-relegation > :first-child { box-shadow: inset 4px 0 var(--rank-band); }
+.standing-card:is(.rank-champions, .rank-europa, .rank-relegation) { border-left: 4px solid var(--rank-band); }
+.standing-card:is(.rank-champions, .rank-europa, .rank-relegation) > :first-child { box-shadow: none; }
