@@ -1,0 +1,19 @@
+PrismaXI — Chelsea/Tottenham 2026/27, roster hiện hành 2026-10-03
+Ô chưa xác minh giữ trống/SQL NULL; không điền 0 hoặc tự thêm quyền vị trí.
+
+Chelsea | 2000005021 | Mahdi Nicoll-Jazuli
+  Còn thiếu: fc27_overall, primary_position, eligible_positions.
+  Chưa tìm được hồ sơ EA FC 27 ghép đúng người; cần URL EA hoặc vị trí bạn bổ sung.
+  Quốc tịch, ngày sinh, chiều cao, chân thuận, số áo đã đủ từ hồ sơ cũ.
+
+Tottenham | 2000030248 | James Rowswell
+  Còn thiếu: primary_position, eligible_positions.
+  Chưa tìm được hồ sơ EA FC 27 theo Rowswell/Roswell; cần vị trí bạn bổ sung.
+  OVR hiện có 61 (người dùng cung cấp 02/10/2026) được giữ nguyên, không gán lại.
+  Chưa xác minh được URL EA FC 27 chính thức cho OVR 61; đây là thiếu nguồn,
+  không phải giá trị NULL. Quốc tịch/ngày sinh/chiều cao/chân thuận/số áo đã đủ.
+
+Hai ID này không nằm trong positions.csv vì reader không nhận vị trí mới trống.
+roster-status.csv vẫn có đúng một dòng cho mỗi người, trạng thái vị trí MISSING.
+Mahdi còn thiếu OVR; James thiếu tập vị trí. Cả hai chưa đủ dữ liệu chọn Fantasy.
+Không có người ghép hồ sơ chưa chắc chắn được đưa vào positions.csv.
