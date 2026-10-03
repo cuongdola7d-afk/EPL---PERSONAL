@@ -1,0 +1,318 @@
+[
+  {
+    "file": "backend\\data\\arsenal-profiles-2026-10-02\\players.csv",
+    "sha256": "dd2fff5b5ac1a0da282d670ef8ca4e7a70c4fb079dc57a5118b3b34da1b512ce"
+  },
+  {
+    "file": "backend\\data\\arsenal-profiles-2026-10-02\\sources.md",
+    "sha256": "84849654d3aa9a5c9a66a0814e657811cdccf213901a047fa24e7a6a059cd18d"
+  },
+  {
+    "file": "backend\\data\\manchester-united-profiles-2026-10-02\\players.csv",
+    "sha256": "583530de843b125c32b134c29236771c99a640659d46644360abab097344e45a"
+  },
+  {
+    "file": "backend\\data\\manchester-united-profiles-2026-10-02\\sources.md",
+    "sha256": "704541914582acdb99c3b73d77f4c394513b5b2ff50fe4161d52538ea8a8dd62"
+  },
+  {
+    "file": "backend\\data\\liverpool-profiles-2026-10-02\\players.csv",
+    "sha256": "610385a872028f5827719f1fcf148538b272f03950315d7d888acab9e936b349"
+  },
+  {
+    "file": "backend\\data\\liverpool-profiles-2026-10-02\\sources.md",
+    "sha256": "acf00877477a997c0f9e6743b25680e3e28d8c8a836f600a3edce7556db9f567"
+  },
+  {
+    "file": "backend\\data\\manchester-city-profiles-2026-10-02\\players.csv",
+    "sha256": "a272d790505a9aa98394dad4c34c9fbe1f7f217b71aadd6d6d0f30ac52b09bf7"
+  },
+  {
+    "file": "backend\\data\\manchester-city-profiles-2026-10-02\\sources.md",
+    "sha256": "1dc0dced1436fddd47825f01e577ccc608bff3b51fcf381cc7f5ebb4c1b4ada0"
+  },
+  {
+    "file": "backend\\data\\chelsea-profiles-2026-10-02\\players.csv",
+    "sha256": "e071302e7d01bb2aee2b668180ce90f3bc505f4f53e259cfb25874f74ab94651"
+  },
+  {
+    "file": "backend\\data\\chelsea-profiles-2026-10-02\\sources.md",
+    "sha256": "c36586bfed7d372179eb0edd316f7f4baca4fd74540a9b5cb3f445f63191d0a8"
+  },
+  {
+    "file": "backend\\data\\tottenham-profiles-2026-10-02\\players.csv",
+    "sha256": "42e340c6b2e5d8e86cc78bf9f93fc19c27d4bfa9c0c46fdcc2ac597f6887bf8b"
+  },
+  {
+    "file": "backend\\data\\tottenham-profiles-2026-10-02\\sources.md",
+    "sha256": "466b6fc6ee191e1aac15ced81a117de55531fe4b6eee4120ec1a70b7418ead86"
+  },
+  {
+    "file": "backend\\data\\aston-villa-profiles-2026-10-02\\players.csv",
+    "sha256": "06c9932ce8c72bec6b498d543142c050459f097974f8d98157fddeecde7a66a5"
+  },
+  {
+    "file": "backend\\data\\aston-villa-profiles-2026-10-02\\sources.md",
+    "sha256": "824e78887f858affb99237eb1168dc726dccb4185f638d21f2cc98d402302ed9"
+  },
+  {
+    "file": "backend\\data\\newcastle-united-profiles-2026-10-02\\players.csv",
+    "sha256": "029b5cd65647d44b3eb8cfd43b1686168302c26e13a0eb5e0a10b5391e6a26a6"
+  },
+  {
+    "file": "backend\\data\\newcastle-united-profiles-2026-10-02\\sources.md",
+    "sha256": "8369f71b6b6033158cb45942a7f941abcab82c936f22778e6491db5f5993da2c"
+  },
+  {
+    "file": "backend\\data\\brighton-profiles-2026-10-02\\players.csv",
+    "sha256": "319705ac98378f34e41ba163b14b609f831d31191a76786fade01e030ff86419"
+  },
+  {
+    "file": "backend\\data\\brighton-profiles-2026-10-02\\sources.md",
+    "sha256": "88d14c75e5898b503c743a635b3d19e4ebd1a9a24b09caf525619eaf4021b96a"
+  },
+  {
+    "file": "backend\\data\\bournemouth-profiles-2026-10-02\\players.csv",
+    "sha256": "fca4f9829191fe99298dbecc240a906b0e421b3b35ecd2e028928c80d89f0efe"
+  },
+  {
+    "file": "backend\\data\\bournemouth-profiles-2026-10-02\\sources.md",
+    "sha256": "b92c2350207f5bbf0c7bd18fd63f21cef5a0edd1c3fbc11d836edf65c89a78a7"
+  },
+  {
+    "file": "backend\\data\\brentford-profiles-2026-10-02\\players.csv",
+    "sha256": "e5fbae404d78c4e699073cc8e5fd29f3d2262051f7976d0b0c06ae43322c95ee"
+  },
+  {
+    "file": "backend\\data\\brentford-profiles-2026-10-02\\sources.md",
+    "sha256": "20524fdaf96cc40f31c3524a3283ccb66179e4c0ea74cc5dc46ac668f88cd222"
+  },
+  {
+    "file": "backend\\data\\crystal-palace-profiles-2026-10-02\\players.csv",
+    "sha256": "7c7c3498968ea47cbfcd7568ed23d3b88305e58dbeb4893c8b5df4a5909278f6"
+  },
+  {
+    "file": "backend\\data\\crystal-palace-profiles-2026-10-02\\sources.md",
+    "sha256": "f38fea1dc6a6ba29761ddd175875f62288840484b2f55d1d141eb511c4a7b002"
+  },
+  {
+    "file": "backend\\data\\everton-profiles-2026-10-02\\players.csv",
+    "sha256": "1f73ce4ce950dc703823488557928f02197b385fe2feee6e134aeb260407fa78"
+  },
+  {
+    "file": "backend\\data\\everton-profiles-2026-10-02\\sources.md",
+    "sha256": "1ae57e401eea2c319e7d6122c18e206f891f7ff3dfb5fe3137fb0af076c33b40"
+  },
+  {
+    "file": "backend\\data\\fulham-profiles-2026-10-02\\players.csv",
+    "sha256": "227202cf391930803410031813ad1aad86ebbf06a2e97bc9fe62296961058bb2"
+  },
+  {
+    "file": "backend\\data\\fulham-profiles-2026-10-02\\sources.md",
+    "sha256": "6601c5157bc11484806c8fb91e032466e0505f38de94a0b14ec4544a1e3217e4"
+  },
+  {
+    "file": "backend\\data\\coventry-city-profiles-2026-10-02\\players.csv",
+    "sha256": "4c7cdbd803412d7fda9ed693086fba00b8b6de8ca2b408ab2b88fde4709b2763"
+  },
+  {
+    "file": "backend\\data\\coventry-city-profiles-2026-10-02\\sources.md",
+    "sha256": "19ec10696a168ff916308ccc6419e861d58cf804cc14d57311ae3d8674815ad5"
+  },
+  {
+    "file": "backend\\data\\nottingham-forest-profiles-2026-10-02\\players.csv",
+    "sha256": "b0d08c4eb94cc756ae5d1b80bbba1f24b335a5dbb98333cdab0917ea40363cc3"
+  },
+  {
+    "file": "backend\\data\\nottingham-forest-profiles-2026-10-02\\sources.md",
+    "sha256": "742b3638b58c62354f6349f274e33fdc33cd2e8ed85eb8e37728f2297bd62f49"
+  },
+  {
+    "file": "backend\\data\\hull-city-profiles-2026-10-02\\players.csv",
+    "sha256": "d9541087d15771816cf79c3ce6d8f8ba948b21ac6d96c81e3a0d3c9e29a0940a"
+  },
+  {
+    "file": "backend\\data\\hull-city-profiles-2026-10-02\\sources.md",
+    "sha256": "8c7cedc50e57c77513cfce9ebcc759c8e8f207914d018cb97a68ae1c03269747"
+  },
+  {
+    "file": "backend\\data\\leeds-profiles-2026-10-02\\players.csv",
+    "sha256": "4b5d3bfb03cff380a41e3183b37b6e262071328362e69554bf29c7ae145b3194"
+  },
+  {
+    "file": "backend\\data\\leeds-profiles-2026-10-02\\sources.md",
+    "sha256": "0104efde885cf0dddc012a4f49beb84a1877f4a3dbaebecac17f5f8335626f07"
+  },
+  {
+    "file": "backend\\data\\ipswich-town-profiles-2026-10-02\\players.csv",
+    "sha256": "1a7451ead0c74c2682db6051d479f9125bd180190f79fddf8ad2d06011bf779d"
+  },
+  {
+    "file": "backend\\data\\ipswich-town-profiles-2026-10-02\\sources.md",
+    "sha256": "4eec3f7d8db15bc74de7c03eeeb333298b6417cf7439174a4cccd67568de0efa"
+  },
+  {
+    "file": "backend\\data\\sunderland-profiles-2026-10-02\\players.csv",
+    "sha256": "c0c39886106d3696a2d4c59e5e38d480430fec2b814a9aefc13700c1322b2d0f"
+  },
+  {
+    "file": "backend\\data\\sunderland-profiles-2026-10-02\\sources.md",
+    "sha256": "60a8e95f5ab71fb90b8f4c35f1d7bde9601b63d0adfa8cb81fe59164a3c6e4d9"
+  },
+  {
+    "file": "backend\\data\\player-data-chelsea-tottenham-2026-10-03\\profiles.csv",
+    "sha256": "6366b2400ab2a5bb14c6cf6f69fba30612f3b51f768633a4ed688297ea55ef6f"
+  },
+  {
+    "file": "backend\\data\\player-data-chelsea-tottenham-2026-10-03\\sources.md",
+    "sha256": "e2fadc617368177f03845bc5c9bd2da5e6537f65769af20388ad1cab552a0439"
+  },
+  {
+    "file": "backend\\data\\player-data-aston-villa-newcastle-2026-10-03\\profiles.csv",
+    "sha256": "a1891338eaf0b85ec9fc4daede9bc3f66229f024d2613e05607259e5bd1f3f9c"
+  },
+  {
+    "file": "backend\\data\\player-data-aston-villa-newcastle-2026-10-03\\sources.md",
+    "sha256": "0341d54e7a9fadacc7bfb54c5dd2d3ee624cd01f5a96f6c89746c86c6e933fa6"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-bournemouth-2026-10-03\\profiles.csv",
+    "sha256": "de8aabaa67ba5b635b881f45dd3bea6de6e6c369b5e2e928115014ef8cb1345d"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-bournemouth-2026-10-03\\sources.md",
+    "sha256": "722e574765d41676819a6d7921829227624e36c28839cc867ed547257876540d"
+  },
+  {
+    "file": "backend\\data\\player-data-brentford-crystal-palace-2026-10-03\\profiles.csv",
+    "sha256": "77a70815bbdba380a92118016f472cad9f24593253749d199ebb501d91ecd737"
+  },
+  {
+    "file": "backend\\data\\player-data-brentford-crystal-palace-2026-10-03\\sources.md",
+    "sha256": "9a4a0b91f11578af9ef0e2e315c6e423f28be78729095677a891557aa5b5b61c"
+  },
+  {
+    "file": "backend\\data\\player-data-everton-fulham-2026-10-03\\profiles.csv",
+    "sha256": "c1336394e9c5eb076ffa1e7d6980a2457506e2778fe0056a5b9b6c00ef10aaf4"
+  },
+  {
+    "file": "backend\\data\\player-data-everton-fulham-2026-10-03\\sources.md",
+    "sha256": "15f266770ffa950d572432f096202270a87c407e757ed8d5bfbd34414647539d"
+  },
+  {
+    "file": "backend\\data\\player-data-coventry-nottingham-forest-2026-10-03\\profiles.csv",
+    "sha256": "6d38da0e17dd1a8828835bab2037f42003aad658a69357b76d0ae1e02e465045"
+  },
+  {
+    "file": "backend\\data\\player-data-coventry-nottingham-forest-2026-10-03\\sources.md",
+    "sha256": "3280622800d7c2d802c10e852ddc779ea58190f0dd3a1ebd60bf9583392a1830"
+  },
+  {
+    "file": "backend\\data\\player-data-hull-leeds-2026-10-03\\profiles.csv",
+    "sha256": "598267d3f41329d6f37d87093c510a9263c5888a5be4a817c843eb4305ec3bf4"
+  },
+  {
+    "file": "backend\\data\\player-data-hull-leeds-2026-10-03\\sources.md",
+    "sha256": "402df5423e5d127fed5149ef0a9d2c69f509b694a220a759a3a0c532d10e2737"
+  },
+  {
+    "file": "backend\\data\\player-data-ipswich-sunderland-2026-10-03\\profiles.csv",
+    "sha256": "51b8cfd65ec31095ad105931bc7d1ed716ae268c4dd86c6af8392ce758cb2c60"
+  },
+  {
+    "file": "backend\\data\\player-data-ipswich-sunderland-2026-10-03\\sources.md",
+    "sha256": "04e52b39616743ddcf2cce096ebc9a9a055804b8efcead5f92dcc214b24cb969"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-supplements-2026-10-03\\profiles.csv",
+    "sha256": "2db30a2c7b2f380729ed0ada849852f3da6600a6224a42fd2f21251375513934"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-supplements-2026-10-03\\sources.md",
+    "sha256": "48fba6b7060488ed27325a2d491a390fdc55408e3f97a67b9a903fe2e0c1aa41"
+  },
+  {
+    "file": "backend\\data\\player-positions-arsenal-manchester-united-2026-10-02\\players.csv",
+    "sha256": "5d6add6d723a58369862fd8dcb3f9a287289aabb0c3020ddedf0ed0ee0f8ac33"
+  },
+  {
+    "file": "backend\\data\\player-positions-arsenal-manchester-united-2026-10-02\\sources.md",
+    "sha256": "9fef18bdeca084270e32f5b35dcf4a4261cb106fe6b8dd2b01b39d8f815df853"
+  },
+  {
+    "file": "backend\\data\\player-positions-liverpool-manchester-city-2026-10-02\\players.csv",
+    "sha256": "6dd01525e21937273a00b6fa35ef480fb4479e8ed34da9ea404de74d6079e723"
+  },
+  {
+    "file": "backend\\data\\player-positions-liverpool-manchester-city-2026-10-02\\sources.md",
+    "sha256": "d01cb9be9781513cdad23a3fba0f8b6cd1d3d732b630b8a49494b8db21070cdd"
+  },
+  {
+    "file": "backend\\data\\player-data-chelsea-tottenham-2026-10-03\\positions.csv",
+    "sha256": "fe15146cb4c9049f84be8db4cf2a927cefce3a563c61f9a7740c951052ccf08d"
+  },
+  {
+    "file": "backend\\data\\player-data-aston-villa-newcastle-2026-10-03\\positions.csv",
+    "sha256": "ec396597831a7445e4c4b4d410bee8413517a0ae1bcabc72f49cf30e7d0b0be7"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-bournemouth-2026-10-03\\positions.csv",
+    "sha256": "61ff42f4b1e84e49d5359a4ceccbbcadcaf939359c3d65eba3e50caef05c7ba1"
+  },
+  {
+    "file": "backend\\data\\player-data-brentford-crystal-palace-2026-10-03\\positions.csv",
+    "sha256": "07767826c01c8e9cb7334868644def3ab8c78f288c7088d2522ab47755c0609e"
+  },
+  {
+    "file": "backend\\data\\player-data-everton-fulham-2026-10-03\\positions.csv",
+    "sha256": "cf61207ca03e836c29b327d476308fb691c4c9fc8983515299c225a4040a391e"
+  },
+  {
+    "file": "backend\\data\\player-data-coventry-nottingham-forest-2026-10-03\\positions.csv",
+    "sha256": "382ca7d19dd8ec6311b9875de9a13d84b36dbaa0908ee11eabe39dfe0317177f"
+  },
+  {
+    "file": "backend\\data\\player-data-hull-leeds-2026-10-03\\positions.csv",
+    "sha256": "e4923bcac9106807aa9b7977ebd7d890e92c5483f2016560ee5ee1adc325796d"
+  },
+  {
+    "file": "backend\\data\\player-data-ipswich-sunderland-2026-10-03\\positions.csv",
+    "sha256": "e42686ae376b7f0b5f948e6c168fb3628ba175cbcd0567c8036cad32da4618df"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-supplements-2026-10-03\\positions.csv",
+    "sha256": "884e2bbdfbb5d1e6c1c5a758ee7bd1825c12d2a86ea915e723a6dd515ff1a955"
+  },
+  {
+    "file": "backend\\data\\player-position-supplements-2026-10-03\\positions.csv",
+    "sha256": "c829b471cb7de5c0388e4485bd46a44e0e08a354e9ee9c3da446423a1520fb70"
+  },
+  {
+    "file": "backend\\data\\player-position-supplements-2026-10-03\\sources.md",
+    "sha256": "aa2c3efa87aa956b93a196993a0ce8893fa789aa94c1566fb085ff2a34a3b3ac"
+  },
+  {
+    "file": "backend\\data\\player-profile-updates-2026-10-02.csv",
+    "sha256": "746ad5cb9f163daae10ba77064d65fbbcfc6b846427375ceeefeeb28831a28e4"
+  },
+  {
+    "file": "backend\\data\\player-profile-updates-2026-10-02.md",
+    "sha256": "ba81bce5ba781e4615995ab1a07ac0b95f8c6a986b264c36b9e3a44e5f8168b8"
+  },
+  {
+    "file": "backend\\data\\player-data-aston-villa-newcastle-2026-10-03\\profile-updates.csv",
+    "sha256": "ccc2ed7daf5a9f155a531bffb5adc640293a1cd44eee5272b877e45c50715022"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-bournemouth-2026-10-03\\profile-updates.csv",
+    "sha256": "74ad15fd6adf412fd13cb1e9e87f5438766139fd2c779a210b06790bb3f9d373"
+  },
+  {
+    "file": "backend\\data\\player-data-everton-fulham-2026-10-03\\profile-updates.csv",
+    "sha256": "b174e6d2cb082e507e4c7869fdeae6576ff51ca0439f367add5a88e1361db272"
+  },
+  {
+    "file": "backend\\data\\player-data-brighton-supplements-2026-10-03\\profile-updates.csv",
+    "sha256": "0a319afd7f322c87b1a09bf2c4769fa882b7925a8b46050ee96a448668742ee7"
+  }
+]

@@ -1,0 +1,13 @@
+PrismaXI 2026/27 — production sau nhập ngày 04/10/2026
+
+Ô thiếu giữ SQL NULL / trạng thái MISSING; không gán 0.
+
+Chelsea FC | Mahdi Nicoll-Jazuli | player_id=2000005021 | club_id=1000000061
+  Thiếu: fc27_overall, primary_position, eligible_positions.
+
+Liverpool FC | Wellity Lucky | player_id=2000030229 | club_id=1000000064
+  Thiếu: fc27_overall.
+
+Coventry City FC | George Shepherd | player_id=2000030180 | club_id=1000001076
+  Thiếu: height_cm, preferred_foot, shirt_number, fc27_overall, primary_position, eligible_positions.
+

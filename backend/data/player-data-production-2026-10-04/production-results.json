@@ -1,0 +1,561 @@
+{
+  "verified_on": "2026-10-04",
+  "season": "2026/27",
+  "roster_as_of": "2026-10-04",
+  "fantasy_as_of": "2026-10-02",
+  "railway_commit": "686682cba3db95fbe2c11c997e87af41d0df1486",
+  "mysql_version": "9.7.2",
+  "totals": {
+    "roster": 534,
+    "profiles": 534,
+    "complete_5_fields": 533,
+    "ovr": 531,
+    "primary_and_eligible": 532,
+    "fantasy_eligible": 531
+  },
+  "eligible_position_rows": 989,
+  "api_list_verified": 534,
+  "api_detail_samples_verified": 18,
+  "clubs": [
+    {
+      "club_id": "1000001044",
+      "club": "AFC Bournemouth",
+      "roster": 26,
+      "profiles": 26,
+      "complete_5_fields": 26,
+      "ovr": 26,
+      "primary_and_eligible": 26,
+      "fantasy_eligible": 26
+    },
+    {
+      "club_id": "1000000057",
+      "club": "Arsenal FC",
+      "roster": 24,
+      "profiles": 24,
+      "complete_5_fields": 24,
+      "ovr": 24,
+      "primary_and_eligible": 24,
+      "fantasy_eligible": 24
+    },
+    {
+      "club_id": "1000000058",
+      "club": "Aston Villa FC",
+      "roster": 27,
+      "profiles": 27,
+      "complete_5_fields": 27,
+      "ovr": 27,
+      "primary_and_eligible": 27,
+      "fantasy_eligible": 27
+    },
+    {
+      "club_id": "1000000402",
+      "club": "Brentford FC",
+      "roster": 28,
+      "profiles": 28,
+      "complete_5_fields": 28,
+      "ovr": 28,
+      "primary_and_eligible": 28,
+      "fantasy_eligible": 28
+    },
+    {
+      "club_id": "1000000397",
+      "club": "Brighton & Hove Albion FC",
+      "roster": 30,
+      "profiles": 30,
+      "complete_5_fields": 30,
+      "ovr": 30,
+      "primary_and_eligible": 30,
+      "fantasy_eligible": 30
+    },
+    {
+      "club_id": "1000000061",
+      "club": "Chelsea FC",
+      "roster": 27,
+      "profiles": 27,
+      "complete_5_fields": 27,
+      "ovr": 26,
+      "primary_and_eligible": 26,
+      "fantasy_eligible": 26
+    },
+    {
+      "club_id": "1000001076",
+      "club": "Coventry City FC",
+      "roster": 30,
+      "profiles": 30,
+      "complete_5_fields": 29,
+      "ovr": 29,
+      "primary_and_eligible": 29,
+      "fantasy_eligible": 29
+    },
+    {
+      "club_id": "1000000354",
+      "club": "Crystal Palace FC",
+      "roster": 24,
+      "profiles": 24,
+      "complete_5_fields": 24,
+      "ovr": 24,
+      "primary_and_eligible": 24,
+      "fantasy_eligible": 24
+    },
+    {
+      "club_id": "1000000062",
+      "club": "Everton FC",
+      "roster": 20,
+      "profiles": 20,
+      "complete_5_fields": 20,
+      "ovr": 20,
+      "primary_and_eligible": 20,
+      "fantasy_eligible": 20
+    },
+    {
+      "club_id": "1000000063",
+      "club": "Fulham FC",
+      "roster": 26,
+      "profiles": 26,
+      "complete_5_fields": 26,
+      "ovr": 26,
+      "primary_and_eligible": 26,
+      "fantasy_eligible": 26
+    },
+    {
+      "club_id": "1000000322",
+      "club": "Hull City AFC",
+      "roster": 34,
+      "profiles": 34,
+      "complete_5_fields": 34,
+      "ovr": 34,
+      "primary_and_eligible": 34,
+      "fantasy_eligible": 34
+    },
+    {
+      "club_id": "1000000349",
+      "club": "Ipswich Town FC",
+      "roster": 26,
+      "profiles": 26,
+      "complete_5_fields": 26,
+      "ovr": 26,
+      "primary_and_eligible": 26,
+      "fantasy_eligible": 26
+    },
+    {
+      "club_id": "1000000341",
+      "club": "Leeds United FC",
+      "roster": 22,
+      "profiles": 22,
+      "complete_5_fields": 22,
+      "ovr": 22,
+      "primary_and_eligible": 22,
+      "fantasy_eligible": 22
+    },
+    {
+      "club_id": "1000000064",
+      "club": "Liverpool FC",
+      "roster": 31,
+      "profiles": 31,
+      "complete_5_fields": 31,
+      "ovr": 30,
+      "primary_and_eligible": 31,
+      "fantasy_eligible": 30
+    },
+    {
+      "club_id": "1000000065",
+      "club": "Manchester City FC",
+      "roster": 26,
+      "profiles": 26,
+      "complete_5_fields": 26,
+      "ovr": 26,
+      "primary_and_eligible": 26,
+      "fantasy_eligible": 26
+    },
+    {
+      "club_id": "1000000066",
+      "club": "Manchester United FC",
+      "roster": 30,
+      "profiles": 30,
+      "complete_5_fields": 30,
+      "ovr": 30,
+      "primary_and_eligible": 30,
+      "fantasy_eligible": 30
+    },
+    {
+      "club_id": "1000000067",
+      "club": "Newcastle United FC",
+      "roster": 28,
+      "profiles": 28,
+      "complete_5_fields": 28,
+      "ovr": 28,
+      "primary_and_eligible": 28,
+      "fantasy_eligible": 28
+    },
+    {
+      "club_id": "1000000351",
+      "club": "Nottingham Forest FC",
+      "roster": 24,
+      "profiles": 24,
+      "complete_5_fields": 24,
+      "ovr": 24,
+      "primary_and_eligible": 24,
+      "fantasy_eligible": 24
+    },
+    {
+      "club_id": "1000000071",
+      "club": "Sunderland AFC",
+      "roster": 22,
+      "profiles": 22,
+      "complete_5_fields": 22,
+      "ovr": 22,
+      "primary_and_eligible": 22,
+      "fantasy_eligible": 22
+    },
+    {
+      "club_id": "1000000073",
+      "club": "Tottenham Hotspur FC",
+      "roster": 29,
+      "profiles": 29,
+      "complete_5_fields": 29,
+      "ovr": 29,
+      "primary_and_eligible": 29,
+      "fantasy_eligible": 29
+    }
+  ],
+  "missing": [
+    {
+      "player_id": "2000005021",
+      "club_id": "1000000061",
+      "club": "Chelsea FC",
+      "name": "Mahdi Nicoll-Jazuli",
+      "fields": [
+        "fc27_overall",
+        "primary_position",
+        "eligible_positions"
+      ]
+    },
+    {
+      "player_id": "2000030229",
+      "club_id": "1000000064",
+      "club": "Liverpool FC",
+      "name": "Wellity Lucky",
+      "fields": [
+        "fc27_overall"
+      ]
+    },
+    {
+      "player_id": "2000030180",
+      "club_id": "1000001076",
+      "club": "Coventry City FC",
+      "name": "George Shepherd",
+      "fields": [
+        "height_cm",
+        "preferred_foot",
+        "shirt_number",
+        "fc27_overall",
+        "primary_position",
+        "eligible_positions"
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "id": 2000001025,
+      "name": "Max Dowman",
+      "clubId": 1000000057,
+      "nationality": "England",
+      "heightCm": 183,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 56,
+      "fc27Overall": 72,
+      "primaryPosition": "CAM",
+      "eligiblePositions": [
+        "CAM",
+        "LM",
+        "LW",
+        "RM",
+        "RW"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000006021,
+      "name": "Luke Shaw",
+      "clubId": 1000000066,
+      "nationality": "England",
+      "heightCm": 178,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 23,
+      "fc27Overall": 79,
+      "primaryPosition": "LB",
+      "eligiblePositions": [
+        "LB"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000001007,
+      "name": "Bukayo Saka",
+      "clubId": 1000000057,
+      "nationality": "England",
+      "heightCm": 178,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 7,
+      "fc27Overall": 87,
+      "primaryPosition": "RW",
+      "eligiblePositions": [
+        "RW",
+        "RM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000006015,
+      "name": "Amad Diallo",
+      "clubId": 1000000066,
+      "nationality": "Côte d'Ivoire",
+      "heightCm": 173,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 16,
+      "fc27Overall": 79,
+      "primaryPosition": "RM",
+      "eligiblePositions": [
+        "RM",
+        "RB",
+        "RW"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000006019,
+      "name": "Carlos Baleba",
+      "clubId": 1000000066,
+      "nationality": "Cameroon",
+      "heightCm": 179,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 20,
+      "fc27Overall": 80,
+      "primaryPosition": "CM",
+      "eligiblePositions": [
+        "CM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000004023,
+      "name": "Ryan McAidoo",
+      "clubId": 1000000065,
+      "nationality": "England",
+      "heightCm": 174,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 56,
+      "fc27Overall": 66,
+      "primaryPosition": "RW",
+      "eligiblePositions": [
+        "RW",
+        "RM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030248,
+      "name": "James Rowswell",
+      "clubId": 1000000073,
+      "nationality": "England",
+      "heightCm": 188,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 76,
+      "fc27Overall": 61,
+      "primaryPosition": "CB",
+      "eligiblePositions": [
+        "CB",
+        "RB"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030243,
+      "name": "Kyran Thompson",
+      "clubId": 1000000067,
+      "nationality": "England",
+      "heightCm": 183,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 44,
+      "fc27Overall": 60,
+      "primaryPosition": "RW",
+      "eligiblePositions": [
+        "RW",
+        "RM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030239,
+      "name": "Mason Miley",
+      "clubId": 1000000067,
+      "nationality": "England",
+      "heightCm": 181,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 76,
+      "fc27Overall": 60,
+      "primaryPosition": "CM",
+      "eligiblePositions": [
+        "CM",
+        "RB"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030242,
+      "name": "Michael Mills",
+      "clubId": 1000000067,
+      "nationality": "England",
+      "heightCm": 179,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 16,
+      "fc27Overall": 60,
+      "primaryPosition": "ST",
+      "eligiblePositions": [
+        "ST"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030241,
+      "name": "Vakhtang Salia",
+      "clubId": 1000000067,
+      "nationality": "Georgia",
+      "heightCm": 181,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 49,
+      "fc27Overall": 60,
+      "primaryPosition": "ST",
+      "eligiblePositions": [
+        "ST"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030176,
+      "name": "Younes Ibrahim",
+      "clubId": 1000000397,
+      "nationality": "Egypt",
+      "heightCm": 182,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 59,
+      "fc27Overall": 60,
+      "primaryPosition": "CAM",
+      "eligiblePositions": [
+        "CAM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030192,
+      "name": "Braiden Graham",
+      "clubId": 1000000062,
+      "nationality": "Northern Ireland",
+      "heightCm": 175,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 58,
+      "fc27Overall": 60,
+      "primaryPosition": "ST",
+      "eligiblePositions": [
+        "ST"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030194,
+      "name": "Macaulay Zepa",
+      "clubId": 1000000063,
+      "nationality": "Cameroon",
+      "heightCm": 178,
+      "preferredFoot": "LEFT",
+      "shirtNumber": 35,
+      "fc27Overall": 60,
+      "primaryPosition": "RW",
+      "eligiblePositions": [
+        "RW",
+        "RM"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000030082,
+      "name": "Gonzalo García",
+      "clubId": 1000000063,
+      "nationality": "Spain",
+      "heightCm": 182,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 7,
+      "fc27Overall": 75,
+      "primaryPosition": "ST",
+      "eligiblePositions": [
+        "ST"
+      ],
+      "positionStatus": "VERIFIED"
+    },
+    {
+      "id": 2000005021,
+      "name": "Mahdi Nicoll-Jazuli",
+      "clubId": 1000000061,
+      "nationality": "England",
+      "heightCm": 190,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 32,
+      "fc27Overall": null,
+      "primaryPosition": null,
+      "eligiblePositions": [],
+      "positionStatus": "MISSING"
+    },
+    {
+      "id": 2000030180,
+      "name": "George Shepherd",
+      "clubId": 1000001076,
+      "nationality": "England",
+      "heightCm": null,
+      "preferredFoot": null,
+      "shirtNumber": null,
+      "fc27Overall": null,
+      "primaryPosition": null,
+      "eligiblePositions": [],
+      "positionStatus": "MISSING"
+    },
+    {
+      "id": 2000030229,
+      "name": "Wellity Lucky",
+      "clubId": 1000000064,
+      "nationality": "Spain",
+      "heightCm": 188,
+      "preferredFoot": "RIGHT",
+      "shirtNumber": 92,
+      "fc27Overall": null,
+      "primaryPosition": "CB",
+      "eligiblePositions": [
+        "CB"
+      ],
+      "positionStatus": "VERIFIED"
+    }
+  ],
+  "first_import": {
+    "profileRows": 534,
+    "profilesInserted": 0,
+    "profileFieldsUpdated": 15,
+    "positionRows": 532,
+    "positionsInserted": 421,
+    "positionsUpdated": 0
+  },
+  "second_import": {
+    "profileRows": 534,
+    "profilesInserted": 0,
+    "profileFieldsUpdated": 0,
+    "positionRows": 532,
+    "positionsInserted": 0,
+    "positionsUpdated": 0
+  },
+  "protected_data_unchanged": true,
+  "schema_or_code_changed": false,
+  "deploy_required_for_data": false,
+  "backup": {
+    "file": "backend\\local-backups\\player-data-release-2026-10-04\\prismaxi-before-player-data-20261004-001415.sql",
+    "bytes": 802130,
+    "sha256": "259279bf621783c17434d2678a11a794a055373903e345f97af1242c890412a3"
+  }
+}

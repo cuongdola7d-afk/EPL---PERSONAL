@@ -1,0 +1,16 @@
+player_id,club_id,field,expected_value,value,name,source
+2000030192,1000000062,fc27_overall,,60,Braiden Graham,backend\data\player-data-everton-fulham-2026-10-03\profile-updates.csv
+2000030082,1000000063,nationality,D Mallorca Yo,Spain,Gonzalo García,backend\data\player-data-everton-fulham-2026-10-03\profile-updates.csv
+2000030194,1000000063,height_cm,,178,Macaulay Zepa,backend\data\player-data-everton-fulham-2026-10-03\profile-updates.csv
+2000030194,1000000063,shirt_number,,35,Macaulay Zepa,backend\data\player-data-everton-fulham-2026-10-03\profile-updates.csv
+2000030194,1000000063,fc27_overall,,60,Macaulay Zepa,backend\data\player-data-everton-fulham-2026-10-03\profile-updates.csv
+2000030243,1000000067,height_cm,,183,Kyran Thompson,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030243,1000000067,fc27_overall,,60,Kyran Thompson,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030239,1000000067,height_cm,,181,Mason Miley,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030239,1000000067,fc27_overall,,60,Mason Miley,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030242,1000000067,height_cm,,179,Michael Mills,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030242,1000000067,preferred_foot,,LEFT,Michael Mills,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030242,1000000067,fc27_overall,,60,Michael Mills,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030241,1000000067,fc27_overall,,60,Vakhtang Salia,backend\data\player-data-aston-villa-newcastle-2026-10-03\profile-updates.csv
+2000030176,1000000397,height_cm,,182,Younes Ibrahim,backend\data\player-data-brighton-bournemouth-2026-10-03\profile-updates.csv
+2000030176,1000000397,fc27_overall,,60,Younes Ibrahim,backend\data\player-data-brighton-supplements-2026-10-03\profile-updates.csv
