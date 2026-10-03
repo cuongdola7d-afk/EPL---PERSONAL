@@ -22,7 +22,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PlayerController.class)
 class PlayerControllerTest {
     private final PlayerResponse saka = new PlayerResponse(2, "Bukayo Saka", 1,
-            "Arsenal", "FORWARD", 12, 10, null, null, null, null, null, null);
+            "Arsenal", "FORWARD", 12, 10, null, null, null, null, null, null,
+            null, List.of(), "NOT_APPLICABLE");
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,9 +49,11 @@ class PlayerControllerTest {
         LocalDate asOf = LocalDate.of(2026, 10, 2);
         when(service.players(2026, null, null, asOf)).thenReturn(List.of(
                 new PlayerResponse(2, "Bukayo Saka", 1, "Arsenal", "FORWARD", null, null, 88,
-                        "England", LocalDate.of(2001, 9, 5), 178, "LEFT", 7),
+                        "England", LocalDate.of(2001, 9, 5), 178, "LEFT", 7,
+                        "RW", List.of("RW", "RM"), "VERIFIED"),
                 new PlayerResponse(3, "Bendito Mantato", 4, "Manchester United", "FORWARD",
-                        null, null, null, null, null, null, null, null)));
+                        null, null, null, null, null, null, null, null,
+                        null, List.of(), "MISSING")));
 
         mockMvc.perform(get("/api/players").param("season", "2026").param("asOf", "2026-10-02"))
                 .andExpect(status().isOk())
@@ -60,7 +63,14 @@ class PlayerControllerTest {
                 .andExpect(jsonPath("$[0].heightCm").value(178))
                 .andExpect(jsonPath("$[0].preferredFoot").value("LEFT"))
                 .andExpect(jsonPath("$[0].shirtNumber").value(7))
-                .andExpect(jsonPath("$[1].fc27Overall").value(org.hamcrest.Matchers.nullValue()));
+                .andExpect(jsonPath("$[0].primaryPosition").value("RW"))
+                .andExpect(jsonPath("$[0].eligiblePositions[0]").value("RW"))
+                .andExpect(jsonPath("$[0].eligiblePositions[1]").value("RM"))
+                .andExpect(jsonPath("$[0].positionStatus").value("VERIFIED"))
+                .andExpect(jsonPath("$[1].fc27Overall").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$[1].primaryPosition").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$[1].eligiblePositions").isEmpty())
+                .andExpect(jsonPath("$[1].positionStatus").value("MISSING"));
     }
 
     @Test
@@ -72,6 +82,23 @@ class PlayerControllerTest {
                 .andExpect(jsonPath("$.name").value("Bukayo Saka"));
         expectError(mockMvc.perform(get("/api/players/999")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/players/999");
+    }
+
+    @Test
+    void currentSeasonDetailReturnsTheSameVerifiedPositionSet() throws Exception {
+        LocalDate asOf = LocalDate.of(2026, 10, 2);
+        when(service.player(2, 2026, asOf)).thenReturn(Optional.of(new PlayerResponse(
+                2, "Bukayo Saka", 1, "Arsenal", "FORWARD", null, null, 88,
+                "England", LocalDate.of(2001, 9, 5), 178, "LEFT", 7,
+                "RW", List.of("RW", "RM"), "VERIFIED")));
+
+        mockMvc.perform(get("/api/players/2").param("season", "2026")
+                        .param("asOf", "2026-10-02"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value("FORWARD"))
+                .andExpect(jsonPath("$.primaryPosition").value("RW"))
+                .andExpect(jsonPath("$.eligiblePositions[1]").value("RM"))
+                .andExpect(jsonPath("$.positionStatus").value("VERIFIED"));
     }
 
     @Test

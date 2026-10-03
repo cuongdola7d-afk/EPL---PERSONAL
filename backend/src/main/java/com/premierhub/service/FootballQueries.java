@@ -19,6 +19,7 @@ import java.sql.Date;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -66,6 +67,7 @@ public class FootballQueries {
         validateSeason(season);
         String parsedPosition = filterEnum(position, "position", "GOALKEEPER", "DEFENDER", "MIDFIELDER", "FORWARD");
         if (season == 2026) {
+            Map<Integer, PositionSet> positionSets = positionSets();
             LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneOffset.UTC) : asOf;
             return jdbc.query("""
                     SELECT p.id, p.name, c.id AS club_id, c.name AS club_name, ps.position,
@@ -119,7 +121,7 @@ public class FootballQueries {
                       AND (? IS NULL OR LOWER(c.name)=LOWER(?))
                       AND (? IS NULL OR ps.position=?)
                     ORDER BY p.name, c.name
-                    """, (rs, row) -> playerResponse(rs), asOf == null ? 1 : 0,
+                    """, (rs, row) -> playerResponse(rs, positionSets.get(rs.getInt("id")), 2026), asOf == null ? 1 : 0,
                     asOf == null ? 1 : 0, Date.valueOf(effectiveDate), LEAGUE_ID, season,
                     Date.valueOf(effectiveDate), Date.valueOf(effectiveDate),
                     blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
@@ -134,7 +136,7 @@ public class FootballQueries {
                   AND (? IS NULL OR LOWER(c.name) = LOWER(?))
                   AND (? IS NULL OR ps.position = ?)
                 ORDER BY p.name, c.name
-                """, (rs, row) -> playerResponse(rs), LEAGUE_ID, season,
+                """, (rs, row) -> playerResponse(rs, null, season), LEAGUE_ID, season,
                 blankToNull(club), blankToNull(club), parsedPosition, parsedPosition);
     }
 
@@ -225,16 +227,46 @@ public class FootballQueries {
         }).toList();
     }
 
-    private static PlayerResponse playerResponse(ResultSet rs) throws SQLException {
+    private Map<Integer, PositionSet> positionSets() {
+        Map<Integer, PositionSet> sets = new HashMap<>();
+        jdbc.query("""
+                SELECT profile.player_id, profile.primary_position, eligible.position_code
+                FROM player_specific_positions profile
+                LEFT JOIN player_eligible_positions eligible
+                  ON eligible.league_id=profile.league_id
+                 AND eligible.season_year=profile.season_year
+                 AND eligible.player_id=profile.player_id
+                WHERE profile.league_id=? AND profile.season_year=?
+                ORDER BY profile.player_id,
+                  CASE WHEN eligible.position_code=profile.primary_position THEN 0 ELSE 1 END,
+                  eligible.position_code
+                """, (RowCallbackHandler) rs -> {
+                    String primary = rs.getString("primary_position");
+                    PositionSet set = sets.computeIfAbsent(rs.getInt("player_id"),
+                            ignored -> new PositionSet(primary, new ArrayList<>()));
+                    String code = rs.getString("position_code");
+                    if (code != null) set.eligible().add(code);
+                }, LEAGUE_ID, 2026);
+        return sets;
+    }
+
+    private static PlayerResponse playerResponse(ResultSet rs, PositionSet positions, int season) throws SQLException {
         Date birthDate = rs.getDate("birth_date");
+        String positionStatus = season == 2026
+                ? (positions == null ? "MISSING" : "VERIFIED") : "NOT_APPLICABLE";
         return new PlayerResponse(rs.getInt("id"), rs.getString("name"),
                 rs.getInt("club_id"), rs.getString("club_name"), rs.getString("position"),
                 rs.getObject("goals", Integer.class), rs.getObject("assists", Integer.class),
                 rs.getObject("fc27_overall", Integer.class), rs.getString("nationality"),
                 birthDate == null ? null : birthDate.toLocalDate(),
                 rs.getObject("height_cm", Integer.class), rs.getString("preferred_foot"),
-                rs.getObject("shirt_number", Integer.class));
+                rs.getObject("shirt_number", Integer.class),
+                positions == null ? null : positions.primary(),
+                positions == null ? List.of() : List.copyOf(positions.eligible()),
+                positionStatus);
     }
+
+    private record PositionSet(String primary, List<String> eligible) { }
 
     public List<MatchResponse> matches(int season, String club, Integer matchweek, String status) {
         validateSeason(season);

@@ -40,6 +40,30 @@ CREATE TABLE IF NOT EXISTS player_season_stats (
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
 
+-- Verified 2026/27 roles are per player and season, independent of club transfers
+-- and of the broad position and statistics in player_season_stats.
+CREATE TABLE IF NOT EXISTS player_specific_positions (
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    primary_position VARCHAR(3) NOT NULL,
+    PRIMARY KEY (league_id, season_year, player_id),
+    FOREIGN KEY (league_id, season_year) REFERENCES seasons(league_id, season_year),
+    FOREIGN KEY (player_id) REFERENCES players(id),
+    CHECK (season_year = 2026)
+);
+
+CREATE TABLE IF NOT EXISTS player_eligible_positions (
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    position_code VARCHAR(3) NOT NULL,
+    PRIMARY KEY (league_id, season_year, player_id, position_code),
+    FOREIGN KEY (league_id, season_year, player_id)
+        REFERENCES player_specific_positions(league_id, season_year, player_id),
+    CHECK (season_year = 2026)
+);
+
 -- Half-open membership interval [start_date, end_date); NULL end_date is open-ended.
 CREATE TABLE IF NOT EXISTS manual_player_memberships (
     league_id INTEGER NOT NULL,
