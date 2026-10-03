@@ -1,93 +1,101 @@
 # Everton – Fulham: hồ sơ, OVR và vị trí 2026/27
 
-Ngày chuẩn bị: 2026-10-03. Chỉ dữ liệu local, chưa ghi production.
+Ngày chuẩn bị và bổ sung: 2026-10-03. Chỉ dữ liệu local, chưa ghi production.
 
-## Roster và bảo toàn dữ liệu
+## Roster và dữ liệu hiện có
 
-- Roster hiện hành PremierHub season=2026, asOf=2026-10-03: Everton 20, Fulham 26.
-  Toàn bộ 46 ID/CLB khớp hai batch hồ sơ 02/10; không thêm người từ roster bên ngoài.
-- profiles.csv có đúng 46 dòng. Giữ nguyên mọi giá trị đã có trong API và CSV hồ sơ
-  cũ; không đổi NULL thành 0, không sửa membership, nhóm rộng hoặc thống kê trận.
-- 44 OVR số đang có, hai OVR NULL (Braiden Graham và Macaulay Zepa). Không có OVR
-  người dùng mới cho hai người này. File missing-fields người dùng 02/10 đánh dấu x;
-  lượt này không tự cấp OVR thay thế. Người thiếu OVR/vị trí chưa đủ chọn Fantasy.
-- Năm trường hồ sơ đã đủ của người khác không thu thập lại. URL SofaScore bên dưới
-  kế thừa nguồn hồ sơ 02/10. Chỉ hồ sơ Macaulay Zepa được mở lại để tìm hai ô thiếu.
+- Roster PremierHub season=2026, asOf=2026-10-03: Everton 20, Fulham 26; toàn bộ 46 ID.
+  Giữ nguyên player_id/club_id, membership, nhóm rộng, thống kê trận và mùa 2024/25.
+- profiles.csv và roster-status.csv có đúng 46 người. positions.csv có 46 primary,
+  79 mã eligible: 44 bộ vị trí xác minh từ EA, hai bộ do người dùng cung cấp.
+- Cả 46 hồ sơ local đều đủ năm trường hồ sơ, OVR số và vị trí sau bổ sung.
+  Không còn MISSING/REVIEW_REQUIRED. Hai OVR/vị trí người dùng chưa có nguồn EA;
+  không gọi các giá trị đó là OVR/vị trí chính thức đã xác minh trên EA.
+- Giữ các giá trị trước ngoài đúng năm ô hồ sơ được bổ sung/xác nhận và hai bộ
+  vị trí mới dưới đây. Không gán 0 hoặc suy quyền chơi từ nhóm vị trí rộng.
 
-## Nguồn vị trí và OVR
+## Bổ sung người dùng ngày 03/10/2026
 
-- Đã đọc đúng 44 hồ sơ EA SPORTS FC 27 từ URL/EA ID đã có: Position, Alt Positions,
-  overallRating của thẻ cơ bản. Các OVR khớp giá trị đang lưu, nên không cập nhật lại.
-- Đọc HTML chính thức, kiểm tra tiêu đề FC 27, canonical EA ID, và lấy đúng đối tượng
-  __NEXT_DATA__.props.pageProps.ratingsEntries.items[0]. Không lấy từ Similar players,
-  FC 26 hay thẻ chiến dịch. alternatePositions=null nghĩa là không có vị trí phụ.
-- Ghép bằng tên/biến thể tên, EA ID, ngày sinh chính xác; 44 DOB khớp hồ sơ hiện có.
-  43 quốc tịch khớp trực tiếp hoặc qua Ireland/Republic of Ireland, Netherlands/Holland,
-  USA/United States. Gonzalo có giá trị quốc tịch cũ cần review riêng; tên đầy đủ,
-  DOB 2004-03-24, EA ID278399 và CLB Fulham xác nhận đúng người cho OVR/vị trí.
-- Joshua King là Josh King sinh 2007-01-03, EA ID70786 (Fulham); không ghép với
-  tiền đạo Joshua King người Norway. Manuel Ángel Morán Ibáñez là Manuel Ángel
-  sinh 2004-03-15, EA ID84290. Gonzalo García là Gonzalo, EA ID278399.
-- CLB trên EA có thể khác: Maitland-Niles OL, Grealish Manchester City,
-  Affengruber Elche CF, Larsson Frankfurt, Manuel Ángel Real Madrid. Giữ CLB PremierHub.
-- Chỉ CDM → CM cho chính và phụ, gộp mã trùng sau ánh xạ. Không suy từ nhóm rộng,
-  không thêm RM cho một RW không có căn cứ. Primary luôn nằm trong eligible.
-- positions.csv có 44 dòng: Everton 19, Fulham 25. expected_* trống theo snapshot API.
-  Hai MISSING không có dòng incoming trống vì reader yêu cầu vị trí hợp lệ;
-  vẫn có dòng profiles.csv và roster-status.csv cho mỗi ID thuộc roster.
+Nguồn: tin nhắn người dùng “Braiden Graham: st, overall 60 , Macaulay Zepa: rw/rm,
+overall 60, 178 cm, số áo 35, Gonzalo García tây ban nha”. Chuẩn hóa vị trí chữ hoa,
+“Tây Ban Nha” thành Spain. Vị trí đầu tiên trong danh sách làm primary.
 
-## Roster và nguồn hồ sơ cũ
+| player_id | CLB | Tên | Bổ sung/xác nhận |
+| --- | --- | --- | --- |
+| 2000030192 | Everton, 1000000062 | Braiden Graham | primary ST; eligible ST; fc27_overall 60 |
+| 2000030194 | Fulham, 1000000063 | Macaulay Zepa | primary RW; eligible RW/RM; fc27_overall 60; height_cm 178; shirt_number 35 |
+| 2000030082 | Fulham, 1000000063 | Gonzalo García | nationality Spain thay D Mallorca Yo; giữ OVR75 và ST/ST |
 
-- [Everton FC roster](https://epl-personal-production.up.railway.app/api/players?season=2026&asOf=2026-10-03&club=Everton+FC); club_id=1000000062; nguồn hồ sơ cũ: backend/data/everton-profiles-2026-10-02/players.csv và sources.md.
-- [Fulham FC roster](https://epl-personal-production.up.railway.app/api/players?season=2026&asOf=2026-10-03&club=Fulham+FC); club_id=1000000063; nguồn hồ sơ cũ: backend/data/fulham-profiles-2026-10-02/players.csv và sources.md.
+Braiden/Zepa: ovr_source=USER_PROVIDED_2026-10-03, position_status=USER_PROVIDED.
+Quốc tịch Gonzalo có nguồn người dùng, không lấy EA thay SofaScore cho trường hồ sơ.
+Giữ năm trường cũ của Braiden, nationality/DOB/LEFT của Zepa và bốn trường hồ sơ
+còn lại của Gonzalo. Các OVR 60 là giá trị do người dùng chốt, không phải chứng
+nhận đã tìm được thẻ cơ bản EA FC27 cho hai người này.
 
-- [EA Everton FC 27](https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/everton/7).
-- [EA Fulham FC 27](https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/fulham/144).
+## Nguồn EA và quy tắc vị trí
 
-## Độ phủ local
+- Đã đọc đúng 44 hồ sơ EA FC27 chính thức ở lượt thu thập: Position, Alt Positions,
+  OVR thẻ cơ bản; giữ các giá trị đó, không thu thập lại ở lượt bổ sung này.
+- Kiểm tra tiêu đề FC27, canonical URL/EA ID và lấy đúng
+  __NEXT_DATA__.props.pageProps.ratingsEntries.items[0], không dùng Similar players,
+  FC26 hoặc thẻ chiến dịch. alternatePositions=null nghĩa là không có vị trí phụ.
+- 44 DOB khớp dữ liệu hồ sơ cũ; 43 quốc tịch khớp trực tiếp hoặc tên tương ứng
+  (Ireland/Republic of Ireland, Netherlands/Holland, USA/United States).
+  Quốc tịch Gonzalo cũ bất thường đã được người dùng xác nhận Spain ở lượt này.
+- Joshua King là Josh King (EA70786, DOB2007-01-03, Fulham), không ghép tiền đạo
+  Norway. Manuel Ángel (EA84290, DOB2004-03-15) là Manuel Ángel Morán Ibáñez.
+  Gonzalo (EA278399, DOB2004-03-24, Fulham) là Gonzalo García.
+- CLB EA khác không đổi PremierHub: Maitland-Niles OL, Grealish Manchester City,
+  Affengruber Elche CF, Larsson Frankfurt, Manuel Ángel Real Madrid.
+- Chỉ CDM → CM cho chính/phụ và gộp trùng, không tự thêm quyền chơi khác.
+  RW/RM của Zepa chỉ áp dụng cho anh theo xác nhận người dùng.
+- expected_* giữ trống theo snapshot API chưa có vị trí; cả 46 incoming hợp lệ,
+  primary nằm trong eligible. Không có dòng incoming trống.
 
-| CLB | Roster | Quốc tịch có ô | DOB | Cao | Chân thuận | Số áo | Đủ 5 ô hồ sơ | OVR | Primary + eligible | MISSING vị trí |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Everton | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | 19 | 1 |
-| Fulham | 26 | 26 | 26 | 25 | 26 | 25 | 25 | 25 | 25 | 1 |
+## URL roster và hồ sơ đã lưu
 
-“Có ô” chỉ thống kê giá trị không NULL, không khẳng định nội dung quốc tịch bất thường
-của Gonzalo đúng. Fulham có 24 hồ sơ đủ năm ô không bị gắn review, một hồ sơ
-REVIEW_REQUIRED (Gonzalo) và một hồ sơ MISSING (Zepa).
+- [Everton roster](https://epl-personal-production.up.railway.app/api/players?season=2026&asOf=2026-10-03&club=Everton+FC), club_id=1000000062.
+- [Fulham roster](https://epl-personal-production.up.railway.app/api/players?season=2026&asOf=2026-10-03&club=Fulham+FC), club_id=1000000063.
+- Hồ sơ cũ: backend/data/everton-profiles-2026-10-02/players.csv và sources.md;
+  backend/data/fulham-profiles-2026-10-02/players.csv và sources.md. Không sửa hai batch cũ.
+- [EA Everton FC27](https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/everton/7).
+- [EA Fulham FC27](https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/fulham/144).
+- SofaScore Zepa đã mở ở lượt thu thập khớp Cameroon, DOB2008-07-07, LEFT, Fulham U21
+  nhưng không ghi height/shirt. Giá trị mới 178cm/số áo35 do người dùng; không lấy
+  followers19 làm số áo, không ghi hai giá trị mới là thu thập từ SofaScore.
 
-## Thiếu và cần xác nhận
+## Độ phủ local sau bổ sung
 
-- **Braiden Graham – 2000030192, Everton:** fc27_overall, primary_position,
-  eligible_positions. Năm trường hồ sơ đã đủ. Tìm chính xác tên và biến thể trên EA
-  (có và không thêm FC27, player-ratings); chưa tìm được hồ sơ FC 27 đúng người.
-  Không suy từ MIDFIELDER hay nguồn khác. OVR và vị trí giữ NULL/MISSING.
-- **Macaulay Zepa – 2000030194, Fulham:** height_cm, shirt_number, fc27_overall,
-  primary_position, eligible_positions. Đã mở đúng
-  https://www.sofascore.com/football/player/macaulay-zepa/2495972 : tên, Cameroon,
-  DOB 2008-07-07, LEFT và Fulham U21 khớp dữ liệu đã có. General info không có
-  chiều cao hoặc số áo; không lấy số 19 followers thành số áo. Thử tải HTML/API
-  SofaScore trực tiếp bị ngắt kết nối; không suy chiều cao/số áo từ nguồn khác.
-  Tìm tên đầy đủ/Zepa trên EA chưa có hồ sơ FC27 đủ chắc chắn. Giữ các ô thiếu NULL.
-- **Gonzalo García – 2000030082, Fulham:** nationality cần xác nhận; giá trị hiện có
-  “D Mallorca Yo” không phải tên quốc gia đã xác minh, EA ghi Spain. Giữ nguyên theo
-  yêu cầu bảo toàn dữ liệu; không lấy EA thay SofaScore cho trường hồ sơ và không
-  sửa ô đã điền trong lượt này. profile_status=REVIEW_REQUIRED, không đánh dấu
-  nationality là ô NULL. OVR75, ST và tập ST vẫn xác minh được bằng đúng người.
-  Nguồn hồ sơ đã lưu: https://www.sofascore.com/football/player/gonzalo-garcia/1402716 .
+| CLB | Roster | Quốc tịch | DOB | Cao | Chân thuận | Số áo | OVR số | Primary + eligible | EA positions | User positions | MISSING |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Everton | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | 1 | 0 |
+| Fulham | 26 | 26 | 26 | 26 | 26 | 26 | 26 | 26 | 25 | 1 | 0 |
 
-roster-status.csv missing_fields chỉ kê ô thực sự thiếu; trường cần review nhưng đã
-có giá trị được nhận diện bởi profile_status=REVIEW_REQUIRED và ghi rõ ở phần này
-cùng missing-fields.txt. Không tuyên bố cả 46 người đủ dữ liệu hoặc đủ Fantasy.
+## Bản kê áp dụng hồ sơ sau này
+
+profile-updates.csv kê đúng năm ô thay đổi, không phải đầu vào PlayerProfileCsvReader.
+profiles.csv là 46 hồ sơ cuối. Importer hồ sơ chỉ chèn và báo xung đột nếu hồ sơ
+đã tồn tại khác nội dung; không tự ghi đè.
+
+Snapshot trước bổ sung: Braiden OVR NULL; Zepa OVR/height/shirt NULL; Gonzalo
+nationality D Mallorca Yo. Khi được phép ghi MySQL sau này, kiểm tra lại đích,
+membership/giá trị hiện hành, tạo SQL backup mới rồi áp dụng đúng năm ô có điều kiện
+theo giá trị cũ trước khi chạy hồ sơ cuối. Nationality Gonzalo là ô khác NULL được
+người dùng xác nhận sửa; không dùng điều kiện IS NULL cho ô này. Nếu giá trị hiện
+hành bằng giá trị cuối thì không cập nhật; nếu khác cả cũ và mới thì báo xung đột.
+Lượt này chưa kết nối/ghi MySQL, không tuyên bố dữ liệu đã có production, không
+sửa importer/schema để ép cập nhật hoặc nhập lại các batch cũ.
 
 ## Nguồn theo từng cầu thủ
 
-URL SofaScore là nguồn lưu từ batch cũ; chỉ Macaulay đọc lại ô thiếu. EA ghi nguyên
-Position và Alt Positions, cột nhập ghi sau CDM → CM. Alt “—” là không có vị trí phụ.
+URL SofaScore là nguồn năm trường hồ sơ đã lưu; giá trị mới người dùng ghi riêng.
+EA chính/phụ là nguyên bản, cột nhập sau CDM → CM. Alt “—” của 44 hồ sơ đã đọc
+nghĩa là không có vị trí phụ; hai USER_PROVIDED chưa có hồ sơ EA đã xác minh.
 
-| CLB | player_id | Tên PremierHub | OVR giữ nguyên | SofaScore đã lưu | EA FC 27 | EA chính; phụ | Nhập chính; eligible | Ghi chú |
+| CLB | player_id | Tên PremierHub | OVR bản cuối | SofaScore đã lưu | EA FC 27 | EA chính; phụ | Nhập chính; eligible | Ghi chú |
 | --- | --- | --- | ---: | --- | --- | --- | --- | --- |
 | Everton | 2000030191 | Ainsley Maitland-Niles | 77 | [SofaScore](https://www.sofascore.com/football/player/ainsley-maitland-niles/352768) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ainsley-maitland-niles/225782) | RB; RM, CM, RW | RB; RB, RM, CM, RW | EA còn ghi OL; giữ membership Everton của PremierHub. EA ghi OL; giữ membership PremierHub. |
-| Everton | 2000030192 | Braiden Graham | NULL | [SofaScore](https://www.sofascore.com/football/player/braiden-graham/1481988) | Chưa xác minh | MISSING | MISSING | Chưa tìm được hồ sơ EA FC 27 đúng người; thiếu fc27_overall, primary_position, eligible_positions. Giữ NULL, không suy vị trí. |
+| Everton | 2000030192 | Braiden Graham | 60 | [SofaScore](https://www.sofascore.com/football/player/braiden-graham/1481988) | Chưa xác minh | — | ST; ST | OVR60 và ST do người dùng cung cấp 03/10/2026; không ghi là EA xác minh. |
 | Everton | 2000020094 | Carlos Alcaraz | 75 | [SofaScore](https://www.sofascore.com/football/player/carlos-alcaraz/1017392) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/carlos-alcaraz/256402) | CAM; CM, CDM | CAM; CAM, CM | CDM → CM; gộp mã trùng. |
 | Everton | 30407 | Christian Nørgaard | 79 | [SofaScore](https://www.sofascore.com/football/player/christian-nrgaard/135256) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/christian-n-rgaard/210697) | CDM; CM | CM; CM | CDM → CM; gộp mã trùng. |
 | Everton | 2000015004 | Harrison Armstrong | 73 | [SofaScore](https://www.sofascore.com/football/player/harrison-armstrong/1627560) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/harrison-armstrong/74413) | CM; CDM, CAM | CM; CM, CAM | CDM → CM; gộp mã trùng. |
@@ -114,7 +122,7 @@ Position và Alt Positions, cột nhập ghi sau CDM → CM. Alt “—” là k
 | Fulham | 2000030091 | César Palacios | 67 | [SofaScore](https://www.sofascore.com/football/player/cesar-palacios/1402688) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/cesar-palacios/83235) | CAM; CM, ST | CAM; CAM, CM, ST |  |
 | Fulham | 2000030197 | David Affengruber | 76 | [SofaScore](https://www.sofascore.com/football/player/david-affengruber/988672) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/david-affengruber/261264) | CB; — | CB; CB | EA ghi Elche CF; giữ membership PremierHub. |
 | Fulham | 2000030142 | Emile Smith Rowe | 77 | [SofaScore](https://www.sofascore.com/football/player/emile-smith-rowe/867445) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/emile-smith-rowe/240273) | CAM; LM, CM, LW | CAM; CAM, LM, CM, LW |  |
-| Fulham | 2000030082 | Gonzalo García | 75 | [SofaScore](https://www.sofascore.com/football/player/gonzalo-garcia/1402716) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/gonzalo/278399) | ST; — | ST; ST | REVIEW_REQUIRED nationality: giữ D Mallorca Yo; EA Spain không được dùng sửa hồ sơ. |
+| Fulham | 2000030082 | Gonzalo García | 75 | [SofaScore](https://www.sofascore.com/football/player/gonzalo-garcia/1402716) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/gonzalo/278399) | ST; — | ST; ST | Nationality Spain do người dùng xác nhận 03/10, sửa D Mallorca Yo. OVR75 và ST/ST giữ nguồn EA. |
 | Fulham | 2000030143 | Harrison Reed | 72 | [SofaScore](https://www.sofascore.com/football/player/harrison-reed/365802) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/harrison-reed/205990) | CDM; CM | CM; CM | CDM → CM; gộp mã trùng. |
 | Fulham | 2000030195 | Hugo Larsson | 77 | [SofaScore](https://www.sofascore.com/football/player/hugo-larsson/1142211) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/hugo-larsson/268896) | CM; CDM | CM; CM | CDM → CM; gộp mã trùng. EA ghi Frankfurt; giữ membership PremierHub. |
 | Fulham | 2729 | Joachim Andersen | 79 | [SofaScore](https://www.sofascore.com/football/player/joachim-andersen/362682) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joachim-andersen/224221) | CB; — | CB; CB |  |
@@ -123,7 +131,7 @@ Position và Alt Positions, cột nhập ghi sau CDM → CM. Alt “—” là k
 | Fulham | 2000030083 | Joshua King | 74 | [SofaScore](https://www.sofascore.com/football/player/joshua-king/1546231) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/josh-king/70786) | CAM; CM, CDM | CAM; CAM, CM | CDM → CM; gộp mã trùng. EA Josh King ID70786, DOB2007-01-03, Fulham; đúng người trẻ England. |
 | Fulham | 2000030140 | Kenny Tete | 78 | [SofaScore](https://www.sofascore.com/football/player/kenny-tete/190877) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kenny-tete/216266) | RB; RM | RB; RB, RM |  |
 | Fulham | 2000030090 | Kevin | 76 | [SofaScore](https://www.sofascore.com/football/player/kevin/1112879) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kevin/70571) | LM; LW | LM; LM, LW |  |
-| Fulham | 2000030194 | Macaulay Zepa | NULL | [SofaScore](https://www.sofascore.com/football/player/macaulay-zepa/2495972) | Chưa xác minh | MISSING | MISSING | Chưa tìm được hồ sơ EA FC 27 đúng người; thiếu height_cm, shirt_number, fc27_overall, primary_position, eligible_positions. Giữ NULL, không suy vị trí. Đã mở SofaScore; vẫn không ghi height/shirt number. |
+| Fulham | 2000030194 | Macaulay Zepa | 60 | [SofaScore](https://www.sofascore.com/football/player/macaulay-zepa/2495972) | Chưa xác minh | — | RW; RW, RM | Người dùng 03/10: OVR60, primary RW, eligible RW/RM, height178cm, shirt35. Các giá trị mới không gắn nguồn EA/SofaScore. |
 | Fulham | 2000030196 | Manuel Ángel Morán Ibáñez | 65 | [SofaScore](https://www.sofascore.com/football/player/manuel-angel-moran/1142683) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/manuel-angel/84290) | CM; CDM, CAM | CM; CM, CAM | SofaScore ghi Manuel Ángel Morán. EA dùng tên Manuel Ángel; giữ membership Fulham của PremierHub. CDM → CM; gộp mã trùng. EA ghi Real Madrid; giữ membership PremierHub. |
 | Fulham | 2000030093 | Oscar Bobb | 76 | [SofaScore](https://www.sofascore.com/football/player/oscar-bobb/1065216) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/oscar-bobb/277295) | RM; LM, RW, LW | RM; RM, LM, RW, LW |  |
 | Fulham | 2000030085 | Rodrigo Muniz | 76 | [SofaScore](https://www.sofascore.com/football/player/rodrigo-muniz/1015256) | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/rodrigo-muniz/264337) | ST; — | ST; ST |  |

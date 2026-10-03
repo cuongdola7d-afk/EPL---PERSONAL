@@ -1,5 +1,6 @@
 player_id,season_year,expected_primary_position,expected_eligible_positions,primary_position,eligible_positions
 2000030191,2026,,,RB,RB|RM|CM|RW
+2000030192,2026,,,ST,ST
 2000020094,2026,,,CAM,CAM|CM
 30407,2026,,,CM,CM
 2000015004,2026,,,CM,CM|CAM
@@ -35,6 +36,7 @@ player_id,season_year,expected_primary_position,expected_eligible_positions,prim
 2000030083,2026,,,CAM,CAM|CM
 2000030140,2026,,,RB,RB|RM
 2000030090,2026,,,LM,LM|LW
+2000030194,2026,,,RW,RW|RM
 2000030196,2026,,,CM,CM|CAM
 2000030093,2026,,,RM,RM|LM|RW|LW
 2000030085,2026,,,ST,ST
