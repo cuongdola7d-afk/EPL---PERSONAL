@@ -88,6 +88,10 @@ Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Stand
 - Quy trình mới lấy đúng danh sách thực tế, thay thế yêu cầu cố định 40 người/trận, 400 dòng/vòng và việc tự nhập SQL trong mục thống kê cũ khi thực hiện yêu cầu thu thập. Quy định cũ trong code/tài liệu tổng mùa là giới hạn hiện hữu phải báo rõ, không phải lý do thêm người hoặc tự tạo DID_NOT_PLAY. Vẫn kiểm tra và tái tính tổng mùa bằng service hiện có khi đủ điều kiện; không báo tổng mùa đã cập nhật nếu bị giới hạn này chặn.
 - “Tổng hợp” mặc định chỉ chuẩn bị file và kiểm tra đầu vào. Chỉ nhập production khi người dùng yêu cầu “nhập SQL” hoặc cho phép rõ ràng, sau khi xác nhận đúng MySQL và có backup ngoài Git. Không tự thu thập rating SofaScore, sửa membership vì chuyển nhượng, commit, push, deploy, tạo cron hoặc Pre-deploy Command.
 
+## Kế hoạch Fantasy có tài khoản — PrismaXI 2026/27
+
+- Khi triển khai tài khoản hoặc Fantasy nhiều người chơi, đọc [docs/fantasy-multiplayer-2026-plan.md](docs/fantasy-multiplayer-2026-plan.md), giữ các luật đã chốt và chỉ làm bước/phần được giao. Lượt lưu kế hoạch chưa triển khai hệ thống; bước tiếp theo là bước 1 — tài khoản khi người dùng yêu cầu. Dữ liệu rating tiếp tục theo quy trình Gameweek; không tự mở cuộc thi, ghi production, commit, push hoặc deploy.
+
 ## Lệnh kiểm tra
 
 Chạy từ thư mục `backend/`:
