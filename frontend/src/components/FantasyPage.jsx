@@ -7,6 +7,7 @@ import ResultPanel from './ResultPanel.jsx'
 import PlayerAvatar, { clubColor, ratingTier } from './FantasyPlayerAvatar.jsx'
 import Pitch from './FantasyPitch.jsx'
 import TeamOfWeek from './TeamOfWeek.jsx'
+import FantasyGameweek from './FantasyGameweek.jsx'
 import './FantasyPage.css'
 
 const GROUPS = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER']
@@ -132,6 +133,7 @@ function FantasyPage() {
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
+      <FantasyGameweek />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
         {[['user', 'Đội hình của bạn'], ['team', 'Đội hình tiêu biểu']].map(([key, label], index) => <button key={key} type="button" role="tab"
           id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}

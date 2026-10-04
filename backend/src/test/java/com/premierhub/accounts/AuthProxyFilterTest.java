@@ -98,6 +98,23 @@ class AuthProxyFilterTest {
         }) assertThrows(IllegalArgumentException.class, () -> new AuthProxySettings(environment().withProperty(invalid[0], invalid[1])));
     }
 
+    @Test void gameweekAdministrationRequiresTheSameProxyProofButPublicInfoDoesNot() throws Exception {
+        var request = request();
+        request.setServletPath("/api/fantasy/2026/admin/gameweeks/6/publish-deadline");
+        request.removeHeader(AuthProxyFilter.PROXY_SECRET);
+        var response = new MockHttpServletResponse();
+        var filter = new AuthProxyFilter(new AuthProxySettings(environment()));
+        filter.doFilter(request, response, (req, res) -> fail("Admin request bypassed proxy proof"));
+        assertEquals(403, response.getStatus());
+        request.addHeader(AuthProxyFilter.PROXY_SECRET, SECRET);
+        filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> assertTrue(((HttpServletRequest) req).isSecure()));
+        request.setServletPath("/api/fantasy/2026/gameweeks");
+        request.removeHeader(AuthProxyFilter.PROXY_SECRET);
+        var called = new AtomicBoolean();
+        filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> called.set(true));
+        assertTrue(called.get());
+    }
+
     @Test void refusesGoogleCallbackOnADifferentOriginAndAcceptsExactFrontendCallback() {
         var environment = environment().withProperty("PREMIERHUB_GOOGLE_CLIENT_ID", "test-client")
                 .withProperty("PREMIERHUB_GOOGLE_CLIENT_SECRET", "test-secret")

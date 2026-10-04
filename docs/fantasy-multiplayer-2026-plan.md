@@ -2,6 +2,8 @@
 
 ## Mục tiêu và phạm vi lượt này
 
+**Checkpoint mới nhất 05/10/2026:** tài khoản đã phát hành, người dùng xác nhận email/Google/liên kết/phiên hoạt động và vấn đề tốc độ đã xử lý; không lặp toàn bộ kiểm tra auth. **Bước 2 đã hoàn thiện local**: cấu hình GW/deadline UTC, audit quản trị, trạng thái theo Clock server và giao diện countdown. GW6 Arsenal–Leeds bắt đầu 10/10/2026 · 18:30 Việt Nam, deadline 09/10/2026 · 00:00 Việt Nam = 08/10/2026 · 17:00 UTC, còn hạn tại 05/10. Migration mới chưa nhập production, cuộc thi chưa tự mở. Chi tiết, API, kiểm tra, file commit và thứ tự phát hành ở [fantasy-gameweeks-2026.md](fantasy-gameweeks-2026.md). Các ghi nhận “chưa phát hành auth” phía dưới là lịch sử checkpoint trước, không phải trạng thái hiện tại. Khôi phục mật khẩu vẫn làm riêng.
+
 Hoàn thiện Fantasy có tài khoản trước hạn chốt GW6 mùa 2026/27 để thử nghiệm với người chơi thật. Triển khai từng bước nhỏ, không làm toàn bộ trong một lượt. Chỉ phát triển mùa 2026/27, không sửa mùa 2024/25 hoặc thống kê bóng đá đã có.
 
 Lượt tạo tài liệu ban đầu chỉ lưu context và kế hoạch. Bước 1 đã có **email/mật khẩu, Google OIDC, liên kết và giới hạn xác thực được kiểm chứng local**; reload/đăng nhập lại giữ ID, không tạo tài khoản trùng. Nay đã chuẩn bị **proxy cùng origin Vercel–Railway, cookie/Google callback và migration MySQL**, kiểm chứng trên MySQL 9.6/proxy HTTPS riêng; chưa phát hành hoặc đổi production. Xem [tài khoản](auth-local-2026.md), [Google](google-auth-2026.md), [phát hành](auth-release-2026.md). Khôi phục mật khẩu làm sau; chưa triển khai chốt đội, chấm điểm hoặc BXH người chơi. Deadline thực tế GW6 chưa được xác minh; không xem mục tiêu này là quyền mở cuộc thi hay mở lại vòng đã hết hạn.
@@ -52,6 +54,10 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 - Nếu cần chia nhỏ, thực hiện phần đủ review của bước 1, ghi phần còn lại rõ ràng; chưa gọi bước 1 hoàn thành khi Google hoặc khôi phục mật khẩu vẫn thiếu. Không kéo bước 2–5 vào lượt tài khoản.
 
 ### Bước 2 — Vòng thi và deadline
+
+- **Hoàn thiện local:** hai bảng GW/audit; publication đóng băng hạn, adjustment ADMIN có CSRF/proxy/reason/revision; OPEN/LOCKED/AWAITING_RESULTS tính mỗi request bằng Clock, PUBLISHED dành riêng luồng kết quả chưa triển khai. GW chưa công bố không tham gia; GW1–GW5 chỉ Replay chưa mở. Có API/no-store, countdown theo giờ server và cập nhật lúc hết hạn, giữ lựa chọn đội trong trình duyệt.
+- Kiểm tra: 19 test backend đúng phạm vi và đóng gói thành công bằng artifact kiểm tra riêng sau lỗi rename JAR Windows; 5 test frontend và build một lượt qua. Clock đọc sau SQL và test truy vấn qua deadline tránh quyết định OPEN cũ. Migration chạy hai lần trên MySQL 9.6 riêng giữ dữ liệu/constraints; không gọi H2 là kiểm chứng MySQL. Browser desktop/390px, đổi GW giữ đội và tự tải lại trạng thái LOCKED khi hết countdown đạt; chi tiết và giới hạn trong fantasy-gameweeks-2026.md.
+- **Còn trước phát hành:** backup/migration hai bảng mới, deploy được giao, quyền quản trị có kiểm soát và thao tác công bố deadline rõ ràng. Chưa lưu/chốt đội, chấm điểm/BXH, nhập SQL production, commit/push/deploy; bước tiếp theo là bước 3 khi được giao.
 
 - Lưu season, GW, deadline và trạng thái `OPEN`, `LOCKED`, `AWAITING_RESULTS`, `PUBLISHED`.
 - Kiểm tra giờ server tại mỗi lần chốt; không phụ thuộc đồng hồ trình duyệt hay cron chạy đúng giờ. Cách lưu/truy xuất trạng thái phải giữ đúng quy tắc ngay cả khi chưa có tác vụ nền đổi trạng thái.

@@ -20,7 +20,8 @@ public class AuthProxyFilter extends OncePerRequestFilter {
 
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return !(path.equals("/api/auth") || path.startsWith("/api/auth/"));
+        return !(path.equals("/api/auth") || path.startsWith("/api/auth/")
+                || path.startsWith("/api/fantasy/2026/admin/"));
     }
 
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
