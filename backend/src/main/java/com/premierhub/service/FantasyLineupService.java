@@ -48,6 +48,14 @@ public class FantasyLineupService {
     public record Inspection(FantasyValidationResponse validation, Map<String, String> slots,
                              Map<Integer, PlayerResponse> players) { }
 
+    public static Map<String,String> normalizedSlots(String formation) {
+        var rows=FORMATIONS.get(formation);
+        if(rows==null) return Map.of();
+        var slots=new LinkedHashMap<String,String>();
+        for(int r=0;r<rows.size();r++) for(int c=0;c<rows.get(r).size();c++) slots.put(r+"-"+c,rows.get(r).get(c));
+        return Map.copyOf(slots);
+    }
+
     // The same roster read supplies validation and the submission snapshot.
     public Inspection inspect(FantasyLineupRequest request, boolean complete) {
         // Legacy guest builder only. Multiplayer always passes the stored GW date.

@@ -1,4 +1,5 @@
 // Private data always stays on the page origin, never the public VITE_API_BASE_URL.
+import { validResult } from '../fantasy/results.js'
 export class FantasyEntryError extends Error {
   constructor(message, status, code) { super(message); this.status = status; this.code = code }
 }
@@ -15,16 +16,16 @@ export function validEntry(data, accountId, gameweek) {
       Object.keys(data.submitted.picks).length === 11 && Number.isInteger(data.submitted.totalOvr) &&
       Array.isArray(data.submitted.players) && data.submitted.players.length === 11)
 }
-async function request(accountId, gameweek, action, body, signal) {
+async function request(accountId, gameweek, action, body, signal, readResult = false) {
   const headers = { Accept: 'application/json', 'X-PrismaXI-Account-ID': String(accountId) }
-  if (action) {
+  if (action && !readResult) {
     const csrfResponse = await fetch('/api/auth/csrf', { credentials: 'include', signal })
     if (!csrfResponse.ok) throw new FantasyEntryError('Không lấy được mã xác nhận phiên. Vui lòng thử lại.', csrfResponse.status)
     const csrf = await csrfResponse.json()
     headers[csrf.headerName] = csrf.token; headers['Content-Type'] = 'application/json'
   }
   const response = await fetch(`/api/fantasy/2026/me/gameweeks/${gameweek}${action ? `/${action}` : ''}`, {
-    credentials: 'include', signal, headers, ...(action ? { method: 'POST', body: JSON.stringify(body) } : {}),
+    credentials: 'include', signal, headers, ...(action && !readResult ? { method: 'POST', body: JSON.stringify(body) } : {}),
   })
   let data
   try { data = await response.json() }
@@ -37,9 +38,10 @@ async function request(accountId, gameweek, action, body, signal) {
   if (data.accountId !== accountId) {
     notifySessionChanged(); throw new FantasyEntryError('Phiên đã đổi tài khoản. Vui lòng tải lại.', 409, 'SESSION_CHANGED')
   }
-  if (!validEntry(data, accountId, gameweek)) throw new FantasyEntryError('Dữ liệu đội hình không đúng định dạng.', 0)
+  if (!(readResult ? validResult(data, accountId, gameweek) : validEntry(data, accountId, gameweek))) throw new FantasyEntryError('Dữ liệu đội hình/kết quả không đúng định dạng.', 0)
   return data
 }
 export const fetchFantasyEntry = (accountId, gameweek, signal) => request(accountId, gameweek, null, null, signal)
 export const saveFantasyDraft = (accountId, gameweek, body, signal) => request(accountId, gameweek, 'draft', body, signal)
 export const submitFantasyEntry = (accountId, gameweek, body, signal) => request(accountId, gameweek, 'submit', body, signal)
+export const fetchFantasyResult = (accountId, gameweek, signal) => request(accountId, gameweek, 'result', null, signal, true)

@@ -30,15 +30,16 @@ export default function FantasyGameweek({ onSelectionChange }) {
     const timer = setInterval(() => setTick(performance.now()), 1000)
     const refreshOnReturn = () => { if (document.visibilityState === 'visible') retry() }
     document.addEventListener('visibilitychange', refreshOnReturn)
-    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refreshOnReturn) }
+    window.addEventListener('prismaxi-results-published', retry)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refreshOnReturn); window.removeEventListener('prismaxi-results-published', retry) }
   }, [retry])
 
   const view = data?.gameweeks.find(gw => gw.gameweek === selected)
   const remaining = view?.deadlineUtc ? remainingMilliseconds(view.deadlineUtc, data.serverTimeUtc, data.receivedAt, tick) : 0
   const expired = shouldRefreshDeadline(view, remaining)
   useEffect(() => {
-    onSelectionChange?.(selected, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null)
-  }, [selected, view?.canEdit, view?.rosterAsOf, expired, loading, error, onSelectionChange])
+    onSelectionChange?.(selected, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null, view?.status ?? null)
+  }, [selected, view?.canEdit, view?.rosterAsOf, view?.status, expired, loading, error, onSelectionChange])
   useEffect(() => {
     const key = `${selected}:${view?.revision}:${data?.serverTimeUtc}`
     if (!expired || loading || error || refreshed.current === key) return

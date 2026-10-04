@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AccountService accounts;

@@ -8,6 +8,7 @@ import PlayerAvatar, { clubColor, ratingTier } from './FantasyPlayerAvatar.jsx'
 import Pitch from './FantasyPitch.jsx'
 import TeamOfWeek from './TeamOfWeek.jsx'
 import FantasyGameweek from './FantasyGameweek.jsx'
+import FantasyResults from './FantasyResults.jsx'
 import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
 import { emptyLineup, entryLineup, sameLineup } from '../fantasy/entry.js'
 import { formatDeadline } from '../fantasy/gameweek.js'
@@ -24,6 +25,7 @@ function readSavedLineup() {
 function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [contestGameweek, setContestGameweek] = useState(null)
   const [contestOpen, setContestOpen] = useState(false)
+  const [contestStatus, setContestStatus] = useState(null)
   const [rosterAsOf, setRosterAsOf] = useState(null)
   const requestPlayers = useCallback((signal) => {
     if (authLoading || account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
@@ -32,8 +34,8 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
   const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
-  const contestSelection = useCallback((gw, open, asOf) => {
-    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf)
+  const contestSelection = useCallback((gw, open, asOf, status) => {
+    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status)
   }, [])
   const lockedSubmission = account && !contestOpen && entry.data?.submitted
   const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({
@@ -179,6 +181,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
       {authLoading && <p role="status">Đang nhận phiên đăng nhập…</p>}
       {authError && <p className="fantasy-message" role="alert">Chưa xác định được tài khoản: {authError}</p>}
       {!authLoading && !account && <p className="fantasy-message">Đăng nhập để lưu nháp và chốt đội cho một GW. Lựa chọn thử trong trình duyệt không tự tham gia cuộc thi.</p>}
+      {account && contestGameweek >= 6 && <FantasyResults key={`${account.id}:${contestGameweek}`} account={account} gameweek={contestGameweek} contestStatus={contestStatus} submittedVersion={entry.data?.submitted?.version ?? null} />}
       {account && <section className="fantasy-card fantasy-entry" aria-label="Đội dự thi của bạn" aria-busy={entry.loading || entry.busy}>
         <h2>Đội của {account.displayName} · GW{contestGameweek ?? '…'}</h2>
         {entry.loading && <p role="status">Đang tải đội từ server…</p>}

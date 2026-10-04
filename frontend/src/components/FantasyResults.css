@@ -1,0 +1,12 @@
+.fantasy-results, .fantasy-admin-results { margin: 16px 0; padding: 18px; min-width: 0; }
+.fantasy-result-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fantasy-results h2, .fantasy-admin-results h2 { margin: 0 0 12px; font-size: 18px; }
+.fantasy-result-total strong { font-size: 30px; color: var(--accent, #37ddb0); }
+.fantasy-result-players { list-style: none; padding: 0; margin: 0; }
+.fantasy-result-players > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; border-top: 1px solid #ffffff20; padding: 12px 0; }
+.fantasy-result-players span { display: block; font-size: 12px; margin-top: 4px; }
+.fantasy-result-players ul { grid-column: 1 / -1; padding-left: 18px; font-size: 12px; overflow-wrap: anywhere; }
+.fantasy-admin-results label { display: block; margin: 12px 0; }
+.fantasy-admin-results input { display: block; width: 100%; box-sizing: border-box; margin: 6px 0; padding: 10px; background: #173139; color: #fff; border: 1px solid #ffffff40; border-radius: 8px; }
+.fantasy-admin-results li, .fantasy-results p { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .fantasy-results, .fantasy-admin-results { padding: 14px; } }

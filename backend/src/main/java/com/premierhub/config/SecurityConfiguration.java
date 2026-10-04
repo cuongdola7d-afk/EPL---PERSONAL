@@ -4,6 +4,7 @@ import com.premierhub.accounts.GoogleOAuthSecurity;
 import com.premierhub.accounts.AuthProxyFilter;
 import com.premierhub.accounts.AuthProxySettings;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -38,7 +39,9 @@ public class SecurityConfiguration {
         return new CompositeSessionAuthenticationStrategy(List.of(new ChangeSessionIdAuthenticationStrategy(), new CsrfAuthenticationStrategy(tokens)));
     }
 
-    @Bean SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts,
+    @Bean
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+    SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts,
                                        SessionAuthenticationStrategy sessions, ObjectProvider<GoogleOAuthSecurity> google,
                                        ObjectProvider<AuthProxySettings> proxy) throws Exception {
         var proxySettings = proxy.getIfAvailable();

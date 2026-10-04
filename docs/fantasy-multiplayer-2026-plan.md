@@ -2,6 +2,8 @@
 
 ## Mục tiêu và phạm vi lượt này
 
+**Checkpoint bước 4 — 05/10/2026, hoàn thiện local:** đã có xác nhận không được SofaScore chấm và xác nhận dữ liệu fixture trong database, giữ nguyên CSV thống kê 10 cột/rating NULL. Readiness ADMIN kiểm tra toàn GW và từng người được chọn; công bố/tái tính transaction, BigDecimal, phiên bản/lý do/lịch sử, API và giao diện kết quả riêng 11 người. Kiểm tra scoped H2/MySQL cô lập và desktop/390px đạt; chưa nhập/công bố/phát hành production hay cuộc thi thật GW1–5. Hướng dẫn, giới hạn, kiểm chứng và file commit ở [fantasy-results-2026.md](fantasy-results-2026.md). Bước tiếp theo là BXH GW/mùa ở bước 5 khi được giao; các checkpoint chưa chấm điểm dưới đây là lịch sử trước bước này.
+
 **Checkpoint bổ sung bước 3 — 05/10/2026:** đã quyết định và triển khai rosterAsOf riêng cho mỗi GW; mặc định ngày công bố theo giờ Việt Nam, cho phép quản trị chọn ngày có roster hiệu lực. Mốc cố định sau công bố; danh sách chọn, kiểm tra đội và lưu/chốt cùng đọc database; snapshot giữ nguyên. Migration H2/MySQL nâng cấp GW cũ bằng ngày công bố Việt Nam, chạy lại giữ mốc đã chọn. Đã kiểm tra đúng phạm vi và đo một tình huống 20 tài khoản lưu/chốt đồng thời trên MySQL local: không lỗi, thời gian truy vấn/lấy khóa GW cao nhất 1,76 giây. Không thay cơ chế khóa; chưa ghi/phát hành production. Chi tiết và file commit ở [fantasy-roster-reference-2026.md](fantasy-roster-reference-2026.md). Ghi nhận giữ mốc 2026-10-02 của checkpoint trước đã được thay bằng quyết định này trong multiplayer; phần khách luyện tập vẫn giữ hành vi cũ.
 
 **Checkpoint bước 3 — 05/10/2026, hoàn thành local:** đã lưu nháp/đội chốt theo tài khoản, mùa và GW; kiểm tra luật bằng database, snapshot khi chốt, transaction và phiên bản chống cập nhật cũ. Giao diện đọc server khi reload/đổi GW, không nhập tự động lựa chọn localStorage; đăng xuất/đổi tài khoản xóa đội riêng khỏi giao diện. Kiểm tra đúng phạm vi, build và trình duyệt desktop/390px đã đạt. Migration đã thử hai lần trên MySQL local cô lập, chưa ghi production hoặc phát hành. Chi tiết API, kiểm tra, giới hạn và toàn bộ file cần commit ở [fantasy-user-lineups-2026.md](fantasy-user-lineups-2026.md). Mốc roster vẫn giữ 2026-10-02 theo validator hiện có; chưa chấm điểm/kết quả/BXH. Checkpoint bước 2 và các đoạn hiện trạng ban đầu dưới đây là lịch sử triển khai.
@@ -83,6 +85,10 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 - Tận dụng giao diện Fantasy hiện có; không tự chốt hoặc tự đưa lựa chọn cũ từ localStorage vào cuộc thi. Người chơi phải chọn vòng và chủ động chốt đội hợp lệ.
 
 ### Bước 4 — Chấm và công bố
+
+**Đã hoàn thành local:** hai bảng bằng chứng nguồn và hai bảng kết quả/version; importer xác nhận dùng file hiện có, không sửa thống kê thô; kiểm tra thiếu rating/dòng/vai trò/trận hoãn và deadline. Chỉ đội chốt hợp lệ có kết quả, nhiều trận cộng từng khóa một lần, 0 chỉ từ DNP hoặc xác nhận không chấm. Công bố ADMIN+CSRF tự kiểm tra nguồn, rollback toàn GW khi lỗi; tái tính có lý do và lịch sử, gọi lặp không tạo trùng. Giao diện riêng không trả điểm tạm và tải lại trạng thái PUBLISHED. Chi tiết ở fantasy-results-2026.md.
+
+**Kiểm chứng:** 10 test backend và 4 test frontend đúng phạm vi; package/build đạt. Service MySQL local có hai đội/2 version, 66.77 → 67.77, giữ NULL thô và gọi lặp không tạo bản; migration lặp giữ kết quả. Desktop/390px đã thử công bố, chờ không điểm, blocker fixture, 11 dòng, reload/đổi GW. Chưa kiểm tra/cuộc thi thật hoặc production. **Còn lại:** backup/migration/xác nhận nguồn/phát hành khi được giao, BXH và xem đội người khác thuộc bước 5.
 
 - Nối rating đã nhập bằng [quy trình Gameweek](gameweek-data-workflow.md), đúng fixture/player_id/mùa/GW, không tự tìm rating hoặc thu thập lại chỉ số đã có.
 - Có trạng thái phân biệt rating chưa nhập với người đã xác nhận không được chấm; không suy luận mọi NULL là 0. Chưa đủ trận/dữ liệu thì vòng tiếp tục AWAITING_RESULTS, không công bố một phần như kết quả cuối.

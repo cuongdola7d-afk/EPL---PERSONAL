@@ -12,7 +12,8 @@ public class PremierHubApplication {
                 || java.util.Arrays.asList(args).contains("--premierhub.manual-match-stats.enabled=true")
                 || java.util.Arrays.asList(args).contains("--premierhub.manual-season-stats.enabled=true")
                 || java.util.Arrays.asList(args).contains("--premierhub.club-information.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.match-lineups.enabled=true")) {
+                || java.util.Arrays.asList(args).contains("--premierhub.match-lineups.enabled=true")
+                || java.util.Arrays.asList(args).contains("--premierhub.fantasy-evidence.enabled=true")) {
             application.setWebApplicationType(org.springframework.boot.WebApplicationType.NONE);
         }
         var context = application.run(args);
@@ -25,6 +26,7 @@ public class PremierHubApplication {
                     || arg.equals("--premierhub.fixture-evidence.enabled=true")
                     || arg.equals("--premierhub.club-information.enabled=true")
                     || arg.equals("--premierhub.match-lineups.enabled=true")
+                    || arg.equals("--premierhub.fantasy-evidence.enabled=true")
                     || arg.startsWith("--premierhub.snapshot.mode=")) {
                 System.exit(SpringApplication.exit(context));
             }
