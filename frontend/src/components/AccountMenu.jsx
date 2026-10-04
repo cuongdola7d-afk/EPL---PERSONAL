@@ -119,16 +119,20 @@ function AccountDialog({ account, initialError, googleOutcome, onAccountChange, 
   </dialog>
 }
 
-export default function AccountMenu() {
+export default function AccountMenu({ onSessionChange }) {
   const [account, setAccount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [googleOutcome] = useState(() => googleResult(window.location.search))
   const [open, setOpen] = useState(false)
+  const sessionRequest = useRef(null)
+  const tabId = useRef(crypto.randomUUID())
 
   useEffect(() => {
     const controller = new AbortController()
+    sessionRequest.current = controller
     currentAccount(controller.signal).then(value => {
+      if (controller.signal.aborted) return
       setAccount(value); setError('')
       if (googleOutcome) {
         setOpen(true)
@@ -140,7 +144,31 @@ export default function AccountMenu() {
     return () => controller.abort()
   }, [])
 
-  function updateAccount(value) { setAccount(value); setError('') }
+  useEffect(() => { onSessionChange?.({ account, loading, error }) }, [account, loading, error, onSessionChange])
+
+  useEffect(() => {
+    const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('prismaxi-session') : null
+    const refresh = () => {
+      sessionRequest.current?.abort()
+      const controller = new AbortController(); sessionRequest.current = controller
+      setAccount(null); setLoading(true); setError('')
+      onSessionChange?.({ account: null, loading: true, error: '' })
+      currentAccount(controller.signal).then(value => { if (!controller.signal.aborted) setAccount(value) })
+        .catch(failure => { if (failure.name !== 'AbortError') setError(failure.message) })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    }
+    window.addEventListener('prismaxi-session-refresh', refresh)
+    if (channel) channel.onmessage = event => { if (event.data?.source !== tabId.current) refresh() }
+    return () => { sessionRequest.current?.abort(); channel?.close(); window.removeEventListener('prismaxi-session-refresh', refresh) }
+  }, [onSessionChange])
+
+  function updateAccount(value) {
+    setAccount(value); setError('')
+    onSessionChange?.({ account: value, loading: false, error: '' })
+    if (typeof BroadcastChannel === 'function') {
+      const channel = new BroadcastChannel('prismaxi-session'); channel.postMessage({ changed: true, source: tabId.current }); channel.close()
+    }
+  }
   async function reload() { const value = await currentAccount(); updateAccount(value) }
 
   return <div className="account-menu">

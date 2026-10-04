@@ -106,6 +106,8 @@ class AuthProxyFilterTest {
         var filter = new AuthProxyFilter(new AuthProxySettings(environment()));
         filter.doFilter(request, response, (req, res) -> fail("Admin request bypassed proxy proof"));
         assertEquals(403, response.getStatus());
+        request.setServletPath("/api/fantasy/2026/me/gameweeks/6");
+        filter.doFilter(request, new MockHttpServletResponse(), (req,res) -> fail("Private team bypassed proxy proof"));
         request.addHeader(AuthProxyFilter.PROXY_SECRET, SECRET);
         filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> assertTrue(((HttpServletRequest) req).isSecure()));
         request.setServletPath("/api/fantasy/2026/gameweeks");

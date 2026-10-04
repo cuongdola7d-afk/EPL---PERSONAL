@@ -54,6 +54,7 @@ function pageFromHash(hash) {
 }
 
 function App() {
+  const [session, setSession] = useState({ account: null, loading: true, error: '' })
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
   const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ??
     parsePlayerListHash(window.location.hash)?.season ?? parseMatchRoute(window.location.hash)?.season ?? parseClubRoute(window.location.hash)?.season ?? 2026)
@@ -124,7 +125,7 @@ function App() {
               </svg>
             </button>
           </div>}
-          <AccountMenu />
+          <AccountMenu onSessionChange={setSession} />
         </div>
       </header>
 
@@ -155,7 +156,8 @@ function App() {
         {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
           playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
-          <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
+          <CurrentPage key={page === 'fantasy' ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
+            {...(page === 'fantasy' ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
             {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
             {...(page === 'standings' ? { tab: standingsTab, onTabChange: setStandingsTab } : {})}

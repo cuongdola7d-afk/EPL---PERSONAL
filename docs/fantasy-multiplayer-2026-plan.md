@@ -2,6 +2,8 @@
 
 ## Mục tiêu và phạm vi lượt này
 
+**Checkpoint bước 3 — 05/10/2026, hoàn thành local:** đã lưu nháp/đội chốt theo tài khoản, mùa và GW; kiểm tra luật bằng database, snapshot khi chốt, transaction và phiên bản chống cập nhật cũ. Giao diện đọc server khi reload/đổi GW, không nhập tự động lựa chọn localStorage; đăng xuất/đổi tài khoản xóa đội riêng khỏi giao diện. Kiểm tra đúng phạm vi, build và trình duyệt desktop/390px đã đạt. Migration đã thử hai lần trên MySQL local cô lập, chưa ghi production hoặc phát hành. Chi tiết API, kiểm tra, giới hạn và toàn bộ file cần commit ở [fantasy-user-lineups-2026.md](fantasy-user-lineups-2026.md). Mốc roster vẫn giữ 2026-10-02 theo validator hiện có; chưa chấm điểm/kết quả/BXH. Checkpoint bước 2 và các đoạn hiện trạng ban đầu dưới đây là lịch sử triển khai.
+
 **Checkpoint mới nhất 05/10/2026:** tài khoản đã phát hành, người dùng xác nhận email/Google/liên kết/phiên hoạt động và vấn đề tốc độ đã xử lý; không lặp toàn bộ kiểm tra auth. **Bước 2 đã hoàn thiện local**: cấu hình GW/deadline UTC, audit quản trị, trạng thái theo Clock server và giao diện countdown. GW6 Arsenal–Leeds bắt đầu 10/10/2026 · 18:30 Việt Nam, deadline 09/10/2026 · 00:00 Việt Nam = 08/10/2026 · 17:00 UTC, còn hạn tại 05/10. Migration mới chưa nhập production, cuộc thi chưa tự mở. Chi tiết, API, kiểm tra, file commit và thứ tự phát hành ở [fantasy-gameweeks-2026.md](fantasy-gameweeks-2026.md). Các ghi nhận “chưa phát hành auth” phía dưới là lịch sử checkpoint trước, không phải trạng thái hiện tại. Khôi phục mật khẩu vẫn làm riêng.
 
 Hoàn thiện Fantasy có tài khoản trước hạn chốt GW6 mùa 2026/27 để thử nghiệm với người chơi thật. Triển khai từng bước nhỏ, không làm toàn bộ trong một lượt. Chỉ phát triển mùa 2026/27, không sửa mùa 2024/25 hoặc thống kê bóng đá đã có.
@@ -65,6 +67,12 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 - Luồng quản trị điều chỉnh deadline phải có thông báo và ghi nhận thay đổi. Phân biệt dữ liệu cuộc thi chính thức với thử nghiệm/Replay GW1–GW5.
 
 ### Bước 3 — Đội nháp và đội đã chốt
+
+**Đã hoàn thành local:** ba bảng cho metadata, lựa chọn nháp và snapshot đội chốt; khóa database, expectedVersion, CSRF/session/kiểm tra proxy và quyền chủ tài khoản. Nháp có thể thiếu người; đội chốt đủ 11 người đúng sơ đồ/vị trí, tối đa 3 người/CLB, OVR không quá 860. Chỉnh nháp giữ nguyên đội chốt; chốt lại lỗi hoặc vượt deadline rollback toàn bộ. Clock được kiểm tra sau khi lấy khóa và trước/sau SQL ghi. API chỉ phục vụ chủ tài khoản, chưa mở xem đội người khác.
+
+**Kiểm chứng:** 31 test backend và 15 test frontend đúng phạm vi đạt; build phần thay đổi đạt. Các sửa phát hiện trong kiểm tra được chạy lại đúng phần liên quan. Trình duyệt đã qua lưu nháp → chốt → sửa → chốt lại → reload, đổi GW, tab cũ xung đột, logout/đổi tài khoản và vòng khóa ở 390px. MySQL 9.6 local đã kiểm tra migration chạy lại, khóa/index/check/FK và rollback; đây chưa phải kiểm chứng service đầu cuối trên MySQL production.
+
+**Còn lại:** backup/migration/phát hành khi được giao; xác nhận chính sách mốc roster cho các GW tương lai và đánh giá tải vì khóa cấu hình GW hiện tuần tự hóa các thao tác ghi cùng vòng. Không tự mở lại vòng hết hạn. Bước tiếp theo là bước 4 khi người dùng yêu cầu, không tự bắt đầu chấm điểm.
 
 - Lưu theo tài khoản trong MySQL để dùng trên nhiều thiết bị; mỗi user/season/GW chỉ có một đội dự thi có hiệu lực.
 - Kiểm tra lại mọi luật bằng dữ liệu server khi chốt, không tin OVR/CLB/vị trí do client gửi. Giữ các ngoại lệ OVR/vị trí đã được người dùng xác nhận trong dữ liệu hiện có.

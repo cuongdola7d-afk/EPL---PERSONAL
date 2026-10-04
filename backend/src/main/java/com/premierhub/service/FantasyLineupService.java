@@ -38,11 +38,19 @@ public class FantasyLineupService {
     }
 
     public FantasyValidationResponse validate(FantasyLineupRequest request) {
+        return inspect(request, true).validation();
+    }
+
+    public record Inspection(FantasyValidationResponse validation, Map<String, String> slots,
+                             Map<Integer, PlayerResponse> players) { }
+
+    // The same roster read supplies validation and the submission snapshot.
+    public Inspection inspect(FantasyLineupRequest request, boolean complete) {
         List<Issue> issues = new ArrayList<>();
         List<List<String>> rows = FORMATIONS.get(request.formation());
         if (rows == null) {
-            return new FantasyValidationResponse(false, 0, List.of(new Issue(
-                    "FORMATION", null, null, "Sơ đồ không được hỗ trợ cho Fantasy 2026/27.")));
+            return new Inspection(new FantasyValidationResponse(false, 0, List.of(new Issue(
+                    "FORMATION", null, null, "Sơ đồ không được hỗ trợ cho Fantasy 2026/27."))), Map.of(), Map.of());
         }
         Map<String, String> slots = new LinkedHashMap<>();
         for (int row = 0; row < rows.size(); row++) {
@@ -56,7 +64,7 @@ public class FantasyLineupService {
         var seen = new HashSet<Integer>();
         int total = 0;
         Map<String, Integer> picks = request.picks();
-        if (picks.size() != 11) {
+        if (picks.size() > 11 || complete && picks.size() != 11) {
             issues.add(new Issue("COUNT", null, null, "Đội hình cần đúng 11 cầu thủ khác nhau."));
         }
         for (var entry : picks.entrySet()) {
@@ -90,13 +98,14 @@ public class FantasyLineupService {
             }
         }
         for (String key : slots.keySet()) {
-            if (picks.get(key) == null) {
+            if (complete && picks.get(key) == null) {
                 issues.add(new Issue("EMPTY_SLOT", key, null, "Ô " + key + " (" + slots.get(key) + ") chưa có cầu thủ."));
             }
         }
         if (total > MAX_OVR) {
             issues.add(new Issue("OVR_LIMIT", null, null, "Tổng OVR " + total + " vượt giới hạn " + MAX_OVR + "."));
         }
-        return new FantasyValidationResponse(issues.isEmpty(), total, List.copyOf(issues));
+        return new Inspection(new FantasyValidationResponse(issues.isEmpty(), total, List.copyOf(issues)),
+                Map.copyOf(slots), Map.copyOf(players));
     }
 }

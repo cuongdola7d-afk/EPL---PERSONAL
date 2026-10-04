@@ -60,6 +60,11 @@ public class GameweekRepository {
                 (rs, row) -> configuration(rs), gameweek).stream().findFirst();
     }
 
+    public Optional<Configuration> find(int gameweek) {
+        return jdbc.query("SELECT * FROM fantasy_gameweeks WHERE season=2026 AND gameweek=?",
+                (rs, row) -> configuration(rs), gameweek).stream().findFirst();
+    }
+
     public void create(int gameweek, Fixture first, Instant deadline, Instant now) {
         jdbc.update("""
                 INSERT INTO fantasy_gameweeks (season,gameweek,deadline_utc,deadline_published_at,
@@ -94,6 +99,7 @@ public class GameweekRepository {
     }
 
     static Timestamp timestamp(Instant value) {
-        return value == null ? null : Timestamp.valueOf(LocalDateTime.ofInstant(value, ZoneOffset.UTC));
+        return value == null ? null : Timestamp.valueOf(LocalDateTime.ofInstant(
+                value.truncatedTo(java.time.temporal.ChronoUnit.MICROS), ZoneOffset.UTC));
     }
 }

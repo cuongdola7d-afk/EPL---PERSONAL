@@ -8,7 +8,11 @@ import PlayerAvatar, { clubColor, ratingTier } from './FantasyPlayerAvatar.jsx'
 import Pitch from './FantasyPitch.jsx'
 import TeamOfWeek from './TeamOfWeek.jsx'
 import FantasyGameweek from './FantasyGameweek.jsx'
+import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
+import { emptyLineup, entryLineup, sameLineup } from '../fantasy/entry.js'
+import { formatDeadline } from '../fantasy/gameweek.js'
 import './FantasyPage.css'
+import './FantasyEntry.css'
 
 const GROUPS = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER']
 
@@ -17,10 +21,22 @@ function readSavedLineup() {
   catch { return {} }
 }
 
-function FantasyPage() {
+function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const requestPlayers = useCallback((signal) => fetchFantasyPlayers(signal), [])
-  const { data: players, status, error, reload } = useApiList(requestPlayers)
-  const [lineup, setLineup] = useState(readSavedLineup)
+  const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
+  const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
+  const [contestGameweek, setContestGameweek] = useState(null)
+  const [contestOpen, setContestOpen] = useState(false)
+  const entry = useFantasyEntry(account, contestGameweek, setLineup)
+  const contestSelection = useCallback((gw, open) => { setContestGameweek(gw); setContestOpen(open) }, [])
+  const lockedSubmission = account && !contestOpen && entry.data?.submitted
+  const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({
+    id: player.playerId, name: player.name, clubId: player.clubId, club: player.club,
+    fc27Overall: player.ovr, primaryPosition: player.primaryPosition, eligiblePositions: player.eligiblePositions,
+    position: ({ GK: 'GOALKEEPER', LB: 'DEFENDER', CB: 'DEFENDER', RB: 'DEFENDER', LW: 'FORWARD', ST: 'FORWARD', RW: 'FORWARD' })[player.requiredPosition] ?? 'MIDFIELDER',
+  })) : []
+  const players = lockedSubmission ? [...snapshotPlayers, ...rosterPlayers.filter(player => !snapshotPlayers.some(p => p.id === player.id))] : rosterPlayers
+  const privateBlocked = Boolean(authLoading || account && (!contestOpen || !entry.ready || entry.busy || entry.conflict))
   const [activeKey, setActiveKey] = useState(null)
   const [search, setSearch] = useState('')
   const [clubFilter, setClubFilter] = useState('')
@@ -33,8 +49,8 @@ function FantasyPage() {
   const [gameweek, setGameweek] = useState(1)
   const searchRef = useRef(null)
 
-  const currentLineup = useMemo(() => status === 'success' ? normalizeLineup(lineup, players) : lineup,
-    [status, lineup, players])
+  const currentLineup = account ? lockedSubmission ? entryLineup({ submitted: lockedSubmission }) : lineup :
+    status === 'success' ? normalizeLineup(lineup, players) : lineup
   const formation = FORMATIONS[currentLineup?.formation] ? currentLineup.formation : '4-2-1-3'
   const picks = currentLineup?.picks ?? {}
   const unassigned = currentLineup?.unassigned ?? []
@@ -55,14 +71,17 @@ function FantasyPage() {
     .sort((a, b) => (b.fc27Overall ?? -1) - (a.fc27Overall ?? -1) || a.name.localeCompare(b.name, 'vi'))
 
   useEffect(() => {
-    if (status === 'success') setLineup((current) => normalizeLineup(current, players))
-  }, [status, players])
+    if (!account && !authLoading && status === 'success') setLineup((current) => normalizeLineup(current, rosterPlayers))
+  }, [status, rosterPlayers, account, authLoading])
 
   useEffect(() => {
-    if (status !== 'success') return
+    if (account || authLoading || status !== 'success') return
     try { window.localStorage.setItem(FANTASY_STORAGE_KEY, JSON.stringify(currentLineup)) }
     catch { /* Fantasy vẫn dùng được nếu trình duyệt chặn localStorage. */ }
-  }, [status, currentLineup])
+  }, [status, currentLineup, account, authLoading])
+
+  useEffect(() => { setActiveKey(null); setResult(false); setMessage(''); checkVersion.current++ }, [contestGameweek, account?.id])
+  useEffect(() => { if (privateBlocked) setActiveKey(null) }, [privateBlocked])
 
   useEffect(() => {
     if (!activeKey) return undefined
@@ -75,6 +94,7 @@ function FantasyPage() {
   useEffect(() => () => { checkVersion.current++ }, [])
 
   function openPicker(key) {
+    if (privateBlocked) return
     setActiveKey(key)
     setClubFilter('')
     setSearch('')
@@ -82,6 +102,7 @@ function FantasyPage() {
   }
 
   function choose(player) {
+    if (privateBlocked) return
     const issue = pickError(player, activeSlot, picks, players, unassigned)
     if (issue) { setMessage(issue); return }
     checkVersion.current++
@@ -92,6 +113,7 @@ function FantasyPage() {
   }
 
   function remove(key) {
+    if (privateBlocked) return
     checkVersion.current++
     const next = { ...picks }
     delete next[key]
@@ -101,6 +123,7 @@ function FantasyPage() {
   }
 
   function changeFormation(nextFormation) {
+    if (privateBlocked) return
     checkVersion.current++
     setLineup(movePicks(formation, nextFormation, picks, players, unassigned))
     setActiveKey(null)
@@ -133,7 +156,7 @@ function FantasyPage() {
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
-      <FantasyGameweek />
+      <FantasyGameweek onSelectionChange={contestSelection} />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
         {[['user', 'Đội hình của bạn'], ['team', 'Đội hình tiêu biểu']].map(([key, label], index) => <button key={key} type="button" role="tab"
           id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}
@@ -147,6 +170,31 @@ function FantasyPage() {
       {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
         <TeamOfWeek gameweek={gameweek} onGameweekChange={setGameweek} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>
+      {authLoading && <p role="status">Đang nhận phiên đăng nhập…</p>}
+      {authError && <p className="fantasy-message" role="alert">Chưa xác định được tài khoản: {authError}</p>}
+      {!authLoading && !account && <p className="fantasy-message">Đăng nhập để lưu nháp và chốt đội cho một GW. Lựa chọn thử trong trình duyệt không tự tham gia cuộc thi.</p>}
+      {account && <section className="fantasy-card fantasy-entry" aria-label="Đội dự thi của bạn" aria-busy={entry.loading || entry.busy}>
+        <h2>Đội của {account.displayName} · GW{contestGameweek ?? '…'}</h2>
+        {entry.loading && <p role="status">Đang tải đội từ server…</p>}
+        {contestGameweek < 6 && <p>Replay chưa triển khai lưu/chốt đội.</p>}
+        {entry.error && <p className="fantasy-message" role="alert">{entry.error}</p>}
+        {(entry.error || entry.conflict) && <button type="button" className="fantasy-clear" disabled={entry.busy} onClick={entry.reload}>Tải lại đội từ server</button>}
+        {entry.notice && <p className="fantasy-result" role="status">{entry.notice}</p>}
+        {entry.ready && <>
+          <p><strong>{entry.data.submitted ? 'Đã chốt' : 'Chưa chốt'}</strong>{entry.data.submitted ? ` · ${formatDeadline(entry.data.submitted.submittedAt)} · Giờ Việt Nam · ${entry.data.submitted.totalOvr}/860 OVR` : ' · Chưa có đội dự thi cho GW này.'}</p>
+          {entry.data.draft && <p>Nháp lưu: {formatDeadline(entry.data.draft.savedAt)} · Giờ Việt Nam</p>}
+          {contestOpen && entry.data.submitted && !sameLineup(currentLineup, entry.data.submitted) && <p>Nháp khác đội đã chốt. Bạn cần chốt lại để thay đội dự thi; đội đã chốt trước vẫn có hiệu lực.</p>}
+          {contestOpen && !sameLineup(currentLineup, entry.data.draft) && <p>Đang có thay đổi chưa lưu trên server.</p>}
+          {!contestOpen && <p>GW chưa mở hoặc đã khóa. Bạn không thể lưu/chốt đội ở trạng thái này.</p>}
+          <div className="fantasy-entry-actions">
+            <button type="button" className="fantasy-clear" disabled={privateBlocked || Boolean(unassigned.length)} onClick={() => entry.save(currentLineup)}>{entry.busy ? 'Đang lưu…' : 'Lưu nháp'}</button>
+            <button type="button" className="fantasy-primary" disabled={privateBlocked || Boolean(issues.length)} onClick={() => entry.submit(currentLineup)}>{entry.busy ? 'Đang chốt…' : entry.data.submitted ? 'Chốt lại đội hình' : 'Chốt đội hình'}</button>
+          </div>
+          {entry.data.submitted && <details className="fantasy-submitted"><summary>Đội đã chốt · {entry.data.submitted.formation}</summary>
+            {entry.data.submitted.players.map(player => <p key={player.slotKey}>{player.requiredPosition} · {player.name} · {player.club} · OVR {player.ovr}</p>)}</details>}
+        </>}
+      </section>}
+      {(!account || entry.ready) && !authLoading && <fieldset className="fantasy-editor" disabled={privateBlocked}>
       <ResultPanel status={status} error={error} count={players.length} itemName="cầu thủ Fantasy"
         emptyMessage="Chưa có cầu thủ trong roster mùa 2026/27." onRetry={reload}>
         <div className="fantasy-summary">
@@ -214,6 +262,7 @@ function FantasyPage() {
           </aside>
         </div>
       </ResultPanel>
+      </fieldset>}
       </div>
     </div>
     {view === 'user' && activeSlot && <div className="fantasy-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKey(null) }}>

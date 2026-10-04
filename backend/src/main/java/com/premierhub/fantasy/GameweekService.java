@@ -87,6 +87,15 @@ public class GameweekService {
         if (!info(gameweek).canEdit()) throw conflict("GW chưa mở hoặc đã hết hạn chỉnh/chốt đội.");
     }
 
+    // Call with the locked configuration after slow reads/writes; no additional SQL here.
+    public Instant requireOpen(Configuration configuration) {
+        Instant now = clock.instant();
+        if (configuration == null || !"OPEN".equals(configuration.workflowStatus())
+                || !now.isBefore(configuration.deadlineUtc()))
+            throw conflict("GW chưa mở hoặc đã hết hạn chỉnh/chốt đội.");
+        return now;
+    }
+
     @Transactional
     public View publishDeadline(int gameweek, long actorId, String reason) {
         validateOfficial(gameweek);

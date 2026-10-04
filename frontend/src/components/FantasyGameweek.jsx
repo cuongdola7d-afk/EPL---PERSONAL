@@ -3,7 +3,7 @@ import { fetchGameweeks } from '../api/gameweeks.js'
 import { GAMEWEEK_LABELS, countdownLabel, formatDeadline, remainingMilliseconds, shouldRefreshDeadline } from '../fantasy/gameweek.js'
 import './FantasyGameweek.css'
 
-export default function FantasyGameweek() {
+export default function FantasyGameweek({ onSelectionChange }) {
   const [data, setData] = useState(null)
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -37,6 +37,9 @@ export default function FantasyGameweek() {
   const remaining = view?.deadlineUtc ? remainingMilliseconds(view.deadlineUtc, data.serverTimeUtc, data.receivedAt, tick) : 0
   const expired = shouldRefreshDeadline(view, remaining)
   useEffect(() => {
+    onSelectionChange?.(selected, Boolean(view?.canEdit && !expired && !loading && !error))
+  }, [selected, view?.canEdit, expired, loading, error, onSelectionChange])
+  useEffect(() => {
     const key = `${selected}:${view?.revision}:${data?.serverTimeUtc}`
     if (!expired || loading || error || refreshed.current === key) return
     refreshed.current = key
@@ -63,6 +66,6 @@ export default function FantasyGameweek() {
       {view.deadlineChanges.filter(change => change.revision > 1).map(change => <p key={change.revision}>
         Điều chỉnh hạn: {formatDeadline(change.oldDeadlineUtc)} → {formatDeadline(change.newDeadlineUtc)} · {change.reason}</p>)}
     </>}
-    <p className="fantasy-gameweek-note">Lựa chọn hiện tại vẫn lưu trong trình duyệt. Chưa triển khai lưu hoặc chốt đội dự thi.</p>
+    <p className="fantasy-gameweek-note">Đội dự thi chỉ có hiệu lực sau khi bạn chủ động chốt thành công trước hạn.</p>
   </section>
 }
