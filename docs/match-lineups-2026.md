@@ -3,9 +3,9 @@
 ## Đã hoàn thành local
 
 - Thêm dữ liệu riêng cho sơ đồ CLB, sơ đồ từng trận và vai trò đăng ký trận. Không thêm cột vào thống kê, membership hoặc vị trí Fantasy.
-- Chuẩn bị batch [`match-lineups-2026-10-04`](../backend/data/match-lineups-2026-10-04/sources.md): CSV chung cho 20 CLB; 1.560 vai trò đã lưu của 39 trận; danh sách cần bổ sung ảnh. Chưa có sơ đồ nào đủ bằng chứng, nên mọi defaultFormation để NULL và số trận kiểm tra sơ đồ bằng 0. Dữ liệu còn thiếu không được coi là 4-3-3.
+- Chuẩn bị batch [`match-lineups-2026-10-04`](../backend/data/match-lineups-2026-10-04/sources.md): CSV chung cho 20 CLB; 1.560 vai trò đã phục hồi của 39 trận; danh sách cần phục hồi nguồn. Người dùng chốt defaultFormation ngày 04/10/2026: 14 CLB dùng 4-2-3-1, 5 CLB dùng 3-4-3, Hull City dùng 5-4-1. Ghi nguồn USER; số trận xác minh sơ đồ thực tế vẫn bằng 0.
 - Importer kiểm tra mùa 2026, CLB của fixture, 11 STARTER, ID trùng, nguồn SofaScore cho sơ đồ mới, tọa độ ô, bằng chứng thay người, sự khớp giữa vai trò và participation_status đã lưu. Toàn batch chạy trong transaction; lỗi rollback. Chạy lại cùng dữ liệu không tạo trùng hoặc cập nhật lại.
-- defaultFormation được tính từ các observation đã xác minh trong phạm vi GW của CLB: đếm tần suất, nếu hòa chọn sơ đồ dùng ở trận gần nhất theo ngày trận; ID fixture làm quy tắc ổn định khi cùng ngày. CSV phải khớp kết quả tính, số trận và danh sách fixture; không chỉ tin một chuỗi sơ đồ tự nhập.
+- Với nguồn OBSERVED, defaultFormation được tính từ các observation đã xác minh: đếm tần suất, nếu hòa chọn sơ đồ dùng ở trận gần nhất theo ngày trận; ID fixture làm quy tắc ổn định khi cùng ngày. Với nguồn USER, dùng sơ đồ người dùng chốt và bắt buộc ghi chú nguồn. Trong cả hai trường hợp, số trận/tần suất/danh sách fixture vẫn phải khớp observation thật; quyết định USER không tự tạo bằng chứng trận. Nguồn MISSING chỉ dùng khi chưa có default và chưa có observation.
 - API chi tiết trận chỉ thêm `homeLineup`/`awayLineup` ở mùa 2026. Mùa 2024 vẫn dùng luồng và JSON cũ; luật Fantasy giữ nguyên.
 - Frontend ưu tiên sơ đồ fixture đã xác minh, tiếp theo defaultFormation của CLB và nhãn **“Bố trí theo sơ đồ thường dùng”**. Thiếu cả hai hiển thị **“Chưa có sơ đồ”**. Mỗi đội có sơ đồ riêng; parser hỗ trợ các chuỗi 2–5 tuyến với tổng 10 cầu thủ ngoài thủ môn, độc lập các sơ đồ Fantasy.
 - 11 người trên sân phải thuộc vai trò STARTER có bằng chứng. Bỏ hoàn toàn cách xếp 11 người theo số phút/rating cho mùa 2026. Không có vai trò đủ tin cậy thì chỉ hiển thị danh sách chưa xác nhận, không tạo đội hình giả.
@@ -18,13 +18,13 @@ Ba bảng mới trong `schema.sql` và bản DDL riêng [`schema-mysql.sql`](../
 
 | Bảng | Khóa | Dữ liệu |
 | --- | --- | --- |
-| club_season_formations | league_id + season_year + club_id | default_formation, updated_on, scope_from_gw/to_gw, verified_matches, formation_counts, fixture_ids |
+| club_season_formations | league_id + season_year + club_id | default_formation, updated_on, default_source, source_note, scope_from_gw/to_gw, verified_matches, formation_counts, fixture_ids |
 | fixture_lineups | fixture_id + club_id | sơ đồ và nguồn/ngày xác minh sơ đồ; nguồn/ngày xác minh vai trò |
 | fixture_lineup_players | fixture_id + club_id + player_id | STARTER/SUB_USED/SUB_UNUSED, match_position, row_index/slot_index, phút thay vào/ra đã xác minh |
 
 `row_index=0` là tuyến thủ môn; những tuyến sau theo thứ tự phòng ngự → tấn công. `slot_index=0` là ô đầu tuyến theo thứ tự của sơ đồ nguồn. Các cặp row/slot phải nằm trong formation của fixture, không được trùng; chỉ STARTER mới có ô. Các ô trống giữ SQL NULL.
 
-Các CSV dùng UTF-8, cột không chứa dấu phẩy/quote; bỏ trống ô để ghi NULL. Header nằm trong `LineupBatchImporter`. Thứ tự trong `formation_counts` là thứ tự tên sơ đồ tăng dần, phân cách `;`; ví dụ `3-4-2-1=2;4-3-3=1`. `fixture_ids` sắp theo ngày trận, rồi ID.
+Các CSV dùng UTF-8, cột không chứa dấu phẩy/quote; bỏ trống ô để ghi NULL. Header nằm trong `LineupBatchImporter`. `clubs.csv` thêm hai cột `default_source` (USER/OBSERVED/MISSING) và `source_note`; nguồn USER bắt buộc có sơ đồ hợp lệ và ghi chú. Thứ tự trong `formation_counts` là thứ tự tên sơ đồ tăng dần, phân cách `;`; ví dụ `3-4-2-1=2;4-3-3=1`. `fixture_ids` sắp theo ngày trận, rồi ID. Phạm vi GW mô tả observation; default USER áp dụng toàn mùa khi thiếu sơ đồ fixture.
 
 Lệnh dưới chỉ dành cho **H2 local đã có bản sao fixtures/players/statistics**, không trỏ datasource vào MySQL:
 
@@ -34,7 +34,7 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar '--spring.datasource.url=
 
 Importer không nhập bảng cầu thủ, fixtures, membership hoặc thống kê. H2 rỗng sẽ bị từ chối vì không có các khóa nguồn. Bản kiểm tra lượt này nằm trong `backend/target/formation-check/`, bị Git ignore.
 
-## Kiểm tra
+## Kiểm tra trước khi người dùng chốt default
 
 - Backend: 21 test trong 5 lớp liên quan đều đạt; Maven package thành công. Các lớp: `LineupBatchImporterTest` (4), `ManualMatchDetailTest`, `FixtureEvidenceServiceTest`, `MatchKickoffQueryTest`, `FantasyLineupServiceTest` (17 test còn lại). Lượt đầu phát hiện lỗi CHECK của H2 và quyền xóa thư mục tạm JUnit trên Windows; đã sửa CHECK và đặt thư mục tạm trong `target/`. Chạy lại phần bị lỗi để xác nhận, không tạo test theo từng CLB.
 - Frontend: một lượt `node --test src/utils/matchLineup.test.js src/utils/matchView.test.js src/api/matches.test.js src/fantasy/lineup.test.js` — 15 test đạt. Một lượt `npm.cmd run build` — thành công.
@@ -44,16 +44,25 @@ Importer không nhập bảng cầu thủ, fixtures, membership hoặc thống k
 
 Fixture dùng hai sơ đồ khác nhau trong test/browser là dữ liệu kiểm thử, **không phải** observation được xác minh của CLB mùa 2026/27. Không đưa các sơ đồ thử vào CSV nguồn hoặc production.
 
+## Kiểm tra sau khi người dùng chốt default ngày 04/10/2026
+
+- Một lượt Maven package với 5 lớp test liên quan: **22 test đạt**, BUILD SUCCESS. Test mới xác nhận default USER khi chưa có observation, số đếm vẫn bằng 0, nguồn được trả qua API, importer idempotent; khi có sơ đồ fixture thật thì ưu tiên fixture và giữ default USER. Từ chối nguồn USER không có ghi chú hoặc default OBSERVED không khớp observation.
+- H2 local mới: cả 20 default khớp đúng CSV; 14 × 4-2-3-1, 5 × 3-4-3, 1 × 5-4-1. API của 50 fixture trả fallback CLB và ghi chú quyết định người dùng; `verified_matches=0`, không tạo observation giả. Import lần hai có 0 thay đổi. Toàn bộ 2.000 dòng thống kê giữ nguyên; 78 lượt CLB có nhãn đá chính đã phục hồi và 22 lượt chưa phục hồi không đổi.
+- Chrome 1440px/390px với payload API từ H2: kiểm tra đủ cả 4-2-3-1, 3-4-3, 5-4-1; đúng 11 đá chính mỗi đội, không trùng ID/chồng thẻ/tràn ngang hoặc ra ngoài sân. Có nhãn fallback và minh họa. Fixture GW1 chưa phục hồi nhãn đá chính vẫn báo thiếu vai trò, dù đã có default; không sinh XI giả. Không có lỗi JavaScript. Kết quả ở `backend/target/formation-check/*user-default*`, không commit.
+- Không sửa frontend trong lượt chốt default; dùng component/parser đã kiểm tra ở lượt trước.
+
 ## Còn lại trước nhập SQL/phát hành
 
-1. Bổ sung ảnh SofaScore Lineups theo `missing-lineups.csv`; điền formation, tọa độ, các vai trò còn thiếu và nguồn/ngày xác minh. Không cần thu thập lại rating/thống kê.
-2. Tái tổng hợp CSV 20 CLB từ các fixture đã kiểm tra; cập nhật default/tần suất/số trận/danh sách fixture theo đúng quy tắc. Hiện toàn bộ 20 CLB chưa có default xác minh.
+1. Phục hồi ảnh/nguồn Lineups đã thu thập trước đây; chỉ cần người dùng bổ sung phần không tìm lại được. Thống kê đã có đủ 50 trận, không thu thập lại rating/chỉ số. `missing-lineups.csv` theo dõi bằng chứng sơ đồ/vị trí thực tế và 11 trận chưa phục hồi nhãn vai trò, không phải danh sách trận thiếu thống kê.
+2. Giữ 20 default USER đã chốt. Khi có sơ đồ fixture thật, nhập observation và số đếm tương ứng; API ưu tiên fixture đó, không đổi default USER sang kết quả tần suất nếu chưa được yêu cầu.
 3. Sau khi được giao bước nhập production: sao lưu, áp dụng riêng DDL mới, chạy importer đã kiểm tra, chạy lần hai xác nhận thay đổi bằng 0 và đọc lại. Lượt này **chưa thực hiện** DDL hay nhập dữ liệu MySQL production.
 4. Phát hành backend trước frontend để có metadata mới. Nếu frontend gặp backend chưa cập nhật, nó báo thiếu vai trò/sơ đồ và không dựng XI từ thống kê.
 
 Không commit, push hoặc deploy trong lượt này.
 
-## File cần commit
+DDL hiện tại dành cho tạo mới các bảng metadata chưa nhập production. Với H2 local đã tạo bảng theo phiên bản cũ, cần nâng cấp hai cột nguồn và CHECK cũ hoặc dựng bản sao H2 mới trước khi import; `CREATE TABLE IF NOT EXISTS` không tự nâng cấp bảng đã có. Lượt kiểm tra này dùng H2 mới, không sửa/xóa database local cũ của người dùng.
+
+## File từ lượt triển khai đội hình trước
 
 Backend/API/importer:
 
@@ -87,3 +96,16 @@ Dữ liệu/nguồn/tài liệu:
 - `docs/match-lineups-2026.md`
 
 Commit message đề xuất: `feat: add verified 2026/27 match lineups and club formation defaults`
+
+## File cần commit cho lượt chốt default
+
+- `backend/data/match-lineups-2026-10-04/clubs.csv`
+- `backend/data/match-lineups-2026-10-04/schema-mysql.sql`
+- `backend/data/match-lineups-2026-10-04/sources.md`
+- `backend/src/main/java/com/premierhub/lineups/LineupBatchImporter.java`
+- `backend/src/main/java/com/premierhub/lineups/MatchLineupQueries.java`
+- `backend/src/main/resources/schema.sql`
+- `backend/src/test/java/com/premierhub/lineups/LineupBatchImporterTest.java`
+- `docs/match-lineups-2026.md`
+
+Commit message đề xuất: `feat: set user-confirmed club formations for 2026/27`

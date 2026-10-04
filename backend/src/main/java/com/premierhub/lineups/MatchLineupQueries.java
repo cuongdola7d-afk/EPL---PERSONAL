@@ -21,10 +21,10 @@ public final class MatchLineupQueries {
                 """, (rs, index) -> new Fixture(rs.getString(1), date(rs.getDate(2)), rs.getString(3),
                         date(rs.getDate(4)), rs.getString(5)), fixtureId, clubId).stream().findFirst().orElse(null);
         var defaults = jdbc.query("""
-                SELECT default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids
+                SELECT default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids,source_note
                 FROM club_season_formations WHERE league_id=39 AND season_year=2026 AND club_id=?
                 """, (rs, index) -> new Default(rs.getString(1), date(rs.getDate(2)), rs.getInt(3), rs.getInt(4),
-                        rs.getInt(5), rs.getString(6), rs.getString(7)), clubId).stream().findFirst().orElse(null);
+                        rs.getInt(5), rs.getString(6), rs.getString(7), rs.getString(8)), clubId).stream().findFirst().orElse(null);
         List<MatchLineupResponse.Player> players = jdbc.query("""
                 SELECT l.player_id,l.role,l.match_position,l.row_index,l.slot_index,
                     l.substitution_in_minute,l.substitution_out_minute,p.primary_position
@@ -48,7 +48,7 @@ public final class MatchLineupQueries {
         if (formation != null) Formation.lines(formation);
         return new MatchLineupResponse(formation, formation == null ? "MISSING" : actual ? "FIXTURE" : "CLUB_DEFAULT",
                 actual ? fixture.formationDate() : defaults == null ? null : defaults.updatedOn(),
-                actual ? fixture.formationSource() : null,
+                actual ? fixture.formationSource() : defaults == null ? null : defaults.sourceNote(),
                 defaults == null ? null : defaults.from(), defaults == null ? null : defaults.to(),
                 defaults == null ? null : defaults.count(), defaults == null ? null : defaults.frequencies(),
                 defaults == null ? null : defaults.ids(), verified ? "VERIFIED" : players.isEmpty() ? "MISSING" : "INCOMPLETE",
@@ -59,5 +59,5 @@ public final class MatchLineupQueries {
     private record Fixture(String formation, LocalDate formationDate, String formationSource,
                            LocalDate rolesDate, String rolesSource) { }
     private record Default(String formation, LocalDate updatedOn, int from, int to, int count,
-                           String frequencies, String ids) { }
+                           String frequencies, String ids, String sourceNote) { }
 }

@@ -217,11 +217,16 @@ CREATE TABLE IF NOT EXISTS club_season_formations (
     verified_matches INTEGER NOT NULL,
     formation_counts TEXT NOT NULL,
     fixture_ids TEXT NOT NULL,
+    default_source VARCHAR(20) NOT NULL DEFAULT 'MISSING',
+    source_note VARCHAR(500),
     PRIMARY KEY (league_id,season_year,club_id),
     FOREIGN KEY (league_id,season_year,club_id) REFERENCES season_clubs(league_id,season_year,club_id),
     CHECK (scope_from_gw BETWEEN 1 AND 38 AND scope_to_gw BETWEEN scope_from_gw AND 38),
     CHECK (verified_matches >= 0),
-    CHECK ((verified_matches=0 AND default_formation IS NULL) OR (verified_matches>0 AND default_formation IS NOT NULL))
+    CHECK ((CASE default_source WHEN 'USER' THEN 1 WHEN 'OBSERVED' THEN 1 WHEN 'MISSING' THEN 1 ELSE 0 END)=1),
+    CHECK ((default_source='USER' AND default_formation IS NOT NULL AND source_note IS NOT NULL)
+        OR (default_source='MISSING' AND verified_matches=0 AND default_formation IS NULL)
+        OR (default_source='OBSERVED' AND verified_matches>0 AND default_formation IS NOT NULL))
 );
 
 CREATE TABLE IF NOT EXISTS fixture_lineups (

@@ -6,7 +6,8 @@ Ngày rà soát local: **2026-10-04**. Chưa ghi MySQL production.
 
 - Tám file `backend/data/gw*/lineups.csv` đã có 1.560 cầu thủ đăng ký trận, thuộc 78 cặp CLB–fixture / 39 trận. Mỗi đội có đúng 11 `STARTER` và 9 `SUB_USED` hoặc `SUB_UNUSED`. `players.csv` giữ nguyên ID/vai trò đã lưu và trỏ tới `sources.md` của từng batch. Các batch cũ dùng StatMuse cho vai trò; lượt này chỉ tái sử dụng dữ liệu đó, không truy cập lại StatMuse hoặc thu thập rating/chỉ số.
 - Những ghi chú SofaScore GW1 và GW4 đã lưu xác nhận từng có ảnh Lineups, nhưng không chứa danh sách 11 ID đá chính, sơ đồ hoặc tọa độ đủ để phục hồi bố cục. Không suy các dữ liệu này từ bảng PLAYED, rating, phút, vị trí mùa hay eligiblePositions.
-- **Chưa xác minh được sơ đồ của trận nào.** `formations.csv` chỉ có header; `clubs.csv` có đúng 20 CLB, `default_formation` trống, `verified_matches=0`, `formation_counts` và `fixture_ids` trống. Không gán mặc định 4-3-3 hoặc một sơ đồ theo nhận định về HLV.
+- **Người dùng đã chốt sơ đồ mặc định của đủ 20 CLB ngày 04/10/2026.** `clubs.csv` lưu `default_source=USER` và ghi chú quyết định; 14 CLB dùng 4-2-3-1, 5 CLB dùng 3-4-3, Hull City dùng 5-4-1. Danh sách này là cấu hình mùa do người dùng chọn, không phải kết quả thống kê các fixture.
+- **Chưa xác minh được sơ đồ thực tế của trận nào.** `formations.csv` vẫn chỉ có header; `verified_matches=0`, `formation_counts` và `fixture_ids` trống. Không ghi quyết định của người dùng thành bằng chứng trận hoặc tự thêm số lần dùng sơ đồ. Phạm vi GW1–GW5 trong CSV là phạm vi quan sát dự kiến; mặc định do người dùng chốt dùng cho toàn mùa 2026/27 khi fixture chưa có sơ đồ riêng.
 
 ## Truy xuất SofaScore đã thử
 
@@ -25,7 +26,7 @@ Không coi “không truy xuất được” là một trận đã kiểm tra s�
 
 - `formation_missing=1`: cần ảnh Lineups cho thấy tên CLB và chuỗi sơ đồ; ảnh đúng trận/ngày. Nếu ảnh bao gồm cả hai đội thì một ảnh có thể phục vụ hai dòng CSV.
 - `positions_missing=1`: cần ảnh sân đủ 11 đá chính và vị trí/tọa độ; không chỉ bảng rating.
-- `roles_missing=1`: còn thiếu 11 ID đá chính và danh sách dự bị có xác nhận vai trò. Có 22 cặp CLB–trận thiếu vai trò, thuộc 11 fixture: toàn bộ GW1 `1000560542`–`1000560551` và GW4 `1000560580`.
+- `roles_missing=1`: chưa phục hồi được nhãn STARTER/SUB_USED/SUB_UNUSED vào dữ liệu mới của 22 cặp CLB–trận, thuộc 11 fixture: toàn bộ GW1 `1000560542`–`1000560551` và GW4 `1000560580`. Thống kê đã lưu vẫn đủ 50 trận × 40 dòng; ghi chú cũ xác nhận đã thu thập ảnh Lineups. Cần tìm lại nguồn cũ trước, không coi đây là 11 trận chưa thu thập thống kê hoặc yêu cầu người dùng cung cấp lại toàn bộ ảnh.
 
 Những trận đã có vai trò chỉ cần bổ sung sơ đồ/vị trí; không cần nhập lại rating, số phút, bàn, kiến tạo hoặc thẻ.
 
@@ -33,25 +34,25 @@ Những trận đã có vai trò chỉ cần bổ sung sơ đồ/vị trí; khô
 
 | Club ID | CLB | Default | Trận kiểm tra sơ đồ | Số lần mỗi sơ đồ | Trận có vai trò |
 | --- | --- | --- | ---: | --- | ---: |
-| 1000001044 | AFC Bournemouth | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000057 | Arsenal FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000058 | Aston Villa FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000402 | Brentford FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000397 | Brighton & Hove Albion FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000061 | Chelsea FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000001076 | Coventry City FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000354 | Crystal Palace FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000062 | Everton FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000063 | Fulham FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000322 | Hull City AFC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000349 | Ipswich Town FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000341 | Leeds United FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000064 | Liverpool FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000065 | Manchester City FC | NULL | 0 | Chưa có bằng chứng | 3 |
-| 1000000066 | Manchester United FC | NULL | 0 | Chưa có bằng chứng | 3 |
-| 1000000067 | Newcastle United FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000351 | Nottingham Forest FC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000071 | Sunderland AFC | NULL | 0 | Chưa có bằng chứng | 4 |
-| 1000000073 | Tottenham Hotspur FC | NULL | 0 | Chưa có bằng chứng | 4 |
+| 1000001044 | AFC Bournemouth | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000057 | Arsenal FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000058 | Aston Villa FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000402 | Brentford FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000397 | Brighton & Hove Albion FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000061 | Chelsea FC | 3-4-3 | 0 | Chưa có bằng chứng | 4 |
+| 1000001076 | Coventry City FC | 3-4-3 | 0 | Chưa có bằng chứng | 4 |
+| 1000000354 | Crystal Palace FC | 3-4-3 | 0 | Chưa có bằng chứng | 4 |
+| 1000000062 | Everton FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000063 | Fulham FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000322 | Hull City AFC | 5-4-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000349 | Ipswich Town FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000341 | Leeds United FC | 3-4-3 | 0 | Chưa có bằng chứng | 4 |
+| 1000000064 | Liverpool FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000065 | Manchester City FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 3 |
+| 1000000066 | Manchester United FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 3 |
+| 1000000067 | Newcastle United FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000351 | Nottingham Forest FC | 3-4-3 | 0 | Chưa có bằng chứng | 4 |
+| 1000000071 | Sunderland AFC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
+| 1000000073 | Tottenham Hotspur FC | 4-2-3-1 | 0 | Chưa có bằng chứng | 4 |
 
-Các số trong cột “Vai trò” đếm trận có danh sách 11 đá chính đã lưu, **không phải** số trận đã kiểm tra sơ đồ. Tất cả 20 CLB vẫn thiếu sơ đồ thường dùng cho tới khi có bằng chứng Lineups đọc được.
+Các số trong cột “Vai trò” đếm trận có nhãn đá chính đã phục hồi vào cấu trúc mới, **không phải** số trận đã kiểm tra sơ đồ. Nguồn của toàn bộ default trong bảng là quyết định người dùng ngày 04/10/2026. Sơ đồ thực tế đã xác minh của fixture vẫn được ưu tiên; vị trí mùa chỉ tạo bố cục minh họa.

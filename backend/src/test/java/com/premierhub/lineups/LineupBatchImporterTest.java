@@ -75,7 +75,7 @@ class LineupBatchImporterTest {
             text.append(String.join(",","100",String.valueOf(club),"2026",String.valueOf(id),role,matchPosition,line,slot,"","","2026-10-04","existing-source-notes")).append('\n');
         }
         playersCsv=text.toString();
-        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-3-3,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102\n");
+        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-3-3,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101,OBSERVED,\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102,OBSERVED,\n");
         write("formations.csv",LineupBatchImporter.FORMATIONS,"100,1,2026,4-2-3-1,2026-10-04,https://www.sofascore.com/football/match/test-a\n101,1,2026,4-3-3,2026-10-04,https://www.sofascore.com/football/match/test-b\n101,2,2026,3-4-2-1,2026-10-04,https://www.sofascore.com/football/match/test-b\n102,2,2026,3-4-2-1,2026-10-04,https://www.sofascore.com/football/match/test-c\n");
         write("players.csv",LineupBatchImporter.PLAYERS,playersCsv);
     }
@@ -105,7 +105,7 @@ class LineupBatchImporterTest {
     }
 
     @Test void refusesIncorrectCountsDuplicateSlotsAndParticipationWithoutPartialWrites() throws Exception {
-        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-2-3-1,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102\n");
+        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-2-3-1,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101,OBSERVED,\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102,OBSERVED,\n");
         assertThrows(IllegalArgumentException.class,()->importer.importDirectory(directory));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM club_season_formations",Integer.class));
         setupFiles();
@@ -119,18 +119,13 @@ class LineupBatchImporterTest {
     }
 
     private void setupFiles() throws Exception {
-        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-3-3,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102\n");
+        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,4-3-3,2026-10-04,1,5,2,4-2-3-1=1;4-3-3=1,100;101,OBSERVED,\n2,2026,3-4-2-1,2026-10-04,1,5,2,3-4-2-1=2,101;102,OBSERVED,\n");
     }
 
     @Test void missingRolesCannotBecomeVerifiedAndUnknownFormationsStayNull() throws Exception {
-        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,,2026-10-04,1,5,0,,\n2,2026,,2026-10-04,1,5,0,,\n");
+        write("clubs.csv",LineupBatchImporter.CLUBS,"1,2026,,2026-10-04,1,5,0,,,MISSING,\n2,2026,,2026-10-04,1,5,0,,,MISSING,\n");
         write("formations.csv",LineupBatchImporter.FORMATIONS,"");
-        // Remove coordinates along with the formation evidence; preserve roles.
-        var plain=new StringBuilder();
-        for (var line:playersCsv.split("\n")) {
-            var row=line.split(",",-1);row[5]="";row[6]="";row[7]="";plain.append(String.join(",",row)).append('\n');
-        }
-        write("players.csv",LineupBatchImporter.PLAYERS,plain.toString());
+        writePlayersWithoutCoordinates();
         importer.importDirectory(directory);
         var detail=queries.matchDetail(100,2026).orElseThrow();
         assertNull(detail.homeLineup().formation());assertEquals("MISSING",detail.homeLineup().formationSource());
@@ -138,6 +133,53 @@ class LineupBatchImporterTest {
         jdbc.update("DELETE FROM fixture_lineup_players WHERE player_id=1");
         assertEquals("INCOMPLETE",queries.matchDetail(100,2026).orElseThrow().homeLineup().startersStatus());
         assertEquals("MISSING",queries.matchDetail(102,2026).orElseThrow().homeLineup().startersStatus());
+    }
+
+    private void writePlayersWithoutCoordinates() throws Exception {
+        // Remove coordinates along with the formation evidence; preserve roles.
+        var plain=new StringBuilder();
+        for (var line:playersCsv.split("\n")) {
+            var row=line.split(",",-1);row[5]="";row[6]="";row[7]="";plain.append(String.join(",",row)).append('\n');
+        }
+        write("players.csv",LineupBatchImporter.PLAYERS,plain.toString());
+    }
+
+    @Test void userDefaultsKeepRealCountsAndRolesAndYieldToVerifiedFixtureFormation() throws Exception {
+        String defaults = "1,2026,5-4-1,2026-10-04,1,5,0,,,USER,User decision 2026-10-04\n"
+                + "2,2026,3-4-3,2026-10-04,1,5,0,,,USER,User decision 2026-10-04\n";
+        write("clubs.csv",LineupBatchImporter.CLUBS,defaults);
+        write("formations.csv",LineupBatchImporter.FORMATIONS,"");
+        writePlayersWithoutCoordinates();
+        var statistics = jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id");
+        importer.importDirectory(directory);
+        var repeat = importer.importDirectory(directory);
+        assertEquals(0,repeat.clubChanges());assertEquals(0,repeat.fixtureChanges());assertEquals(0,repeat.playerChanges());
+        var detail = queries.matchDetail(100,2026).orElseThrow();
+        assertEquals("5-4-1",detail.homeLineup().formation());
+        assertEquals("3-4-3",detail.awayLineup().formation());
+        assertEquals("CLUB_DEFAULT",detail.homeLineup().formationSource());
+        assertEquals("User decision 2026-10-04",detail.homeLineup().formationSourceNote());
+        assertEquals(0,detail.homeLineup().verifiedMatches());
+        assertEquals("",detail.homeLineup().formationCounts());
+        assertEquals("VERIFIED",detail.homeLineup().startersStatus());
+        assertEquals("MISSING",queries.matchDetail(102,2026).orElseThrow().homeLineup().startersStatus());
+        assertEquals("USER",jdbc.queryForObject("SELECT default_source FROM club_season_formations WHERE club_id=1",String.class));
+
+        write("formations.csv",LineupBatchImporter.FORMATIONS,"100,1,2026,4-2-3-1,2026-10-04,https://www.sofascore.com/football/match/test-a\n");
+        defaults = defaults.replace("5-4-1,2026-10-04,1,5,0,,,USER", "5-4-1,2026-10-04,1,5,1,4-2-3-1=1,100,USER");
+        write("clubs.csv",LineupBatchImporter.CLUBS,defaults);
+        importer.importDirectory(directory);
+        detail = queries.matchDetail(100,2026).orElseThrow();
+        assertEquals("4-2-3-1",detail.homeLineup().formation());
+        assertEquals("FIXTURE",detail.homeLineup().formationSource());
+        assertEquals("3-4-3",detail.awayLineup().formation());
+        assertEquals("5-4-1",jdbc.queryForObject("SELECT default_formation FROM club_season_formations WHERE club_id=1",String.class));
+        assertEquals(statistics,jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id"));
+
+        write("clubs.csv",LineupBatchImporter.CLUBS,defaults.replace("USER,User decision 2026-10-04", "USER,"));
+        assertThrows(IllegalArgumentException.class,()->importer.importDirectory(directory));
+        write("clubs.csv",LineupBatchImporter.CLUBS,defaults.replace("USER,User decision 2026-10-04", "OBSERVED,"));
+        assertThrows(IllegalArgumentException.class,()->importer.importDirectory(directory));
     }
 
     @Test void frequencyUsesOnlyVerifiedMatchesAndLatestFixtureBreaksTies() {

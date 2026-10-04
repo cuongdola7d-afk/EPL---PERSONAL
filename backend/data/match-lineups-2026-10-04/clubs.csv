@@ -1,21 +1,21 @@
-club_id,season_year,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids
-1000001044,2026,,2026-10-04,1,5,0,,
-1000000057,2026,,2026-10-04,1,5,0,,
-1000000058,2026,,2026-10-04,1,5,0,,
-1000000402,2026,,2026-10-04,1,5,0,,
-1000000397,2026,,2026-10-04,1,5,0,,
-1000000061,2026,,2026-10-04,1,5,0,,
-1000001076,2026,,2026-10-04,1,5,0,,
-1000000354,2026,,2026-10-04,1,5,0,,
-1000000062,2026,,2026-10-04,1,5,0,,
-1000000063,2026,,2026-10-04,1,5,0,,
-1000000322,2026,,2026-10-04,1,5,0,,
-1000000349,2026,,2026-10-04,1,5,0,,
-1000000341,2026,,2026-10-04,1,5,0,,
-1000000064,2026,,2026-10-04,1,5,0,,
-1000000065,2026,,2026-10-04,1,5,0,,
-1000000066,2026,,2026-10-04,1,5,0,,
-1000000067,2026,,2026-10-04,1,5,0,,
-1000000351,2026,,2026-10-04,1,5,0,,
-1000000071,2026,,2026-10-04,1,5,0,,
-1000000073,2026,,2026-10-04,1,5,0,,
+club_id,season_year,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids,default_source,source_note
+1000001044,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000057,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000058,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000402,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000397,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000061,2026,3-4-3,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000001076,2026,3-4-3,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000354,2026,3-4-3,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000062,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000063,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000322,2026,5-4-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000349,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000341,2026,3-4-3,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000064,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000065,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000066,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000067,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000351,2026,3-4-3,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000071,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04
+1000000073,2026,4-2-3-1,2026-10-04,1,5,0,,,USER,User confirmed club defaults on 2026-10-04

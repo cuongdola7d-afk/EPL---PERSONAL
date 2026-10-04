@@ -21,7 +21,7 @@ import java.util.Set;
 
 @Service
 public class LineupBatchImporter {
-    public static final String CLUBS = "club_id,season_year,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids";
+    public static final String CLUBS = "club_id,season_year,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids,default_source,source_note";
     public static final String FORMATIONS = "fixture_id,club_id,season_year,formation,verified_on,source_url";
     public static final String PLAYERS = "fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_index,substitution_in_minute,substitution_out_minute,verified_on,source_note";
     private final JdbcTemplate jdbc;
@@ -54,6 +54,11 @@ public class LineupBatchImporter {
             date(row[3]); int from = positive(row[4]), to = positive(row[5]);
             require(from <= to && to <= 38 && integer(row[6]) >= 0, "Invalid gameweek scope or count for club " + id);
             if (!row[2].isEmpty()) Formation.lines(row[2]);
+            require(Set.of("OBSERVED", "USER", "MISSING").contains(row[9]), "Invalid default source for club " + id);
+            require(row[10].length() <= 500, "Default source note is too long for club " + id);
+            if (row[9].equals("USER")) {
+                require(!row[2].isEmpty() && !row[10].isBlank(), "User default requires formation and source note for club " + id);
+            }
         }
         require(!clubRows.isEmpty(), "clubs.csv is empty");
         var fixtures = new HashMap<Integer, Fixture>();
@@ -112,9 +117,14 @@ public class LineupBatchImporter {
             int club = entry.getKey(); var row = entry.getValue();
             var summary = FormationSummary.from(observations.entrySet().stream().filter(item -> item.getKey().club() == club)
                     .map(item -> new FormationSummary.Observation(item.getKey().fixture(), fixtures.get(item.getKey().fixture()).date(), item.getValue().formation())).toList());
-            require(Objects.equals(blank(row[2]), summary.defaultFormation()) && integer(row[6]) == summary.verifiedMatches()
+            require(integer(row[6]) == summary.verifiedMatches()
                     && row[7].equals(summary.formationCounts()) && row[8].equals(summary.fixtureIds()),
-                    "Default/counts/fixture scope must match verified observations for club " + club);
+                    "Counts/fixture scope must match verified observations for club " + club);
+            if (!row[9].equals("USER")) {
+                require(Objects.equals(blank(row[2]), summary.defaultFormation())
+                        && row[9].equals(summary.defaultFormation() == null ? "MISSING" : "OBSERVED"),
+                        "Observed default must match verified observations for club " + club);
+            }
             for (var item : observations.entrySet()) if (item.getKey().club() == club) {
                 int week = fixtures.get(item.getKey().fixture()).week();
                 require(week >= positive(row[4]) && week <= positive(row[5]) && !date(row[3]).isBefore(item.getValue().date()), "Observation outside club sample " + club);
@@ -125,8 +135,8 @@ public class LineupBatchImporter {
         for (var entry : clubRows.entrySet()) {
             var row = entry.getValue(); var summary = summaries.get(entry.getKey());
             clubChanges += upsert("club_season_formations", "league_id=? AND season_year=? AND club_id=?", new Object[]{39,2026,entry.getKey()},
-                    "league_id,season_year,club_id,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids",
-                    new Object[]{39,2026,entry.getKey(),summary.defaultFormation(),Date.valueOf(date(row[3])),positive(row[4]),positive(row[5]),summary.verifiedMatches(),summary.formationCounts(),summary.fixtureIds()});
+                    "league_id,season_year,club_id,default_formation,updated_on,scope_from_gw,scope_to_gw,verified_matches,formation_counts,fixture_ids,default_source,source_note",
+                    new Object[]{39,2026,entry.getKey(),blank(row[2]),Date.valueOf(date(row[3])),positive(row[4]),positive(row[5]),summary.verifiedMatches(),summary.formationCounts(),summary.fixtureIds(),row[9],blank(row[10])});
         }
         var allTeams = new HashSet<Team>(observations.keySet()); allTeams.addAll(groups.keySet());
         for (var key : allTeams) {
