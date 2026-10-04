@@ -2,6 +2,7 @@ package com.premierhub.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
+@Import(SecurityConfiguration.class)
 public class ApiCorsConfiguration implements WebMvcConfigurer {
     private final List<String> allowedOrigins;
 
@@ -25,6 +27,11 @@ public class ApiCorsConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/auth/**")
+                .allowedOrigins(allowedOrigins.toArray(String[]::new))
+                .allowedMethods("GET", "POST")
+                .allowedHeaders("Accept", "Content-Type", "X-CSRF-TOKEN")
+                .allowCredentials(true);
         registry.addMapping("/api/fantasy/2026/validate")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("POST")

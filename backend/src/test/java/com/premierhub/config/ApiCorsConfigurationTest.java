@@ -1,6 +1,7 @@
 package com.premierhub.config;
 
 import com.premierhub.service.FootballQueries;
+import com.premierhub.service.ClubStatisticsService;
 import com.premierhub.web.ClubController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ class ApiCorsConfigurationTest {
 
     @MockitoBean
     private FootballQueries service;
+
+    @MockitoBean
+    private ClubStatisticsService statistics;
 
     @Test
     void allowsConfiguredProductionOriginWithoutChangingSuccessfulApiResponse() throws Exception {

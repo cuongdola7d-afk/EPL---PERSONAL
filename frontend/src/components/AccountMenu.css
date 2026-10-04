@@ -1,0 +1,29 @@
+.account-menu { flex: none; margin-left: 8px; }
+.account-trigger { max-width: 160px; padding: 8px 14px; border: 1px solid var(--site-accent); border-radius: 999px; background: transparent; color: var(--site-accent); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-trigger:disabled { opacity: .6; cursor: wait; }
+.account-trigger:focus-visible, .account-dialog button:focus-visible, .account-dialog input:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 3px; }
+.account-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; margin: auto; padding: 28px; overflow-y: auto; border: 1px solid var(--site-line); border-radius: 22px; background: var(--site-card); color: var(--site-text); box-shadow: 0 24px 90px #0008; }
+.account-dialog::backdrop { background: #041015ba; backdrop-filter: blur(5px); }
+.account-dialog h2 { margin: 0 26px 22px 0; font-size: 1.6rem; }
+.account-eyebrow { margin: 0 0 7px; color: var(--site-accent); font-size: .8rem; font-weight: 800; }
+.account-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--site-subtle); color: var(--site-text); font-size: 1.4rem; cursor: pointer; }
+.account-tabs { display: flex; gap: 6px; margin-bottom: 20px; padding: 4px; border-radius: 12px; background: var(--site-subtle); }
+.account-tabs button { flex: 1; padding: 9px 12px; border: 0; border-radius: 9px; background: transparent; color: var(--site-muted); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.account-tabs button[aria-pressed='true'] { background: var(--site-accent); color: #08251f; }
+.account-dialog fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.account-dialog label { display: grid; gap: 7px; margin-bottom: 15px; color: var(--site-text); font-size: .85rem; font-weight: 650; }
+.account-dialog input { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--site-line); border-radius: 10px; background: var(--site-subtle); color: var(--site-text); font: inherit; font-weight: 400; }
+.account-dialog .account-submit { width: 100%; margin-top: 8px; padding: 12px; border: 0; border-radius: 10px; background: var(--site-accent); color: #08251f; font: inherit; font-size: .9rem; font-weight: 800; cursor: pointer; }
+.account-dialog button:disabled { opacity: .6; cursor: wait; }
+.account-error, .account-message { margin: 0 0 16px; padding: 12px; border-radius: 10px; font-size: .85rem; line-height: 1.5; overflow-wrap: anywhere; }
+.account-error { background: #ee776a18; color: #ffc2b8; border: 1px solid #ee776a55; }
+.account-message { background: #46e2b518; color: var(--site-accent); }
+.account-hint { margin: -7px 0 16px; color: var(--site-muted); font-size: .72rem; }
+.account-profile > strong { display: block; font-size: 1.25rem; overflow-wrap: anywhere; }
+.account-profile p { color: var(--site-muted); overflow-wrap: anywhere; }
+.account-retry { margin: 0 0 16px; border: 0; background: transparent; color: var(--site-accent); cursor: pointer; }
+@media (max-width: 600px) {
+  .account-menu { margin-left: 0; }
+  .account-trigger { max-width: 100px; padding: 7px 9px; font-size: .7rem; }
+  .account-dialog { padding: 22px; }
+}

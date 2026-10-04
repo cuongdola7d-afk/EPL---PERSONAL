@@ -4,17 +4,17 @@
 
 Hoàn thiện Fantasy có tài khoản trước hạn chốt GW6 mùa 2026/27 để thử nghiệm với người chơi thật. Triển khai từng bước nhỏ, không làm toàn bộ trong một lượt. Chỉ phát triển mùa 2026/27, không sửa mùa 2024/25 hoặc thống kê bóng đá đã có.
 
-Lượt này **chỉ lưu context và kế hoạch**, bổ sung liên kết trong AGENTS.md và ghi các quyết định kỹ thuật còn cần chốt cho bước tài khoản. Chưa thêm dependency, API xác thực, bảng SQL, migration, cơ chế chấm hoặc cuộc thi chính thức. Người dùng sẽ yêu cầu bắt đầu bước 1 sau đó. Deadline thực tế GW6 chưa được xác minh trong lượt lưu kế hoạch; không xem mục tiêu này là quyền mở cuộc thi hay mở lại vòng đã hết hạn.
+Lượt tạo tài liệu ban đầu chỉ lưu context và kế hoạch. Lượt bước 1 hiện tại đã triển khai **email/mật khẩu trên local**; xem [hướng dẫn tài khoản và kết quả kiểm tra](auth-local-2026.md). Google và khôi phục mật khẩu làm sau; chưa triển khai chốt đội, chấm điểm hoặc BXH người chơi. Deadline thực tế GW6 chưa được xác minh; không xem mục tiêu này là quyền mở cuộc thi hay mở lại vòng đã hết hạn.
 
 ## Hiện trạng và điểm đã đối chiếu trong repo
 
-- Theo context người dùng: backend Spring Boot, frontend React/Vite, MySQL trên Railway, frontend trên Vercel. Không kiểm tra deployment hoặc đọc production trong lượt tài liệu này.
-- [backend/pom.xml](../backend/pom.xml) dùng Java mục tiêu 21, Spring Boot 4.1.1, Web, Validation, JDBC, MySQL/H2. Chưa có dependency Spring Security/OAuth2; không coi xác thực là chức năng đã hoàn thành.
+- Theo context người dùng: backend Spring Boot, frontend React/Vite, MySQL trên Railway, frontend trên Vercel. Lượt tài khoản chỉ kiểm tra H2 local, không đọc/ghi production hoặc thử deployment.
+- [backend/pom.xml](../backend/pom.xml) giữ Java mục tiêu 21 và Spring Boot 4.1.1, thêm Security/Session JDBC và starter kiểm thử Security theo BOM hiện có (Security 7.1.1, Session 4.1.1). Email/mật khẩu đã kiểm tra local; chưa có OAuth2.
 - Đã có roster, OVR, primaryPosition và eligiblePositions. [FantasyLineupService](../backend/src/main/java/com/premierhub/service/FantasyLineupService.java) và [lineup.js](../frontend/src/fantasy/lineup.js) kiểm tra đúng vị trí, 11 người khác nhau, giới hạn CLB và OVR. Các sơ đồ Fantasy đang có là `4-2-1-3`, `4-3-3`, `4-4-2`, `3-5-2`; giữ nguyên các tên/ô này, không lấy sơ đồ đội hình trận thay luật Fantasy. LCB/RCB dùng quyền CB, LCM/RCM dùng quyền CM.
 - [FantasyPage.jsx](../frontend/src/components/FantasyPage.jsx) lưu lựa chọn trong localStorage. `POST /api/fantasy/2026/validate` trong [FantasyController](../backend/src/main/java/com/premierhub/web/FantasyController.java) chỉ kiểm tra đội hình, chưa lưu đội dự thi hay xác nhận tham gia một GW. Mốc roster hiện có là `2026-10-02`; khi thiết kế vòng thi cần quyết định cách dùng mốc roster theo GW, không tự đổi dữ liệu/membership đang có.
-- [schema.sql](../backend/src/main/resources/schema.sql) có các bảng bóng đá, thống kê và đội hình trận; chưa có bảng tài khoản, đội dự thi hoặc kết quả cuộc thi. Lượt này không đặt tên bảng/cột mới như thể đã tồn tại.
-- Local: [vite.config.js](../frontend/vite.config.js) proxy `/api` tới `http://localhost:8080`. Production: [request.js](../frontend/src/api/request.js) gọi origin backend qua `VITE_API_BASE_URL`; fetch hiện chưa thiết lập credentials cho đăng nhập qua cookie. Chưa có file Vercel rewrite được tìm thấy trong phần cấu hình repo liên quan, nên không giả định production có proxy cùng origin.
-- [ApiCorsConfiguration](../backend/src/main/java/com/premierhub/config/ApiCorsConfiguration.java) hiện cho GET công khai và POST riêng `/api/fantasy/2026/validate`, cấu hình origin bằng `PREMIERHUB_CORS_ALLOWED_ORIGINS`; chưa cấu hình allowCredentials. Luồng auth phải được thiết kế và kiểm tra riêng cho local và Vercel–Railway.
+- [schema.sql](../backend/src/main/resources/schema.sql) giữ nguyên các bảng bóng đá. [auth-schema.sql](../backend/src/main/resources/auth-schema.sql) mới chỉ tạo tài khoản và phiên JDBC trên H2 local; chưa có bảng đội dự thi/kết quả cuộc thi. Migration MySQL production còn phải chuẩn bị và được giao thực hiện.
+- Local: [vite.config.js](../frontend/vite.config.js) proxy `/api` tới `http://localhost:8080`. Production: [request.js](../frontend/src/api/request.js) gọi origin backend qua `VITE_API_BASE_URL`; [auth.js](../frontend/src/api/auth.js) gửi `credentials: 'include'` và CSRF cho auth. Chưa có Vercel rewrite được xác minh; không giả định production có proxy cùng origin.
+- [ApiCorsConfiguration](../backend/src/main/java/com/premierhub/config/ApiCorsConfiguration.java) giữ GET tra cứu và POST Fantasy validate công khai, bổ sung GET/POST `/api/auth/**` với allowCredentials và origin chính xác qua `PREMIERHUB_CORS_ALLOWED_ORIGINS`. Local cookie HttpOnly/SameSite=Lax đã thử; cấu hình khác site Vercel–Railway phải giải quyết trước phát hành.
 - Đã có thống kê/rating GW1–GW5 theo context và hồ sơ nhập trước đó; rating do người dùng cung cấp từ SofaScore. Không kiểm kê lại toàn database hoặc thu thập lại các vòng này khi lưu kế hoạch.
 - OVR chỉ dùng giới hạn sức mạnh đội; điểm thi đấu lấy từ rating, không phải tổng OVR. [Đội hình tiêu biểu](team-of-week-2026.md) là chức năng riêng, chưa phải hệ thống tài khoản/đội dự thi/BXH người chơi.
 
@@ -42,6 +42,7 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 
 ### Bước 1 — Tài khoản
 
+- **Checkpoint local:** email/mật khẩu, tên hiển thị, đăng xuất, `/me`, USER, CSRF, phiên JDBC và giao diện desktop/390px đã hoàn thành. Google/khôi phục mật khẩu chưa làm; bước 1 tổng thể chưa hoàn thành. Hướng dẫn chạy và danh sách file ở [auth-local-2026.md](auth-local-2026.md).
 - Email/mật khẩu, Google, đăng xuất, tên hiển thị và khôi phục mật khẩu.
 - Dùng cơ chế xác thực tiêu chuẩn của Spring Security, không tự thiết kế mã hóa/băm mật khẩu. Giải thích nhu cầu và phạm vi dependency trước khi thêm.
 - Kiểm tra danh tính Google ở backend bằng cơ chế tiêu chuẩn; không tin email/tên/ID do frontend tự gửi. Liên kết tài khoản phải có xác nhận sở hữu phù hợp; không tự gộp tài khoản chỉ vì chuỗi email trùng nhau.
@@ -84,38 +85,40 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 - Thử đăng nhập và chốt đội trên deployment thực tế khi được giao. Xác minh callback, cookie/proxy, nhiều thiết bị và thời điểm server.
 - Dữ liệu thử phân biệt rõ với cuộc thi chính thức; GW1–GW5 chỉ Replay, không sửa thống kê đã biết. Migration production cần kế hoạch và backup trước khi thực hiện.
 
-## Các quyết định kỹ thuật còn cần chốt cho bước tài khoản
+## Quyết định kỹ thuật bước tài khoản: đã chốt local và phần còn mở
 
-Các mục dưới đây **chưa chốt**, không phải thay đổi các luật sản phẩm phía trên. Khi được yêu cầu bắt đầu bước 1, đề xuất cách triển khai phù hợp repo và giải thích nhu cầu trước khi thêm framework/dependency. Không yêu cầu người dùng gửi credentials trong tin nhắn; chỉ cấu hình bằng env được ignore.
+Phần email/mật khẩu và phiên local đã chốt theo yêu cầu bước 1; các phần Google, khôi phục và phát hành còn mở được ghi riêng dưới đây. Không thay đổi luật sản phẩm phía trên. Không yêu cầu người dùng gửi credentials trong tin nhắn; chỉ cấu hình bằng env được ignore.
 
 | Quyết định | Nội dung cần chọn/xác nhận trước khi triển khai phần liên quan |
 | --- | --- |
-| Cơ chế xác thực và duy trì đăng nhập | Spring Security dùng session server/cookie hay luồng token chuẩn; thời hạn, thu hồi khi logout/reset, lưu session khi restart/nhiều instance. Nếu lưu session bền vững, chọn cách dùng hạ tầng MySQL hiện có hoặc giải thích nhu cầu bổ sung; chưa tự thêm Redis/framework xác thực khác. |
-| Origin, cookie và proxy | URL frontend/backend local/production và có dùng domain/proxy cùng origin hay tiếp tục gọi khác origin. Chốt thuộc tính cookie HttpOnly/Secure/SameSite, phạm vi cookie, gửi credentials, CORS chính xác và CSRF theo cơ chế đã chọn; không tắt CSRF/CORS hàng loạt để vượt lỗi. Chuẩn bị kiểm tra đăng nhập/đăng xuất thực tế qua Vercel–Railway. |
+| Cơ chế xác thực và duy trì đăng nhập | Đã chọn Spring Security và Spring Session JDBC, cookie HttpOnly `SESSION`, hết hạn sau 30 phút không hoạt động; login đổi mã phiên/CSRF, logout hủy phiên server. H2 file dùng thử local; production dùng MySQL hiện có sau migration/backup được giao, chưa thử restart/nhiều instance trên Railway. Không dùng JWT hoặc Redis. |
+| Origin, cookie và proxy | Local Vite proxy cùng origin đã thử, SameSite=Lax. Production bật Secure nhưng Lax chưa phù hợp fetch khác site Vercel–Railway. Chốt proxy cùng origin/domain cùng site, hoặc None+Secure với CORS origin chính xác, credentials và CSRF; kiểm tra cookie bên thứ ba trên trình duyệt thực tế trước phát hành. Chi tiết ở auth-local-2026.md. |
 | Google OAuth/OIDC | Google project/client, backend callback và URL quay về frontend cho local/prod; nơi kiểm tra danh tính theo Spring Security, nhận diện bằng subject của provider và kiểm tra các claim cần thiết. Chưa tạo OAuth client hoặc đăng ký redirect URI trong lượt kế hoạch. |
 | Liên kết Google với tài khoản email | Hành vi khi email trùng tài khoản có mật khẩu, Google email chưa xác minh hoặc có nhiều danh tính. Chốt xác nhận sở hữu bằng đăng nhập lại hoặc luồng xác nhận phù hợp; việc không bắt xác thực email trước khi chơi không cho phép tự gộp tài khoản. Người chỉ dùng Google và muốn thêm mật khẩu cũng cần luồng sở hữu rõ. |
-| Mô hình tài khoản và chính sách dữ liệu | ID tài khoản độc lập với player_id bóng đá, email đăng nhập duy nhất/chuẩn hóa, tên hiển thị và giới hạn, danh tính Google, trạng thái tài khoản và role. Không công khai email; không coi tên hiển thị là khóa sở hữu. Tên bảng/cột/constraint và cách xử lý email trùng phải được thiết kế trong bước 1, chưa phải schema hiện có. |
-| Mật khẩu và lỗi đăng nhập | Chọn PasswordEncoder tiêu chuẩn của Spring Security, tham số và chính sách mật khẩu; xử lý giới hạn thử đăng nhập/đăng ký/reset, thông báo lỗi không làm lộ tài khoản. Không lưu mật khẩu rõ hoặc tự thiết kế thuật toán. Chốt hành vi tài khoản Google-only khi đăng nhập email/mật khẩu. |
+| Mô hình tài khoản và chính sách dữ liệu | Đã có `accounts`: ID riêng, email strip/lowercase ROOT và unique SQL, tên 2–80 ký tự, hash, role, thời điểm UTC. Chỉ USER khi đăng ký, request không cấp role. Không công khai email trên API tra cứu. Hash nullable cho tài khoản Google-only sau này; danh tính provider/subject phải liên kết đến cùng accounts.id, chưa tạo bảng danh tính Google. |
+| Mật khẩu và lỗi đăng nhập | Đã dùng DelegatingPasswordEncoder với BCrypt mặc định, đăng ký tối thiểu 8 ký tự/tối đa 72 byte UTF-8; sai email và mật khẩu có cùng lỗi, không trả hash/credentials. Giới hạn tốc độ thử đăng nhập/đăng ký/reset còn phải làm trước phát hành. Google-only chưa có luồng đăng nhập; hash NULL hiện bị từ chối khi dùng email/mật khẩu. |
 | Khôi phục mật khẩu | Nhà cung cấp gửi email, địa chỉ gửi/domain, URL reset, thời hạn và sử dụng một lần; cách lưu token an toàn, thu hồi token cũ và session sau reset. Phải có kênh gửi thật để thử end-to-end; không coi in token ra log là tính năng khôi phục đã hoàn tất. |
 | Tài khoản quản trị đầu tiên | Cách cấp admin có kiểm soát ngoài luồng đăng ký, xác nhận người quản trị và ghi nhận thao tác. Không tự cấp admin theo request, email tùy ý hay tài khoản đăng ký đầu tiên. |
-| Migration và thứ tự phát hành | Cấu trúc bảng tài khoản/session/reset/danh tính, cách quản lý migration local/production, rollback và backup. Cấu hình hiện có `spring.sql.init.mode=always` không thay thế kế hoạch migration; không mặc định đổi schema.sql local là đã cập nhật Railway. Nếu cần công cụ migration, giải thích rồi chốt trước khi thêm. |
+| Migration và thứ tự phát hành | Local H2 tạo accounts và hai bảng Spring Session bằng auth-schema.sql. Profile prod tắt tự chạy SQL (`spring.sql.init.mode=never`), cần migration MySQL riêng đã review và backup trước khi được giao nhập; không chạy DDL H2 nguyên xi trên MySQL. Chưa thêm reset/provider schema hoặc công cụ migration, chưa phát hành. |
 
-Email/mật khẩu + Google, logout, khôi phục mật khẩu, quyền người chơi/admin, trang công khai và không yêu cầu xác thực email trước khi chơi **đã chốt**, không mở lại thành câu hỏi về việc có cần các chức năng này hay không. Bảng trên chỉ chốt cách thực hiện và cấu hình cần thiết. Hiện chưa chốt tên endpoint auth, env Google/mail, schema tài khoản hoặc thư viện/version mới; không ghi các tên dự kiến thành lệnh đang có.
+Email/mật khẩu + Google, logout, khôi phục mật khẩu, quyền người chơi/admin, trang công khai và không yêu cầu xác thực email trước khi chơi **đã chốt**, không mở lại thành câu hỏi về việc có cần các chức năng này hay không. Endpoint email/session và schema local hiện có được ghi trong auth-local-2026.md; env Google/mail và danh tính Google/reset vẫn chưa triển khai, không ghi tên dự kiến thành lệnh đang có.
 
 ## Cách làm việc, kiểm tra và báo cáo
 
 - Chỉ đọc phần repo liên quan, không kiểm kê lại toàn bộ dữ liệu đã hoàn thành. Mỗi lượt triển khai một bước hoặc một phần đủ review; ghi đã làm, còn thiếu và bước tiếp theo trong tài liệu/checkpoint.
 - Tái sử dụng validation, sân bóng, thẻ cầu thủ và quy trình rating hiện có. Không tự mở cuộc thi chính thức hoặc chuyển lựa chọn localStorage thành đội dự thi.
-- Với mã thay đổi: test đúng phạm vi và build phần thay đổi một lần; mở rộng kiểm tra khi có lỗi/thay đổi mới cần xác minh. Không viết test riêng cho từng CLB/GW. Lượt chỉ tài liệu này kiểm tra nội dung/liên kết/diff, không chạy application test/build.
+- Với mã thay đổi: test đúng phạm vi và build phần thay đổi một lần; mở rộng kiểm tra khi có lỗi/thay đổi mới cần xác minh. Không viết test riêng cho từng CLB/GW. Lượt chỉ tài liệu kiểm tra nội dung/liên kết/diff, không chạy application test/build.
 - Credentials chỉ đặt trong env được ignore; không in secret, mật khẩu hoặc token reset/Google/session ra log, không đưa secret vào cấu hình frontend công khai. Dùng cấu hình hiện có làm căn cứ, không tự tạo credentials.
 - Không tự commit, push, deploy hoặc ghi production. Khi cần migration production, trình bày schema/phạm vi, backup, kiểm tra và kế hoạch phát hành trước bước được giao thực hiện. Không tạo cron/Pre-deploy Command để thay kiểm tra deadline ở server.
 - Mỗi lượt báo file cần commit, commit message, kiểm tra đã chạy/chưa chạy và giới hạn còn lại. Phần local và bước nhập SQL/phát hành phải tách rõ.
 
-## Trạng thái bàn giao lượt lưu kế hoạch
+## Trạng thái bàn giao bước 1 — email/mật khẩu local
 
-- Hoàn thành: lưu context, 13 luật đã chốt, sáu bước và quyết định tài khoản còn mở; thêm liên kết trong AGENTS.md, giữ nguyên các hướng dẫn khác.
-- Chưa triển khai: bước 1–6, migration, cuộc thi chính thức, deadline GW6 thực tế và kiểm tra deployment.
-- Không sửa code/schema/database, không chạy test/build, không commit/push/deploy.
-- File cần commit: `AGENTS.md`, `docs/fantasy-multiplayer-2026-plan.md`.
-- Commit message đề xuất: `docs: record PrismaXI multiplayer fantasy plan for 2026/27`.
-- Lượt tiếp theo: **“Bắt đầu bước 1 — tài khoản, theo docs/fantasy-multiplayer-2026-plan.md.”** Trước phần triển khai liên quan, chốt các quyết định kỹ thuật còn mở; chưa làm toàn bộ Fantasy trong lượt đó.
+- Hoàn thành local: đăng ký, đăng nhập, đăng xuất, tài khoản hiện tại; hash BCrypt, email unique/chuẩn hóa, chỉ USER, phiên JDBC/cookie HttpOnly và CSRF; form cùng loading/lỗi trong PrismaXI. Không thay đội Fantasy trong trình duyệt.
+- Kiểm tra: 49 test backend qua và Maven package thành công trên H2 cô lập; 15 test frontend qua, Vite build thành công. Chrome desktop 1440px/390px gọi server thật đã thử đăng ký → đăng nhập → reload → đăng xuất, lỗi trùng email/sai mật khẩu, API riêng 401 sau logout, cookie và giữ localStorage Fantasy. Không kiểm kê hoặc nhập lại dữ liệu bóng đá.
+- Lần test backend đầu phát hiện cấu hình MVC slice cần Security Test starter của Boot 4 và mock service còn thiếu trong test CORS; đã sửa, chạy lại cùng phạm vi để xác nhận. Không chạy full suite, không tạo test cho từng GW/CLB.
+- Chưa hoàn thành: Google, khôi phục mật khẩu, giới hạn tốc độ trước phát hành, migration MySQL và cấu hình cookie/domain Vercel–Railway. Bước 2–6, cuộc thi chính thức, deadline GW6 thực tế và kiểm tra deployment chưa triển khai. Bước 1 tổng thể còn phần tiếp theo.
+- Chỉ ghi H2 thử local; không nối/ghi MySQL production, không tự commit/push/deploy. Schema bóng đá, membership, mùa 2024/25 và luật Fantasy giữ nguyên.
+- File cần commit và lệnh chạy: xem danh sách đầy đủ trong [auth-local-2026.md](auth-local-2026.md). AGENTS.md không sửa trong lượt này.
+- Commit message đề xuất: `feat: add local PrismaXI email accounts with JDBC sessions and CSRF`.
+- Lượt tiếp theo: **“Tiếp tục bước 1 — thêm đăng nhập Google vào cùng hệ thống tài khoản, theo docs/fantasy-multiplayer-2026-plan.md.”** Chốt callback/domain và cách liên kết có xác nhận sở hữu; triển khai OIDC chuẩn, dùng cùng accounts.id/session, kiểm tra local trước. Khôi phục mật khẩu là phần riêng sau đó, chưa kéo bước chốt/chấm/BXH vào lượt Google.

@@ -6,6 +6,7 @@ import StandingsPage from './components/StandingsPage.jsx'
 import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import ClubDetailPage from './components/ClubDetailPage.jsx'
+import AccountMenu from './components/AccountMenu.jsx'
 import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
 import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
 import { parseMatchRoute } from './utils/matchRoute.js'
@@ -123,6 +124,7 @@ function App() {
               </svg>
             </button>
           </div>}
+          <AccountMenu />
         </div>
       </header>
 

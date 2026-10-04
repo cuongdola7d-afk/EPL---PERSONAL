@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 @WebMvcTest(FantasyController.class)
 @Import({FantasyLineupService.class, ApiCorsConfiguration.class})
@@ -46,7 +47,7 @@ class FantasyControllerTest {
                         .content("{\"formation\":\"4-4-2\",\"picks\":{\"0-0\":\"not-an-id\"}}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.issues[0].code").value("REQUEST"));
-        mvc.perform(post("/api/fantasy/2024/validate").contentType("application/json").content("{}"))
+        mvc.perform(post("/api/fantasy/2024/validate").with(csrf()).contentType("application/json").content("{}"))
                 .andExpect(handler().handlerType(org.springframework.web.servlet.resource.ResourceHttpRequestHandler.class));
     }
 
