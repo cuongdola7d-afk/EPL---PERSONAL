@@ -13,6 +13,15 @@ import java.util.Map;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = {AuthController.class, GoogleAuthController.class})
 public class AuthExceptionHandler {
+    @ExceptionHandler(AuthRateLimitException.class)
+    ResponseEntity<?> rateLimited(AuthRateLimitException exception) {
+        long seconds = exception.retryAfterSeconds();
+        return ResponseEntity.status(429).header("Retry-After", Long.toString(seconds))
+                .header("Cache-Control", "no-store")
+                .body(Map.of("code", "AUTH_RATE_LIMITED", "message", "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau " + seconds + " giây.",
+                        "retryAfterSeconds", seconds));
+    }
+
     @ExceptionHandler(GoogleAccountException.class)
     ResponseEntity<?> google(GoogleAccountException exception) {
         String code = exception.code();

@@ -4,7 +4,7 @@
 
 Đã triển khai code đăng nhập Google và liên kết có xác nhận vào **cùng `accounts.id`**, Spring Security, JDBC session, cookie HttpOnly, CSRF, logout và `/api/auth/me` hiện có. Spring Boot vẫn 4.1.1/Java mục tiêu 21; chỉ thêm `spring-boot-starter-oauth2-client` do BOM quản lý. Các API bóng đá, luật Fantasy, lựa chọn localStorage và dữ liệu mùa 2024/25 không thay đổi.
 
-**Chưa kiểm chứng Google thật đầu cuối:** môi trường kiểm tra chưa có Client ID/secret Google. Kiểm tra tự động dùng provider OIDC local có ký JWT và HTTP thật; không phải Google Cloud/consent screen thật. Khôi phục mật khẩu, rate limiting, chốt đội, chấm điểm/BXH và phát hành chưa làm.
+**Google thật đã được người dùng kiểm chứng trên local:** reload/đăng nhập lại giữ đúng ID, logout trả AUTH_REQUIRED, liên kết tài khoản email giữ cùng ID. Đối chiếu H2 không trùng email/provider-subject, tài khoản email đã có liên kết và phiên còn hạn. Kiểm tra tự động của lượt triển khai trước dùng provider OIDC local có ký JWT/HTTP thật; kiểm tra deployment vẫn chưa làm. Lượt này bổ sung giới hạn khởi tạo LOGIN/LINK theo IP, chi tiết ở [auth-local-2026.md](auth-local-2026.md#giới-hạn-tần-suất-xác-thực--local-04102026). Khôi phục mật khẩu, chốt đội, chấm điểm/BXH và phát hành chưa làm.
 
 ## Chính xác cấu hình cần để thử local
 
@@ -65,7 +65,7 @@ OAuth dùng chiến lược chống session fixation/đổi CSRF hiện có. Sau
 
 Sau callback, backend chỉ quay về **origin cố định từ env** + route nội bộ đã kiểm tra của SPA (`/`, query và hash). Từ chối URL tuyệt đối, authority `//`, path khác `/`, backslash, control characters và path mã hóa khác root. Không dùng Host/URL quay lại tùy ý từ request làm origin. Kết quả Google chỉ là mã cố định ở query (`success`, `confirm_link`, `cancelled`, `provider_error`, `link_required`, ...); không đưa token/code/error_description lên frontend. Frontend xóa query kết quả khi đọc, giữ hash/trang đang mở và kiểm tra `/me` để xác định đăng nhập thật.
 
-## Local đã kiểm tra, Google thật còn thiếu
+## Kiểm tra triển khai ban đầu và xác nhận Google thật local
 
 Backend từ `backend/`:
 
@@ -86,7 +86,7 @@ npm.cmd run build
 
 **18 test qua**, build Vite thành công, mỗi phần một lượt. Chrome desktop 1440px/390px gọi backend JAR/H2 riêng `target/google-browser-20261004` đã thử lại email signup/login/reload/logout, nút Google disabled khi thiếu credentials và thông báo kết quả hủy/provider lỗi/cần liên kết bằng query mẫu. Không tràn ngang, không lỗi JavaScript, dữ liệu Fantasy thử trong localStorage giữ nguyên. Thông báo query mẫu là kiểm tra UI, không phải xác nhận callback Google thật. Ảnh/kết quả ở `backend/target/google-check/`, không commit.
 
-Bạn cần cấu hình Console/env rồi thử thật: đăng nhập Google mới → reload → logout → đăng nhập lại; trùng email → đăng nhập account cũ → LINK → xác nhận/hủy; thử hủy ở Google, chọn identity đã liên kết vào account khác và quay về đúng trang đang mở. Đối chiếu account/identity trên **H2 local**. Vòng Console/consent/callback/token Google thật và UI confirmation từ Google thật vẫn chưa được kiểm chứng.
+Sau lượt triển khai ban đầu, bạn đã cấu hình Console/env và thử Google thật trên local: đăng nhập → reload → logout → đăng nhập lại giữ ID, cùng liên kết tài khoản email. Đã đọc lại **H2 local**, không trùng email/danh tính, tài khoản email có liên kết và phiên còn hạn. Đây là xác nhận local theo thao tác người dùng, không phải kiểm chứng Railway/Vercel. Các ca lỗi provider/state/nonce được test tự động với provider local; không khẳng định mọi ca hủy/xung đột đã được người dùng thử lại trên Google thật.
 
 ## Vercel/Railway — chuẩn bị, chưa đổi production
 
@@ -96,7 +96,7 @@ Với frontend/backend khác domain, đặt `PREMIERHUB_GOOGLE_FRONTEND_ORIGIN` 
 
 Chốt domain/proxy trước phát hành. Giữ cookie Secure; nếu vẫn khác site Vercel/Railway, Lax hiện có chưa đủ cho fetch có cookie: cần None+Secure hoặc giải pháp cùng origin/cùng site, kiểm tra chặn cookie bên thứ ba và CSRF như [auth-local-2026.md](auth-local-2026.md). OAuth callback top-level và fetch auth là hai trường hợp khác nhau, không coi callback thành công là fetch đã nhận phiên.
 
-Spring phải thấy scheme/host callback đúng URI đã đăng ký khi đứng sau Railway proxy. Xác minh forwarded headers/trusted proxy thực tế; nếu cần Spring xử lý forwarding, cấu hình `SERVER_FORWARD_HEADERS_STRATEGY=framework` trong bước phát hành với proxy đã tin cậy. Chưa đặt biến này hay thay cấu hình production trong lượt local. Thử HTTPS, cookie, callback và return route trên deployment thật trước khi gọi đã phát hành.
+Spring phải thấy scheme/host callback đúng URI đã đăng ký khi đứng sau Railway proxy. Bản có giới hạn xác thực giữ `server.forward-headers-strategy=none` để xác định socket peer trước khi kiểm tra danh sách proxy tin cậy; không bật global `native/framework`. Xác minh dải IP và cách proxy ghi/nối X-Forwarded-For cùng việc xử lý scheme/host HTTPS đáng tin trước phát hành, xem chính sách ở auth-local-2026.md. Chưa thiết kế/xác minh forwarding HTTPS Railway cho bản này hoặc thay cấu hình production. Thử HTTPS, cookie, callback và return route trên deployment thật trước khi gọi đã phát hành.
 
 ## File cần commit cho lượt Google
 

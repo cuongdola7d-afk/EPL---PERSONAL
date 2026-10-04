@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { currentAccount, loginAccount, logoutAccount, startGoogle, confirmGoogleLink } from './auth.js'
+import { currentAccount, loginAccount, logoutAccount, registerAccount, startGoogle, confirmGoogleLink } from './auth.js'
 
 test('unauthenticated account is null; server failures remain visible', async () => {
   const original = globalThis.fetch
@@ -50,4 +50,47 @@ test('login/logout include cookies, use a fresh CSRF header each time and never 
     assert.equal(requests[3].options.headers['X-CSRF-TOKEN'], 'csrf-3')
     assert.equal(requests[1].options.method, 'POST'); assert.equal(requests[3].options.method, 'POST')
   } finally { globalThis.fetch = original }
+})
+
+test('429 displays Vietnamese wait time for email login, registration and both Google modes', async () => {
+  const original = globalThis.fetch
+  try {
+    globalThis.fetch = async url => {
+      if (url.endsWith('/csrf')) return new Response(JSON.stringify({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
+      return new Response(JSON.stringify({ message: 'Ignored backend detail', retryAfterSeconds: 999 }),
+        { status: 429, headers: { 'Retry-After': '42' } })
+    }
+    for (const attempt of [
+      () => loginAccount({ email: 'player@example.com', password: 'example-password' }),
+      () => registerAccount({ displayName: 'Player', email: 'player@example.com', password: 'example-password' }),
+      () => startGoogle('LOGIN', '/'), () => startGoogle('LINK', '/'),
+    ]) {
+      await assert.rejects(attempt(), error => error.status === 429 && error.retryAfterSeconds === 42
+        && error.message === 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau 42 giây.')
+    }
+  } finally { globalThis.fetch = original }
+})
+
+test('429 uses Retry-After even for a non-JSON proxy response and falls back safely', async () => {
+  const original = globalThis.fetch
+  try {
+    globalThis.fetch = async () => new Response('Too many requests', { status: 429, headers: { 'Retry-After': '8' } })
+    await assert.rejects(currentAccount(), error => error.status === 429 && error.retryAfterSeconds === 8)
+    globalThis.fetch = async () => new Response(JSON.stringify({ retryAfterSeconds: 12 }), { status: 429 })
+    await assert.rejects(currentAccount(), /sau 12 giây/)
+    globalThis.fetch = async () => new Response('{}', { status: 429, headers: { 'Retry-After': 'invalid' } })
+    await assert.rejects(currentAccount(), error => error.status === 429 && error.retryAfterSeconds === null
+      && error.message.includes('chờ một lúc'))
+  } finally { globalThis.fetch = original }
+})
+
+test('429 accepts an HTTP date in Retry-After', async () => {
+  const original = globalThis.fetch
+  const originalNow = Date.now
+  try {
+    Date.now = () => Date.UTC(2026, 9, 4, 12, 0, 0)
+    globalThis.fetch = async () => new Response('{}', { status: 429,
+      headers: { 'Retry-After': new Date(Date.now() + 30000).toUTCString() } })
+    await assert.rejects(currentAccount(), error => error.status === 429 && error.retryAfterSeconds === 30)
+  } finally { globalThis.fetch = original; Date.now = originalNow }
 })

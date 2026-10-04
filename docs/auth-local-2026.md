@@ -2,7 +2,7 @@
 
 ## Phạm vi đã hoàn thành
 
-Bước 1 của [kế hoạch Fantasy 2026/27](fantasy-multiplayer-2026-plan.md): đăng ký, đăng nhập, đăng xuất và xem tài khoản của chính mình. Không yêu cầu xác thực email trước khi chơi. Google đã có code OIDC và liên kết vào cùng tài khoản, kiểm tra với provider local; [hướng dẫn Google](google-auth-2026.md) ghi cấu hình và phần thử Google thật còn thiếu. Khôi phục mật khẩu, lưu đội dự thi, chốt đội, chấm điểm và BXH người chơi chưa triển khai. Tài khoản độc lập với `player_id` và dữ liệu mùa bóng; không thay luật Fantasy hay dữ liệu 2024/25.
+Bước 1 của [kế hoạch Fantasy 2026/27](fantasy-multiplayer-2026-plan.md): đăng ký, đăng nhập, đăng xuất và xem tài khoản của chính mình. Không yêu cầu xác thực email trước khi chơi. Email, Google OIDC và liên kết cùng tài khoản đã được kiểm chứng trên local; [hướng dẫn Google](google-auth-2026.md) ghi cấu hình và phần deployment còn thiếu. Đã bổ sung giới hạn tần suất xác thực dưới đây. Khôi phục mật khẩu, lưu đội dự thi, chốt đội, chấm điểm và BXH người chơi chưa triển khai. Tài khoản độc lập với `player_id` và dữ liệu mùa bóng; không thay luật Fantasy hay dữ liệu 2024/25.
 
 Spring Boot giữ nguyên **4.1.1**, Java mục tiêu **21**. Dependency do BOM hiện có quản lý: Spring Security **7.1.1**, Spring Session **4.1.1**; dùng các starter Security, Session JDBC và Security Test, không thêm Redis hoặc JWT.
 
@@ -70,13 +70,68 @@ Vercel `*.vercel.app` và Railway `*.railway.app` là khác site. **Cookie SameS
 - Ưu tiên proxy `/api` cùng origin, hoặc domain riêng cho frontend/backend thuộc cùng site; xác minh rewrite/proxy có chuyển đúng Set-Cookie, cookie path/domain và request cookie.
 - Nếu tiếp tục khác site: đặt `server.servlet.session.cookie.same-site=none`, giữ `server.servlet.session.cookie.secure=true`, HTTPS; auth fetch đã dùng `credentials: 'include'`. `PREMIERHUB_CORS_ALLOWED_ORIGINS` phải là origin frontend chính xác và CORS auth đã `allowCredentials(true)`, không dùng `*`. Vẫn giữ CSRF. Chính sách chặn cookie bên thứ ba của trình duyệt có thể khiến cách này không hoạt động; cần thử trên deployment thật, không coi SameSite=None là bảo đảm.
 
-Chưa xác minh domain/rewrite Railway–Vercel thực tế hoặc cấu hình forwarded headers/trusted proxy; chưa có giới hạn tốc độ đăng nhập/đăng ký. Những việc này cần hoàn thiện và thử trước phát hành công khai. Google chỉ bật khi backend có cấu hình; khôi phục mật khẩu chưa có trên UI.
+Chưa xác minh domain/rewrite Railway–Vercel thực tế. Giới hạn xác thực local đã được bổ sung bên dưới; danh sách proxy tin cậy và giới hạn khi chạy nhiều instance vẫn cần chốt trước phát hành. Google chỉ bật khi backend có cấu hình; khôi phục mật khẩu chưa có trên UI.
 
 ## Google dùng cùng tài khoản: cập nhật tiến độ
 
 Đã thêm OAuth2/OIDC client chuẩn của Spring Security theo BOM hiện có, dùng cùng session/me/logout. Google mới tạo USER hoặc dùng subject đã liên kết; email trùng yêu cầu đăng nhập account cũ và xác nhận liên kết, không tự gộp. LINK giữ account hiện có và chỉ ghi liên kết sau POST có CSRF và proof Google trong phiên.
 
-Chi tiết API, Console, bốn biến env, callback local trực tiếp backend 8080 và khác biệt production ở [google-auth-2026.md](google-auth-2026.md). 24 test scoped backend và 18 test frontend đã qua ở lượt Google; provider OIDC thử có ký JWT, state/nonce và token/userinfo HTTP. Browser desktop/390px thử lại email, Google disabled và thông báo callback bằng query mẫu. **Chưa thử Google thật** vì chưa có credentials; bước tiếp theo là bạn cấu hình Console/env và thử flow thực tế trên H2. Khôi phục mật khẩu và rate limiting vẫn chưa làm.
+Chi tiết API, Console, bốn biến env, callback local trực tiếp backend 8080 và khác biệt production ở [google-auth-2026.md](google-auth-2026.md). 24 test scoped backend và 18 test frontend đã qua ở lượt Google; provider OIDC thử có ký JWT, state/nonce và token/userinfo HTTP. Sau đó người dùng đã thử Google thật trên local: reload/đăng nhập lại giữ ID, logout trả AUTH_REQUIRED và liên kết email giữ cùng tài khoản. Đối chiếu H2 có 3 tài khoản/3 danh tính riêng, không trùng email/provider-subject; tài khoản email ID 3 đã liên kết Google và có phiên còn hạn. Không chạy lại toàn bộ kiểm tra Google thật trong lượt giới hạn tần suất. Khôi phục mật khẩu chưa làm.
+
+## Giới hạn tần suất xác thực — local, 04/10/2026
+
+Không thêm dependency/dịch vụ hoặc bảng SQL. `AuthRateLimiter` giữ các bộ đếm trong bộ nhớ **từng JVM**; một cửa sổ bắt đầu từ yêu cầu được chấp nhận đầu tiên. Cả thao tác thành công và thất bại đều tính một lượt, sau CSRF và validation, trước truy vấn tài khoản/hash mật khẩu hoặc tạo luồng Google. Chỉ đếm request hợp lệ vào controller; JSON/field không hợp lệ và CSRF sai được xử lý bằng cơ chế hiện có. Đây không phải giới hạn mọi traffic/DoS ở tầng mạng.
+
+| Thao tác/phạm vi | Mặc định | Biến môi trường ngưỡng | Biến môi trường cửa sổ |
+| --- | --- | --- | --- |
+| POST `/api/auth/login`, theo IP | 20 lượt/5 phút | `PREMIERHUB_AUTH_LOGIN_IP_ATTEMPTS` | `PREMIERHUB_AUTH_LOGIN_IP_WINDOW` |
+| Cùng endpoint, theo email strip/lowercase ROOT | 5 lượt/5 phút | `PREMIERHUB_AUTH_LOGIN_EMAIL_ATTEMPTS` | `PREMIERHUB_AUTH_LOGIN_EMAIL_WINDOW` |
+| POST `/api/auth/register`, theo IP | 5 lượt/15 phút | `PREMIERHUB_AUTH_REGISTER_IP_ATTEMPTS` | `PREMIERHUB_AUTH_REGISTER_IP_WINDOW` |
+| POST `/api/auth/google/start`, theo IP, chung LOGIN/LINK | 10 lượt/5 phút | `PREMIERHUB_AUTH_GOOGLE_IP_ATTEMPTS` | `PREMIERHUB_AUTH_GOOGLE_IP_WINDOW` |
+
+Ngưỡng là số nguyên dương; cửa sổ dùng cú pháp Duration của Spring Boot, ví dụ `30s`, `5m`, `15m`, từ 1 giây tới 7 ngày. Có thể dùng các property tương ứng `premierhub.auth-rate-limit.login-ip.attempts/window`, `login-email.attempts/window`, `registration-ip.attempts/window`, `google-ip.attempts/window`. Đồng hồ bộ đếm dùng `System.nanoTime` để không bị chỉnh đồng hồ lịch làm thay đổi thời gian chờ.
+
+Đăng nhập phải còn lượt ở **cả hai** bộ đếm. Đổi email không né được giới hạn IP; đổi IP không né được giới hạn email đã chuẩn hóa. Bộ đếm không phụ thuộc email có tồn tại hay không và phản hồi 429 không nêu email/bộ đếm nào bị chặn. IP và email khác nhau không chia sẻ bộ đếm; người dùng chung IP/NAT vẫn chia sẻ hạn mức IP theo thiết kế. Không khóa tài khoản trong database, không gia hạn cửa sổ vì request bị chặn, không xóa lượt sau login thành công; hết cửa sổ tự thử lại được.
+
+Vượt ngưỡng trả HTTP **429**, `Retry-After: <số giây nguyên làm tròn lên>` và JSON `code: AUTH_RATE_LIMITED`, `message` tiếng Việt, `retryAfterSeconds`. Nếu nhiều bộ đếm chặn, lấy thời gian chờ dài nhất. `Cache-Control: no-store`; CORS auth expose `Retry-After`. Frontend ưu tiên header, hỗ trợ số giây hoặc HTTP date, fallback số giây JSON rồi thông báo chờ chung. Các form email và nút Google dùng chung xử lý lỗi, hiện trong `role=alert`; không tự gửi lại request hay lưu credentials. Thời gian hiển thị là tại lúc nhận phản hồi, chưa có đếm ngược trực tiếp.
+
+`PREMIERHUB_AUTH_LIMIT_MAX_ENTRIES` mặc định **10000** (2..1000000) tính chung các khóa IP/email/thao tác. `PREMIERHUB_AUTH_LIMIT_CLEANUP_INTERVAL` mặc định **60s** (1s..1d). Một thread daemon dọn khóa hết hạn định kỳ và đóng khi ứng dụng dừng; cũng dọn trước khi kiểm tra dung lượng. Kiểm tra/tăng bộ đếm có đồng bộ, không vượt ngưỡng khi request chạy song song. Khi hết dung lượng, không xóa khóa đang hiệu lực: thao tác cần khóa mới trả 429 đến mốc hết hạn sớm nhất; thao tác có sẵn khóa vẫn theo hạn mức của nó. Một đợt nhiều khóa mới có thể tạm chặn người dùng khác, cần theo dõi và điều chỉnh dung lượng khi phát hành.
+
+**Khởi động lại:** bộ đếm bị xóa, nhưng tài khoản/liên kết và phiên JDBC vẫn được lưu riêng. **Nhiều instance:** mỗi JVM có hạn mức riêng, không phải giới hạn toàn cụm; tổng số lượt thực tế có thể tăng theo số instance. Bản này phù hợp chạy một instance. Trước khi mở rộng, cần bộ đếm chung atomically trên hạ tầng/database hiện có hoặc giới hạn ở proxy đã xác minh; chưa bổ sung Redis/dịch vụ trả phí hoặc thay đổi production trong lượt này.
+
+### IP và proxy tin cậy
+
+Mặc định `server.forward-headers-strategy=none` và `PREMIERHUB_AUTH_TRUSTED_PROXIES` rỗng: dùng IP socket từ `getRemoteAddr()`, bỏ qua mọi `X-Forwarded-For`/`Forwarded`. Chỉ cấu hình IP/CIDR thực tế của các proxy do mình kiểm soát, phân cách bằng dấu phẩy; không điền tên miền hoặc `/0`. Ví dụ minh họa `10.0.0.2/32,2001:db8:1::/48` **không phải** dải Railway đã xác minh.
+
+Nếu socket peer thuộc danh sách tin cậy, resolver ghép các header X-Forwarded-For và đi từ phải sang trái qua các proxy tin cậy, dừng ở hop không tin cậy đầu tiên. Proxy phải xóa header client tự khai rồi ghi IP socket, hoặc nối IP socket vào cuối chuỗi; không được chuyển nguyên header client mà không thêm IP thật. Địa chỉ chỉ nhận IP literal IPv4/IPv6, chuẩn hóa trước khi dùng khóa; không DNS lookup cho hostname. Chuỗi sai, quá 2048 ký tự hoặc 32 hop dùng lại peer IP. `Forwarded` không được dùng để xác định IP.
+
+Resolver từ chối khởi động nếu bật global forwarding `native/framework`: các cơ chế đó có thể thay socket peer trước khi kiểm tra trust. **Không áp dụng hướng dẫn bật `SERVER_FORWARD_HEADERS_STRATEGY=framework` cũ để phát hành bản này.** Scheme/host callback HTTPS sau Railway proxy cần được kiểm tra và thiết kế cùng chính sách proxy tin cậy trước phát hành; chưa xác minh CIDR/forwarding Railway hoặc thay cấu hình production. Local callback trực tiếp 8080 vẫn hoạt động.
+
+Không ghi password, cookie, OAuth token, credentials, email hoặc IP vào log giới hạn. Logout, GET `/me`, CSRF, callback/confirm/cancel Google không dùng bộ đếm mới; bảo vệ session/CSRF/state/nonce/xác nhận liên kết giữ nguyên.
+
+### Kiểm tra và file của lượt giới hạn
+
+Chạy từ `backend/`, không `clean` để giữ H2 local của người dùng:
+
+```powershell
+mvn.cmd '-Dtest=AuthRateLimiterTest,AuthClientIpResolverTest,AuthRateLimitIntegrationTest' '-Dspring.datasource.url=jdbc:h2:mem:auth-rate-build;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1' '-Dspring.datasource.username=sa' '-Dspring.datasource.password=' package
+```
+
+Frontend từ `frontend/`: `node --test src/api/auth.test.js`, rồi `npm.cmd run build`. Test dùng H2 memory riêng và Google disabled; clock giả kiểm tra hết hạn mà không ngủ. Không đọc/ghi H2 tài khoản người dùng hoặc MySQL production bằng test, không chạy lại Google thật.
+
+Kết quả: **17 test backend qua** (7 limiter, 5 IP/proxy, 5 HTTP integration); Maven package thành công. Lần đầu dừng ở lỗi biên dịch `IntStream.map` trong test đồng thời; đã sửa thành `mapToObj` và chạy lại đúng phạm vi. **6 test frontend qua**, Vite build thành công một lượt. Backend kiểm tra vượt ngưỡng/IP/email chuẩn hóa, hết hạn, người dùng khác, nhiều request song song, dung lượng/cleanup, CSRF, CORS Retry-After, phiên hiện tại/logout và API công khai.
+
+Chrome **1440px và 390px**: 8 ca UI cho email login/register, Google LOGIN/LINK đều hiển thị “thử lại sau 42 giây”, không tràn ngang hoặc lỗi JavaScript; marker localStorage giữ nguyên. Chỉ mock các phản hồi auth 429/status/CSRF trong một profile Chrome cô lập để kiểm tra giao diện; HTTP integration bên trên dùng limiter thật/H2 thật. Không thao tác màn hình Google hoặc tạo tài khoản thật trong kiểm tra UI. Chrome lần khởi chạy đầu lỗi GPU trong môi trường kiểm tra; lần chạy headless không dùng GPU hoàn tất. Kết quả/ảnh ở `backend/target/auth-rate-check/`, không commit. Backend auth-local và frontend local đã chạy lại bản mới tại localhost:8080/5173.
+
+File cần commit:
+
+- `backend/src/main/java/com/premierhub/accounts/`: `AuthRateLimitSettings.java`, `AuthRateLimitException.java`, `AuthRateLimiter.java`, `AuthClientIpResolver.java`, `AuthController.java`, `GoogleAuthController.java`, `AuthExceptionHandler.java`.
+- `backend/src/main/java/com/premierhub/config/ApiCorsConfiguration.java`, `backend/src/main/resources/application.properties`.
+- `backend/src/test/java/com/premierhub/accounts/`: `AuthRateLimiterTest.java`, `AuthClientIpResolverTest.java`, `AuthRateLimitIntegrationTest.java`.
+- `frontend/src/api/auth.js`, `frontend/src/api/auth.test.js`.
+- `docs/auth-local-2026.md`, `docs/google-auth-2026.md`, `docs/fantasy-multiplayer-2026-plan.md`.
+
+Commit message: `feat(auth): rate limit registration and sign-in attempts`. Chưa commit/push/deploy; không migration SQL cho bộ giới hạn. Khôi phục mật khẩu làm trong lượt riêng.
 
 ## File lượt email ban đầu (đã bàn giao)
 

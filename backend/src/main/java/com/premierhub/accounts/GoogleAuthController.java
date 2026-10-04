@@ -14,9 +14,13 @@ public class GoogleAuthController {
     private final GoogleOAuthSettings settings;
     private final GoogleOAuthFlow flow;
     private final GoogleAccountService accounts;
+    private final AuthRateLimiter limits;
+    private final AuthClientIpResolver clientIps;
 
-    public GoogleAuthController(GoogleOAuthSettings settings, GoogleOAuthFlow flow, GoogleAccountService accounts) {
+    public GoogleAuthController(GoogleOAuthSettings settings, GoogleOAuthFlow flow, GoogleAccountService accounts,
+                                AuthRateLimiter limits, AuthClientIpResolver clientIps) {
         this.settings = settings; this.flow = flow; this.accounts = accounts;
+        this.limits = limits; this.clientIps = clientIps;
     }
 
     public record Status(boolean enabled, boolean linked, String pendingEmail) { }
@@ -33,6 +37,7 @@ public class GoogleAuthController {
 
     @PostMapping("/start")
     public Started start(@Valid @RequestBody Start body, HttpServletRequest request, Authentication auth) {
+        limits.google(clientIps.resolve(request));
         flow.start(request, auth, body.mode(), body.returnPath());
         return new Started(GoogleOAuthSettings.AUTHORIZE_BASE + "/google");
     }

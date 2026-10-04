@@ -3,7 +3,24 @@ import { buildApiUrl } from './request.js'
 const url = path => buildApiUrl(`/api/auth/${path}`, import.meta.env?.VITE_API_BASE_URL, import.meta.env?.DEV ?? true)
 
 export class AuthError extends Error {
-  constructor(message, status) { super(message); this.status = status }
+  constructor(message, status, retryAfterSeconds = null) {
+    super(message); this.status = status; this.retryAfterSeconds = retryAfterSeconds
+  }
+}
+
+function rateLimitError(response, data) {
+  const header = response.headers.get('Retry-After')
+  let seconds = header && /^\d+$/.test(header) ? Number(header) : null
+  if (header && seconds === null) {
+    const date = Date.parse(header)
+    if (Number.isFinite(date)) seconds = Math.ceil((date - Date.now()) / 1000)
+  }
+  if (!(seconds > 0) && Number.isFinite(data?.retryAfterSeconds)) seconds = data.retryAfterSeconds
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return new AuthError('Bạn đã thử quá nhiều lần. Vui lòng chờ một lúc rồi thử lại.', 429)
+  }
+  seconds = Math.ceil(seconds)
+  return new AuthError(`Bạn đã thử quá nhiều lần. Vui lòng thử lại sau ${seconds} giây.`, 429, seconds)
 }
 
 async function accountRequest(path, options = {}) {
@@ -16,7 +33,11 @@ async function accountRequest(path, options = {}) {
   if (response.status === 204) return null
   let data
   try { data = await response.json() }
-  catch { throw new AuthError('Dịch vụ tài khoản trả về dữ liệu không hợp lệ.', response.status) }
+  catch {
+    if (response.status === 429) throw rateLimitError(response, null)
+    throw new AuthError('Dịch vụ tài khoản trả về dữ liệu không hợp lệ.', response.status)
+  }
+  if (response.status === 429) throw rateLimitError(response, data)
   if (!response.ok) throw new AuthError(data.message ?? 'Không thực hiện được thao tác tài khoản.', response.status)
   return data
 }

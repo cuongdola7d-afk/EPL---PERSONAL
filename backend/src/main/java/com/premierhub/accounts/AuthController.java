@@ -24,13 +24,18 @@ public class AuthController {
     private final AuthenticationConfiguration authentication;
     private final SecurityContextRepository contexts;
     private final SessionAuthenticationStrategy sessions;
+    private final AuthRateLimiter limits;
+    private final AuthClientIpResolver clientIps;
 
     public AuthController(AccountService accounts, AuthenticationConfiguration authentication,
-                          SecurityContextRepository contexts, SessionAuthenticationStrategy sessions) {
+                          SecurityContextRepository contexts, SessionAuthenticationStrategy sessions,
+                          AuthRateLimiter limits, AuthClientIpResolver clientIps) {
         this.accounts = accounts;
         this.authentication = authentication;
         this.contexts = contexts;
         this.sessions = sessions;
+        this.limits = limits;
+        this.clientIps = clientIps;
     }
 
     public record Registration(@NotBlank @Email @Size(max = 254) String email,
@@ -50,12 +55,14 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse register(@Valid @RequestBody Registration body) {
+    public AccountResponse register(@Valid @RequestBody Registration body, HttpServletRequest request) {
+        limits.register(clientIps.resolve(request));
         return accounts.register(body.email(), body.displayName(), body.password());
     }
 
     @PostMapping("/login")
     public AccountResponse login(@Valid @RequestBody Login body, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        limits.login(clientIps.resolve(request), body.email());
         AccountService.validatePasswordBytes(body.password());
         var result = authentication.getAuthenticationManager().authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(body.email(), body.password()));
