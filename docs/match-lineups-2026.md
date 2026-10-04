@@ -60,7 +60,30 @@ Fixture dùng hai sơ đồ khác nhau trong test/browser là dữ liệu kiểm
 
 Không commit, push hoặc deploy trong lượt này.
 
-DDL hiện tại dành cho tạo mới các bảng metadata chưa nhập production. Với H2 local đã tạo bảng theo phiên bản cũ, cần nâng cấp hai cột nguồn và CHECK cũ hoặc dựng bản sao H2 mới trước khi import; `CREATE TABLE IF NOT EXISTS` không tự nâng cấp bảng đã có. Lượt kiểm tra này dùng H2 mới, không sửa/xóa database local cũ của người dùng.
+DDL hiện tại dành cho tạo mới các bảng metadata chưa nhập production. Trước **import**, database có bảng cũ cần nâng cấp hai cột nguồn và CHECK cũ; `CREATE TABLE IF NOT EXISTS` không tự nâng cấp bảng đã có. API đọc hiện tương thích schema cũ theo bản sửa dưới đây, không cần chạy DDL để xem trận. Không sửa/xóa database local cũ của người dùng.
+
+## Sửa HTTP 500 khi xem trận ngày 04/10/2026
+
+- Xác nhận bằng kết nối MySQL **chỉ đọc**: bảng `club_season_formations` đang có 10 cột của phiên bản trước, chưa có `source_note` hoặc `default_source`. Ba bảng metadata đội hình đã tồn tại. Query mới yêu cầu `source_note` nên gây lỗi SQLState 42S22 cho mọi trận; `CREATE TABLE IF NOT EXISTS` không thêm cột thiếu. Vị trí mùa NULL không phải nguyên nhân trên dữ liệu production đã kiểm tra (0 fixture có NULL), nhưng có thể gây NPE nên được xử lý giữ nguyên NULL.
+- `MatchLineupQueries` đọc được cấu trúc cũ không có ghi chú. Chỉ phục hồi khi thiếu bảng/cột metadata tùy chọn; lỗi truy cập database và thống kê bắt buộc vẫn báo lỗi, không bị biến thành kết quả rỗng. Có log cảnh báo khoảng trống schema.
+- Maven đóng gói đúng hai CSV nguồn `clubs.csv` và `players.csv` vào JAR, không sao chép rating/thống kê. Khi SQL chưa có default hoặc vai trò, API dùng quyết định 20 CLB và vai trò đã thu thập từ CSV. Metadata SQL đã có vẫn được ưu tiên; tọa độ/thời điểm thay người chỉ đọc từ metadata trận SQL đã xác minh. Không có thao tác import/DDL hoặc ghi database trong đường đọc.
+- Vai trò dự phòng phải khớp toàn bộ ID và participation_status của đội trong fixture, đủ 11 STARTER và không trùng cầu thủ. Không khớp thì INCOMPLETE, không dựng XI giả. Trận chưa có bằng chứng vai trò vẫn MISSING. Vị trí mùa lấy từ SQL nếu có; các vị trí minh họa không được ghi thành vị trí trận thực tế.
+- Một lượt test backend: **26 test đạt** trong 6 lớp liên quan; Maven package cuối cùng thành công. Test mới gọi API thật qua MockMvc cho schema thiếu cột, thiếu toàn bộ metadata, dữ liệu NULL và participation không khớp; đồng thời bảo đảm lỗi bảng thống kê bắt buộc không bị che giấu và không ghi dữ liệu nguồn.
+
+- Code mới đọc trực tiếp MySQL hiện tại bằng connection read-only, không khởi động Spring/schema initializer: **50/50 fixture GW1–GW5 đọc thành công**, tổng 2.000 dòng cầu thủ, đầy đủ default 20 CLB, 78 lượt CLB có XI VERIFIED và 22 lượt chưa phục hồi vai trò. Không chạy DDL/import hoặc cập nhật dữ liệu production. Đây là kiểm tra code mới với datasource thật, **không phải** đã phát hành bản sửa lên API đang chạy.
+- Chrome với các response vừa đọc, desktop 1440px và mobile 390px: cả 4-2-3-1, 3-4-3, 5-4-1 đều có 22 thẻ đá chính đúng ID, không chồng hoặc tràn; hiển thị nhãn fallback/minh họa. GW1 có default nhưng thiếu vai trò vẫn không dựng XI giả. Không có lỗi JavaScript. HTTP 200 đã được kiểm tra qua MockMvc; browser dùng response được phục vụ qua mock API local, không gọi/ghi production.
+- Đã kiểm tra JAR chứa đúng bytes của hai CSV nguồn và xem diff. Không sửa frontend, không commit, push hoặc deploy. Website đang chạy cần phát hành backend mới để nhận bản sửa; nâng cấp schema/nhập metadata production vẫn là bước riêng chưa thực hiện.
+
+File cần commit cho bản sửa lỗi:
+
+- `backend/pom.xml`
+- `backend/src/main/java/com/premierhub/lineups/BundledMatchLineups.java`
+- `backend/src/main/java/com/premierhub/lineups/MatchLineupQueries.java`
+- `backend/src/main/java/com/premierhub/service/FootballQueries.java`
+- `backend/src/test/java/com/premierhub/lineups/MatchLineupCompatibilityTest.java`
+- `docs/match-lineups-2026.md`
+
+Commit message: `fix: keep match details compatible with legacy lineup schema`
 
 ## File từ lượt triển khai đội hình trước
 

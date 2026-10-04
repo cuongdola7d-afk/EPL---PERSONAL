@@ -435,6 +435,7 @@ public class FootballQueries {
     }
 
     private static String shortPosition(String position) {
+        if (position == null) return null;
         return switch (position) {
             case "GOALKEEPER" -> "G";
             case "DEFENDER" -> "D";

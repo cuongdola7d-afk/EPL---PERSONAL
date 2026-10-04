@@ -67,6 +67,19 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>data/match-lineups-2026-10-04</directory>
+                <targetPath>data/match-lineups-2026</targetPath>
+                <includes>
+                    <include>clubs.csv</include>
+                    <include>players.csv</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
