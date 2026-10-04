@@ -28,8 +28,7 @@ export default function TeamOfWeek({ gameweek, onGameweekChange }) {
         <p>Các ô chưa xếp được: {data.missingSlots.join(', ')}.</p></div>}
       {data.status === 'MULTIPLE_MATCHES' && <div className="fantasy-message" role="alert"><strong>Cần chốt cách tính rating cho cầu thủ có nhiều trận trong vòng.</strong>
         {data.conflicts.map(conflict => <p key={conflict.playerId}>{conflict.name} (#{conflict.playerId}): trận {conflict.fixtureIds.join(', ')}.</p>)}</div>}
-      <p className="tow-note">Loại vì thiếu vị trí: <strong>{data.excludedMissingPositions}</strong> · PLAYED chưa có rating: <strong>{data.excludedNullRatings}</strong>.
-        {data.recordedFixtures < 10 && ' Vòng đấu chưa có đủ 10 trận được ghi nhận.'}</p>
+      {data.recordedFixtures < 10 && <p className="tow-note">Vòng đấu chưa có đủ 10 trận được ghi nhận.</p>}
       {data.status !== 'MULTIPLE_MATCHES' && <div className="fantasy-main">
         <div className="fantasy-pitch tow-pitch" aria-label={`Đội hình tiêu biểu GW${data.gameweek}, sơ đồ 4-3-3`}><Pitch />
           {slots.map(slot => {
@@ -49,7 +48,6 @@ export default function TeamOfWeek({ gameweek, onGameweekChange }) {
             <div className="tow-unfilled" key={slot}><b>{slot}</b><span>Chưa có cầu thủ phù hợp</span></div>)}</div>
         </aside>
       </div>}
-      <p className="tow-note">Rating từ các trận đã nhập trong GW{data.gameweek}. CLB hiển thị là đội cầu thủ đại diện trong trận đó.</p>
     </>}
   </div>
 }

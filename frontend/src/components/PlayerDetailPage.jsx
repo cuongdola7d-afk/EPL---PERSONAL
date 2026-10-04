@@ -5,6 +5,7 @@ import { getInitials } from '../utils/initials.js'
 import { effectiveStat, matchRating, matchResult, matchState, seasonSummary } from '../utils/playerDetail.js'
 import { SEASONS, hasMatchScore } from '../utils/seasons.js'
 import { compareMatchSchedule, matchDateTimeLabel } from '../utils/matchTime.js'
+import { matchDetailHash } from '../utils/matchRoute.js'
 import MatchKickoff from './MatchKickoff.jsx'
 import './PlayerDetailPage.css'
 
@@ -30,7 +31,8 @@ function MatchCard({ row, season }) {
     ['Phút', 'minutes', '′'], ['Bàn', 'goals', '⚽'], ['Kiến tạo', 'assists', '↗'],
     ['Thẻ vàng', 'yellowCards', '▪'], ['Thẻ đỏ', 'redCards', '▪'],
   ]
-  return <li className="pd-match-card">
+  return <li><a className="pd-match-card" href={matchDetailHash(row.match.id,
+    { season, week: row.match.matchweek }, window.location.hash)}>
     <div className="pd-match-main">
       <div className="pd-match-meta"><span className="pd-gw">GW{row.match.matchweek}</span><span><MatchKickoff match={row.match} season={season} legacyLabel={season === 2024 ? dateLabel(row.match.date) : undefined} /></span>
         <span className={`pd-result pd-result-${result ?? 'unknown'}`}>{result ? resultLabel[result] : 'Chưa rõ'}</span></div>
@@ -41,7 +43,7 @@ function MatchCard({ row, season }) {
       <span className={`pd-rating pd-rating-${ratingTier(rating)}`} aria-label={`Đánh giá: ${rating == null ? 'chưa có' : rating.toFixed(1)}`}>{rating == null ? '—' : rating.toFixed(1)}</span>
       <div className="pd-stat-pills">{stats.map(([label, field, symbol]) => <span key={field} className={`pd-stat-pill pd-stat-pill-${field}`} title={label} aria-label={`${label}: ${numberLabel(effectiveStat(row, field))}`}><span aria-hidden="true">{symbol}</span> {numberLabel(effectiveStat(row, field))}<small>{label}</small></span>)}</div>
     </div> : <span className="pd-dnp">{state === 'did-not-play' ? 'DNP' : 'Chưa có dữ liệu'}</span>}
-  </li>
+  </a></li>
 }
 
 function MatchesTab({ rows, season }) {

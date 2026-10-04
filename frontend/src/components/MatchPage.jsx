@@ -68,7 +68,8 @@ function MatchPage({ season, onSeasonChange, matchRoute }) {
       </div>
 
       {selectedMatchId !== null ? <MatchDetail key={selectedMatchId} matchId={selectedMatchId}
-        summary={selectedMatch} season={season} onClose={closeMatch} backLabel={matchRoute?.backHash ? 'Câu lạc bộ' : 'Lịch đấu'} /> : <>
+        summary={selectedMatch} season={season} onClose={closeMatch}
+        backLabel={matchRoute?.backHash?.startsWith('#players/') ? 'Cầu thủ' : matchRoute?.backHash ? 'Câu lạc bộ' : 'Lịch đấu'} /> : <>
         <header className="mx-hero">
           <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
             <circle cx="100" cy="100" r="80" /><circle cx="100" cy="100" r="46" />
