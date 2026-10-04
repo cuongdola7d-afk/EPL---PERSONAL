@@ -2,7 +2,8 @@
 
 Thẻ CLB trên trang chủ mở `#clubs/<club_id>?season=2026`. Giao diện theo
 `club-mockup-v2.html`: danh tính CLB, trận trước/kế tiếp, phong độ năm trận và
-bốn tab BXH, Trận đấu, Cầu thủ, Thống kê. Chưa thêm HLV/sân vận động vì chưa có dữ liệu.
+bốn tab BXH, Trận đấu, Cầu thủ, Thống kê. HLV/sân nhà hiện tại mùa 2026/27 được bổ sung
+trong [quy trình thông tin CLB](club-information-2026.md); thiếu hiển thị “Chưa cập nhật”.
 
 ## Dữ liệu và API
 

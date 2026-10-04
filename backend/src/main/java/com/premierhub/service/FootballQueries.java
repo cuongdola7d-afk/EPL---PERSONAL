@@ -46,6 +46,20 @@ public class FootballQueries {
     public List<ClubResponse> clubs(int season, String keyword) {
         validateSeason(season);
         String search = keyword == null ? "" : keyword.strip().toLowerCase(Locale.ROOT);
+        if (season == 2026) {
+            return jdbc.query("""
+                    SELECT c.id,c.name,COALESCE(c.city,'') AS city,info.manager_name,
+                           info.manager_status,info.stadium_name,info.verified_on
+                    FROM clubs c JOIN season_clubs sc ON sc.club_id=c.id
+                    LEFT JOIN club_season_information info ON info.league_id=sc.league_id
+                        AND info.season_year=sc.season_year AND info.club_id=sc.club_id
+                    WHERE sc.league_id=? AND sc.season_year=? AND LOWER(c.name) LIKE ?
+                    ORDER BY c.name
+                    """, (rs, row) -> new ClubResponse(rs.getInt("id"), rs.getString("name"), rs.getString("city"),
+                    rs.getString("manager_name"), rs.getString("manager_status"), rs.getString("stadium_name"),
+                    rs.getDate("verified_on") == null ? null : rs.getDate("verified_on").toLocalDate()),
+                    LEAGUE_ID, season, "%" + search + "%");
+        }
         return jdbc.query("""
                 SELECT c.id, c.name, COALESCE(c.city, '') AS city FROM clubs c
                 JOIN season_clubs sc ON sc.club_id = c.id

@@ -1,0 +1,30 @@
+{
+  "season": 2026,
+  "verifiedOn": "2026-10-04",
+  "productionCommit": "2623cae424b9e2e3d831e70893303f7c47d17b69",
+  "rowsBefore": 0,
+  "rowsAfter": 20,
+  "inserted": 20,
+  "repeatInserted": 0,
+  "managers": 19,
+  "stadiums": 20,
+  "missing": [
+    {
+      "clubId": 1000000322,
+      "name": "Hull City AFC",
+      "fields": [
+        "manager_name",
+        "manager_status"
+      ]
+    }
+  ],
+  "sqlBackup": {
+    "file": "backend\\local-backups\\club-info-2026-10-04\\prismaxi-before-club-information-20261004-102142.sql",
+    "bytes": 832838,
+    "sha256": "4d0d2785671f599106980646b878f6154debb85c2d170d432d123a2073cc4c25"
+  },
+  "unrelatedTableChecksumsUnchanged": true,
+  "productionApiFieldsPresent": false,
+  "apiStatus": "Existing production API club IDs match; all 20 new API query responses match MySQL using local code. HTTP production fields await backend release.",
+  "initialImportCapture": "Java operation exited 0; Windows console output decoding failed. Insert count confirmed by empty-before/full-after inventory and successful repeat (0 inserted)."
+}

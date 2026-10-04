@@ -1,0 +1,394 @@
+{
+  "iteration": 2,
+  "rows": 20,
+  "inserted": 0,
+  "managers": 19,
+  "stadiums": 20,
+  "unrelatedChecksumsUnchanged": true,
+  "mysqlRows": [
+    {
+      "name": "AFC Bournemouth",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000001044",
+      "manager_name": "Marco Rose",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Vitality Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Arsenal FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000057",
+      "manager_name": "Mikel Arteta",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Emirates Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Aston Villa FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000058",
+      "manager_name": "Unai Emery",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Villa Park",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Brentford FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000402",
+      "manager_name": "Keith Andrews",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Gtech Community Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Brighton & Hove Albion FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000397",
+      "manager_name": "Fabian Hurzeler",
+      "manager_status": "PERMANENT",
+      "stadium_name": "American Express Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Chelsea FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000061",
+      "manager_name": "Xabi Alonso",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Stamford Bridge",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Coventry City FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000001076",
+      "manager_name": "Frank Lampard",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Coventry Building Society Arena",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Crystal Palace FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000354",
+      "manager_name": "Pierre Sage",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Selhurst Park",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Everton FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000062",
+      "manager_name": "David Moyes",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Hill Dickinson Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Fulham FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000063",
+      "manager_name": "Álvaro Arbeloa",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Craven Cottage",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Hull City AFC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000322",
+      "manager_name": "NULL",
+      "manager_status": "NULL",
+      "stadium_name": "MKM Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Ipswich Town FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000349",
+      "manager_name": "Gary O'Neil",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Portman Road",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Leeds United FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000341",
+      "manager_name": "Daniel Farke",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Elland Road",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Liverpool FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000064",
+      "manager_name": "Andoni Iraola",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Anfield",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Manchester City FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000065",
+      "manager_name": "Enzo Maresca",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Etihad Stadium",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Manchester United FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000066",
+      "manager_name": "Michael Carrick",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Old Trafford",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Newcastle United FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000067",
+      "manager_name": "Matthias Jaissle",
+      "manager_status": "PERMANENT",
+      "stadium_name": "St James' Park",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Nottingham Forest FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000351",
+      "manager_name": "Oliver Glasner",
+      "manager_status": "PERMANENT",
+      "stadium_name": "City Ground",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Sunderland AFC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000071",
+      "manager_name": "Régis Le Bris",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Stadium of Light",
+      "verified_on": "2026-10-04"
+    },
+    {
+      "name": "Tottenham Hotspur FC",
+      "league_id": "39",
+      "season_year": "2026",
+      "club_id": "1000000073",
+      "manager_name": "Roberto De Zerbi",
+      "manager_status": "PERMANENT",
+      "stadium_name": "Tottenham Hotspur Stadium",
+      "verified_on": "2026-10-04"
+    }
+  ],
+  "localApiQueriesOnProduction": [
+    {
+      "id": 1000001044,
+      "name": "AFC Bournemouth",
+      "city": "",
+      "managerName": "Marco Rose",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Vitality Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000057,
+      "name": "Arsenal FC",
+      "city": "",
+      "managerName": "Mikel Arteta",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Emirates Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000058,
+      "name": "Aston Villa FC",
+      "city": "",
+      "managerName": "Unai Emery",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Villa Park",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000402,
+      "name": "Brentford FC",
+      "city": "",
+      "managerName": "Keith Andrews",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Gtech Community Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000397,
+      "name": "Brighton & Hove Albion FC",
+      "city": "",
+      "managerName": "Fabian Hurzeler",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "American Express Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000061,
+      "name": "Chelsea FC",
+      "city": "",
+      "managerName": "Xabi Alonso",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Stamford Bridge",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000001076,
+      "name": "Coventry City FC",
+      "city": "",
+      "managerName": "Frank Lampard",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Coventry Building Society Arena",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000354,
+      "name": "Crystal Palace FC",
+      "city": "",
+      "managerName": "Pierre Sage",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Selhurst Park",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000062,
+      "name": "Everton FC",
+      "city": "",
+      "managerName": "David Moyes",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Hill Dickinson Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000063,
+      "name": "Fulham FC",
+      "city": "",
+      "managerName": "Álvaro Arbeloa",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Craven Cottage",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000322,
+      "name": "Hull City AFC",
+      "city": "",
+      "managerName": null,
+      "managerStatus": null,
+      "stadiumName": "MKM Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000349,
+      "name": "Ipswich Town FC",
+      "city": "",
+      "managerName": "Gary O'Neil",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Portman Road",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000341,
+      "name": "Leeds United FC",
+      "city": "",
+      "managerName": "Daniel Farke",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Elland Road",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000064,
+      "name": "Liverpool FC",
+      "city": "",
+      "managerName": "Andoni Iraola",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Anfield",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000065,
+      "name": "Manchester City FC",
+      "city": "",
+      "managerName": "Enzo Maresca",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Etihad Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000066,
+      "name": "Manchester United FC",
+      "city": "",
+      "managerName": "Michael Carrick",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Old Trafford",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000067,
+      "name": "Newcastle United FC",
+      "city": "",
+      "managerName": "Matthias Jaissle",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "St James' Park",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000351,
+      "name": "Nottingham Forest FC",
+      "city": "",
+      "managerName": "Oliver Glasner",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "City Ground",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000071,
+      "name": "Sunderland AFC",
+      "city": "",
+      "managerName": "Régis Le Bris",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Stadium of Light",
+      "informationVerifiedOn": "2026-10-04"
+    },
+    {
+      "id": 1000000073,
+      "name": "Tottenham Hotspur FC",
+      "city": "",
+      "managerName": "Roberto De Zerbi",
+      "managerStatus": "PERMANENT",
+      "stadiumName": "Tottenham Hotspur Stadium",
+      "informationVerifiedOn": "2026-10-04"
+    }
+  ],
+  "productionApiFieldsPresent": false,
+  "productionApiVerification": "New fields await backend release; existing production API club IDs matched all 20 database IDs."
+}

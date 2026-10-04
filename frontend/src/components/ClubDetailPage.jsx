@@ -141,7 +141,12 @@ export default function ClubDetailPage({ route, season }) {
     <DataState {...club} title="câu lạc bộ" />
     {club.data && <>
       <header className="cd-card cd-header"><div className="cd-identity"><span className="cd-big-crest" style={{background:visual.color}} aria-hidden="true">{visual.code}</span>
-        <div><h1>{club.data.name}</h1><p>Premier League · {SEASONS[season]}</p><div className="cd-pills">
+        <div><h1>{club.data.name}</h1><p>Premier League · {SEASONS[season]}</p>
+          {season === 2026 && <div className="cd-club-information">
+            <p><span>HLV</span><strong>{club.data.managerName ?? 'Chưa cập nhật'}{club.data.managerName && club.data.managerStatus === 'INTERIM' ? ' (tạm quyền)' : ''}</strong></p>
+            <p><span>Sân nhà</span><strong>{club.data.stadiumName ?? 'Chưa cập nhật'}</strong></p>
+          </div>}
+          <div className="cd-pills">
           {standing && <><span className="cd-pill cd-pill-accent">Hạng {standing.position}</span><span className="cd-pill">{standing.points} điểm</span></>}
           <div className="cd-form" aria-label="5 trận gần nhất">{done.slice(0,5).reverse().map(match=> {
             const result=clubMatchResult(match,route.clubId)

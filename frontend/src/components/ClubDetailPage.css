@@ -140,3 +140,7 @@ a.cd-player-row:hover, .cd-ranking-row:hover { background: var(--cx-hover); }
   .cd-ranking-row .cd-avatar { width: 38px; height: 38px; }.cd-metric { padding: 14px; }.cd-metric > span { font-size: 12px; }
   .cd-chart { gap: 8px; }.cd-chart-group { flex-basis: 44px; }
 }
+.cd-club-information { margin: 10px 0 12px; }
+.cd-identity .cd-club-information p { display: flex; gap: 8px; margin: 5px 0; font-size: 13px; }
+.cd-club-information span { flex: 0 0 55px; }
+.cd-club-information strong { color: var(--cx-text); font-weight: 600; overflow-wrap: anywhere; }

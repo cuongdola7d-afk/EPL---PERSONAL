@@ -19,6 +19,25 @@ CREATE TABLE IF NOT EXISTS season_clubs (
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
 
+-- Current club information verified on a date; not a fixture or historical manager record.
+CREATE TABLE IF NOT EXISTS club_season_information (
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    club_id INTEGER NOT NULL,
+    manager_name VARCHAR(200),
+    manager_status VARCHAR(20),
+    stadium_name VARCHAR(200),
+    verified_on DATE NOT NULL,
+    CONSTRAINT club_info_season CHECK (season_year = 2026),
+    CONSTRAINT club_info_status CHECK ((CASE manager_status
+        WHEN 'PERMANENT' THEN 1 WHEN 'INTERIM' THEN 1
+        ELSE CASE WHEN manager_status IS NULL THEN 1 ELSE 0 END END) = 1),
+    CONSTRAINT club_info_manager CHECK ((manager_name IS NULL AND manager_status IS NULL)
+        OR (manager_name IS NOT NULL AND manager_status IS NOT NULL)),
+    PRIMARY KEY (league_id, season_year, club_id),
+    FOREIGN KEY (league_id, season_year, club_id) REFERENCES season_clubs(league_id, season_year, club_id)
+);
+
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY,
     name VARCHAR(200) NOT NULL

@@ -32,6 +32,19 @@ class ClubControllerTest {
     private ClubStatisticsService statistics;
 
     @Test
+    void detailIncludesCurrentVerifiedClubInformation() throws Exception {
+        var club = new ClubResponse(1, "Arsenal", "London", "Coach", "INTERIM", "Stadium",
+                java.time.LocalDate.of(2026, 10, 4));
+        when(service.club(1, 2026)).thenReturn(Optional.of(club));
+        mockMvc.perform(get("/api/clubs/1").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.managerName").value("Coach"))
+                .andExpect(jsonPath("$.managerStatus").value("INTERIM"))
+                .andExpect(jsonPath("$.stadiumName").value("Stadium"))
+                .andExpect(jsonPath("$.informationVerifiedOn").value("2026-10-04"));
+    }
+
+    @Test
     void getAllReturnsJsonArray() throws Exception {
         when(service.clubs(2024, null)).thenReturn(List.of(arsenal));
 
