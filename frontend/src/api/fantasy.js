@@ -1,4 +1,4 @@
-import { buildApiUrl, fetchApiList } from './request.js'
+import { buildApiUrl, fetchApiJson, fetchApiList } from './request.js'
 import { isValidPlayer } from './players.js'
 import { FANTASY_AS_OF } from '../fantasy/lineup.js'
 
@@ -10,14 +10,23 @@ export function isValidFantasyPlayer(player) {
     ['VERIFIED', 'MISSING'].includes(player.positionStatus)
 }
 
-export function fetchFantasyPlayers(signal) {
+export async function fetchFantasyPlayers(signal, gameweek = null, rosterAsOf = null) {
+  if (gameweek !== null) {
+    const data = await fetchApiJson(`/api/fantasy/2026/gameweeks/${gameweek}/players`, signal)
+    if (data?.season !== 2026 || data.gameweek !== gameweek || !rosterAsOf || data.rosterAsOf !== rosterAsOf ||
+        !Array.isArray(data.players) || data.players.some(player => !isValidFantasyPlayer(player)))
+      throw new Error('Mốc roster của GW không khớp. Tải lại trạng thái vòng trước khi chọn đội.')
+    return data.players
+  }
+  // Fixed reference belongs only to the guest practice builder.
   return fetchApiList(`/api/players?season=2026&asOf=${FANTASY_AS_OF}`, signal,
     isValidFantasyPlayer, 'cầu thủ Fantasy')
 }
 
-export async function checkFantasyLineup(formation, picks) {
-  const response = await fetch(buildApiUrl('/api/fantasy/2026/validate',
-    import.meta.env.VITE_API_BASE_URL, import.meta.env.DEV), {
+export async function checkFantasyLineup(formation, picks, gameweek = null) {
+  const path = `/api/fantasy/2026/validate${gameweek === null ? '' : `?gameweek=${gameweek}`}`
+  const response = await fetch(buildApiUrl(path,
+    import.meta.env?.VITE_API_BASE_URL, import.meta.env?.DEV ?? true), {
     method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ formation, picks }),
   })

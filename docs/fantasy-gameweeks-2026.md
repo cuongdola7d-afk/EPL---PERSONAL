@@ -1,5 +1,7 @@
 # Bước 2 — Gameweek và deadline Fantasy 2026/27
 
+**Bổ sung sau bước 3:** cấu hình GW có rosterAsOf cố định khi công bố, mặc định ngày mở theo giờ Việt Nam hoặc ngày quản trị chọn có dữ liệu. POST publish-deadline nhận thêm trường rosterAsOf tùy chọn dạng YYYY-MM-DD; bỏ trường này để dùng mặc định. GET thông tin GW trả mốc đã lưu; GET /api/fantasy/2026/gameweeks/{gameweek}/players trả roster tại mốc đó. Điều chỉnh deadline không đổi rosterAsOf. Cần migration bổ sung trước phát hành code; xem [fantasy-roster-reference-2026.md](fantasy-roster-reference-2026.md). Kiểm tra/checkpoint dưới đây ghi nhận lượt bước 2 trước phần bổ sung.
+
 Checkpoint 05/10/2026: hoàn thiện mã local, migration và kiểm tra đúng phạm vi. Chưa nhập production, công bố deadline production hoặc phát hành. Không triển khai lưu/chốt đội, chấm điểm, BXH hoặc Replay; không thay luật Fantasy, dữ liệu bóng đá, membership hay mùa 2024/25. Phần auth đang dùng được giữ nguyên, không kiểm tra lại Google thật.
 
 ## Deadline GW6 đã xác minh

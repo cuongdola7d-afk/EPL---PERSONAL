@@ -53,7 +53,7 @@ public class FantasyEntryService {
         deadlines.requireOpen(configuration); // time AFTER all locks, including a queued request
         long version=previous==null ? 0 : previous.version();
         if (version!=expectedVersion) throw conflict("Dữ liệu đã thay đổi ở tab hoặc thiết bị khác. Tải lại trước khi lưu/chốt.");
-        var inspected=validator.inspect(new FantasyLineupRequest(formation,picks),submit);
+        var inspected=validator.inspect(new FantasyLineupRequest(formation,picks),submit,configuration.rosterAsOf());
         if (!inspected.validation().valid()) throw new InvalidLineup(inspected.validation());
         var snapshots=submit ? picks.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(pick -> {
             var player=inspected.players().get(pick.getValue());

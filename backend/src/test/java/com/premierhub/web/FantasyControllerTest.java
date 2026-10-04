@@ -21,6 +21,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 class FantasyControllerTest {
     @Autowired private MockMvc mvc;
     @MockitoBean private FootballQueries queries;
+    @MockitoBean private com.premierhub.fantasy.GameweekService gameweeks;
 
     @Test
     void ignoresForgedOvrAndPositionsAndReturnsSlotSpecificDatabaseErrors() throws Exception {

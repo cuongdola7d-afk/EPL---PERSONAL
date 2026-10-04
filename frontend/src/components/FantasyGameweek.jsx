@@ -37,8 +37,8 @@ export default function FantasyGameweek({ onSelectionChange }) {
   const remaining = view?.deadlineUtc ? remainingMilliseconds(view.deadlineUtc, data.serverTimeUtc, data.receivedAt, tick) : 0
   const expired = shouldRefreshDeadline(view, remaining)
   useEffect(() => {
-    onSelectionChange?.(selected, Boolean(view?.canEdit && !expired && !loading && !error))
-  }, [selected, view?.canEdit, expired, loading, error, onSelectionChange])
+    onSelectionChange?.(selected, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null)
+  }, [selected, view?.canEdit, view?.rosterAsOf, expired, loading, error, onSelectionChange])
   useEffect(() => {
     const key = `${selected}:${view?.revision}:${data?.serverTimeUtc}`
     if (!expired || loading || error || refreshed.current === key) return
@@ -62,6 +62,7 @@ export default function FantasyGameweek({ onSelectionChange }) {
         {view.status === 'OPEN' && !expired && <div><span>Còn lại theo giờ server</span><strong className="fantasy-gameweek-countdown" role="timer">{countdownLabel(remaining)}</strong></div>}
       </div>
       {!view.configured && view.candidateDeadlineUtc && <p>Deadline dự kiến theo lịch: {formatDeadline(view.candidateDeadlineUtc)} · Giờ Việt Nam. Chưa mở cuộc thi.</p>}
+      {view.rosterAsOf && <p>Mốc danh sách cầu thủ: {view.rosterAsOf.split('-').reverse().join('/')}</p>}
       {!view.scheduleComplete && <p>Lịch chưa đủ thời điểm UTC để xác định trận đầu và deadline.</p>}
       {view.deadlineChanges.filter(change => change.revision > 1).map(change => <p key={change.revision}>
         Điều chỉnh hạn: {formatDeadline(change.oldDeadlineUtc)} → {formatDeadline(change.newDeadlineUtc)} · {change.reason}</p>)}

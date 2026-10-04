@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
@@ -24,7 +25,7 @@ public class GameweekService {
     public record View(int season, int gameweek, String mode, boolean configured,
                        Instant deadlineUtc, Instant deadlinePublishedAt, Instant candidateDeadlineUtc,
                        Fixture firstFixture, boolean scheduleComplete, Status status, boolean canEdit,
-                       int revision, List<Change> deadlineChanges) { }
+                       int revision, List<Change> deadlineChanges, LocalDate rosterAsOf) { }
     public record Overview(Instant serverTimeUtc, Integer recommendedGameweek, List<View> gameweeks) { }
     private final GameweekRepository repository;
     private final Clock clock;
@@ -68,7 +69,8 @@ public class GameweekService {
                 configuration == null ? null : configuration.deadlineUtc(),
                 configuration == null ? null : configuration.deadlinePublishedAt(),
                 complete ? calculateDeadline(first.kickoffUtc()) : null, first, complete, status,
-                status == Status.OPEN, configuration == null ? 0 : configuration.revision(), changes);
+                status == Status.OPEN, configuration == null ? 0 : configuration.revision(), changes,
+                configuration == null ? null : configuration.rosterAsOf());
     }
 
     static Status effectiveStatus(Configuration configuration, List<Fixture> fixtures, Instant now) {
@@ -98,16 +100,29 @@ public class GameweekService {
 
     @Transactional
     public View publishDeadline(int gameweek, long actorId, String reason) {
+        return publishDeadline(gameweek, actorId, reason, null);
+    }
+
+    @Transactional
+    public View publishDeadline(int gameweek, long actorId, String reason, LocalDate selectedRosterAsOf) {
         validateOfficial(gameweek);
         reason = validateReason(reason);
         if (repository.lock(gameweek).isPresent()) throw conflict("Deadline đã công bố; dùng thao tác điều chỉnh có lý do.");
         var info = info(gameweek);
         if (!info.scheduleComplete()) throw conflict("Chưa đủ 10 trận có thời điểm UTC xác định để công bố deadline.");
         Instant now = clock.instant();
-        try { repository.create(gameweek, info.firstFixture(), info.candidateDeadlineUtc(), now); }
+        LocalDate rosterAsOf = selectedRosterAsOf == null ? now.atZone(VIETNAM).toLocalDate() : selectedRosterAsOf;
+        if (!repository.hasRoster(rosterAsOf))
+            throw conflict("Chưa có dữ liệu roster hiệu lực tại ngày " + rosterAsOf + ". Chọn ngày đã có dữ liệu.");
+        try { repository.create(gameweek, info.firstFixture(), info.candidateDeadlineUtc(), now, rosterAsOf); }
         catch (DuplicateKeyException duplicate) { throw conflict("Deadline đã được công bố bởi request khác."); }
         repository.audit(gameweek, 1, null, info.candidateDeadlineUtc(), now, actorId, reason);
         return info(gameweek);
+    }
+
+    public LocalDate rosterAsOf(int gameweek) {
+        validateOfficial(gameweek);
+        return repository.find(gameweek).orElseThrow(() -> conflict("GW chưa công bố mốc roster.")).rosterAsOf();
     }
 
     @Transactional

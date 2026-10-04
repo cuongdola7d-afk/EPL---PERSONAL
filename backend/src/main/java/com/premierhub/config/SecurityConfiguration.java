@@ -57,7 +57,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers("/api/fantasy/2026/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/fantasy/2026/me/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/fantasy/2026/gameweeks", "/api/fantasy/2026/gameweeks/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/fantasy/2026/gameweeks", "/api/fantasy/2026/gameweeks/*", "/api/fantasy/2026/gameweeks/*/players").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/clubs/**", "/api/players/**", "/api/matches/**", "/api/standings/**", "/api/fantasy/2026/team-of-week", "/api/fantasy/2024/team-of-week", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/fantasy/2026/validate", "/api/fantasy/2024/validate").permitAll()
                         .requestMatchers("/error").permitAll()

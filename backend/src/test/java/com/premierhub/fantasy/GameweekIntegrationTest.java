@@ -44,6 +44,10 @@ class GameweekIntegrationTest {
         jdbc.update("MERGE INTO seasons KEY(league_id,season_year) VALUES (39,2026),(39,2024)");
         jdbc.update("MERGE INTO clubs KEY(id) VALUES (991,'Test Home',''),(992,'Test Away','')");
         jdbc.update("INSERT INTO accounts VALUES (91,'admin@example.test','Admin',NULL,'ADMIN',CURRENT_TIMESTAMP)");
+        jdbc.update("MERGE INTO players KEY(id) VALUES (99001,'Roster test player')");
+        jdbc.update("MERGE INTO player_season_stats (league_id,season_year,player_id,club_id,position) KEY(league_id,season_year,player_id,club_id) VALUES (39,2026,99001,991,'FORWARD')");
+        jdbc.update("DELETE FROM manual_player_memberships WHERE player_id=99001");
+        jdbc.update("INSERT INTO manual_player_memberships VALUES (39,2026,99001,991,'2026-07-01',NULL)");
         for (int i = 0; i < 10; i++) {
             jdbc.update("""
                     INSERT INTO fixtures VALUES (?,39,2026,991,992,6,'2026-10-10','SCHEDULED','TIMED',NULL,NULL,?,CURRENT_TIMESTAMP)

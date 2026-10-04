@@ -7,6 +7,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
+import java.time.LocalDate;
+import com.premierhub.service.FootballQueries;
+import com.premierhub.web.dto.PlayerResponse;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,8 +18,12 @@ import java.util.Map;
 public class GameweekController {
     private final GameweekService service;
     private final AccountService accounts;
-    public GameweekController(GameweekService service, AccountService accounts) { this.service = service; this.accounts = accounts; }
-    public record Publish(String reason) { }
+    private final FootballQueries queries;
+    public GameweekController(GameweekService service, AccountService accounts, FootballQueries queries) {
+        this.service = service; this.accounts = accounts; this.queries = queries;
+    }
+    public record Publish(String reason, LocalDate rosterAsOf) { }
+    public record Roster(int season, int gameweek, LocalDate rosterAsOf, List<PlayerResponse> players) { }
     public record Adjustment(Instant deadlineUtc, int expectedRevision, String reason) { }
 
     @GetMapping("/gameweeks")
@@ -32,7 +40,13 @@ public class GameweekController {
 
     @PostMapping("/admin/gameweeks/{gameweek}/publish-deadline")
     public ResponseEntity<GameweekService.View> publish(@PathVariable int gameweek, @RequestBody Publish body, Authentication authentication) {
-        return noStore(service.publishDeadline(gameweek, accounts.current(authentication.getName()).id(), body.reason()));
+        return noStore(service.publishDeadline(gameweek, accounts.current(authentication.getName()).id(), body.reason(), body.rosterAsOf()));
+    }
+
+    @GetMapping("/gameweeks/{gameweek}/players")
+    public ResponseEntity<Roster> roster(@PathVariable int gameweek) {
+        LocalDate asOf = service.rosterAsOf(gameweek);
+        return noStore(new Roster(2026, gameweek, asOf, queries.players(2026, null, null, asOf)));
     }
 
     @PostMapping("/admin/gameweeks/{gameweek}/adjust-deadline")

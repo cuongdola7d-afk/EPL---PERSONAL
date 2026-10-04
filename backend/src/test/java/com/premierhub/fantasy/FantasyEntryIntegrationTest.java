@@ -69,7 +69,7 @@ class FantasyEntryIntegrationTest {
         }
         jdbc.update("INSERT INTO player_season_stats (league_id,season_year,player_id,club_id,goals) VALUES (39,2024,1,1,10)");
         for(int gw:List.of(6,7)) jdbc.update("""
-                INSERT INTO fantasy_gameweeks VALUES (2026,?,?,'2026-10-05 00:00:00',901,'2026-10-10 11:30:00','OPEN',NULL,1,'2026-10-05 00:00:00')
+                INSERT INTO fantasy_gameweeks VALUES (2026,?,?,'2026-10-05 00:00:00',901,'2026-10-10 11:30:00','OPEN',NULL,1,'2026-10-05 00:00:00','2026-10-05')
                 """,gw,GameweekRepository.timestamp(DEADLINE));
     }
     private FantasyEntryService.Mine save(Map<String,Integer> choices,long version,boolean submit) {
@@ -155,7 +155,7 @@ class FantasyEntryIntegrationTest {
         assertThrows(ResponseStatusException.class,()->save(Map.of(),1,false));
         time.set(DEADLINE.minusSeconds(1));
         doAnswer(invocation -> {var answer=invocation.callRealMethod();time.set(DEADLINE);return answer;})
-                .when(validator).inspect(any(),eq(true));
+                .when(validator).inspect(any(),eq(true),any(java.time.LocalDate.class));
         assertThrows(ResponseStatusException.class,()->save(alternate(),1,true));
         assertEquals(picks,service.read(101,6).submitted().picks());
     }

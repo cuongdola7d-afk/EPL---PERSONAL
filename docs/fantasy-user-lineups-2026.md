@@ -9,7 +9,7 @@ Checkpoint 05/10/2026: hoàn thành mã, migration và kiểm tra local cho bư�
 - fantasy_submitted_picks lưu snapshot sơ đồ/ô, ID, tên cầu thủ, CLB, OVR, vị trí chính, eligiblePositions và quyền vị trí dùng để xác nhận. Thay đổi hồ sơ hoặc membership về sau không viết lại snapshot.
 - Các khóa chính, khóa duy nhất và khóa ngoại bảo đảm một entry hiện hành mỗi tài khoản/GW và không lặp cầu thủ trong từng đội. Snapshot không phụ thuộc khóa ngoại tới hồ sơ bóng đá có thể thay đổi.
 - Dùng validator Fantasy hiện có: 11 ID khác nhau khi chốt, đúng ô của bốn sơ đồ hiện có, eligiblePositions hợp lệ, không thiếu OVR, tối đa 3 người/CLB và tổng OVR ≤ 860. Không nhận CLB/OVR/quyền vị trí từ client.
-- Giữ mốc roster 2026-10-02 của validator và frontend hiện có. Cần quyết định riêng chính sách roster theo GW trước khi dùng dài hạn; lượt này không tự đổi membership hoặc ngoại lệ đã nhập.
+- Mỗi GW lưu rosterAsOf khi quản trị công bố/mở vòng: mặc định ngày công bố theo giờ Việt Nam, hoặc ngày được chọn có roster hiệu lực trong database. Danh sách chọn và validator dùng cùng mốc lưu này; không đổi theo ngày hiện tại. Mốc 2026-10-02 chỉ còn trong phần luyện tập của khách. Xem [bổ sung roster và đo khóa MySQL](fantasy-roster-reference-2026.md).
 - Chỉ phục vụ GW6–GW38 mùa 2026/27; GW1–GW5 chưa triển khai Replay.
 
 ## Transaction, thời gian và nhiều tab
@@ -20,7 +20,7 @@ Validator đọc roster từ database một lần; dữ liệu đó cũng dùng 
 
 Chốt hợp lệ cũng lưu bản nháp hiện tại rồi thay đội chốt trong cùng transaction. Lưu nháp riêng không đổi snapshot. Lần chốt lỗi giữ nguyên đội đã chốt và phiên bản trước đó. Giới hạn thời gian dựa trên lần chấp nhận của server; việc commit hoặc phản hồi mạng có thể hoàn tất sau lần kiểm tra đó.
 
-Khóa hàng cấu hình GW hiện tuần tự hóa thao tác ghi của mọi người trong cùng vòng. Phù hợp giai đoạn thử nghiệm; chưa benchmark tải lớn. Chỉ lưu đội chốt hiện hành, không lưu lịch sử mọi đội từng chốt; số phiên bản vẫn phát hiện dữ liệu cũ.
+Khóa hàng cấu hình GW hiện tuần tự hóa thao tác ghi của mọi người trong cùng vòng. Phép đo local 20 tài khoản ghi đồng thời có hàng đợi lấy khóa cao nhất 1,76 giây, không lỗi; chưa benchmark tải lớn hoặc đo trên deployment thật. Giữ cơ chế khóa trong lượt bổ sung roster. Chỉ lưu đội chốt hiện hành, không lưu lịch sử mọi đội từng chốt; số phiên bản vẫn phát hiện dữ liệu cũ.
 
 ## API riêng của người đăng nhập
 
@@ -56,7 +56,7 @@ Thông báo giữa các tab chỉ mang tín hiệu đổi session và ID tab, kh
 
 File MySQL: [2026-10-05-fantasy-entries-mysql.sql](../backend/sql/2026-10-05-fantasy-entries-mysql.sql). Tạo ba bảng bằng CREATE TABLE IF NOT EXISTS; không xóa/reset/seed dữ liệu. Yêu cầu bảng accounts và fantasy_gameweeks từ các migration trước đã tồn tại. Production giữ SQL initialization tắt như cấu hình hiện có.
 
-Khi được giao phát hành: xác nhận đúng MySQL đích, backup mới và kiểm tra hoàn tất; áp dụng migration này bằng quy trình SQL hiện có trước phát hành code. Nếu bước 2 chưa nhập, thực hiện migration GW trước. Cần cấu hình/công bố GW hợp lệ đang OPEN; không tự mở lại vòng đã hết hạn. Sau deploy kiểm tra qua origin frontend thật, bao gồm CSRF, quyền, nhiều tab/thiết bị và vòng khóa.
+Khi được giao phát hành: xác nhận đúng MySQL đích, backup mới và kiểm tra hoàn tất; áp dụng migration này bằng quy trình SQL hiện có trước phát hành code. Nếu bước 2 chưa nhập, thực hiện migration GW trước. Trước code mới cần thêm [migration roster_as_of](../backend/sql/2026-10-05-fantasy-roster-reference-mysql.sql); các GW cũ lấy ngày công bố ban đầu theo giờ Việt Nam, không sửa snapshot. Cần cấu hình/công bố GW hợp lệ đang OPEN; không tự mở lại vòng đã hết hạn. Sau deploy kiểm tra qua origin frontend thật, bao gồm CSRF, quyền, nhiều tab/thiết bị và vòng khóa.
 
 Chưa thực hiện các bước production trên. Chưa triển khai xem đội người khác, lịch sử mọi lần chốt, Replay, chấm điểm/kết quả/BXH hay quên mật khẩu.
 

@@ -22,13 +22,19 @@ function readSavedLineup() {
 }
 
 function FantasyPage({ account = null, authLoading = false, authError = '' }) {
-  const requestPlayers = useCallback((signal) => fetchFantasyPlayers(signal), [])
-  const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
-  const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const [contestGameweek, setContestGameweek] = useState(null)
   const [contestOpen, setContestOpen] = useState(false)
+  const [rosterAsOf, setRosterAsOf] = useState(null)
+  const requestPlayers = useCallback((signal) => {
+    if (authLoading || account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
+    return fetchFantasyPlayers(signal, account ? contestGameweek : null, account ? rosterAsOf : null)
+  }, [account?.id, authLoading, contestGameweek, rosterAsOf])
+  const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
+  const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
-  const contestSelection = useCallback((gw, open) => { setContestGameweek(gw); setContestOpen(open) }, [])
+  const contestSelection = useCallback((gw, open, asOf) => {
+    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf)
+  }, [])
   const lockedSubmission = account && !contestOpen && entry.data?.submitted
   const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({
     id: player.playerId, name: player.name, clubId: player.clubId, club: player.club,
@@ -36,7 +42,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
     position: ({ GK: 'GOALKEEPER', LB: 'DEFENDER', CB: 'DEFENDER', RB: 'DEFENDER', LW: 'FORWARD', ST: 'FORWARD', RW: 'FORWARD' })[player.requiredPosition] ?? 'MIDFIELDER',
   })) : []
   const players = lockedSubmission ? [...snapshotPlayers, ...rosterPlayers.filter(player => !snapshotPlayers.some(p => p.id === player.id))] : rosterPlayers
-  const privateBlocked = Boolean(authLoading || account && (!contestOpen || !entry.ready || entry.busy || entry.conflict))
+  const privateBlocked = Boolean(authLoading || account && (!contestOpen || !entry.ready || entry.busy || entry.conflict || status !== 'success' || !rosterAsOf))
   const [activeKey, setActiveKey] = useState(null)
   const [search, setSearch] = useState('')
   const [clubFilter, setClubFilter] = useState('')
@@ -139,7 +145,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
     const version = ++checkVersion.current
     setChecking(true)
     try {
-      const checked = await checkFantasyLineup(formation, picks)
+      const checked = await checkFantasyLineup(formation, picks, account ? contestGameweek : null)
       if (version !== checkVersion.current) return
       setMessage(checked.issues.map(item => item.message).join(' '))
       setResult(checked.valid ? checked : false)

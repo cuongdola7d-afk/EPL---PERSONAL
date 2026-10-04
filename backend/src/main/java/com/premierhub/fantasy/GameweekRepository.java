@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -17,7 +18,7 @@ public class GameweekRepository {
                           String homeClub, String awayClub) { }
     public record Configuration(int gameweek, Instant deadlineUtc, Instant deadlinePublishedAt,
                                 int firstFixtureId, Instant firstKickoffUtc, String workflowStatus,
-                                Instant resultsPublishedAt, int revision) { }
+                                Instant resultsPublishedAt, int revision, LocalDate rosterAsOf) { }
     public record Change(int gameweek, int revision, Instant oldDeadlineUtc, Instant newDeadlineUtc,
                          Instant changedAt, String reason) { }
     private final JdbcTemplate jdbc;
@@ -65,12 +66,23 @@ public class GameweekRepository {
                 (rs, row) -> configuration(rs), gameweek).stream().findFirst();
     }
 
-    public void create(int gameweek, Fixture first, Instant deadline, Instant now) {
+    public boolean hasRoster(LocalDate asOf) {
+        return !jdbc.queryForList("""
+                SELECT 1 FROM manual_player_memberships m
+                JOIN player_season_stats s ON s.league_id=m.league_id AND s.season_year=m.season_year
+                    AND s.player_id=m.player_id AND s.club_id=m.club_id
+                WHERE m.league_id=39 AND m.season_year=2026 AND m.start_date<=?
+                    AND (m.end_date IS NULL OR m.end_date>?) LIMIT 1
+                """, java.sql.Date.valueOf(asOf), java.sql.Date.valueOf(asOf)).isEmpty();
+    }
+
+    public void create(int gameweek, Fixture first, Instant deadline, Instant now, LocalDate rosterAsOf) {
         jdbc.update("""
                 INSERT INTO fantasy_gameweeks (season,gameweek,deadline_utc,deadline_published_at,
-                    first_fixture_id,first_kickoff_utc,workflow_status,revision,updated_at)
-                VALUES (2026,?,?,?,?,?,'OPEN',1,?)
-                """, gameweek, timestamp(deadline), timestamp(now), first.id(), timestamp(first.kickoffUtc()), timestamp(now));
+                    first_fixture_id,first_kickoff_utc,workflow_status,revision,updated_at,roster_as_of)
+                VALUES (2026,?,?,?,?,?,'OPEN',1,?,?)
+                """, gameweek, timestamp(deadline), timestamp(now), first.id(), timestamp(first.kickoffUtc()), timestamp(now),
+                java.sql.Date.valueOf(rosterAsOf));
     }
 
     public void adjust(int gameweek, Instant deadline, int revision, Instant now) {
@@ -90,7 +102,7 @@ public class GameweekRepository {
         return new Configuration(rs.getInt("gameweek"), instant(rs, "deadline_utc"),
                 instant(rs, "deadline_published_at"), rs.getInt("first_fixture_id"),
                 instant(rs, "first_kickoff_utc"), rs.getString("workflow_status"),
-                instant(rs, "results_published_at"), rs.getInt("revision"));
+                instant(rs, "results_published_at"), rs.getInt("revision"), rs.getDate("roster_as_of").toLocalDate());
     }
 
     private static Instant instant(ResultSet rs, String column) throws SQLException {

@@ -41,11 +41,21 @@ public class FantasyLineupService {
         return inspect(request, true).validation();
     }
 
+    public FantasyValidationResponse validate(FantasyLineupRequest request, LocalDate asOf) {
+        return inspect(request, true, asOf).validation();
+    }
+
     public record Inspection(FantasyValidationResponse validation, Map<String, String> slots,
                              Map<Integer, PlayerResponse> players) { }
 
     // The same roster read supplies validation and the submission snapshot.
     public Inspection inspect(FantasyLineupRequest request, boolean complete) {
+        // Legacy guest builder only. Multiplayer always passes the stored GW date.
+        return inspect(request, complete, AS_OF);
+    }
+
+    public Inspection inspect(FantasyLineupRequest request, boolean complete, LocalDate asOf) {
+        java.util.Objects.requireNonNull(asOf, "Gameweek roster reference date is required");
         List<Issue> issues = new ArrayList<>();
         List<List<String>> rows = FORMATIONS.get(request.formation());
         if (rows == null) {
@@ -58,7 +68,7 @@ public class FantasyLineupService {
                 slots.put(row + "-" + column, rows.get(row).get(column));
             }
         }
-        Map<Integer, PlayerResponse> players = queries.players(2026, null, null, AS_OF).stream()
+        Map<Integer, PlayerResponse> players = queries.players(2026, null, null, asOf).stream()
                 .collect(Collectors.toMap(PlayerResponse::id, Function.identity()));
         Map<Integer, Integer> clubCounts = new HashMap<>();
         var seen = new HashSet<Integer>();

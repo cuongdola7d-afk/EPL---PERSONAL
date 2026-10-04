@@ -8,7 +8,7 @@ export async function fetchGameweeks(signal) {
       !(data.recommendedGameweek === null || Number.isInteger(data.recommendedGameweek) && data.recommendedGameweek >= 6 && data.recommendedGameweek <= 38) ||
       data.gameweeks.some((v, index) => v.season !== 2026 || v.gameweek !== index + 1 ||
         typeof v.configured !== 'boolean' || typeof v.canEdit !== 'boolean' || !Array.isArray(v.deadlineChanges) ||
-        (v.configured ? !timestamp(v.deadlineUtc) || !timestamp(v.deadlinePublishedAt) || !GAMEWEEK_LABELS[v.status] || v.canEdit !== (v.status === 'OPEN')
+        (v.configured ? !/^\d{4}-\d{2}-\d{2}$/.test(v.rosterAsOf ?? '') || !timestamp(v.deadlineUtc) || !timestamp(v.deadlinePublishedAt) || !GAMEWEEK_LABELS[v.status] || v.canEdit !== (v.status === 'OPEN')
           : v.status !== null || v.deadlineUtc !== null || v.canEdit))) {
     throw new Error('Thông tin Gameweek không đúng định dạng.')
   }
