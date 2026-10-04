@@ -13,8 +13,9 @@ test('production joins the backend origin and API path with one slash', () => {
     'https://railway.example/api/matches?status=FINISHED')
 })
 
-test('production rejects a missing or non-origin backend URL', () => {
-  assert.throws(() => buildApiUrl('/api/clubs', '', false), /VITE_API_BASE_URL/)
+test('production defaults to the same-origin proxy and rejects malformed explicit backend origins', () => {
+  assert.equal(buildApiUrl('/api/clubs', '', false), '/api/clubs')
+  assert.equal(buildApiUrl('/api/clubs', undefined, false), '/api/clubs')
   assert.throws(() => buildApiUrl('/api/clubs', 'https://railway.example/api', false), /origin backend/)
   assert.throws(() => buildApiUrl('/api/clubs', 'https://railway.example?token=secret', false), /origin backend/)
 })

@@ -63,14 +63,11 @@ Trình duyệt Chrome thật gọi backend JAR/H2 file riêng `backend/target/au
 
 ## Vercel–Railway và việc còn lại trước phát hành
 
-Local đã kiểm tra; **chưa triển khai hoặc ghi MySQL production**. Cấu hình `prod` bật cookie Secure và tắt tự chạy SQL lúc khởi động (`spring.sql.init.mode=never`). Phải chuẩn bị migration MySQL cho các bảng account/session/identity mới, review/backup ngoài Git và được giao nhập SQL trước khi dùng bản này trên Railway. DDL local có `CREATE INDEX IF NOT EXISTS`, không chạy nguyên file đó trên MySQL; chưa kiểm thử migration MySQL. Cần giữ kết nối MySQL ở UTC khi nhập dữ liệu tài khoản, kiểm tra lưu phiên trên DB và cookie qua HTTPS sau phát hành.
+Local đã kiểm tra; **chưa triển khai hoặc ghi MySQL production**. Nay đã chuẩn bị [cấu hình phát hành và migration MySQL riêng](auth-release-2026.md), kiểm chứng trên instance MySQL 9.6 cô lập và proxy HTTPS local. `prod` giữ `spring.sql.init.mode=never`, cookie Secure/HttpOnly/host-only/Path=/SameSite=Lax và yêu cầu proof proxy. Cần review schema/backup ngoài Git và được giao nhập SQL trước khi dùng trên Railway; không chạy DDL H2 nguyên xi hoặc chép tài khoản H2. Migration chưa được kiểm chứng trên phiên bản/schema Railway thực tế.
 
-Vercel `*.vercel.app` và Railway `*.railway.app` là khác site. **Cookie SameSite=Lax hiện tại không phù hợp cho fetch đăng nhập giữa hai site đó**. Chốt một trong các cách trước phát hành:
+Đã chọn **proxy `/api` tại Vercel** thay đường auth trực tiếp khác site. Auth luôn gọi origin của trang; callback Google production cũng trên `https://premierhub.vercel.app/api/auth/google/callback`. Không dùng None/cookie bên thứ ba. Biến môi trường, Google Console, thứ tự publish và kiểm tra Cookie/Set-Cookie/CORS/CSRF trên deployment thật ở auth-release-2026.md.
 
-- Ưu tiên proxy `/api` cùng origin, hoặc domain riêng cho frontend/backend thuộc cùng site; xác minh rewrite/proxy có chuyển đúng Set-Cookie, cookie path/domain và request cookie.
-- Nếu tiếp tục khác site: đặt `server.servlet.session.cookie.same-site=none`, giữ `server.servlet.session.cookie.secure=true`, HTTPS; auth fetch đã dùng `credentials: 'include'`. `PREMIERHUB_CORS_ALLOWED_ORIGINS` phải là origin frontend chính xác và CORS auth đã `allowCredentials(true)`, không dùng `*`. Vẫn giữ CSRF. Chính sách chặn cookie bên thứ ba của trình duyệt có thể khiến cách này không hoạt động; cần thử trên deployment thật, không coi SameSite=None là bảo đảm.
-
-Chưa xác minh domain/rewrite Railway–Vercel thực tế. Giới hạn xác thực local đã được bổ sung bên dưới; danh sách proxy tin cậy và giới hạn khi chạy nhiều instance vẫn cần chốt trước phát hành. Google chỉ bật khi backend có cấu hình; khôi phục mật khẩu chưa có trên UI.
+Chưa xác minh rewrite/header/cookie trên dịch vụ Vercel–Railway thật. Auth production xác minh secret proxy trước khi tin visitor IP của Vercel; thử nghiệm ban đầu dùng một replica, chưa có giới hạn chung nhiều instance. Google chỉ bật khi backend có cấu hình; khôi phục mật khẩu chưa có trên UI.
 
 ## Google dùng cùng tài khoản: cập nhật tiến độ
 
@@ -105,7 +102,7 @@ Mặc định `server.forward-headers-strategy=none` và `PREMIERHUB_AUTH_TRUSTE
 
 Nếu socket peer thuộc danh sách tin cậy, resolver ghép các header X-Forwarded-For và đi từ phải sang trái qua các proxy tin cậy, dừng ở hop không tin cậy đầu tiên. Proxy phải xóa header client tự khai rồi ghi IP socket, hoặc nối IP socket vào cuối chuỗi; không được chuyển nguyên header client mà không thêm IP thật. Địa chỉ chỉ nhận IP literal IPv4/IPv6, chuẩn hóa trước khi dùng khóa; không DNS lookup cho hostname. Chuỗi sai, quá 2048 ký tự hoặc 32 hop dùng lại peer IP. `Forwarded` không được dùng để xác định IP.
 
-Resolver từ chối khởi động nếu bật global forwarding `native/framework`: các cơ chế đó có thể thay socket peer trước khi kiểm tra trust. **Không áp dụng hướng dẫn bật `SERVER_FORWARD_HEADERS_STRATEGY=framework` cũ để phát hành bản này.** Scheme/host callback HTTPS sau Railway proxy cần được kiểm tra và thiết kế cùng chính sách proxy tin cậy trước phát hành; chưa xác minh CIDR/forwarding Railway hoặc thay cấu hình production. Local callback trực tiếp 8080 vẫn hoạt động.
+Resolver từ chối khởi động nếu bật global forwarding `native/framework`: các cơ chế đó có thể thay socket peer trước khi kiểm tra trust. **Không áp dụng hướng dẫn bật `SERVER_FORWARD_HEADERS_STRATEGY=framework` cũ.** Bản chuẩn bị phát hành nay dùng AuthProxyFilter xác minh shared secret, pin HTTPS/public origin và cung cấp visitor IP đã xác minh bằng servlet attribute. Profile prod không cần đoán CIDR Railway hoặc tin chuỗi X-Forwarded-For; giữ TRUSTED_PROXIES rỗng. Chính sách CIDR phía trên vẫn dành cho local/proxy do mình kiểm soát khi auth-proxy disabled. Chi tiết/biến môi trường và phần cần thử deployment ở auth-release-2026.md. Local callback trực tiếp 8080 vẫn hoạt động.
 
 Không ghi password, cookie, OAuth token, credentials, email hoặc IP vào log giới hạn. Logout, GET `/me`, CSRF, callback/confirm/cancel Google không dùng bộ đếm mới; bảo vệ session/CSRF/state/nonce/xác nhận liên kết giữ nguyên.
 

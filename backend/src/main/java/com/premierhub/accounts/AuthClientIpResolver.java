@@ -33,6 +33,8 @@ public class AuthClientIpResolver {
     }
 
     public String resolve(HttpServletRequest request) {
+        Object verified = request.getAttribute(AuthProxyFilter.VERIFIED_IP);
+        if (verified instanceof String ip) return ip;
         byte[] peer = literal(request.getRemoteAddr());
         if (peer == null) return "unknown";
         if (!isTrusted(peer)) return text(peer);
@@ -92,5 +94,10 @@ public class AuthClientIpResolver {
     private static String text(byte[] address) {
         try { return InetAddress.getByAddress(address).getHostAddress(); }
         catch (UnknownHostException impossible) { throw new IllegalStateException("Invalid IP length", impossible); }
+    }
+
+    static String canonicalIp(String value) {
+        byte[] address = literal(value);
+        return address == null ? null : text(address);
     }
 }

@@ -2,9 +2,7 @@ export function buildApiUrl(path, baseUrl, isDevelopment) {
   const apiPath = `/${path.replace(/^\/+/, '')}`
   if (isDevelopment) return apiPath
 
-  if (!baseUrl?.trim()) {
-    throw new Error('Chưa cấu hình VITE_API_BASE_URL cho bản production.')
-  }
+  if (!baseUrl?.trim()) return apiPath
 
   let url
   try {

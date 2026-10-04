@@ -1,6 +1,6 @@
-import { buildApiUrl } from './request.js'
-
-const url = path => buildApiUrl(`/api/auth/${path}`, import.meta.env?.VITE_API_BASE_URL, import.meta.env?.DEV ?? true)
+// Auth always uses the page's origin, including Google authorization and callback.
+// A legacy VITE_API_BASE_URL may still be used for public football lookups.
+const url = path => `/api/auth/${path}`
 
 export class AuthError extends Error {
   constructor(message, status, retryAfterSeconds = null) {

@@ -1,6 +1,8 @@
 package com.premierhub.config;
 
 import com.premierhub.accounts.GoogleOAuthSecurity;
+import com.premierhub.accounts.AuthProxyFilter;
+import com.premierhub.accounts.AuthProxySettings;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +19,7 @@ import org.springframework.security.web.context.DelegatingSecurityContextReposit
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import java.util.List;
@@ -36,7 +39,10 @@ public class SecurityConfiguration {
     }
 
     @Bean SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts,
-                                       SessionAuthenticationStrategy sessions, ObjectProvider<GoogleOAuthSecurity> google) throws Exception {
+                                       SessionAuthenticationStrategy sessions, ObjectProvider<GoogleOAuthSecurity> google,
+                                       ObjectProvider<AuthProxySettings> proxy) throws Exception {
+        var proxySettings = proxy.getIfAvailable();
+        if (proxySettings != null) http.addFilterBefore(new AuthProxyFilter(proxySettings), SecurityContextHolderFilter.class);
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.csrfTokenRepository(tokens)
