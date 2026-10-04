@@ -1,45 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { checkFantasyLineup, fetchFantasyPlayers } from '../api/fantasy.js'
 import { useApiList } from '../hooks/useApiList.js'
-import { getInitials } from '../utils/initials.js'
 import { FANTASY_STORAGE_KEY, FORMATIONS, GROUP_LABEL, MAX_OVR, fitsSlot, formationSlots,
   lineupIssues, movePicks, normalizeLineup, pickError, playerDataError, validateLineup } from '../fantasy/lineup.js'
 import ResultPanel from './ResultPanel.jsx'
+import PlayerAvatar, { clubColor, ratingTier } from './FantasyPlayerAvatar.jsx'
+import Pitch from './FantasyPitch.jsx'
+import TeamOfWeek from './TeamOfWeek.jsx'
 import './FantasyPage.css'
 
 const GROUPS = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER']
-const CLUB_COLORS = ['#b44955', '#425caa', '#3c987e', '#a26c35', '#705aaa', '#497d9b']
 
 function readSavedLineup() {
   try { return JSON.parse(window.localStorage.getItem(FANTASY_STORAGE_KEY) ?? '{}') }
   catch { return {} }
-}
-
-function clubColor(id) { return CLUB_COLORS[Math.abs(id) % CLUB_COLORS.length] }
-function ratingTier(overall) { return overall >= 85 ? 'elite' : overall >= 78 ? 'strong' : overall >= 70 ? 'good' : 'basic' }
-
-function PlayerAvatar({ player, group, small = false }) {
-  return <span className={`fantasy-avatar${small ? ' fantasy-avatar-small' : ''}${player ? '' : ' fantasy-avatar-empty'}`}
-    style={player ? { '--club-color': clubColor(player.clubId) } : undefined} aria-hidden="true">
-    {player ? getInitials(player.name) : '+'}
-    {player && !small && <span className={`fantasy-rating fantasy-rating-${ratingTier(player.fc27Overall)}`}>{player.fc27Overall}</span>}
-    {small && group && <span className={`fantasy-position fantasy-position-${group}`}>{group === 'GOALKEEPER' ? 'GK' : group === 'DEFENDER' ? 'DEF' : group === 'MIDFIELDER' ? 'MID' : 'FWD'}</span>}
-  </span>
-}
-
-function Pitch() {
-  return <svg className="fantasy-field" viewBox="0 0 400 500" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="fantasy-grass" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#4aae5e" /><stop offset="1" stopColor="#2f8c47" /></linearGradient></defs>
-    <polygon points="36,0 364,0 400,500 0,500" fill="url(#fantasy-grass)" />
-    {[0, 2, 4].map((stripe) => <path key={stripe} d={`M${36 - stripe * 6} ${stripe * 83} L${364 + stripe * 6} ${stripe * 83} L${376 + stripe * 6} ${(stripe + 1) * 83} L${24 - stripe * 6} ${(stripe + 1) * 83} Z`} fill="#ffffff" opacity=".055" />)}
-    <g fill="none" stroke="rgba(255,255,255,.64)" strokeWidth="2" strokeLinejoin="round">
-      <polygon points="36,0 364,0 400,500 0,500" />
-      <path d="M0 250 H400 M155 0 A45 32 0 0 0 245 0 M155 500 A45 32 0 0 1 245 500" />
-      <ellipse cx="200" cy="250" rx="55" ry="55" />
-      <path d="M96 0 V92 H304 V0 M139 0 V38 H261 V0 M75 500 V398 H325 V500 M139 500 V455 H261 V500" />
-    </g>
-    <circle cx="200" cy="250" r="2.5" fill="white" opacity=".75" />
-  </svg>
 }
 
 function FantasyPage() {
@@ -54,6 +28,8 @@ function FantasyPage() {
   const [checking, setChecking] = useState(false)
   const checkVersion = useRef(0)
   const [theme, setTheme] = useState('dark')
+  const [view, setView] = useState('user')
+  const [gameweek, setGameweek] = useState(1)
   const searchRef = useRef(null)
 
   const currentLineup = useMemo(() => status === 'success' ? normalizeLineup(lineup, players) : lineup,
@@ -151,11 +127,24 @@ function FantasyPage() {
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
       <header className="fantasy-head">
-        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">Đội hình của bạn</h1>
-          <p>11 cầu thủ · tối đa 3/CLB · OVR tối đa 860. Điểm trận tính từ rating.</p></div>
+        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">{view === 'user' ? 'Đội hình của bạn' : 'Đội hình tiêu biểu'}</h1>
+          <p>{view === 'user' ? '11 cầu thủ · tối đa 3/CLB · OVR tối đa 860. Điểm trận tính từ rating.' : '11 cầu thủ · 4-3-3 · tổng rating SofaScore cao nhất mỗi vòng.'}</p></div>
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
+      <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
+        {[['user', 'Đội hình của bạn'], ['team', 'Đội hình tiêu biểu']].map(([key, label], index) => <button key={key} type="button" role="tab"
+          id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}
+          onClick={() => { setView(key); setActiveKey(null) }} onKeyDown={event => {
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? 1 - index : null
+            if (next === null) return
+            event.preventDefault(); setView(next === 0 ? 'user' : 'team'); setActiveKey(null)
+            event.currentTarget.parentElement.children[next].focus()
+          }}>{label}</button>)}
+      </div>
+      {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
+        <TeamOfWeek gameweek={gameweek} onGameweekChange={setGameweek} /></div>}
+      <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>
       <ResultPanel status={status} error={error} count={players.length} itemName="cầu thủ Fantasy"
         emptyMessage="Chưa có cầu thủ trong roster mùa 2026/27." onRetry={reload}>
         <div className="fantasy-summary">
@@ -223,8 +212,9 @@ function FantasyPage() {
           </aside>
         </div>
       </ResultPanel>
+      </div>
     </div>
-    {activeSlot && <div className="fantasy-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKey(null) }}>
+    {view === 'user' && activeSlot && <div className="fantasy-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKey(null) }}>
       <div className="fantasy-sheet" role="dialog" aria-modal="true" aria-labelledby="fantasy-picker-title">
         <div className="fantasy-sheet-head"><div><h2 id="fantasy-picker-title">Chọn cầu thủ</h2><span>Vị trí {activeSlot.position} · {GROUP_LABEL[activeSlot.group]}</span></div>
           <button type="button" className="fantasy-theme" onClick={() => setActiveKey(null)} aria-label="Đóng">×</button></div>

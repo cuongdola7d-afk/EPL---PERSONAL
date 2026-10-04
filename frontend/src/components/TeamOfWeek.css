@@ -1,0 +1,31 @@
+.fantasy-feature-tabs { display: flex; gap: 4px; padding: 5px; margin-bottom: 16px; border: 1px solid var(--f-line); border-radius: 99px; background: var(--f-card); width: fit-content; max-width: 100%; }
+.fantasy-feature-tabs button { border: 0; border-radius: 99px; padding: 10px 18px; background: none; color: var(--f-muted); font-weight: 650; }
+.fantasy-feature-tabs button[aria-selected='true'] { background: var(--f-accent); color: var(--f-on-accent); }
+.tow-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.tow-controls label { display: flex; align-items: center; gap: 10px; font-weight: 650; }
+.tow-controls select { border: 1px solid var(--f-line); border-radius: 99px; padding: 8px 30px 8px 14px; background: var(--f-card); color: var(--f-text); }
+.tow-controls > span, .tow-note { color: var(--f-muted); font-size: .8rem; }
+.tow-controls button { margin-left: auto; }.tow-controls button:disabled { opacity: .6; cursor: wait; }
+.tow-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 18px; text-align: center; }
+.tow-state p { margin: 0; color: var(--f-muted); }.tow-state .fantasy-primary { margin: 0; }
+.tow-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; margin-bottom: 12px; }
+.tow-summary h2 { margin: 0; font-size: 1.15rem; }.tow-summary p { margin: 6px 0 0; color: var(--f-muted); font-size: .8rem; }
+.tow-total { display: flex; flex-direction: column; text-align: right; flex: none; }.tow-total span { font-size: .78rem; color: var(--f-muted); }.tow-total strong { font-size: 2rem; color: var(--f-accent); }
+.tow-missing p { margin-bottom: 0; }.tow-note { margin: 10px 0 14px; line-height: 1.6; }
+.tow-pitch a, .tow-player-row { text-decoration: none; color: inherit; }
+.tow-pitch .fantasy-avatar > .fantasy-rating { font-size: .68rem; min-width: 40px; }
+.tow-pitch-club { font-size: .6rem; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; }
+.tow-player-row { width: 100%; padding: 8px 0; border-bottom: 1px solid var(--f-line); }.tow-player-row:last-child { border-bottom: 0; }
+.tow-player-row .fantasy-side-name strong, .tow-player-row .fantasy-side-name small { white-space: normal; overflow-wrap: anywhere; }
+.tow-player-rating { min-width: 48px; padding: 5px; text-align: center; border-radius: 10px; background: var(--f-chip); color: var(--f-accent); }
+.tow-unfilled { display: flex; gap: 10px; padding: 12px 4px; color: var(--f-muted); font-size: .8rem; }
+.tow-pitch :is(a, .tow-empty-slot) { min-width: 0; }
+.tow-pitch a:focus-visible, .tow-player-row:focus-visible { outline: 2px solid var(--f-accent); outline-offset: 3px; }
+@media (max-width: 560px) {
+  .fantasy-feature-tabs { width: 100%; }.fantasy-feature-tabs button { flex: 1; padding: 10px 8px; font-size: .8rem; }
+  .tow-summary { align-items: flex-start; padding: 14px; gap: 10px; }.tow-summary h2 { font-size: 1rem; }.tow-summary p { font-size: .73rem; }
+  .tow-total strong { font-size: 1.6rem; }.tow-total span { font-size: .65rem; }
+  .tow-pitch .fantasy-slot { width: 68px; }.tow-pitch .fantasy-slot-name { max-width: 66px; font-size: .59rem; padding-inline: 4px; }
+  .tow-pitch .fantasy-avatar > .fantasy-rating { right: -9px; font-size: .6rem; min-width: 34px; padding: 2px 4px; }
+  .tow-pitch .fantasy-slot > .fantasy-position { font-size: .6rem; }
+}
