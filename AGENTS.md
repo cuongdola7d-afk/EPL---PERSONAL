@@ -81,6 +81,13 @@ Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Stand
 - Chạy lại thao tác tái tính để xác nhận `updated=0`, đối chiếu tổng số trận và số dòng theo trận, rồi báo rõ các chỉ số `PLAYED` còn thiếu. Chỉ số chưa xác minh giữ SQL `NULL`; `DID_NOT_PLAY` không cộng vào tổng. Không sửa dữ liệu mùa 2024/25.
 - Cách chạy và quy tắc kiểm tra chi tiết ở `docs/player-season-stats-2026.md`.
 
+## Quy trình Gameweek cố định cho PrismaXI
+
+- Khi người dùng nhắn “tổng hợp GW…”, “thu thập Gameweek…” hoặc yêu cầu tương đương, bắt buộc đọc và áp dụng [docs/gameweek-data-workflow.md](docs/gameweek-data-workflow.md), tiếp tục từ checkpoint của Gameweek đó.
+- Chỉ xử lý mùa 2026/27, hoàn thiện cả hai đội của mọi fixture FINISHED trong vòng được giao; trận chưa xong ghi chờ. Batch 5 trận chỉ là cách chia nội bộ, không phải điểm dừng.
+- Quy trình mới lấy đúng danh sách thực tế, thay thế yêu cầu cố định 40 người/trận, 400 dòng/vòng và việc tự nhập SQL trong mục thống kê cũ khi thực hiện yêu cầu thu thập. Quy định cũ trong code/tài liệu tổng mùa là giới hạn hiện hữu phải báo rõ, không phải lý do thêm người hoặc tự tạo DID_NOT_PLAY. Vẫn kiểm tra và tái tính tổng mùa bằng service hiện có khi đủ điều kiện; không báo tổng mùa đã cập nhật nếu bị giới hạn này chặn.
+- “Tổng hợp” mặc định chỉ chuẩn bị file và kiểm tra đầu vào. Chỉ nhập production khi người dùng yêu cầu “nhập SQL” hoặc cho phép rõ ràng, sau khi xác nhận đúng MySQL và có backup ngoài Git. Không tự thu thập rating SofaScore, sửa membership vì chuyển nhượng, commit, push, deploy, tạo cron hoặc Pre-deploy Command.
+
 ## Lệnh kiểm tra
 
 Chạy từ thư mục `backend/`:
