@@ -1,0 +1,8 @@
+.match-kickoff { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.match-kickoff .match-time-zone { font-size: .75rem; font-weight: 500; opacity: .75; white-space: nowrap; }
+.cx-fixture-kickoff { display: block; margin: 5px 0 12px; color: var(--cx-muted); font-size: 12px; }
+.mx-match-meta-timed { flex-wrap: wrap; }
+.mx-match-meta-timed > .match-kickoff { font-size: .8rem; color: var(--mx-muted); }
+@media (max-width: 560px) {
+  .mx-match-meta-timed > .match-kickoff { flex-basis: 100%; order: 3; }
+}

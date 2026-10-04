@@ -1,4 +1,5 @@
 import { fetchApiJson, fetchApiList } from './request.js'
+import { kickoffInstant } from '../utils/matchTime.js'
 
 export function isValidMatch(match) {
   return match !== null &&
@@ -9,6 +10,7 @@ export function isValidMatch(match) {
     typeof match.awayClub === 'string' &&
     Number.isInteger(match.matchweek) &&
     typeof match.date === 'string' &&
+    (match.kickoffUtc == null || kickoffInstant(match) !== null) &&
     typeof match.status === 'string' &&
     (match.hasManualStats === undefined || typeof match.hasManualStats === 'boolean') &&
     (match.homeGoals === null || Number.isInteger(match.homeGoals)) &&

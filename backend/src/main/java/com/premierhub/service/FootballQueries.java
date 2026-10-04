@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Date;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -289,7 +290,7 @@ public class FootballQueries {
         return jdbc.query("""
                 SELECT f.id, f.home_club_id, home.name AS home_name, f.away_club_id,
                        away.name AS away_name, f.gameweek, f.match_date, f.status,
-                       f.home_goals, f.away_goals,
+                       f.home_goals, f.away_goals, provider.kickoff_utc,
                        EXISTS (SELECT 1 FROM manual_fixture_player_stats ms
                                JOIN manual_player_memberships membership
                                  ON membership.league_id=ms.league_id
@@ -304,6 +305,8 @@ public class FootballQueries {
                 FROM fixtures f
                 JOIN clubs home ON home.id = f.home_club_id
                 JOIN clubs away ON away.id = f.away_club_id
+                LEFT JOIN football_data_fixtures provider ON provider.fixture_id = f.id
+                    AND f.season_year = 2026
                 WHERE f.league_id = ? AND f.season_year = ?
                   AND (? IS NULL OR LOWER(home.name) = LOWER(?) OR LOWER(away.name) = LOWER(?))
                   AND (? IS NULL OR f.gameweek = ?) AND (? IS NULL OR f.status = ?)
@@ -407,11 +410,13 @@ public class FootballQueries {
     }
 
     private static MatchResponse match(ResultSet rs) throws SQLException {
+        String kickoffUtc = rs.getString("kickoff_utc");
         return new MatchResponse(rs.getInt("id"), rs.getInt("home_club_id"),
                 rs.getString("home_name"), rs.getInt("away_club_id"), rs.getString("away_name"),
                 rs.getInt("gameweek"), rs.getDate("match_date").toLocalDate(),
                 rs.getString("status"), (Integer) rs.getObject("home_goals"),
-                (Integer) rs.getObject("away_goals"), rs.getBoolean("has_manual_stats"));
+                (Integer) rs.getObject("away_goals"), rs.getBoolean("has_manual_stats"),
+                kickoffUtc == null ? null : Instant.parse(kickoffUtc));
     }
 
     private static MatchPlayerStatResponse manualPlayerStat(ResultSet rs) throws SQLException {

@@ -14,6 +14,7 @@ import { vietnamToday } from '../utils/homeView.js'
 import { clubVisual } from '../utils/matchView.js'
 import { getInitials } from '../utils/initials.js'
 import { HomeCrest } from './ClubCard.jsx'
+import MatchKickoff from './MatchKickoff.jsx'
 import './ClubDetailPage.css'
 
 const dateLabel = value => value ? new Intl.DateTimeFormat('vi-VN', {
@@ -42,7 +43,7 @@ function MatchTeams({ match }) {
 function FeaturedMatch({ label, match, season, fromHash }) {
   return match ? <a className="cd-match-box" href={matchDetailHash(match.id, {season, week:match.matchweek}, fromHash)}>
     <div className="cd-box-label"><span>{label}</span><span>GW{match.matchweek}</span></div>
-    <MatchTeams match={match} /><span className="cd-match-date">{dateLabel(match.date)}</span>
+    <MatchTeams match={match} /><span className="cd-match-date"><MatchKickoff match={match} season={season} legacyLabel={season === 2024 ? dateLabel(match.date) : undefined} /></span>
   </a> : <div className="cd-match-box"><div className="cd-box-label">{label}</div><p className="cd-muted">Chưa có dữ liệu</p></div>
 }
 
@@ -131,7 +132,7 @@ export default function ClubDetailPage({ route, season }) {
   }
   const fromHash=clubDetailHash(route.clubId,{...route,season})
   const standing=standings.data.find(row=>row.clubId === route.clubId)
-  const {done,soon,pending}=clubMatches(matches.data,route.clubId,vietnamToday())
+  const {done,soon,pending}=clubMatches(matches.data,route.clubId,vietnamToday(),season)
   const matchList=route.matches === 'done' ? done : pending
   const tabs=[['standings','Bảng xếp hạng'],['matches','Trận đấu'],['players','Cầu thủ'],['stats','Thống kê']]
   const visual=clubVisual(club.data?.name ?? '')
@@ -173,7 +174,7 @@ export default function ClubDetailPage({ route, season }) {
         {route.tab === 'matches' && <><div className="cd-chips" role="group" aria-label="Lọc trận đấu">{[['done','Đã kết thúc',done.length],['soon','Sắp diễn ra',pending.length]].map(([key,label,count])=><button type="button" key={key} aria-pressed={route.matches===key} onClick={()=>update({matches:key})}>{label}<span>{count}</span></button>)}</div>
           <DataState {...matches} empty={!matchList.length} title="trận đấu cho mục này" />
           {matches.status==='success' && matchList.map(match=><a className="cd-match-card" key={match.id} href={matchDetailHash(match.id,{season,week:match.matchweek},fromHash)}>
-            <div className="cd-match-meta"><span><b>GW{match.matchweek}</b> {dateLabel(match.date)}</span><span className={`cd-result cd-result-${clubMatchResult(match,route.clubId) ?? 'unknown'}`}>{resultLabel[clubMatchResult(match,route.clubId)] ?? pendingLabel[match.status] ?? 'Chưa rõ'}</span></div><MatchTeams match={match} /></a>)}
+            <div className="cd-match-meta"><span><b>GW{match.matchweek}</b> <MatchKickoff match={match} season={season} legacyLabel={season === 2024 ? dateLabel(match.date) : undefined} /></span><span className={`cd-result cd-result-${clubMatchResult(match,route.clubId) ?? 'unknown'}`}>{resultLabel[clubMatchResult(match,route.clubId)] ?? pendingLabel[match.status] ?? 'Chưa rõ'}</span></div><MatchTeams match={match} /></a>)}
         </>}
         {route.tab === 'players' && <><DataState {...players} empty={!players.data.length} title="cầu thủ" />
           {players.status==='success' && (route.players==='squad' ? <PlayerRows players={players.data} season={season} fromHash={fromHash} /> : <>

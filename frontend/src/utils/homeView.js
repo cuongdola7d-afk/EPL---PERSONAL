@@ -1,9 +1,11 @@
+import { compareMatchSchedule, matchDayKey } from './matchTime.js'
+
 const inactive = new Set(['CANCELLED', 'POSTPONED', 'SUSPENDED'])
 
-export function homeFixturePreview(matches, today) {
+export function homeFixturePreview(matches, today, season = 2026) {
   const ordered = [...matches].filter(match => !inactive.has(match.status))
-    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
-  const next = ordered.find(match => match.status !== 'FINISHED' && match.date >= today)
+    .sort((a, b) => compareMatchSchedule(a, b, season))
+  const next = ordered.find(match => match.status !== 'FINISHED' && matchDayKey(match, season) >= today)
   const latest = ordered.filter(match => match.status === 'FINISHED').at(-1)
   const selected = next ?? latest ?? ordered[0]
   if (!selected) return { week: null, mode: 'empty', matches: [] }

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import static com.premierhub.web.ErrorResponseAssertions.expectError;
@@ -38,7 +39,24 @@ class MatchControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].homeClub").value("Arsenal"))
                 .andExpect(jsonPath("$[0].awayClub").value("Chelsea"))
-                .andExpect(jsonPath("$[0].matchweek").value(1));
+                .andExpect(jsonPath("$[0].matchweek").value(1))
+                .andExpect(jsonPath("$[0].kickoffUtc").doesNotExist());
+    }
+
+    @Test
+    void season2026ListAndDetailSerializeFullUtcKickoff() throws Exception {
+        var timed = new MatchResponse(1, 1, "Arsenal", 2, "Chelsea", 6,
+                LocalDate.of(2026, 10, 4), "SCHEDULED", null, null, false,
+                Instant.parse("2026-10-04T20:00:00Z"));
+        when(service.matches(2026, null, null, null)).thenReturn(List.of(timed));
+        when(service.match(1, 2026)).thenReturn(Optional.of(timed));
+        mockMvc.perform(get("/api/matches?season=2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].date").value("2026-10-04"))
+                .andExpect(jsonPath("$[0].kickoffUtc").value("2026-10-04T20:00:00Z"));
+        mockMvc.perform(get("/api/matches/1?season=2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kickoffUtc").value("2026-10-04T20:00:00Z"));
     }
 
     @Test

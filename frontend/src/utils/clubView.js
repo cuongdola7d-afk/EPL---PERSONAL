@@ -1,3 +1,5 @@
+import { compareMatchSchedule, matchDayKey } from './matchTime.js'
+
 export const FOOT_LABEL = { LEFT: 'Chân trái', RIGHT: 'Chân phải', BOTH: 'Hai chân' }
 export const valueLabel = value => value == null ? '—' : String(value)
 export const ratingClass = value => value == null ? 'na' : value >= 9 ? 'blue' : value >= 7 ? 'green' : value >= 5 ? 'orange' : 'red'
@@ -16,14 +18,14 @@ export function clubMatchResult(match, clubId) {
   return own > other ? 'W' : own < other ? 'L' : 'D'
 }
 
-export function clubMatches(matches, clubId, today) {
+export function clubMatches(matches, clubId, today, season = 2026) {
   const own = matches.filter(match => match.homeClubId === clubId || match.awayClubId === clubId)
   const done = own.filter(match => match.status === 'FINISHED')
-    .sort((a,b) => b.date.localeCompare(a.date) || b.id-a.id)
-  const soon = own.filter(match => ['SCHEDULED', 'LIVE'].includes(match.status) && match.date >= today)
-    .sort((a,b) => a.date.localeCompare(b.date) || a.id-b.id)
+    .sort((a,b) => compareMatchSchedule(b, a, season))
+  const soon = own.filter(match => ['SCHEDULED', 'LIVE'].includes(match.status) && matchDayKey(match, season) >= today)
+    .sort((a,b) => compareMatchSchedule(a, b, season))
   const pending = own.filter(match => match.status !== 'FINISHED' && !['CANCELLED', 'AWARDED'].includes(match.status))
-    .sort((a,b) => a.date.localeCompare(b.date) || a.id-b.id)
+    .sort((a,b) => compareMatchSchedule(a, b, season))
   return { done, soon, pending }
 }
 

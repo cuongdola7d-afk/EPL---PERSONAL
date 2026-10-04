@@ -6,6 +6,7 @@ import { matchDetailHash, matchListHash } from '../utils/matchRoute.js'
 import { SEASONS } from '../utils/seasons.js'
 import MatchCard from './MatchCard.jsx'
 import MatchDetail from './MatchDetail.jsx'
+import { compareMatchSchedule, matchDayKey, matchDayLabel } from '../utils/matchTime.js'
 import './MatchPage.css'
 
 const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', {
@@ -28,7 +29,7 @@ function MatchPage({ season, onSeasonChange, matchRoute }) {
   const finished = weekMatches.filter((match) => match.status === 'FINISHED').length
   const visible = weekMatches.filter((match) => filter === 'all' ||
     (filter === 'finished' ? match.status === 'FINISHED' : match.status !== 'FINISHED'))
-    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
+    .sort((a, b) => compareMatchSchedule(a, b, season))
   const selectedMatch = matches.find((match) => match.id === selectedMatchId)
   const weekIndex = weeks.indexOf(currentWeek)
 
@@ -113,9 +114,9 @@ function MatchPage({ season, onSeasonChange, matchRoute }) {
             <p>Thử đổi vòng đấu hoặc bộ lọc.</p><button type="button" onClick={() => { setFilter('all'); setClub('') }}>Xem tất cả</button>
           </div> : <div className="mx-match-list">
             {visible.map((match, index) => <div key={match.id}>
-              {(index === 0 || visible[index - 1].date !== match.date) &&
-                <h2 className="mx-date-heading">{dateLabel(match.date)}</h2>}
-              <MatchCard match={match} onOpen={openMatch} />
+              {(index === 0 || matchDayKey(visible[index - 1], season) !== matchDayKey(match, season)) &&
+                <h2 className="mx-date-heading">{season === 2026 ? matchDayLabel(match, season) : dateLabel(match.date)}</h2>}
+              <MatchCard match={match} season={season} onOpen={openMatch} />
             </div>)}
           </div>}
           <p className="mx-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>

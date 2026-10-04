@@ -11,6 +11,8 @@ import { MAX_OVR } from '../fantasy/lineup.js'
 import { standingBand } from '../utils/clubView.js'
 import ClubCard, { HomeCrest } from './ClubCard.jsx'
 import HomeHero from './HomeHero.jsx'
+import MatchKickoff from './MatchKickoff.jsx'
+import { matchDayKey } from '../utils/matchTime.js'
 import { ArrowIcon, SearchIcon, FantasyArtwork } from './HomeArtwork.jsx'
 import './ClubPage.css'
 
@@ -33,7 +35,7 @@ export default function ClubPage({ season, homeState, onHomeStateChange }) {
   const query = homeState.query
   const visible = [...clubs.data].filter(club => matchesPlayerSearch(club.name, query))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
-  const preview = homeFixturePreview(matches.data, vietnamToday())
+  const preview = homeFixturePreview(matches.data, vietnamToday(), season)
   const table = [...standings.data].sort((a, b) => a.position - b.position).slice(0, 6)
   const fixtureTitle = preview.week == null ? 'Lịch đấu & kết quả' :
     `Vòng ${preview.week}${preview.mode === 'upcoming' ? ' sắp diễn ra' : preview.mode === 'recent' ? ' · Kết quả' : ' · Lịch đấu'}`
@@ -72,13 +74,14 @@ export default function ClubPage({ season, homeState, onHomeStateChange }) {
           <a className="cx-more" href={scheduleHash}>Xem lịch đấu<ArrowIcon /></a></header>
           <HomeDataState {...matches} empty={!preview.matches.length} title="lịch đấu" />
           {matches.status === 'success' && preview.matches.map((match, index) => <div key={match.id}>
-            {(index === 0 || preview.matches[index - 1].date !== match.date) && <h3 className="cx-fixture-day">{fixtureDateLabel(match.date)}</h3>}
+            {(index === 0 || matchDayKey(preview.matches[index - 1], season) !== matchDayKey(match, season)) && <h3 className="cx-fixture-day">{fixtureDateLabel(matchDayKey(match, season))}</h3>}
             <a className="cx-fixture" href={matchDetailHash(match.id, { season, week: match.matchweek })}
               aria-label={`Xem trận ${match.homeClub} – ${match.awayClub}`}>
               <span className="cx-team cx-team-home"><span className="cx-team-name">{match.homeClub}</span><HomeCrest name={match.homeClub} /></span>
               <span className="cx-fixture-score">{hasMatchScore(match) ? `${match.homeGoals} – ${match.awayGoals}` : 'vs'}</span>
               <span className="cx-team"><HomeCrest name={match.awayClub} /><span className="cx-team-name">{match.awayClub}</span></span>
             </a>
+            {season === 2026 && <span className="cx-fixture-kickoff"><MatchKickoff match={match} season={season} /></span>}
           </div>)}
         </div>
         <div className="cx-panel"><header className="cx-panel-heading"><h2>Bảng xếp hạng</h2>

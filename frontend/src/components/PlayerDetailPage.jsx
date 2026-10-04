@@ -4,9 +4,12 @@ import { ESTIMATED_OVR_PLAYER_IDS, GROUP_LABEL } from '../fantasy/lineup.js'
 import { getInitials } from '../utils/initials.js'
 import { effectiveStat, matchRating, matchResult, matchState, seasonSummary } from '../utils/playerDetail.js'
 import { SEASONS, hasMatchScore } from '../utils/seasons.js'
+import { compareMatchSchedule, matchDateTimeLabel } from '../utils/matchTime.js'
+import MatchKickoff from './MatchKickoff.jsx'
 import './PlayerDetailPage.css'
 
 const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
+const matchLabel = (match, season) => season === 2026 ? `${matchDateTimeLabel(match, season)} · Giờ Việt Nam` : dateLabel(match.date)
 const numberLabel = (value) => value == null ? '—' : String(value)
 const ratingTier = (rating) => rating == null ? 'na' : rating >= 9 ? 'blue' : rating >= 7 ? 'green' : rating >= 5 ? 'orange' : 'red'
 const isHome = (row) => row.clubId === row.match.homeClubId
@@ -18,7 +21,7 @@ function Empty({ title, children }) {
   return <div className="pd-empty"><strong>{title}</strong><p>{children}</p></div>
 }
 
-function MatchCard({ row }) {
+function MatchCard({ row, season }) {
   const state = matchState(row)
   const result = matchResult(row)
   const rating = state === 'played' ? matchRating(row) : null
@@ -29,7 +32,7 @@ function MatchCard({ row }) {
   ]
   return <li className="pd-match-card">
     <div className="pd-match-main">
-      <div className="pd-match-meta"><span className="pd-gw">GW{row.match.matchweek}</span><span>{dateLabel(row.match.date)}</span>
+      <div className="pd-match-meta"><span className="pd-gw">GW{row.match.matchweek}</span><span><MatchKickoff match={row.match} season={season} legacyLabel={season === 2024 ? dateLabel(row.match.date) : undefined} /></span>
         <span className={`pd-result pd-result-${result ?? 'unknown'}`}>{result ? resultLabel[result] : 'Chưa rõ'}</span></div>
       <div className="pd-teams"><span className={isHome(row) ? 'pd-my-club' : ''}>{row.match.homeClub}</span><b className="pd-score">{score}</b><span className={!isHome(row) ? 'pd-my-club' : ''}>{row.match.awayClub}</span></div>
       <span className="pd-match-note">{state === 'missing' ? 'Chưa có thống kê cầu thủ cho trận này' : state === 'did-not-play' ? 'Không ra sân' : rating === null ? 'Đã ra sân · chưa được chấm điểm' : 'Đã ra sân'}</span>
@@ -46,25 +49,25 @@ function MatchesTab({ rows, season }) {
   return <>
     <div className="pd-panel-head"><div><h2>Trận đã đấu</h2><p>Premier League · {SEASONS[season]} · {rows.length} trận của CLB</p></div></div>
     <div className="pd-legend"><span>Đánh giá</span><span><i className="pd-legend-dot pd-rating-blue" /> 9+</span><span><i className="pd-legend-dot pd-rating-green" /> 7–8.9</span><span><i className="pd-legend-dot pd-rating-orange" /> 5–6.9</span><span><i className="pd-legend-dot pd-rating-red" /> dưới 5</span><span>— chưa được chấm</span></div>
-    <ul className="pd-match-list">{rows.map((row) => <MatchCard key={row.match.id} row={row} />)}</ul>
+    <ul className="pd-match-list">{rows.map((row) => <MatchCard key={row.match.id} row={row} season={season} />)}</ul>
     <p className="pd-note">Một trận của CLB không xác nhận cầu thủ đã ra sân. DNP là không ra sân; cầu thủ đã chơi nhưng chưa được chấm vẫn có rating trống.</p>
   </>
 }
 
-function FixtureCard({ row, featured = false }) {
+function FixtureCard({ row, season, featured = false }) {
   const home = isHome(row)
   const opponent = home ? row.match.awayClub : row.match.homeClub
   return <div className={featured ? 'pd-next-featured' : 'pd-next-row'}>
     {featured && <span className="pd-next-tag">TRẬN TIẾP THEO</span>}
-    <div className="pd-next-content"><span className="pd-club-initials" aria-hidden="true">{getInitials(opponent)}</span><div><strong>{opponent}</strong><span>{home ? 'Sân nhà' : 'Sân khách'} · GW{row.match.matchweek}</span></div><div className="pd-next-date"><strong>{dateLabel(row.match.date)}</strong><small>{pendingLabel[row.match.status] ?? row.match.status}</small></div></div>
+    <div className="pd-next-content"><span className="pd-club-initials" aria-hidden="true">{getInitials(opponent)}</span><div><strong>{opponent}</strong><span>{home ? 'Sân nhà' : 'Sân khách'} · GW{row.match.matchweek}</span></div><div className="pd-next-date"><strong><MatchKickoff match={row.match} season={season} legacyLabel={season === 2024 ? dateLabel(row.match.date) : undefined} /></strong><small>{pendingLabel[row.match.status] ?? row.match.status}</small></div></div>
   </div>
 }
 
 function NextTab({ rows, season }) {
   if (!rows.length) return <Empty title="Chưa có lịch thi đấu sắp tới">Hiện chưa có fixture sắp tới thuộc thời gian cầu thủ ở CLB trong mùa {SEASONS[season]}.</Empty>
   return <><div className="pd-panel-head"><div><h2>Trận sắp tới</h2><p>Premier League · {SEASONS[season]} · lịch thi đấu có thể thay đổi</p></div></div>
-    <FixtureCard row={rows[0]} featured />
-    {rows.slice(1).map((row) => <FixtureCard key={row.match.id} row={row} />)}
+    <FixtureCard row={rows[0]} season={season} featured />
+    {rows.slice(1).map((row) => <FixtureCard key={row.match.id} row={row} season={season} />)}
     <p className="pd-note">Đây là lịch của CLB trong thời gian membership đã lưu, không phải xác nhận cầu thủ sẽ ra sân.</p>
   </>
 }
@@ -79,12 +82,12 @@ function SeasonTab({ rows, season, player }) {
     ['Bàn thắng', summary.goals], ['Kiến tạo', summary.assists],
     ['Thẻ vàng', summary.yellowCards], ['Thẻ đỏ', summary.redCards],
   ]
-  const rated = [...summary.ratedMatches].sort((a, b) => a.row.match.date.localeCompare(b.row.match.date))
+  const rated = [...summary.ratedMatches].sort((a, b) => season === 2026 ? compareMatchSchedule(a.row.match, b.row.match, season) : a.row.match.date.localeCompare(b.row.match.date))
   const activeMatch = rated.find(({ row }) => row.match.id === activeMatchId)
   return <><div className="pd-panel-head"><div><h2>Tổng kết mùa</h2><p>Premier League · {SEASONS[season]}</p></div></div>
     <div className="pd-season-top"><span className={`pd-rating pd-season-rating pd-rating-${ratingTier(summary.averageRating)}`}>{summary.averageRating == null ? '—' : summary.averageRating.toFixed(1)}</span><div><strong>Đánh giá trung bình</strong><p>{rated.length} trận có điểm đánh giá</p>
-      {rated.length > 0 && <div className="pd-spark" aria-label="Đánh giá theo từng trận" onPointerLeave={(event) => { if (event.pointerType === 'mouse' && !event.currentTarget.contains(document.activeElement)) setActiveMatchId(null) }}>{rated.map(({ row, rating }) => <button type="button" key={row.match.id} className={`pd-spark-bar pd-rating-${ratingTier(rating)}`} style={{ height: `${Math.max(8, rating * 10)}%` }} aria-label={`GW${row.match.matchweek}, ${dateLabel(row.match.date)}, ${row.match.homeClub} gặp ${row.match.awayClub}, rating ${rating.toFixed(1)}`} aria-pressed={activeMatchId === row.match.id} onMouseEnter={() => setActiveMatchId(row.match.id)} onFocus={() => setActiveMatchId(row.match.id)} onClick={() => setActiveMatchId(row.match.id)} />)}</div>}
-      {activeMatch && <div className="pd-rating-detail" role="status"><strong>Rating {activeMatch.rating.toFixed(1)}</strong><span>GW{activeMatch.row.match.matchweek} · {dateLabel(activeMatch.row.match.date)} · {activeMatch.row.clubId === activeMatch.row.match.homeClubId ? 'Sân nhà' : 'Sân khách'}</span><span>{activeMatch.row.match.homeClub} <b>{hasMatchScore(activeMatch.row.match) ? `${activeMatch.row.match.homeGoals} – ${activeMatch.row.match.awayGoals}` : 'Chưa có tỉ số'}</b> {activeMatch.row.match.awayClub}</span></div>}
+      {rated.length > 0 && <div className="pd-spark" aria-label="Đánh giá theo từng trận" onPointerLeave={(event) => { if (event.pointerType === 'mouse' && !event.currentTarget.contains(document.activeElement)) setActiveMatchId(null) }}>{rated.map(({ row, rating }) => <button type="button" key={row.match.id} className={`pd-spark-bar pd-rating-${ratingTier(rating)}`} style={{ height: `${Math.max(8, rating * 10)}%` }} aria-label={`GW${row.match.matchweek}, ${matchLabel(row.match, season)}, ${row.match.homeClub} gặp ${row.match.awayClub}, rating ${rating.toFixed(1)}`} aria-pressed={activeMatchId === row.match.id} onMouseEnter={() => setActiveMatchId(row.match.id)} onFocus={() => setActiveMatchId(row.match.id)} onClick={() => setActiveMatchId(row.match.id)} />)}</div>}
+      {activeMatch && <div className="pd-rating-detail" role="status"><strong>Rating {activeMatch.rating.toFixed(1)}</strong><span>GW{activeMatch.row.match.matchweek} · <MatchKickoff match={activeMatch.row.match} season={season} legacyLabel={season === 2024 ? dateLabel(activeMatch.row.match.date) : undefined} /> · {activeMatch.row.clubId === activeMatch.row.match.homeClubId ? 'Sân nhà' : 'Sân khách'}</span><span>{activeMatch.row.match.homeClub} <b>{hasMatchScore(activeMatch.row.match) ? `${activeMatch.row.match.homeGoals} – ${activeMatch.row.match.awayGoals}` : 'Chưa có tỉ số'}</b> {activeMatch.row.match.awayClub}</span></div>}
     </div></div>
     <div className="pd-metric-grid">{metrics.map(([label, value]) => <div className="pd-metric" key={label}><span>{label}</span><strong>{numberLabel(value)}</strong></div>)}</div>
     <p className="pd-note">Tổng chỉ số để trống nếu một trận đã ra sân còn thiếu chỉ số đó. Đánh giá trận là rating đã lưu, không phải điểm Fantasy.</p>
@@ -119,8 +122,8 @@ function PlayerDetailPage({ playerId, season, backHash }) {
   }, [playerId, season, reloadKey])
 
   const { status, player, rows, error } = data
-  const finished = rows.filter((row) => row.match.status === 'FINISHED').sort((a, b) => b.match.date.localeCompare(a.match.date))
-  const next = rows.filter((row) => ['SCHEDULED', 'POSTPONED', 'SUSPENDED', 'LIVE'].includes(row.match.status)).sort((a, b) => a.match.date.localeCompare(b.match.date))
+  const finished = rows.filter((row) => row.match.status === 'FINISHED').sort((a, b) => season === 2026 ? compareMatchSchedule(b.match, a.match, season) : b.match.date.localeCompare(a.match.date))
+  const next = rows.filter((row) => ['SCHEDULED', 'POSTPONED', 'SUSPENDED', 'LIVE'].includes(row.match.status)).sort((a, b) => season === 2026 ? compareMatchSchedule(a.match, b.match, season) : a.match.date.localeCompare(b.match.date))
   const tabs = [['matches', 'Trận đã đấu', finished.length], ['next', 'Trận sắp tới', next.length], ['season', 'Mùa giải', null], ['info', 'Thông tin', null]]
   const estimated = player && ESTIMATED_OVR_PLAYER_IDS.has(player.id)
   const backLabel = backHash?.startsWith('#matches/') ? 'Trở lại trận đấu' :

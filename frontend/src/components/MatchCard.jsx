@@ -1,5 +1,6 @@
 import { clubVisual } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
+import MatchKickoff from './MatchKickoff.jsx'
 
 const LABELS = {
   FINISHED: 'Đã kết thúc', SCHEDULED: 'Sắp diễn ra', POSTPONED: 'Bị hoãn',
@@ -18,14 +19,15 @@ export function MatchStatus({ status }) {
   </span>
 }
 
-function MatchCard({ match, onOpen }) {
+function MatchCard({ match, season, onOpen }) {
   const scored = hasMatchScore(match)
   const homeWon = scored && match.homeGoals > match.awayGoals
   const awayWon = scored && match.awayGoals > match.homeGoals
 
   return <button className="mx-match-card" type="button" onClick={() => onOpen(match.id)}
     aria-label={`Xem trận ${match.homeClub} gặp ${match.awayClub}, ${scored ? `${match.homeGoals}–${match.awayGoals}` : LABELS[match.status] ?? match.status}`}>
-    <span className="mx-match-meta"><MatchStatus status={match.status} />
+    <span className={`mx-match-meta${season === 2026 ? ' mx-match-meta-timed' : ''}`}><MatchStatus status={match.status} />
+      {season === 2026 && <MatchKickoff match={match} season={season} />}
       {match.hasManualStats && <span className="mx-stat-tag">Có chỉ số cầu thủ</span>}</span>
     <span className="mx-match-main">
       <span className={`mx-team mx-team-home${awayWon ? ' mx-team-lost' : ''}${homeWon ? ' mx-team-won' : ''}`}>

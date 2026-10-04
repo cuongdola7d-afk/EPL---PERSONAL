@@ -4,6 +4,7 @@ import { playerDetailHash } from '../utils/playerRoute.js'
 import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
+import MatchKickoff from './MatchKickoff.jsx'
 
 const POSITIONS = { G: 'GK', D: 'DEF', M: 'MID', F: 'FWD' }
 const EVENTS = [
@@ -220,7 +221,7 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
     <button className="mx-back" type="button" onClick={onClose}>‹ <span>{backLabel}</span></button>
     {match && <header className="mx-detail-hero">
       <div className="mx-detail-meta"><span className="mx-gw">GW{match.matchweek}</span>
-        <time dateTime={match.date}>{dateLabel(match.date)}</time><MatchStatus status={match.status} /></div>
+        {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}<MatchStatus status={match.status} /></div>
       <div className="mx-detail-score"><div className="mx-detail-club"><ClubCrest name={match.homeClub} large />
         <strong>{match.homeClub}</strong></div><div className="mx-big-score" ref={headingRef} tabIndex="-1"
           aria-label={`${match.homeClub} ${scored ? match.homeGoals : 'đấu'} ${match.awayClub} ${scored ? match.awayGoals : ''}`}>
