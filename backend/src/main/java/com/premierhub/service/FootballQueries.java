@@ -8,6 +8,7 @@ import com.premierhub.web.dto.InferredMatchStatsResponse;
 import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.dto.PlayerMatchResponse;
 import com.premierhub.web.dto.StandingResponse;
+import com.premierhub.lineups.MatchLineupQueries;
 import com.premierhub.web.error.InvalidFilterException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -36,12 +37,14 @@ public class FootballQueries {
     private final JdbcTemplate jdbc;
     private final MatchScoringService scoring;
     private final FixtureEvidenceService evidence;
+    private final MatchLineupQueries lineups;
 
     public FootballQueries(JdbcTemplate jdbc, MatchScoringService scoring,
                            FixtureEvidenceService evidence) {
         this.jdbc = jdbc;
         this.scoring = scoring;
         this.evidence = evidence;
+        this.lineups = new MatchLineupQueries(jdbc);
     }
 
     public List<ClubResponse> clubs(int season, String keyword) {
@@ -342,10 +345,11 @@ public class FootballQueries {
                           AND m.club_id IN (f.home_club_id, f.away_club_id)
                         ORDER BY m.club_id, p.name, m.player_id
                         """, (rs, row) -> manualPlayerStat(rs), id, LEAGUE_ID, season);
-                return new MatchDetailResponse(match,
-                        players.stream().filter(player -> player.clubId() == match.homeClubId()).toList(),
-                        players.stream().filter(player -> player.clubId() == match.awayClubId()).toList(),
-                        players.isEmpty() ? "MISSING" : "MANUAL_VERIFIED", null);
+                var home = players.stream().filter(player -> player.clubId() == match.homeClubId()).toList();
+                var away = players.stream().filter(player -> player.clubId() == match.awayClubId()).toList();
+                return new MatchDetailResponse(match, home, away,
+                        players.isEmpty() ? "MISSING" : "MANUAL_VERIFIED", null,
+                        lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away));
             }
             List<MatchPlayerStatResponse> rawPlayers = jdbc.query("""
                     SELECT s.player_id, p.name AS player_name, s.club_id, s.position,

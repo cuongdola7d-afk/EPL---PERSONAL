@@ -3,6 +3,7 @@ import { fetchMatchDetail } from '../api/matches.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
 import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
+import { formationLines, matchLineup } from '../utils/matchLineup.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
 import MatchKickoff from './MatchKickoff.jsx'
 
@@ -44,6 +45,8 @@ function PlayerRow({ player, club, season, evidenceStatus }) {
         {POSITIONS[player.position] ?? player.position ?? '—'}</span>{state === 'played' && rating == null ? ' · chưa có rating' : ''}
         {points && ` · ${points}`}</small></span>
     </span>
+    {player.role === 'SUB_USED' && <span className="mx-substitution" title="Thay vào đã xác nhận">↗{player.substitutionInMinute == null ? '' : ` ${player.substitutionInMinute}′`}</span>}
+    {player.substitutionOutMinute != null && <span className="mx-substitution" title="Thay ra đã xác nhận">↘ {player.substitutionOutMinute}′</span>}
     {state === 'did-not-play' ? <span className="mx-dnp">Không ra sân</span> :
       state === 'unknown' ? <span className="mx-dnp">Chưa rõ ra sân</span> :
         <span className="mx-player-numbers">
@@ -87,11 +90,13 @@ function PitchNode({ player, club, season, evidenceStatus, x, y }) {
       {minutes != null && minutes < 90 && <span className="mx-pitch-minutes" title="Số phút thi đấu">{minutes}′</span>}
     </span>
     <RatingBadge player={player} />
+    {player.matchPosition && <span className="mx-match-position">{player.matchPosition}</span>}
+    {player.substitutionOutMinute != null && <span className="mx-pitch-substitution" title="Thay ra đã xác nhận">↘ {player.substitutionOutMinute}′</span>}
     <span className="mx-pitch-name" title={player.playerName}>{player.playerName}</span>
   </a>
 }
 
-function Lineup({ match, detail, season }) {
+function LegacyLineup({ match, detail, season }) {
   const home = estimatedPitchPlayers(detail.homePlayers, detail.evidenceStatus)
   const away = estimatedPitchPlayers(detail.awayPlayers, detail.evidenceStatus)
   const homeNodes = pitchPositions(home.selected, 'home')
@@ -126,6 +131,55 @@ function Lineup({ match, detail, season }) {
       <PlayerGroup title={`Dự bị · ${match.awayClub}`} rows={away.bench} club={match.awayClub}
         season={season} evidenceStatus={detail.evidenceStatus} />
     </div>
+  </div>
+}
+
+function Lineup({ match, detail, season }) {
+  return season === 2026 ? <SeasonLineup match={match} detail={detail} season={season} /> :
+    <LegacyLineup match={match} detail={detail} season={season} />
+}
+
+function SeasonLineup({ match, detail, season }) {
+  const home = matchLineup(detail.homePlayers, detail.homeLineup, 'home')
+  const away = matchLineup(detail.awayPlayers, detail.awayLineup, 'away')
+  const sides = [home, away]
+  const clubs = [match.homeClub, match.awayClub]
+  const pitchRows = Math.max(...sides.map(team => formationLines(team.formation)?.length ?? 0), 4)
+  return <div className="mx-lineup mx-lineup-2026">
+    <div className="mx-lineup-heading">{sides.map((team, index) => <div key={index} className={`mx-lineup-team mx-lineup-team-${index ? 'away' : 'home'}`}>
+      <ClubCrest name={clubs[index]} /><span><strong>{clubs[index]}</strong><span>{team.formation ? `Sơ đồ ${team.formation}` : 'Chưa có sơ đồ'}</span>
+        <span>{team.formationSource === 'FIXTURE' ? 'Sơ đồ trận đã xác minh' : team.formationSource === 'CLUB_DEFAULT' ? 'Bố trí theo sơ đồ thường dùng' : 'Cần bổ sung ảnh Lineups'}</span></span>
+    </div>)}</div>
+    {sides.map((team, index) => <div key={index} className="mx-lineup-notice" role="status">
+      <strong>{clubs[index]}: </strong>{team.startersStatus !== 'VERIFIED' ? 'Chưa có đủ dữ liệu xác nhận 11 cầu thủ đá chính.' :
+        !team.formation ? 'Đã xác nhận 11 đá chính; chưa có sơ đồ để bố trí trên sân.' :
+          team.positionSource === 'MATCH' ? 'Vị trí trên sân đã xác minh trong trận.' :
+            team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
+              'Bố cục minh họa theo vị trí mùa; các ô đã có vị trí trận được ưu tiên. Không xác nhận vị trí thi đấu thực tế của các ô còn lại.'}
+    </div>)}
+    {sides.some(team => team.nodes.length > 0) && <div className="mx-pitch mx-pitch-2026" style={{ '--mx-lineup-rows': pitchRows }} aria-label="Sơ đồ sân bóng hai đội">
+      <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="14" y="14" width="972" height="592" /><path d="M500 14v592" /><circle cx="500" cy="310" r="72" />
+        <rect x="14" y="145" width="165" height="330" /><rect x="14" y="235" width="55" height="150" />
+        <rect x="821" y="145" width="165" height="330" /><rect x="931" y="235" width="55" height="150" />
+        <circle cx="500" cy="310" r="5" className="mx-pitch-center-dot" />
+      </svg>
+      <svg className="mx-pitch-vertical" viewBox="0 0 620 1000" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="14" y="14" width="592" height="972" /><path d="M14 500h592" /><circle cx="310" cy="500" r="72" />
+        <rect x="145" y="14" width="330" height="165" /><rect x="235" y="14" width="150" height="55" />
+        <rect x="145" y="821" width="330" height="165" /><rect x="235" y="931" width="150" height="55" />
+        <circle cx="310" cy="500" r="5" className="mx-pitch-center-dot" />
+      </svg>
+      {sides.flatMap((team, index) => team.nodes.map(node => <PitchNode key={`${index}-${node.player.playerId}`}
+        {...node} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />))}
+    </div>}
+    <div className="mx-bench">{sides.map((team, index) => <div key={index}>
+      {team.startersStatus === 'VERIFIED' ? <>
+        <PlayerGroup title={`Đá chính · ${clubs[index]}`} rows={team.starters} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
+        <PlayerGroup title={`Đã vào thay · ${clubs[index]}`} rows={team.substitutes} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
+        <PlayerGroup title={`Dự bị không vào sân · ${clubs[index]}`} rows={team.bench} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
+      </> : <PlayerGroup title={`Chưa xác nhận vai trò · ${clubs[index]}`} rows={team.unknown} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />}
+    </div>)}</div>
   </div>
 }
 
