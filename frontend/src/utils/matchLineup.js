@@ -5,7 +5,15 @@ export function formationLines(formation) {
   return lines.reduce((sum, count) => sum + count, 0) === 10 ? [1, ...lines] : null
 }
 
+// Display labels describe formation slots; player positions and assignment affinities stay separate.
+const FORMATION_LABELS = {
+  '4-2-3-1': [['GK'], ['LB', 'CB', 'CB', 'RB'], ['CM', 'CM'], ['LW', 'CAM', 'RW'], ['ST']],
+  '5-4-1': [['GK'], ['LB', 'CB', 'CB', 'CB', 'RB'], ['LM', 'CM', 'CM', 'RM'], ['ST']],
+  '3-4-3': [['GK'], ['CB', 'CB', 'CB'], ['LM', 'CM', 'CM', 'RM'], ['LW', 'ST', 'RW']],
+}
+
 function formationSlots(lines) {
+  const labels = FORMATION_LABELS[lines.slice(1).join('-')]
   const last = lines.length - 1
   return lines.flatMap((count, rowIndex) => Array.from({ length: count }, (_, slotIndex) => {
     const lane = Math.sign(slotIndex - (count - 1) / 2)
@@ -28,7 +36,7 @@ function formationSlots(lines) {
       role = rowIndex === 2 && count <= 2 && lines.length >= 5 ? 'DM' : 'CM'
       layoutPosition = `${prefix}${role === 'DM' ? 'DM' : 'CM'}`
     }
-    return { rowIndex, slotIndex, lane, role, layoutPosition }
+    return { rowIndex, slotIndex, lane, role, layoutPosition: labels?.[rowIndex]?.[slotIndex] ?? layoutPosition }
   }))
 }
 

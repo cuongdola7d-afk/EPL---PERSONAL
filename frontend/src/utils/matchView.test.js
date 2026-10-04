@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { estimatedPitchPlayers, matchPlayerState, matchPlayerValue, pitchPositions, preferredMatchweek } from './matchView.js'
+import { estimatedPitchPlayers, matchPlayerState, matchPlayerValue, pitchPositions, preferredMatchweek, shortPlayerName } from './matchView.js'
 
 test('prefers the latest complete gameweek and falls back to the first available week', () => {
   const matches = [
@@ -10,6 +10,13 @@ test('prefers the latest complete gameweek and falls back to the first available
   assert.equal(preferredMatchweek(matches), 5)
   assert.equal(preferredMatchweek(matches.slice(10)), 6)
   assert.equal(preferredMatchweek([]), 1)
+})
+
+test('abbreviates the first name while preserving compound surnames, accents and single names', () => {
+  for (const [name, expected] of [['Harvey Barnes', 'H. Barnes'], ['Cole Palmer', 'C. Palmer'],
+    ['Virgil van Dijk', 'V. van Dijk'], ['  João   Pedro ', 'J. Pedro'], ['C. Palmer', 'C. Palmer'], ['Rodri', 'Rodri']]) {
+    assert.equal(shortPlayerName(name), expected)
+  }
 })
 
 test('uses explicit participation before minutes and preserves missing statistics', () => {

@@ -18,6 +18,11 @@ const CODES = [
   ['tottenham', 'TOT'], ['coventry', 'COV'],
 ]
 
+export function shortPlayerName(name) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  return parts.length < 2 ? parts.join('') : `${Array.from(parts[0])[0]}. ${parts.slice(1).join(' ')}`
+}
+
 export function clubVisual(name) {
   const lower = name.toLowerCase()
   return {

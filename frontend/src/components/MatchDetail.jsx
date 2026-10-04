@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchMatchDetail } from '../api/matches.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
-import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions } from '../utils/matchView.js'
+import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions, shortPlayerName } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
 import { formationLines, matchLineup } from '../utils/matchLineup.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
@@ -17,6 +17,7 @@ const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', {
 }).format(new Date(`${date}T00:00:00Z`))
 const numberLabel = (value) => value == null ? '—' : String(value)
 const ratingTier = (value) => value == null ? 'na' : value >= 9 ? 'blue' : value >= 7 ? 'green' : value >= 5 ? 'orange' : 'red'
+const playerLabel = (name, season) => season === 2026 ? shortPlayerName(name) : name
 
 function Avatar({ name, club }) {
   const initials = name.replace(/\./g, '').split(/\s+/).filter(Boolean)
@@ -41,7 +42,7 @@ function PlayerRow({ player, club, season, evidenceStatus }) {
       : player.score ? `Tạm tính v1: ${player.score.confirmedPoints}` : null
   return <div className="mx-player-entry"><a className="mx-player-row" href={playerDetailHash(player.playerId, season, window.location.hash)}>
     <span className="mx-player-identity"><Avatar name={player.playerName} club={club} />
-      <span><strong>{player.playerName}</strong><small><span className={`mx-position mx-position-${player.position}`}>
+      <span><strong title={player.playerName}>{playerLabel(player.playerName, season)}</strong><small><span className={`mx-position mx-position-${player.position}`}>
         {POSITIONS[player.position] ?? player.position ?? '—'}</span>{state === 'played' && rating == null ? ' · chưa có rating' : ''}
         {points && ` · ${points}`}</small></span>
     </span>
@@ -75,12 +76,12 @@ function PlayerGroup({ title, rows, club, season, evidenceStatus }) {
   </section>
 }
 
-function PitchNode({ player, club, season, evidenceStatus, x, y, positionSource, layoutPosition }) {
+function PitchNode({ player, club, season, evidenceStatus, x, y, layoutPosition }) {
   const initials = player.playerName.replace(/\./g, '').split(/\s+/).filter(Boolean)
   const label = initials.length < 2 ? player.playerName.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
   const marks = EVENTS.filter(([field]) => (matchPlayerValue(player, field, evidenceStatus) ?? 0) > 0)
   const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
-  const positionLabel = player.matchPosition ?? (positionSource === 'ILLUSTRATION' ? player.seasonPosition : null)
+  const positionLabel = season === 2026 ? layoutPosition : player.matchPosition
   return <a className="mx-pitch-node" href={playerDetailHash(player.playerId, season, window.location.hash)}
     data-layout-position={season === 2026 ? layoutPosition : undefined}
     style={{ '--mx-x': `${x}%`, '--mx-y': `${y}%`, '--mx-club-color': clubVisual(club).color }}
@@ -92,9 +93,9 @@ function PitchNode({ player, club, season, evidenceStatus, x, y, positionSource,
       {minutes != null && minutes < 90 && <span className="mx-pitch-minutes" title="Số phút thi đấu">{minutes}′</span>}
     </span>
     <RatingBadge player={player} />
-    {positionLabel && <span className="mx-match-position" title={player.matchPosition ? 'Vị trí trận đã xác minh' : `Vị trí chính mùa: ${positionLabel}. Ô ${layoutPosition} là bố cục minh họa.`}>{positionLabel}</span>}
+    {positionLabel && <span className="mx-match-position" title={season === 2026 ? `Ô ${positionLabel} trong sơ đồ` : 'Vị trí trận đã xác minh'}>{positionLabel}</span>}
     {player.substitutionOutMinute != null && <span className="mx-pitch-substitution" title="Thay ra đã xác nhận">↘ {player.substitutionOutMinute}′</span>}
-    <span className="mx-pitch-name" title={player.playerName}>{player.playerName}</span>
+    <span className="mx-pitch-name" title={player.playerName}>{playerLabel(player.playerName, season)}</span>
   </a>
 }
 
@@ -150,15 +151,13 @@ function SeasonLineup({ match, detail, season }) {
   return <div className="mx-lineup mx-lineup-2026">
     <div className="mx-lineup-heading">{sides.map((team, index) => <div key={index} className={`mx-lineup-team mx-lineup-team-${index ? 'away' : 'home'}`}>
       <ClubCrest name={clubs[index]} /><span><strong>{clubs[index]}</strong><span>{team.formation ? `Sơ đồ ${team.formation}` : 'Chưa có sơ đồ'}</span>
-        <span>{team.formationSource === 'FIXTURE' ? 'Sơ đồ trận đã xác minh' : team.formationSource === 'CLUB_DEFAULT' ? 'Bố trí theo sơ đồ thường dùng' : 'Cần bổ sung ảnh Lineups'}</span></span>
+        {team.formationSource === 'FIXTURE' && <span>Sơ đồ trận đã xác minh</span>}</span>
     </div>)}</div>
-    {sides.map((team, index) => <div key={index} className="mx-lineup-notice" role="status">
+    {sides.map((team, index) => (team.startersStatus !== 'VERIFIED' || !team.formation || ['INVALID', 'INSUFFICIENT_POSITIONS'].includes(team.positionSource)) && <div key={index} className="mx-lineup-notice" role="status">
       <strong>{clubs[index]}: </strong>{team.startersStatus !== 'VERIFIED' ? 'Chưa có đủ dữ liệu xác nhận 11 cầu thủ đá chính.' :
         !team.formation ? 'Đã xác nhận 11 đá chính; chưa có sơ đồ để bố trí trên sân.' :
-          team.positionSource === 'MATCH' ? 'Vị trí trên sân đã xác minh trong trận.' :
-            team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
-              team.positionSource === 'INSUFFICIENT_POSITIONS' ? 'Chưa đủ vị trí phù hợp để minh họa đúng sơ đồ này. Giữ danh sách 11 đá chính bên dưới; cần vị trí trận đã xác minh.' :
-              'Bố cục minh họa theo vị trí mùa; các ô đã có vị trí trận được ưu tiên. Không xác nhận vị trí thi đấu thực tế của các ô còn lại.'}
+          team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
+            'Chưa đủ vị trí phù hợp để bố trí sơ đồ này; cần bổ sung vị trí trận đã xác minh.'}
     </div>)}
     {sides.some(team => team.nodes.length > 0) && <div className="mx-pitch mx-pitch-2026" style={{ '--mx-lineup-rows': pitchRows }} aria-label="Sơ đồ sân bóng hai đội">
       <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
@@ -178,22 +177,21 @@ function SeasonLineup({ match, detail, season }) {
     </div>}
     <div className="mx-bench">{sides.map((team, index) => <div key={index}>
       {team.startersStatus === 'VERIFIED' ? <>
-        <PlayerGroup title={`Đá chính · ${clubs[index]}`} rows={team.starters} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
-        <PlayerGroup title={`Đã vào thay · ${clubs[index]}`} rows={team.substitutes} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
-        <PlayerGroup title={`Dự bị không vào sân · ${clubs[index]}`} rows={team.bench} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
+        <PlayerGroup title={`Dự bị đã vào sân · ${clubs[index]}`} rows={team.substitutes} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
+        <PlayerGroup title={`Không ra sân · ${clubs[index]}`} rows={team.bench} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />
       </> : <PlayerGroup title={`Chưa xác nhận vai trò · ${clubs[index]}`} rows={team.unknown} club={clubs[index]} season={season} evidenceStatus={detail.evidenceStatus} />}
     </div>)}</div>
   </div>
 }
 
-function EventColumn({ club, players, evidenceStatus }) {
+function EventColumn({ club, players, evidenceStatus, season }) {
   return <div className="mx-event-column"><strong>{club}</strong>
     {EVENTS.map(([field, symbol, label]) => {
       const contributors = players.filter((player) =>
         (matchPlayerValue(player, field, evidenceStatus) ?? 0) > 0)
       return <div className="mx-event-type" key={field}><small>{label}</small>
-        {contributors.length ? contributors.map((player) => <span key={player.playerId}>
-          <span aria-hidden="true">{symbol}</span>{player.playerName}
+        {contributors.length ? contributors.map((player) => <span key={player.playerId} title={player.playerName}>
+          <span aria-hidden="true">{symbol}</span>{playerLabel(player.playerName, season)}
           {matchPlayerValue(player, field, evidenceStatus) > 1 && ` ×${matchPlayerValue(player, field, evidenceStatus)}`}
         </span>) : <em>—</em>}</div>
     })}
@@ -209,7 +207,7 @@ function TeamAverage({ club, players }) {
   </span><strong>{average == null ? '—' : average.toFixed(1)}</strong></div>
 }
 
-function Overview({ match, detail }) {
+function Overview({ match, detail, season }) {
   const all = [...detail.homePlayers.map((player) => ({ player, club: match.homeClub })),
     ...detail.awayPlayers.map((player) => ({ player, club: match.awayClub }))]
   const best = all.filter(({ player }) => matchPlayerState(player) === 'played' && matchRating(player) != null)
@@ -217,13 +215,13 @@ function Overview({ match, detail }) {
   return <div className="mx-overview">
     <section className="mx-block"><h3>Cầu thủ xuất sắc nhất trận</h3>
       {best ? <div className="mx-best"><Avatar name={best.player.playerName} club={best.club} />
-        <span><strong>{best.player.playerName}</strong><small>{best.club}</small></span>
+        <span><strong title={best.player.playerName}>{playerLabel(best.player.playerName, season)}</strong><small>{best.club}</small></span>
         <span className={`mx-rating mx-best-rating mx-rating-${ratingTier(matchRating(best.player))}`}>
           {matchRating(best.player).toFixed(1)}</span></div> : <p>Chưa có điểm đánh giá nào.</p>}
     </section>
     <section className="mx-block"><h3>Sự kiện chính</h3>
-      <div className="mx-event-grid"><EventColumn club={match.homeClub} players={detail.homePlayers} evidenceStatus={detail.evidenceStatus} />
-        <EventColumn club={match.awayClub} players={detail.awayPlayers} evidenceStatus={detail.evidenceStatus} /></div>
+      <div className="mx-event-grid"><EventColumn club={match.homeClub} players={detail.homePlayers} evidenceStatus={detail.evidenceStatus} season={season} />
+        <EventColumn club={match.awayClub} players={detail.awayPlayers} evidenceStatus={detail.evidenceStatus} season={season} /></div>
       <p className="mx-detail-note">Nguồn hiện chưa lưu phút xảy ra sự kiện.</p>
     </section>
     <section className="mx-block"><h3>Rating trung bình của đội</h3>
@@ -233,13 +231,13 @@ function Overview({ match, detail }) {
   </div>
 }
 
-function Scorers({ match, detail }) {
+function Scorers({ match, detail, season }) {
   const sides = [detail.homePlayers, detail.awayPlayers]
   if (!sides.some((players) => players.some((player) =>
     (matchPlayerValue(player, 'goals', detail.evidenceStatus) ?? 0) > 0))) return null
   return <div className="mx-scorers">{sides.map((players, index) => <div key={index}>
     {players.filter((player) => (matchPlayerValue(player, 'goals', detail.evidenceStatus) ?? 0) > 0)
-      .map((player) => <span key={player.playerId}>⚽ {player.playerName}
+      .map((player) => <span key={player.playerId} title={player.playerName}>⚽ {playerLabel(player.playerName, season)}
         {matchPlayerValue(player, 'goals', detail.evidenceStatus) > 1 && ` ×${matchPlayerValue(player, 'goals', detail.evidenceStatus)}`}</span>)}
   </div>)}</div>
 }
@@ -286,7 +284,7 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
           {!scored && <small>Chưa có tỉ số</small>}</div>
         <div className="mx-detail-club"><ClubCrest name={match.awayClub} large />
           <strong>{match.awayClub}</strong></div></div>
-      {status === 'success' && !noStats && <Scorers match={match} detail={detail} />}
+      {status === 'success' && !noStats && <Scorers match={match} detail={detail} season={season} />}
     </header>}
 
     {status === 'loading' && <div className="mx-empty" role="status">Đang tải chi tiết trận...</div>}
@@ -304,7 +302,7 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
       </div>
       <section className="mx-detail-panel" role="tabpanel">
         {tab === 'lineup' ? <Lineup match={match} detail={detail} season={season} /> :
-          <Overview match={match} detail={detail} />}
+          <Overview match={match} detail={detail} season={season} />}
       </section>
     </>}
   </div>

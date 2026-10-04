@@ -165,3 +165,29 @@ File cần commit cho lượt sửa này:
 Commit message đề xuất: `fix: respect player positions in illustrative match lineups`
 
 Chưa commit, push hoặc deploy. Không ghi MySQL production và không cần nhập SQL cho thay đổi này. Để website đang chạy nhận bản sửa, bước còn lại là phát hành cả backend/API mới và frontend sau khi được yêu cầu. Vị trí thực tế của Pep trong trận này vẫn cần bằng chứng Lineups; ô minh họa LWB không được lưu thành vị trí thi đấu thực tế.
+
+## Điều chỉnh giao diện đội hình theo yêu cầu tiếp theo
+
+Đã hoàn thành local, chỉ trên màn chi tiết trận mùa 2026/27:
+
+- Bỏ hai dòng chú thích bố cục dưới tên CLB và dòng “Bố trí theo sơ đồ thường dùng”. Chỉ hiện thông báo khi thiếu dữ liệu hoặc không thể bố trí; không tạo XI khi chưa xác nhận đá chính.
+- Bỏ danh sách đá chính bên dưới sân. Giữ hai nhóm cho mỗi đội: “Dự bị đã vào sân” và “Không ra sân”. Cầu thủ đá chính vẫn hiện đúng trên sân và không bị đưa vào hai nhóm này.
+- Nhãn vị trí trên sân là nhãn của ô sơ đồ: 4-2-3-1 có hai CM, LW–CAM–RW và ST; 5-4-1 có LM–CM–CM–RM và ST; 3-4-3 có LM–CM–CM–RM và LW–ST–RW. Hàng thủ hiện LB/CB/RB tương ứng. Việc phân công cầu thủ, tọa độ đã xác minh, matchPosition và vị trí mùa không bị ghi đè bởi nhãn hiển thị.
+- Tên hiển thị rút gọn chữ đầu: Harvey Barnes → H. Barnes, Cole Palmer → C. Palmer. Áp dụng trên sân, danh sách dự bị/không ra sân, cầu thủ ghi bàn, sự kiện và cầu thủ xuất sắc nhất trong tab Tổng quan. Giữ tên đầy đủ ở tooltip; tên một từ giữ nguyên, giữ các phần còn lại của tên nhiều từ.
+- Mở rộng nhãn tên trên sân trong CSS riêng cho mùa 2026/27; giao diện mùa 2024/25 và Fantasy giữ nguyên.
+
+Kiểm tra: 20 test frontend liên quan đạt; chạy frontend build một lần và đạt. Chrome desktop 1440px và 390px, dùng response API đã đọc trước đó cho Newcastle–Hull GW5 và Brentford–Chelsea GW5: đủ 22 người, nhãn đúng cho cả ba sơ đồ, tên H. Barnes/C. Palmer, đúng số dự bị/không ra sân, không có danh sách đá chính/chú thích bình thường, không chồng cầu thủ hoặc tràn sân, không lỗi JavaScript. Tab Tổng quan cũng hiện tên viết tắt. Trường hợp thiếu xác nhận đá chính vẫn có thông báo rõ và không tạo XI. Không chạy lại backend vì lượt này chỉ sửa frontend.
+
+File cần commit cho lượt điều chỉnh giao diện:
+
+- `frontend/src/components/MatchDetail.jsx`
+- `frontend/src/components/MatchPage.css`
+- `frontend/src/utils/matchLineup.js`
+- `frontend/src/utils/matchLineup.test.js`
+- `frontend/src/utils/matchView.js`
+- `frontend/src/utils/matchView.test.js`
+- `docs/match-lineups-2026.md`
+
+Commit message đề xuất: `feat: simplify 2026 match lineup display and abbreviate player names`
+
+Chưa commit, push, deploy hoặc ghi MySQL production. Không cần nhập SQL cho lượt này; bước phát hành còn lại chỉ là frontend khi được yêu cầu.

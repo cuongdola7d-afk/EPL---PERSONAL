@@ -78,10 +78,10 @@ test('three defenders keep a left back on the left midfield flank and use saved 
     assert.equal(result.nodes.length, 11)
     assert.equal(new Set(result.nodes.map(node => node.player.playerId)).size, 11)
     const byId = id => result.nodes.find(node => node.player.playerId === id)
-    assert.equal(byId(11).layoutPosition, 'LWB'); assert.equal(byId(11).rowIndex, 2)
+    assert.equal(byId(11).layoutPosition, 'LM'); assert.equal(byId(11).rowIndex, 2)
     assert.equal(byId(11).y, side === 'home' ? 20 : 80)
     assert.equal(byId(11).player.seasonPosition, 'LB'); assert.equal(byId(11).positionSource, 'ILLUSTRATION')
-    assert.equal(byId(6).layoutPosition, 'RWB')
+    assert.equal(byId(6).layoutPosition, 'RM')
     assert.equal(byId(7).layoutPosition, 'RW'); assert.equal(byId(9).layoutPosition, 'LW')
     assert.equal(byId(10).layoutPosition, 'ST')
     assert.ok(result.nodes.filter(node => node.rowIndex === 1).every(node => node.player.seasonPosition === 'CB'))
@@ -114,4 +114,23 @@ test('verified match position and coordinates override a conflicting season posi
   assert.equal(result.positionSource, 'MATCH'); assert.equal(node.positionSource, 'MATCH')
   assert.equal(node.layoutPosition, 'RW'); assert.equal(node.player.matchPosition, 'RW')
   assert.equal(node.player.seasonPosition, 'LB'); assert.equal(node.y, 25)
+})
+
+test('formation slot labels stay consistent while actual and season position metadata are preserved', () => {
+  const expected = {
+    '4-2-3-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CM', 'CM', 'LW', 'CAM', 'RW', 'ST'],
+    '5-4-1': ['GK', 'LB', 'CB', 'CB', 'CB', 'RB', 'LM', 'CM', 'CM', 'RM', 'ST'],
+    '3-4-3': ['GK', 'CB', 'CB', 'CB', 'LM', 'CM', 'CM', 'RM', 'LW', 'ST', 'RW'],
+  }
+  for (const [formation, labels] of Object.entries(expected)) {
+    const data = sample(formation)
+    const before = structuredClone(data)
+    for (const side of ['home', 'away']) {
+      const result = matchLineup(data.players, data.evidence, side)
+      assert.deepEqual(result.nodes.map(node => node.layoutPosition), labels)
+      assert.equal(result.positionSource, 'MATCH')
+      assert.equal(result.nodes.at(-1).player.matchPosition, 'CM')
+    }
+    assert.deepEqual(data, before)
+  }
 })

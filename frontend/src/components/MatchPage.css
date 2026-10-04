@@ -209,7 +209,7 @@
 .mx-lineup-notice { margin: 8px 0 12px; padding: 10px 12px; border: 1px solid var(--mx-line); border-radius: 12px; color: var(--mx-muted); font-size: .75rem; line-height: 1.5; }
 .mx-lineup-notice strong { color: var(--mx-text); }
 .mx-pitch-2026 .mx-pitch-node { width: 64px; }
-.mx-pitch-2026 .mx-pitch-name { max-width: 62px; }
+.mx-pitch-2026 .mx-pitch-name { max-width: 84px; }
 .mx-match-position { padding: 1px 4px; margin-top: 2px; border-radius: 5px; background: #071d19b8; color: #fff; font-size: .55rem; }
 .mx-substitution { flex: none; padding: 3px 6px; border-radius: 6px; background: var(--mx-chip); color: var(--mx-accent); font-size: .7rem; }
 .mx-pitch-substitution { color: #18343b; background: #fff; border-radius: 5px; padding: 1px 3px; font-size: .55rem; }
@@ -221,7 +221,7 @@
   .mx-pitch-2026 .mx-pitch-node { left: var(--mx-y); top: var(--mx-x); width: 48px; }
   .mx-pitch-2026 .mx-pitch-avatar { width: 28px; height: 28px; font-size: .6rem; }
   .mx-pitch-2026 .mx-pitch-rating { min-width: 26px; font-size: .56rem; }
-  .mx-pitch-2026 .mx-pitch-name { max-width: 46px; padding-inline: 3px; font-size: .52rem; }
+  .mx-pitch-2026 .mx-pitch-name { max-width: 54px; padding-inline: 3px; font-size: .52rem; }
   .mx-pitch-2026 .mx-pitch-marks { right: -10px; }
   .mx-pitch-2026 .mx-pitch-minutes { left: -10px; }
 }
