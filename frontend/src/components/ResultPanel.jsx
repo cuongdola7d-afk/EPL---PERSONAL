@@ -1,4 +1,4 @@
-function ResultPanel({ status, error, count, itemName, emptyMessage, onRetry, onClear, children }) {
+function ResultPanel({ status, error, count, itemName, emptyMessage, onRetry, onClear, keepContent = false, children }) {
   return (
     <div className="results" aria-live="polite" aria-busy={status === 'loading'}>
       {status === 'loading' && (
@@ -27,7 +27,7 @@ function ResultPanel({ status, error, count, itemName, emptyMessage, onRetry, on
         </div>
       )}
 
-      {status === 'success' && count > 0 && children}
+      {(keepContent || status === 'success' && count > 0) && children}
     </div>
   )
 }

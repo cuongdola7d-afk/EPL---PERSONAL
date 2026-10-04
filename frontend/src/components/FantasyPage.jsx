@@ -37,7 +37,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const contestSelection = useCallback((gw, open, asOf, status) => {
     setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status)
   }, [])
-  const lockedSubmission = account && !contestOpen && entry.data?.submitted
+  const lockedSubmission = account && entry.ready && !contestOpen && entry.data?.submitted
   const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({
     id: player.playerId, name: player.name, clubId: player.clubId, club: player.club,
     fc27Overall: player.ovr, primaryPosition: player.primaryPosition, eligiblePositions: player.eligiblePositions,
@@ -57,7 +57,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [gameweek, setGameweek] = useState(1)
   const searchRef = useRef(null)
 
-  const currentLineup = account ? lockedSubmission ? entryLineup({ submitted: lockedSubmission }) : lineup :
+  const currentLineup = account ? !entry.ready ? emptyLineup() : lockedSubmission ? entryLineup({ submitted: lockedSubmission }) : lineup :
     status === 'success' ? normalizeLineup(lineup, players) : lineup
   const formation = FORMATIONS[currentLineup?.formation] ? currentLineup.formation : '4-2-1-3'
   const picks = currentLineup?.picks ?? {}
@@ -185,7 +185,9 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
       {account && <section className="fantasy-card fantasy-entry" aria-label="Đội dự thi của bạn" aria-busy={entry.loading || entry.busy}>
         <h2>Đội của {account.displayName} · GW{contestGameweek ?? '…'}</h2>
         {entry.loading && <p role="status">Đang tải đội từ server…</p>}
-        {contestGameweek < 6 && <p>Replay chưa triển khai lưu/chốt đội.</p>}
+        {contestGameweek !== null && contestGameweek < 6 && <p>Replay chưa triển khai lưu/chốt đội.</p>}
+        {!entry.ready && contestGameweek >= 6 && !entry.loading && <p>Chưa tải được đội của vòng này. Sân vẫn hiển thị; chọn, lưu và chốt đội đang tạm khóa.</p>}
+        {!rosterAsOf && contestGameweek >= 6 && <p>Chưa nhận được mốc danh sách cầu thủ của vòng thi. Thử lại ở phần Vòng thi phía trên.</p>}
         {entry.error && <p className="fantasy-message" role="alert">{entry.error}</p>}
         {(entry.error || entry.conflict) && <button type="button" className="fantasy-clear" disabled={entry.busy} onClick={entry.reload}>Tải lại đội từ server</button>}
         {entry.notice && <p className="fantasy-result" role="status">{entry.notice}</p>}
@@ -203,9 +205,9 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
             {entry.data.submitted.players.map(player => <p key={player.slotKey}>{player.requiredPosition} · {player.name} · {player.club} · OVR {player.ovr}</p>)}</details>}
         </>}
       </section>}
-      {(!account || entry.ready) && !authLoading && <fieldset className="fantasy-editor" disabled={privateBlocked}>
-      <ResultPanel status={status} error={error} count={players.length} itemName="cầu thủ Fantasy"
+      {!authLoading && <ResultPanel status={status} error={error} count={players.length} itemName="cầu thủ Fantasy" keepContent={Boolean(account)}
         emptyMessage="Chưa có cầu thủ trong roster mùa 2026/27." onRetry={reload}>
+      <fieldset className="fantasy-editor" disabled={privateBlocked}>
         <div className="fantasy-summary">
           <div className="fantasy-card fantasy-total"><span className="fantasy-label">Tổng overall</span>
             <div className="fantasy-total-body"><span className="fantasy-ring" style={{ '--progress': `${Math.min(100, total / MAX_OVR * 100)}%` }}><span>{selectedIds.length}/11</span></span>
@@ -270,8 +272,8 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
               </div> })}</div>
           </aside>
         </div>
-      </ResultPanel>
-      </fieldset>}
+      </fieldset>
+      </ResultPanel>}
       </div>
     </div>
     {view === 'user' && activeSlot && <div className="fantasy-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKey(null) }}>
