@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { currentAccount, loginAccount, logoutAccount, registerAccount } from '../api/auth.js'
+import { currentAccount, loginAccount, logoutAccount, registerAccount, googleStatus, startGoogle, confirmGoogleLink, cancelGoogleLink } from '../api/auth.js'
+import { googleResult, googleReturnPath } from '../utils/googleAuth.js'
 import './AccountMenu.css'
 
-function AccountDialog({ account, initialError, onAccountChange, onClose, onReload }) {
+function AccountDialog({ account, initialError, googleOutcome, onAccountChange, onClose, onReload }) {
   const dialog = useRef(null)
   const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
@@ -10,10 +11,34 @@ function AccountDialog({ account, initialError, onAccountChange, onClose, onRelo
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(initialError)
-  const [message, setMessage] = useState('')
+  const [error, setError] = useState(initialError || googleOutcome?.message ||
+    (googleOutcome?.result === 'success' && !account ? 'Chưa nhận được phiên đăng nhập Google. Vui lòng kiểm tra cookie hoặc thử lại.' : ''))
+  const [message, setMessage] = useState(googleOutcome?.result === 'success' && account ? 'Đăng nhập Google thành công.' : '')
+  const [google, setGoogle] = useState(null)
+  const [googleError, setGoogleError] = useState('')
 
   useEffect(() => { dialog.current.showModal() }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    googleStatus(controller.signal).then(value => { setGoogle(value); setGoogleError('') })
+      .catch(failure => { if (failure.name !== 'AbortError') setGoogleError(failure.message) })
+    return () => controller.abort()
+  }, [account?.id])
+
+  async function continueGoogle(mode) {
+    setError(''); setMessage(''); setBusy(true)
+    try { window.location.assign(await startGoogle(mode, googleReturnPath(window.location))) }
+    catch (failure) { setError(failure.message); setBusy(false) }
+  }
+
+  async function finishLink(confirm) {
+    setError(''); setMessage(''); setBusy(true)
+    try {
+      if (confirm) { setGoogle(await confirmGoogleLink()); setMessage('Đã liên kết Google với tài khoản của bạn.') }
+      else { await cancelGoogleLink(); setGoogle(await googleStatus()); setMessage('Đã hủy liên kết Google.') }
+    } catch (failure) { setError(failure.message); setGoogle(await googleStatus().catch(() => null)) }
+    finally { setBusy(false) }
+  }
 
   function switchMode(next) {
     setMode(next); setError(''); setMessage(''); setPassword(''); setConfirmation('')
@@ -54,18 +79,28 @@ function AccountDialog({ account, initialError, onAccountChange, onClose, onRelo
     <h2 id="account-title">{account ? 'Tài khoản của bạn' : mode === 'register' ? 'Tạo tài khoản' : 'Chào mừng trở lại'}</h2>
     {error && <p className="account-error" role="alert">{error}</p>}
     {message && <p className="account-message" role="status">{message}</p>}
+    {googleError && <p className="account-error" role="alert">{googleError}</p>}
     {initialError && <button type="button" className="account-retry" onClick={async () => {
       setBusy(true)
       try { await onReload(); setError('') } catch (failure) { setError(failure.message) } finally { setBusy(false) }
     }} disabled={busy}>Thử kết nối lại</button>}
     {account ? <section className="account-profile" aria-label="Thông tin tài khoản">
       <strong>{account.displayName}</strong><p>{account.email}</p>
+      {google?.pendingEmail ? <div className="account-google-confirm">
+        <p>Liên kết Google <strong>{google.pendingEmail}</strong> với tài khoản đang đăng nhập?</p>
+        <button type="button" className="account-google" disabled={busy} onClick={() => finishLink(true)}>Xác nhận liên kết Google</button>
+        <button type="button" className="account-retry" disabled={busy} onClick={() => finishLink(false)}>Hủy liên kết</button>
+      </div> : google?.linked ? <p className="account-hint">Đã liên kết Google</p> :
+        <button type="button" className="account-google" disabled={busy || !google?.enabled} onClick={() => continueGoogle('LINK')}>Liên kết Google</button>}
+      {google && !google.enabled && <p className="account-hint account-google-hint">Google chưa được cấu hình trên máy chủ.</p>}
       <button type="button" className="account-submit" disabled={busy} onClick={logout}>{busy ? 'Đang đăng xuất…' : 'Đăng xuất'}</button>
     </section> : <>
       <div className="account-tabs" aria-label="Chọn đăng nhập hoặc đăng ký">
         <button type="button" aria-pressed={mode === 'login'} onClick={() => switchMode('login')} disabled={busy}>Đăng nhập</button>
         <button type="button" aria-pressed={mode === 'register'} onClick={() => switchMode('register')} disabled={busy}>Đăng ký</button>
       </div>
+      <button type="button" className="account-google" disabled={busy || !google?.enabled} onClick={() => continueGoogle('LOGIN')}>Tiếp tục với Google</button>
+      <p className="account-hint account-google-hint">{!google ? googleError ? 'Chưa kiểm tra được Google. Bạn vẫn có thể dùng email và mật khẩu.' : 'Đang kiểm tra Google…' : google.enabled ? 'Hoặc dùng email và mật khẩu' : 'Google chưa được cấu hình. Bạn có thể dùng email và mật khẩu.'}</p>
       <form onSubmit={submit} aria-busy={busy}>
         <fieldset disabled={busy}>
           {mode === 'register' && <label>Tên hiển thị<input name="displayName" autoComplete="nickname" required minLength={2} maxLength={80}
@@ -88,11 +123,18 @@ export default function AccountMenu() {
   const [account, setAccount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [googleOutcome] = useState(() => googleResult(window.location.search))
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
-    currentAccount(controller.signal).then(value => { setAccount(value); setError('') })
+    currentAccount(controller.signal).then(value => {
+      setAccount(value); setError('')
+      if (googleOutcome) {
+        setOpen(true)
+        window.history.replaceState(null, '', googleReturnPath(window.location))
+      }
+    })
       .catch(failure => { if (failure.name !== 'AbortError') setError(failure.message) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
@@ -106,7 +148,7 @@ export default function AccountMenu() {
       aria-haspopup="dialog" title={account ? 'Mở tài khoản' : 'Đăng nhập hoặc đăng ký'}>
       {loading ? 'Đang tải…' : account ? account.displayName : 'Đăng nhập'}
     </button>
-    {open && <AccountDialog account={account} initialError={error} onAccountChange={updateAccount}
+    {open && <AccountDialog account={account} initialError={error} googleOutcome={googleOutcome} onAccountChange={updateAccount}
       onClose={() => setOpen(false)} onReload={reload} />}
   </div>
 }

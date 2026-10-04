@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS accounts (
     CHECK (role IN ('USER', 'ADMIN'))
 );
 
+-- A provider subject identifies a Google identity; email never links accounts implicitly.
+CREATE TABLE IF NOT EXISTS account_identities (
+    provider VARCHAR(16) NOT NULL,
+    subject_id VARCHAR(255) NOT NULL,
+    account_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    CONSTRAINT account_identities_pk PRIMARY KEY (provider, subject_id),
+    CONSTRAINT account_identities_account_fk FOREIGN KEY (account_id) REFERENCES accounts(id)
+);
+
 -- Spring Session JDBC's standard tables, idempotent local H2 DDL.
 -- MySQL requires a reviewed migration (its CREATE INDEX syntax differs).
 CREATE TABLE IF NOT EXISTS SPRING_SESSION (

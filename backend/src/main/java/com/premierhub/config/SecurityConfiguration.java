@@ -1,5 +1,7 @@
 package com.premierhub.config;
 
+import com.premierhub.accounts.GoogleOAuthSecurity;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -33,16 +35,19 @@ public class SecurityConfiguration {
         return new CompositeSessionAuthenticationStrategy(List.of(new ChangeSessionIdAuthenticationStrategy(), new CsrfAuthenticationStrategy(tokens)));
     }
 
-    @Bean SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts) throws Exception {
-        return http
+    @Bean SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts,
+                                       SessionAuthenticationStrategy sessions, ObjectProvider<GoogleOAuthSecurity> google) throws Exception {
+        http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.csrfTokenRepository(tokens)
                         // This existing endpoint only reads football data; it does not save a user's team.
                         .ignoringRequestMatchers("/api/fantasy/2026/validate"))
                 .securityContext(context -> context.securityContextRepository(contexts))
+                .sessionManagement(session -> session.sessionAuthenticationStrategy(sessions))
                 .requestCache(cache -> cache.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/csrf", "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/google/status", "/api/auth/google/start", "/api/auth/google/authorize/google", "/api/auth/google/callback").permitAll()
                         .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/clubs/**", "/api/players/**", "/api/matches/**", "/api/standings/**", "/api/fantasy/2026/team-of-week", "/api/fantasy/2024/team-of-week", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/fantasy/2026/validate", "/api/fantasy/2024/validate").permitAll()
@@ -53,8 +58,10 @@ public class SecurityConfiguration {
                         .accessDeniedHandler((request, response, failure) -> jsonError(response, 403, "ACCESS_DENIED", "Phiên hoặc mã CSRF không hợp lệ. Vui lòng thử lại.")))
                 .logout(logout -> logout.logoutUrl("/api/auth/logout")
                         .invalidateHttpSession(true).clearAuthentication(true)
-                        .logoutSuccessHandler((request, response, auth) -> response.setStatus(204)))
-                .build();
+                        .logoutSuccessHandler((request, response, auth) -> response.setStatus(204)));
+        var googleSecurity = google.getIfAvailable();
+        if (googleSecurity != null) googleSecurity.configure(http);
+        return http.build();
     }
 
     private static void jsonError(jakarta.servlet.http.HttpServletResponse response, int status, String code, String message) throws java.io.IOException {

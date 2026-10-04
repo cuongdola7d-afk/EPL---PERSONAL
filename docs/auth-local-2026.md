@@ -2,7 +2,7 @@
 
 ## Phạm vi đã hoàn thành
 
-Bước 1 của [kế hoạch Fantasy 2026/27](fantasy-multiplayer-2026-plan.md): đăng ký, đăng nhập, đăng xuất và xem tài khoản của chính mình. Không yêu cầu xác thực email trước khi chơi. Google, khôi phục mật khẩu, lưu đội dự thi, chốt đội, chấm điểm và BXH người chơi chưa triển khai. Tài khoản độc lập với `player_id` và dữ liệu mùa bóng; không thay luật Fantasy hay dữ liệu 2024/25.
+Bước 1 của [kế hoạch Fantasy 2026/27](fantasy-multiplayer-2026-plan.md): đăng ký, đăng nhập, đăng xuất và xem tài khoản của chính mình. Không yêu cầu xác thực email trước khi chơi. Google đã có code OIDC và liên kết vào cùng tài khoản, kiểm tra với provider local; [hướng dẫn Google](google-auth-2026.md) ghi cấu hình và phần thử Google thật còn thiếu. Khôi phục mật khẩu, lưu đội dự thi, chốt đội, chấm điểm và BXH người chơi chưa triển khai. Tài khoản độc lập với `player_id` và dữ liệu mùa bóng; không thay luật Fantasy hay dữ liệu 2024/25.
 
 Spring Boot giữ nguyên **4.1.1**, Java mục tiêu **21**. Dependency do BOM hiện có quản lý: Spring Security **7.1.1**, Spring Session **4.1.1**; dùng các starter Security, Session JDBC và Security Test, không thêm Redis hoặc JWT.
 
@@ -36,7 +36,7 @@ Response tài khoản chỉ chứa `id`, `email`, `displayName`, `role`, `create
 
 `PasswordEncoderFactories.createDelegatingPasswordEncoder()` lưu hash `{bcrypt}` với mặc định của Spring Security. Không trả hash hay mã phiên trong response; DTO request có `toString()` đã che credentials, handler lỗi không trả rejected value và không ghi request body/password vào log. Role đăng ký luôn là `USER` trong SQL, không lấy role từ request; chưa có luồng cấp ADMIN.
 
-`auth-schema.sql` bổ sung đúng ba bảng: `accounts`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES`. Các bảng phiên theo Spring Session JDBC, tăng `PRINCIPAL_NAME` lên 254 ký tự cho email; các attributes được serialize bằng cơ chế chuẩn. `created_at` ghi/đọc theo UTC, response dùng `Instant`. Cookie tên `SESSION`, HttpOnly, SameSite=Lax trên local; phiên hết hạn sau 30 phút không hoạt động và được Spring Session dọn phiên hết hạn. Không dùng session trong localStorage. Schema bóng đá `schema.sql` không thay đổi.
+`auth-schema.sql` ban đầu bổ sung `accounts`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES`; lượt Google thêm `account_identities` với khóa duy nhất provider/subject và FK tới cùng account. Các bảng phiên theo Spring Session JDBC, tăng `PRINCIPAL_NAME` lên 254 ký tự cho email; các attributes được serialize bằng cơ chế chuẩn. `created_at` ghi/đọc theo UTC, response dùng `Instant`. Cookie tên `SESSION`, HttpOnly, SameSite=Lax trên local; phiên hết hạn sau 30 phút không hoạt động và được Spring Session dọn phiên hết hạn. Không dùng session trong localStorage. Schema bóng đá `schema.sql` không thay đổi.
 
 Các GET tra cứu clubs/players/matches/standings và đội hình tiêu biểu tiếp tục công khai. Chỉ endpoint kiểm tra đội Fantasy hiện có `/api/fantasy/2026/validate` được miễn CSRF vì chỉ đọc dữ liệu và không ghi đội người dùng; đây không phải ngoại lệ cho các API ghi ở bước sau. Những API riêng được thêm sau phải có rule xác thực/quyền rõ ràng; cấu hình hiện tại mặc định từ chối endpoint khác.
 
@@ -63,22 +63,24 @@ Trình duyệt Chrome thật gọi backend JAR/H2 file riêng `backend/target/au
 
 ## Vercel–Railway và việc còn lại trước phát hành
 
-Local đã kiểm tra; **chưa triển khai hoặc ghi MySQL production**. Cấu hình `prod` bật cookie Secure và tắt tự chạy SQL lúc khởi động (`spring.sql.init.mode=never`). Phải chuẩn bị migration MySQL cho ba bảng mới, review/backup ngoài Git và được giao nhập SQL trước khi dùng bản này trên Railway. DDL local có `CREATE INDEX IF NOT EXISTS`, không chạy nguyên file đó trên MySQL; chưa kiểm thử migration MySQL. Cần giữ kết nối MySQL ở UTC khi nhập dữ liệu tài khoản, kiểm tra lưu phiên trên DB và cookie qua HTTPS sau phát hành.
+Local đã kiểm tra; **chưa triển khai hoặc ghi MySQL production**. Cấu hình `prod` bật cookie Secure và tắt tự chạy SQL lúc khởi động (`spring.sql.init.mode=never`). Phải chuẩn bị migration MySQL cho các bảng account/session/identity mới, review/backup ngoài Git và được giao nhập SQL trước khi dùng bản này trên Railway. DDL local có `CREATE INDEX IF NOT EXISTS`, không chạy nguyên file đó trên MySQL; chưa kiểm thử migration MySQL. Cần giữ kết nối MySQL ở UTC khi nhập dữ liệu tài khoản, kiểm tra lưu phiên trên DB và cookie qua HTTPS sau phát hành.
 
 Vercel `*.vercel.app` và Railway `*.railway.app` là khác site. **Cookie SameSite=Lax hiện tại không phù hợp cho fetch đăng nhập giữa hai site đó**. Chốt một trong các cách trước phát hành:
 
 - Ưu tiên proxy `/api` cùng origin, hoặc domain riêng cho frontend/backend thuộc cùng site; xác minh rewrite/proxy có chuyển đúng Set-Cookie, cookie path/domain và request cookie.
 - Nếu tiếp tục khác site: đặt `server.servlet.session.cookie.same-site=none`, giữ `server.servlet.session.cookie.secure=true`, HTTPS; auth fetch đã dùng `credentials: 'include'`. `PREMIERHUB_CORS_ALLOWED_ORIGINS` phải là origin frontend chính xác và CORS auth đã `allowCredentials(true)`, không dùng `*`. Vẫn giữ CSRF. Chính sách chặn cookie bên thứ ba của trình duyệt có thể khiến cách này không hoạt động; cần thử trên deployment thật, không coi SameSite=None là bảo đảm.
 
-Chưa xác minh domain/rewrite Railway–Vercel thực tế hoặc cấu hình forwarded headers/trusted proxy; chưa có giới hạn tốc độ đăng nhập/đăng ký. Những việc này cần hoàn thiện và thử trước phát hành công khai. Không bật Google/recovery giả trên UI.
+Chưa xác minh domain/rewrite Railway–Vercel thực tế hoặc cấu hình forwarded headers/trusted proxy; chưa có giới hạn tốc độ đăng nhập/đăng ký. Những việc này cần hoàn thiện và thử trước phát hành công khai. Google chỉ bật khi backend có cấu hình; khôi phục mật khẩu chưa có trên UI.
 
-## Bước tiếp theo: Google dùng cùng tài khoản
+## Google dùng cùng tài khoản: cập nhật tiến độ
 
-Thêm OAuth2/OIDC client chuẩn của Spring Security theo phiên bản BOM hiện có; cấu hình Google bằng env được ignore, không gửi client secret trong chat/frontend. Chốt client, redirect URI/backend callback và URL quay lại cho local/prod sau khi chốt cách cookie/domain.
+Đã thêm OAuth2/OIDC client chuẩn của Spring Security theo BOM hiện có, dùng cùng session/me/logout. Google mới tạo USER hoặc dùng subject đã liên kết; email trùng yêu cầu đăng nhập account cũ và xác nhận liên kết, không tự gộp. LINK giữ account hiện có và chỉ ghi liên kết sau POST có CSRF và proof Google trong phiên.
 
-Danh tính Google cần khóa duy nhất provider/subject và liên kết đến **`accounts.id` hiện tại**, dùng cùng session, `/me`, role và tên hiển thị; không tạo hệ tài khoản thứ hai. `password_hash` hiện nullable để hỗ trợ Google-only; đăng ký email luôn có hash. Với email trùng tài khoản mật khẩu, cần xác nhận sở hữu bằng đăng nhập lại/luồng liên kết đã chốt, không tự gộp vì email giống nhau, kể cả Google có verified email. Việc không bắt xác thực email trước khi chơi không cho phép bỏ kiểm tra sở hữu khi liên kết. Khi triển khai Google phải thử xác minh OIDC, callback lỗi, liên kết/trùng email, phiên sau login/logout và không lộ secret.
+Chi tiết API, Console, bốn biến env, callback local trực tiếp backend 8080 và khác biệt production ở [google-auth-2026.md](google-auth-2026.md). 24 test scoped backend và 18 test frontend đã qua ở lượt Google; provider OIDC thử có ký JWT, state/nonce và token/userinfo HTTP. Browser desktop/390px thử lại email, Google disabled và thông báo callback bằng query mẫu. **Chưa thử Google thật** vì chưa có credentials; bước tiếp theo là bạn cấu hình Console/env và thử flow thực tế trên H2. Khôi phục mật khẩu và rate limiting vẫn chưa làm.
 
-## File cần commit
+## File lượt email ban đầu (đã bàn giao)
+
+Danh sách dưới là lượt email trước. File cần commit **lượt Google hiện tại** xem [google-auth-2026.md](google-auth-2026.md).
 
 - `backend/pom.xml`
 - `backend/src/main/java/com/premierhub/accounts/Account.java`

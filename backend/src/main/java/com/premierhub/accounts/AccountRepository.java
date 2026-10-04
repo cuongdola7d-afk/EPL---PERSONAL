@@ -23,6 +23,13 @@ public class AccountRepository {
                 .stream().findFirst();
     }
 
+    Optional<Account> findById(long id) {
+        return jdbc.query("SELECT id,email,display_name,password_hash,role,created_at FROM accounts WHERE id=?",
+                (rs, index) -> new Account(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4),
+                        rs.getString(5), rs.getTimestamp(6).toLocalDateTime().toInstant(ZoneOffset.UTC)), id)
+                .stream().findFirst();
+    }
+
     Account create(String email, String name, String hash, Instant createdAt) {
         var key = new GeneratedKeyHolder();
         jdbc.update(connection -> {

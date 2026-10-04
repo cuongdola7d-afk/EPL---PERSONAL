@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { currentAccount, loginAccount, logoutAccount } from './auth.js'
+import { currentAccount, loginAccount, logoutAccount, startGoogle, confirmGoogleLink } from './auth.js'
 
 test('unauthenticated account is null; server failures remain visible', async () => {
   const original = globalThis.fetch
@@ -9,6 +9,27 @@ test('unauthenticated account is null; server failures remain visible', async ()
     assert.equal(await currentAccount(), null)
     globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Server unavailable' }), { status: 500 })
     await assert.rejects(currentAccount(), /Server unavailable/)
+  } finally { globalThis.fetch = original }
+})
+
+test('Google start and link confirmation use cookie/CSRF and reject arbitrary authorization URLs', async () => {
+  const original = globalThis.fetch
+  const requests = []
+  let authorizationPath = '/api/auth/google/authorize/google'
+  try {
+    globalThis.fetch = async (url, options) => {
+      requests.push({ url, options })
+      if (url.endsWith('/csrf')) return new Response(JSON.stringify({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
+      return new Response(JSON.stringify({ authorizationPath }))
+    }
+    assert.equal(await startGoogle('LOGIN', '/#fantasy'), '/api/auth/google/authorize/google')
+    assert.deepEqual(JSON.parse(requests[1].options.body), { mode: 'LOGIN', returnPath: '/#fantasy' })
+    await confirmGoogleLink()
+    assert.deepEqual(JSON.parse(requests[3].options.body), { confirmed: true })
+    assert.ok(requests.every(({ options }) => options.credentials === 'include'))
+    assert.equal(requests[3].options.headers['X-CSRF-TOKEN'], 'csrf')
+    authorizationPath = 'https://evil.example/'
+    await assert.rejects(startGoogle('LOGIN', '/'), /không hợp lệ/)
   } finally { globalThis.fetch = original }
 })
 

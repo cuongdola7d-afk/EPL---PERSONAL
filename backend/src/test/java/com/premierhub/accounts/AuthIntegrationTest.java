@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
         "spring.datasource.url=jdbc:h2:mem:account-integration;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa", "spring.datasource.password=",
         "server.servlet.session.cookie.secure=false",
+        "PREMIERHUB_GOOGLE_CLIENT_ID=", "PREMIERHUB_GOOGLE_CLIENT_SECRET=",
         "PREMIERHUB_CORS_ALLOWED_ORIGINS=https://frontend.example"
 })
 class AuthIntegrationTest {
@@ -116,6 +117,15 @@ class AuthIntegrationTest {
         assertEquals(403, post("/api/auth/register", body, null).statusCode());
         assertEquals(403, post("/api/auth/login", body, null).statusCode());
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM accounts WHERE email=?", Integer.class, email));
+    }
+
+    @Test void googleWithoutCredentialsIsDisabledAndDoesNotReplaceEmailLogin() throws Exception {
+        var status = get("/api/auth/google/status");
+        assertEquals(200, status.statusCode()); assertFalse(json(status).path("enabled").asBoolean());
+        assertEquals(503, post("/api/auth/google/start", "{\"mode\":\"LOGIN\",\"returnPath\":\"/#fantasy\"}", csrf()).statusCode());
+        assertEquals(201, register(email, PASSWORD).statusCode());
+        assertEquals(200, login(email, PASSWORD).statusCode());
+        assertEquals(email, json(get("/api/auth/me")).path("email").asText());
     }
 
     @Test void validatesInputAndRedactsMalformedRequestAndMultibytePasswords() throws Exception {

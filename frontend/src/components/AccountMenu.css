@@ -22,6 +22,11 @@
 .account-profile > strong { display: block; font-size: 1.25rem; overflow-wrap: anywhere; }
 .account-profile p { color: var(--site-muted); overflow-wrap: anywhere; }
 .account-retry { margin: 0 0 16px; border: 0; background: transparent; color: var(--site-accent); cursor: pointer; }
+.account-google { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid var(--site-line); border-radius: 10px; background: var(--site-subtle); color: var(--site-text); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.account-google-hint { margin: 10px 0 20px; line-height: 1.5; }
+.account-google-confirm { margin: 14px 0; padding: 12px; border: 1px solid var(--site-accent); border-radius: 12px; }
+.account-google-confirm p { margin-top: 0; font-size: .85rem; }
+.account-google-confirm .account-retry { margin: 12px 0 0; }
 @media (max-width: 600px) {
   .account-menu { margin-left: 0; }
   .account-trigger { max-width: 100px; padding: 7px 9px; font-size: .7rem; }

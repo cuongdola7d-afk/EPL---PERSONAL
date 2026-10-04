@@ -11,8 +11,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Map;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = AuthController.class)
+@RestControllerAdvice(assignableTypes = {AuthController.class, GoogleAuthController.class})
 public class AuthExceptionHandler {
+    @ExceptionHandler(GoogleAccountException.class)
+    ResponseEntity<?> google(GoogleAccountException exception) {
+        String code = exception.code();
+        int status = "unavailable".equals(code) ? 503 : "login_required".equals(code) ? 401 : 409;
+        String message = switch (code) {
+            case "unavailable" -> "Đăng nhập Google chưa được cấu hình. Bạn vẫn có thể dùng email và mật khẩu.";
+            case "login_required" -> "Đăng nhập tài khoản hiện có trước khi liên kết Google.";
+            case "identity_linked" -> "Google này đã được liên kết với tài khoản khác.";
+            case "already_signed_in" -> "Bạn đã đăng nhập. Hãy dùng thao tác liên kết Google trong tài khoản.";
+            case "link_required" -> "Email này đã có tài khoản. Hãy đăng nhập tài khoản đó rồi xác nhận liên kết Google.";
+            default -> "Phiên liên kết không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.";
+        };
+        return ResponseEntity.status(status).body(Map.of("code", code, "message", message));
+    }
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<?> unreadable() { return ResponseEntity.badRequest().body(Map.of("code", "INVALID_INPUT", "message", "Thông tin gửi lên không hợp lệ.")); }
 

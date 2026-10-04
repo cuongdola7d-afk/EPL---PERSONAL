@@ -38,3 +38,12 @@ async function changeAccount(path, body) {
 export const registerAccount = body => changeAccount('register', body)
 export const loginAccount = body => changeAccount('login', body)
 export const logoutAccount = () => changeAccount('logout')
+export const googleStatus = signal => accountRequest('google/status', { signal })
+export const confirmGoogleLink = () => changeAccount('google/link/confirm', { confirmed: true })
+export const cancelGoogleLink = () => changeAccount('google/link/cancel')
+export async function startGoogle(mode, returnPath) {
+  const started = await changeAccount('google/start', { mode, returnPath })
+  // Accept only this fixed server authorization endpoint, never a provider/client-supplied arbitrary URL.
+  if (started.authorizationPath !== '/api/auth/google/authorize/google') throw new AuthError('Đường dẫn Google không hợp lệ.', 0)
+  return url('google/authorize/google')
+}
