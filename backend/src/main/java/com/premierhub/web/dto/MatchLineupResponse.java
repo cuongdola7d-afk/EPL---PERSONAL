@@ -9,5 +9,12 @@ public record MatchLineupResponse(String formation, String formationSource, Loca
                                  String startersStatus, LocalDate rolesVerifiedOn, String rolesSourceNote,
                                  List<Player> players) {
     public record Player(int playerId, String role, String matchPosition, Integer rowIndex, Integer slotIndex,
-                         Integer substitutionInMinute, Integer substitutionOutMinute, String seasonPosition) { }
+                         Integer substitutionInMinute, Integer substitutionOutMinute, String seasonPosition,
+                         List<String> seasonEligiblePositions) {
+        public Player(int playerId, String role, String matchPosition, Integer rowIndex, Integer slotIndex,
+                      Integer substitutionInMinute, Integer substitutionOutMinute, String seasonPosition) {
+            this(playerId, role, matchPosition, rowIndex, slotIndex, substitutionInMinute,
+                    substitutionOutMinute, seasonPosition, List.of());
+        }
+    }
 }

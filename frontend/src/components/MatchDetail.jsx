@@ -75,12 +75,14 @@ function PlayerGroup({ title, rows, club, season, evidenceStatus }) {
   </section>
 }
 
-function PitchNode({ player, club, season, evidenceStatus, x, y }) {
+function PitchNode({ player, club, season, evidenceStatus, x, y, positionSource, layoutPosition }) {
   const initials = player.playerName.replace(/\./g, '').split(/\s+/).filter(Boolean)
   const label = initials.length < 2 ? player.playerName.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
   const marks = EVENTS.filter(([field]) => (matchPlayerValue(player, field, evidenceStatus) ?? 0) > 0)
   const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
+  const positionLabel = player.matchPosition ?? (positionSource === 'ILLUSTRATION' ? player.seasonPosition : null)
   return <a className="mx-pitch-node" href={playerDetailHash(player.playerId, season, window.location.hash)}
+    data-layout-position={season === 2026 ? layoutPosition : undefined}
     style={{ '--mx-x': `${x}%`, '--mx-y': `${y}%`, '--mx-club-color': clubVisual(club).color }}
     aria-label={`${player.playerName}, ${club}, rating ${matchRating(player) == null ? 'chưa có' : matchRating(player).toFixed(1)}`}>
     <span className="mx-pitch-avatar">{label.toUpperCase()}
@@ -90,7 +92,7 @@ function PitchNode({ player, club, season, evidenceStatus, x, y }) {
       {minutes != null && minutes < 90 && <span className="mx-pitch-minutes" title="Số phút thi đấu">{minutes}′</span>}
     </span>
     <RatingBadge player={player} />
-    {player.matchPosition && <span className="mx-match-position">{player.matchPosition}</span>}
+    {positionLabel && <span className="mx-match-position" title={player.matchPosition ? 'Vị trí trận đã xác minh' : `Vị trí chính mùa: ${positionLabel}. Ô ${layoutPosition} là bố cục minh họa.`}>{positionLabel}</span>}
     {player.substitutionOutMinute != null && <span className="mx-pitch-substitution" title="Thay ra đã xác nhận">↘ {player.substitutionOutMinute}′</span>}
     <span className="mx-pitch-name" title={player.playerName}>{player.playerName}</span>
   </a>
@@ -155,6 +157,7 @@ function SeasonLineup({ match, detail, season }) {
         !team.formation ? 'Đã xác nhận 11 đá chính; chưa có sơ đồ để bố trí trên sân.' :
           team.positionSource === 'MATCH' ? 'Vị trí trên sân đã xác minh trong trận.' :
             team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
+              team.positionSource === 'INSUFFICIENT_POSITIONS' ? 'Chưa đủ vị trí phù hợp để minh họa đúng sơ đồ này. Giữ danh sách 11 đá chính bên dưới; cần vị trí trận đã xác minh.' :
               'Bố cục minh họa theo vị trí mùa; các ô đã có vị trí trận được ưu tiên. Không xác nhận vị trí thi đấu thực tế của các ô còn lại.'}
     </div>)}
     {sides.some(team => team.nodes.length > 0) && <div className="mx-pitch mx-pitch-2026" style={{ '--mx-lineup-rows': pitchRows }} aria-label="Sơ đồ sân bóng hai đội">

@@ -132,3 +132,36 @@ Commit message đề xuất: `feat: add verified 2026/27 match lineups and club 
 - `docs/match-lineups-2026.md`
 
 Commit message đề xuất: `feat: set user-confirmed club formations for 2026/27`
+
+## Sửa bố cục minh họa trái/phải — Pep Chavarria
+
+Lỗi cũ phân cầu thủ theo khoảng cách tới tuyến, không phân biệt vai trò từng ô hoặc bên trái/phải. Trong Brentford–Chelsea GW5 (`1000560591`), ba trung vệ đã chiếm hàng thủ 3 người, khiến Pep Chavarria (vị trí chính `LB`, vị trí đã lưu `LB|LM`) bị đẩy lên ô `RW` của sơ đồ mặc định `3-4-3`. Đây là lỗi bố trí minh họa; không phải dữ liệu xác nhận Pep đá RW trong trận.
+
+Đã sửa local:
+
+- Phân ô theo vai trò và bên trái/phải, phân công toàn bộ 11 đá chính đã xác nhận với kết quả ổn định theo player_id. Với sơ đồ này, Pep nằm ở ô biên trái tuyến giữa (`LWB` của bố cục), vẫn hiện nhãn vị trí chính `LB`.
+- API bổ sung `seasonEligiblePositions` từ `player_eligible_positions.position_code`, chỉ đọc các vị trí đã lưu cho mùa 2026/27. Dùng vị trí phụ khi bố trí minh họa; không suy diễn quyền Fantasy, không dùng vị trí để xác định ai đá chính. Khi đã có `matchPosition`, không dùng vị trí phụ mùa để thay thế.
+- Tọa độ trận đã xác minh vẫn được giữ nguyên. Nếu không thể bố trí đúng các nhóm vị trí, không ép người vào ô sai: giữ danh sách 11 đá chính và báo thiếu vị trí trên giao diện.
+- Rating, thẻ, thay người và đường dẫn chi tiết tiếp tục gắn theo player_id. Không sửa SQL, membership, vị trí cầu thủ, luật Fantasy hoặc giao diện mùa 2024/25.
+
+Kiểm tra một lượt:
+
+- 18 test frontend đạt: vị trí biên trái/phải trong 3-4-3, vị trí phụ đã lưu, thiếu vị trí, ưu tiên tọa độ trận, không trùng người và hồi quy Fantasy. Frontend build đạt.
+- 26 test backend trong 6 lớp liên quan đạt; package đạt. Test API xác nhận trả cả vị trí chính và danh sách vị trí phụ, các bảng thống kê/vị trí/membership không bị ghi đè.
+- Đối chiếu local 50 trận GW1–GW5 từ bản đọc dữ liệu trước đó, bổ sung vị trí phụ từ CSV vị trí đã lưu: cả 78 đội hình có xác nhận vai trò đều bố trí đủ 11. 22 đội hình chưa có xác nhận vai trò vẫn không tạo XI. Đây không phải xác minh mới về vị trí thực tế trong trận.
+- Đọc MySQL bằng kết nối chỉ đọc cho 4 trận `1000560591`, `1000560560`, `1000560575`, `1000560588`: API local trả đúng các vị trí đã lưu; Pep là `LB`, eligible `LB|LM`. Các vị trí trả về khớp dữ liệu dùng trong kiểm tra local.
+- Chrome desktop 1440px và 390px với response local: kiểm tra cả 4-2-3-1, 3-4-3, 5-4-1; đủ 22 cầu thủ, không chồng ô hoặc tràn sân, không lỗi JavaScript. Brentford–Chelsea hiện Pep `LB` ở ô minh họa `LWB` trên cả hai kích thước.
+
+File cần commit cho lượt sửa này:
+
+- `backend/src/main/java/com/premierhub/lineups/MatchLineupQueries.java`
+- `backend/src/main/java/com/premierhub/web/dto/MatchLineupResponse.java`
+- `backend/src/test/java/com/premierhub/lineups/LineupBatchImporterTest.java`
+- `frontend/src/utils/matchLineup.js`
+- `frontend/src/utils/matchLineup.test.js`
+- `frontend/src/components/MatchDetail.jsx`
+- `docs/match-lineups-2026.md`
+
+Commit message đề xuất: `fix: respect player positions in illustrative match lineups`
+
+Chưa commit, push hoặc deploy. Không ghi MySQL production và không cần nhập SQL cho thay đổi này. Để website đang chạy nhận bản sửa, bước còn lại là phát hành cả backend/API mới và frontend sau khi được yêu cầu. Vị trí thực tế của Pep trong trận này vẫn cần bằng chứng Lineups; ô minh họa LWB không được lưu thành vị trí thi đấu thực tế.

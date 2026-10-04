@@ -83,6 +83,7 @@ class LineupBatchImporterTest {
     private void write(String name,String header,String content) throws Exception { Files.writeString(directory.resolve(name),header+"\n"+content); }
 
     @Test void importsIdempotentlyAndPrioritizesFixtureOverClubWithIndependentFormations() throws Exception {
+        jdbc.update("INSERT INTO player_eligible_positions VALUES (39,2026,2,'RB')");
         var before=jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id");
         var positions=jdbc.queryForList("SELECT * FROM player_eligible_positions ORDER BY player_id");
         var memberships=jdbc.queryForList("SELECT * FROM manual_player_memberships ORDER BY player_id");
@@ -97,6 +98,8 @@ class LineupBatchImporterTest {
         assertEquals(11,detail.homeLineup().players().stream().filter(player -> player.role().equals("STARTER")).count());
         assertEquals("SUB_USED",detail.homeLineup().players().stream().filter(player -> player.playerId()==12).findFirst().orElseThrow().role());
         assertEquals("CB",detail.homeLineup().players().get(1).matchPosition());assertEquals("CM",detail.homeLineup().players().get(1).seasonPosition());
+        assertEquals(List.of("CM", "RB"), detail.homeLineup().players().get(1).seasonEligiblePositions());
+        assertEquals(List.of("GK"), detail.homeLineup().players().getFirst().seasonEligiblePositions());
         assertEquals("4-3-3",jdbc.queryForObject("SELECT default_formation FROM club_season_formations WHERE club_id=1",String.class));
         assertEquals(before,jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id"));
         assertEquals(positions,jdbc.queryForList("SELECT * FROM player_eligible_positions ORDER BY player_id"));

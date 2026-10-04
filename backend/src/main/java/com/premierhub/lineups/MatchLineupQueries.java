@@ -66,6 +66,17 @@ public final class MatchLineupQueries {
                 rolesSource = bundled.sourceNote();
             }
         }
+        if (!players.isEmpty()) {
+            var eligibility = optionalQuery("SELECT player_id,position_code FROM player_eligible_positions "
+                    + "WHERE league_id=39 AND season_year=2026 ORDER BY player_id,position_code",
+                    (rs, index) -> new SeasonPosition(rs.getInt(1), rs.getString(2))).stream()
+                    .collect(Collectors.groupingBy(SeasonPosition::playerId,
+                            Collectors.mapping(SeasonPosition::position, Collectors.toList())));
+            players = players.stream().map(player -> new MatchLineupResponse.Player(player.playerId(), player.role(),
+                    player.matchPosition(), player.rowIndex(), player.slotIndex(), player.substitutionInMinute(),
+                    player.substitutionOutMinute(), player.seasonPosition(),
+                    List.copyOf(eligibility.getOrDefault(player.playerId(), List.of())))).toList();
+        }
         Set<Integer> sourceIds = players.stream().map(MatchLineupResponse.Player::playerId).collect(Collectors.toSet());
         Set<Integer> statIds = stats.stream().map(MatchPlayerStatResponse::playerId).collect(Collectors.toSet());
         var byPlayer = stats.stream().collect(Collectors.toMap(MatchPlayerStatResponse::playerId, player -> player, (first, second) -> first));

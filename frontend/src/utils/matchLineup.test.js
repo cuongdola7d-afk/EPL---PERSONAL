@@ -12,7 +12,10 @@ function sample(formation, formationSource = 'FIXTURE', startId = 1) {
     matchPosition: formationSource === 'FIXTURE' && index < 11 ? index === 0 ? 'GK' : 'CM' : null,
     rowIndex: formationSource === 'FIXTURE' && index < 11 ? slots[index].rowIndex : null,
     slotIndex: formationSource === 'FIXTURE' && index < 11 ? slots[index].slotIndex : null,
-    seasonPosition: index === 0 ? 'GK' : 'CM', substitutionInMinute: index === 11 ? 65 : null,
+    seasonPosition: index >= 11 ? 'CM' : index === 0 ? 'GK' : slots[index].rowIndex === 1 ?
+      lines[1] >= 4 && slots[index].slotIndex === 0 ? 'LB' : lines[1] >= 4 && slots[index].slotIndex === lines[1] - 1 ? 'RB' : 'CB' :
+      slots[index].rowIndex === lines.length - 1 ? lines.at(-1) >= 3 && slots[index].slotIndex === 0 ? 'LW' :
+        lines.at(-1) >= 3 && slots[index].slotIndex === lines.at(-1) - 1 ? 'RW' : 'ST' : 'CM', substitutionInMinute: index === 11 ? 65 : null,
     substitutionOutMinute: index === 2 ? 65 : null }))
   return { players, evidence: { formation, formationSource, startersStatus: 'VERIFIED', players: metadata } }
 }
@@ -60,4 +63,55 @@ test('supports formation lines beyond Fantasy and refuses invalid counts or dupl
   const data = sample('4-3-3'); data.evidence.players[1].rowIndex = 0; data.evidence.players[1].slotIndex = 0
   const invalid = matchLineup(data.players, data.evidence, 'home')
   assert.equal(invalid.positionSource, 'INVALID'); assert.equal(invalid.nodes.length, 0)
+})
+
+test('three defenders keep a left back on the left midfield flank and use saved wing positions', () => {
+  const data = sample('3-4-3', 'CLUB_DEFAULT')
+  const positions = ['GK', 'CB', 'CB', 'CB', 'CM', 'RM', 'CAM', 'CM', 'CAM', 'ST', 'LB']
+  data.evidence.players.slice(0, 11).forEach((player, index) => {
+    player.seasonPosition = positions[index]
+    player.seasonEligiblePositions = index === 6 ? ['CAM', 'RW'] : index === 8 ? ['CAM', 'LW'] : [positions[index]]
+  })
+  const snapshot = structuredClone(data)
+  for (const side of ['home', 'away']) {
+    const result = matchLineup(data.players, data.evidence, side)
+    assert.equal(result.nodes.length, 11)
+    assert.equal(new Set(result.nodes.map(node => node.player.playerId)).size, 11)
+    const byId = id => result.nodes.find(node => node.player.playerId === id)
+    assert.equal(byId(11).layoutPosition, 'LWB'); assert.equal(byId(11).rowIndex, 2)
+    assert.equal(byId(11).y, side === 'home' ? 20 : 80)
+    assert.equal(byId(11).player.seasonPosition, 'LB'); assert.equal(byId(11).positionSource, 'ILLUSTRATION')
+    assert.equal(byId(6).layoutPosition, 'RWB')
+    assert.equal(byId(7).layoutPosition, 'RW'); assert.equal(byId(9).layoutPosition, 'LW')
+    assert.equal(byId(10).layoutPosition, 'ST')
+    assert.ok(result.nodes.filter(node => node.rowIndex === 1).every(node => node.player.seasonPosition === 'CB'))
+    assert.equal(byId(3).player.yellowCards, 1); assert.equal(byId(3).player.substitutionOutMinute, 65)
+    assert.deepEqual(matchLineup([...data.players].reverse(), { ...data.evidence, players: [...data.evidence.players].reverse() }, side).nodes, result.nodes)
+  }
+  assert.deepEqual(data, snapshot)
+})
+
+test('a stored secondary position can fill a missing right back; missing positions keep the confirmed XI off the pitch', () => {
+  const data = sample('4-2-3-1', 'CLUB_DEFAULT')
+  const rightBack = data.evidence.players[4]
+  rightBack.seasonPosition = 'CM'; rightBack.seasonEligiblePositions = ['CM', 'RB']
+  const result = matchLineup(data.players, data.evidence, 'home')
+  assert.equal(result.nodes.length, 11)
+  assert.equal(result.nodes.find(node => node.player.playerId === rightBack.playerId).layoutPosition, 'RB')
+  rightBack.seasonEligiblePositions = ['CM']
+  const missing = matchLineup(data.players, data.evidence, 'home')
+  assert.equal(missing.positionSource, 'INSUFFICIENT_POSITIONS')
+  assert.equal(missing.nodes.length, 0); assert.equal(missing.starters.length, 11)
+  assert.equal(missing.substitutes.length, 1); assert.equal(missing.bench.length, 1)
+})
+
+test('verified match position and coordinates override a conflicting season position', () => {
+  const data = sample('4-3-3')
+  const winger = data.evidence.players[10]
+  Object.assign(winger, { matchPosition: 'RW', seasonPosition: 'LB', seasonEligiblePositions: ['LB', 'LM'] })
+  const result = matchLineup(data.players, data.evidence, 'away')
+  const node = result.nodes.find(node => node.player.playerId === winger.playerId)
+  assert.equal(result.positionSource, 'MATCH'); assert.equal(node.positionSource, 'MATCH')
+  assert.equal(node.layoutPosition, 'RW'); assert.equal(node.player.matchPosition, 'RW')
+  assert.equal(node.player.seasonPosition, 'LB'); assert.equal(node.y, 25)
 })
