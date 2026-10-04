@@ -37,7 +37,7 @@ const PAGES = {
     hasSeasons: true,
     navLabel: 'Bảng xếp hạng', label: 'Bảng xếp hạng', title: 'Mỗi điểm số.', highlight: 'Một vị trí.',
     description: 'Tra cứu bảng xếp hạng theo mùa giải từ dữ liệu đã lưu tại prismaXI.',
-    component: StandingsPage,
+    component: StandingsPage, fullPage: true,
   },
   fantasy: {
     navLabel: 'Fantasy', label: 'Fantasy · 2026/27', title: 'Đội hình của bạn.', highlight: 'Theo OVR FC 27.',
@@ -61,6 +61,7 @@ function App() {
   const [clubRoute, setClubRoute] = useState(() => parseClubRoute(window.location.hash))
   const [homeState, setHomeState] = useState({ query: '', slide: 0 })
   const [homeTheme, setHomeTheme] = useState('dark')
+  const [standingsTab, setStandingsTab] = useState('clubs')
 
   useEffect(() => {
     function handleHashChange() {
@@ -90,7 +91,7 @@ function App() {
   }, [current.label, playerDetail, clubRoute, page])
 
   return (
-    <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : ''}`} data-home-theme={homeTheme}>
+    <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : page === 'standings' ? ' standings-shell' : ''}`} data-home-theme={homeTheme}>
       <header className="site-header">
         <div className="container header-inner">
           <a className="brand" href="#clubs" aria-label="prismaXI, trang chủ">
@@ -105,7 +106,7 @@ function App() {
               </a>
             ))}
           </nav>
-          {page === 'clubs' && <div className="cx-header-controls">
+          {(page === 'clubs' || page === 'standings') && <div className="cx-header-controls">
             <label className="cx-season"><span className="sr-only">Mùa giải</span><select aria-label="Mùa giải" value={season}
               onChange={event => {
                 const next = Number(event.target.value)
@@ -155,6 +156,7 @@ function App() {
           <CurrentPage key={current.hasSeasons ? `${page}-${season}` : page}
             {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
+            {...(page === 'standings' ? { tab: standingsTab, onTabChange: setStandingsTab } : {})}
             {...(page === 'matches' ? { matchRoute } : {})} />}
       </main>
 
