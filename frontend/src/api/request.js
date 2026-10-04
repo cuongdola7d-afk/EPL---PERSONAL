@@ -20,8 +20,10 @@ export function buildApiUrl(path, baseUrl, isDevelopment) {
 }
 
 export async function fetchApiJson(path, signal, notFoundMessage = 'API trả về mã HTTP 404.') {
-  const url = buildApiUrl(path, import.meta.env.VITE_API_BASE_URL, import.meta.env.DEV)
+  const url = buildApiUrl(path, import.meta.env?.VITE_API_BASE_URL, import.meta.env?.DEV ?? true)
   const response = await fetch(url, {
+    // Public football lookups do not need a JDBC account session. Auth uses auth.js.
+    credentials: 'omit',
     headers: { Accept: 'application/json' },
     signal,
   })

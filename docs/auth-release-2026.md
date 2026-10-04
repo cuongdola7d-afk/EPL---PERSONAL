@@ -1,5 +1,9 @@
 # Phát hành tài khoản PrismaXI qua Vercel–Railway
 
+## Checkpoint production hiện tại
+
+Người dùng đã push main và cho phép phát hành sau lượt chuẩn bị. Migration đã hoàn tất trên MySQL Railway 9.7.2 sau backup mới được kiểm tra. Vercel và Railway **đã phát hành thành công cùng commit `446f044`**; cookie/CSRF/proxy và các trang công khai đã kiểm chứng trên production. **Google thật đã được người dùng xác nhận và đối chiếu MySQL: 2 account USER, 2 identity Google riêng, không trùng email/provider-subject; phiên được lưu đúng account.** Hiện chưa có account email–mật khẩu/ca LINK từ email để đối chiếu riêng trên production; kiểm chứng local vẫn giữ nguyên. Xem [biên bản và checkpoint hiện tại](auth-production-2026-10-04.md); không áp dụng lại phần “chưa ghi production” của biên bản bàn giao local bên dưới làm trạng thái hiện tại.
+
 ## Trạng thái bàn giao, 04/10/2026
 
 Đã chuẩn bị mã, cấu hình và migration, **chưa sửa cấu hình dịch vụ, ghi SQL production hoặc deploy**. Email/Google thật/LINK/rate limit đã được người dùng kiểm chứng local trước lượt này, không chạy lại toàn bộ. Khôi phục mật khẩu và Fantasy mới không thuộc phạm vi.

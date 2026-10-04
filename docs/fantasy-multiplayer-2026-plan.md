@@ -129,6 +129,10 @@ Email/mật khẩu + Google, logout, khôi phục mật khẩu, quyền người
 
 ## Checkpoint chuẩn bị phát hành tài khoản — 04/10/2026
 
+Đối chiếu sau phản hồi người dùng “mọi thứ đều OK”: Google thật production đã đạt, MySQL có 2 account USER/2 email/2 Google identity riêng, không trùng hoặc mồ côi; ID 1 không có phiên authenticated còn hạn, ID 2 có một phiên. Hai account đều Google-only; chưa có ca email–mật khẩu/LINK từ email production để đối chiếu độc lập, không tự tạo thêm tài khoản. Biên bản auth-production-2026-10-04.md là trạng thái mới nhất; các ghi nhận chờ thử dưới đây thuộc thời điểm trước phản hồi.
+
+Checkpoint mới sau khi người dùng push/cho phép phát hành: [auth-production-2026-10-04.md](auth-production-2026-10-04.md). MySQL production đã được xác nhận, backup đủ 22 bảng và migration bốn bảng auth đã chạy hai lần. Vercel/Railway đã phát hành thành công đúng `446f044`, Google Console callback được người dùng xác nhận. Browser production kiểm chứng cookie/CSRF/logout vô danh và các trang công khai, Google redirect đúng origin/state/nonce/PKCE. Email/Google thật production còn chờ người dùng thao tác rồi đối chiếu ID/identity/session; baseline chưa có account. Không sửa mã hoặc chạy lại test/build local; không lặp migration khi tiếp tục.
+
 - Chọn external proxy `/api` của Vercel với env secret transform, auth URL tương đối, cookie host-only Secure/HttpOnly/Lax và callback **https://premierhub.vercel.app/api/auth/google/callback**. Backend chỉ tin IP/HTTPS sau proof proxy; URL quay về vẫn frontend origin cố định + route nội bộ.
 - Migration 4 bảng auth/session, không xóa/reset hoặc chép H2. MySQL 9.6 cô lập đã chạy hai lần, giữ dữ liệu và xác minh unique/FK/CHECK/cascade/subject exact. Chưa xác minh phiên bản/schema/permissions MySQL Railway.
 - 13 test backend và package qua; 10 test frontend và Vite build qua. Chrome qua HTTPS proxy local + MySQL thật kiểm chứng cookie, CSRF, reload/logout, LOGIN/LINK callback hủy giữ ID/hash; marker Fantasy giữ nguyên. Không thử lại Google thật hoặc deployment. Test credentials/helpers ở target được ignore, không nhập dữ liệu bóng đá.
