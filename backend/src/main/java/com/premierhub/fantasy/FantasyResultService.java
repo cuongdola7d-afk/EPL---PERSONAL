@@ -26,6 +26,8 @@ public class FantasyResultService {
                             List<Issue> issues,List<Publication> history) {}
     public record Published(int season,int gameweek,int version,int participants,Instant publishedAt,boolean unchanged) {}
     public record Mine(long accountId,int season,int gameweek,String status,Integer version,Instant publishedAt,TeamScore result) {}
+    public record Ranked(int rank,long accountId,String displayName,BigDecimal totalPoints,int gameweeksPlayed) {}
+    public record Leaderboard(int season,Integer gameweek,String status,Integer version,int publishedGameweeks,List<Ranked> players) {}
     private record Source(Fixture fixture,List<Stat> stats,List<Unrated> unrated,List<Lineup> lineups,List<Role> roles) {}
     private record Submitted(Participant participant,List<FantasyEntryRepository.Snapshot> players) {}
     private record Plan(Readiness readiness,String hash,List<Participant> participants,Map<Long,TeamScore> scores) {}
@@ -203,6 +205,23 @@ public class FantasyResultService {
         var publication=repository.latest(gw).orElseThrow(()->new IllegalStateException("Published GW has no result version"));
         var score=repository.team(owner,gw,publication.version()).orElseThrow(()->new IllegalStateException("Published participant has no result"));
         return new Mine(owner,2026,gw,"PUBLISHED",publication.version(),publication.publishedAt(),score);
+    }
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Leaderboard leaderboard(Integer gw) {
+        if(gw!=null) official(gw);
+        var configuration=gw==null ? Optional.<GameweekRepository.Configuration>empty() : gameweeks.find(gw);
+        var publication=gw==null ? Optional.<Publication>empty() : repository.latest(gw);
+        boolean published=gw==null ? repository.publishedGameweeks()>0 : configuration.isPresent()
+                && "PUBLISHED".equals(configuration.get().workflowStatus()) && configuration.get().resultsPublishedAt()!=null && publication.isPresent();
+        int publishedWeeks=gw==null ? repository.publishedGameweeks() : published?1:0;
+        if(!published) return new Leaderboard(2026,gw,"AWAITING_RESULTS",null,publishedWeeks,List.of());
+        var ranked=new ArrayList<Ranked>();BigDecimal previous=null;int rank=0;
+        for(var standing:repository.standings(gw)) {
+            if(previous==null || previous.compareTo(standing.totalPoints())!=0) rank=ranked.size()+1;
+            ranked.add(new Ranked(rank,standing.accountId(),standing.displayName(),standing.totalPoints(),standing.gameweeksPlayed()));
+            previous=standing.totalPoints();
+        }
+        return new Leaderboard(2026,gw,"PUBLISHED",publication.map(Publication::version).orElse(null),publishedWeeks,List.copyOf(ranked));
     }
     static void official(int gw) {
         if(gw<6 || gw>38) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Chỉ tính cuộc thi chính thức GW6–38 mùa 2026/27.");

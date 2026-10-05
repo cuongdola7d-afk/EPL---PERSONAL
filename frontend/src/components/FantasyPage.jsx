@@ -9,6 +9,7 @@ import Pitch from './FantasyPitch.jsx'
 import TeamOfWeek from './TeamOfWeek.jsx'
 import FantasyGameweek from './FantasyGameweek.jsx'
 import FantasyResults from './FantasyResults.jsx'
+import FantasyLeaderboard from './FantasyLeaderboard.jsx'
 import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
 import { emptyLineup, entryLineup, sameLineup } from '../fantasy/entry.js'
 import { formatDeadline } from '../fantasy/gameweek.js'
@@ -16,6 +17,7 @@ import './FantasyPage.css'
 import './FantasyEntry.css'
 
 const GROUPS = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER']
+const VIEWS = [['user', 'Đội hình của bạn'], ['team', 'Đội hình tiêu biểu'], ['leaderboard', 'BXH người chơi']]
 
 function readSavedLineup() {
   try { return JSON.parse(window.localStorage.getItem(FANTASY_STORAGE_KEY) ?? '{}') }
@@ -159,29 +161,30 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
       <header className="fantasy-head">
-        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">{view === 'user' ? 'Đội hình của bạn' : 'Đội hình tiêu biểu'}</h1>
-          <p>{view === 'user' ? '11 cầu thủ · tối đa 3/CLB · OVR tối đa 860. Điểm trận tính từ rating.' : '11 cầu thủ · 4-3-3 · tổng rating SofaScore cao nhất mỗi vòng.'}</p></div>
+        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">{VIEWS.find(([key]) => key === view)[1]}</h1>
+          <p>{view === 'user' ? 'Chọn 11 cầu thủ và lưu đội hình trước deadline · tối đa 3/CLB · OVR tối đa 860.' : view === 'team' ? '11 cầu thủ · 4-3-3 · tổng rating SofaScore cao nhất mỗi vòng.' : 'Điểm cao xếp trên · chỉ tính các GW đã công bố.'}</p></div>
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
       <FantasyGameweek onSelectionChange={contestSelection} />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
-        {[['user', 'Đội hình của bạn'], ['team', 'Đội hình tiêu biểu']].map(([key, label], index) => <button key={key} type="button" role="tab"
+        {VIEWS.map(([key, label], index) => <button key={key} type="button" role="tab"
           id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}
           onClick={() => { setView(key); setActiveKey(null) }} onKeyDown={event => {
-            const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? 1 - index : null
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? VIEWS.length - 1 : event.key === 'ArrowLeft' ? (index + VIEWS.length - 1) % VIEWS.length : event.key === 'ArrowRight' ? (index + 1) % VIEWS.length : null
             if (next === null) return
-            event.preventDefault(); setView(next === 0 ? 'user' : 'team'); setActiveKey(null)
+            event.preventDefault(); setView(VIEWS[next][0]); setActiveKey(null)
             event.currentTarget.parentElement.children[next].focus()
           }}>{label}</button>)}
       </div>
       {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
         <TeamOfWeek gameweek={gameweek} onGameweekChange={setGameweek} /></div>}
+      {view === 'leaderboard' && <div id="fantasy-panel-leaderboard" role="tabpanel" aria-labelledby="fantasy-tab-leaderboard">
+        <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>
       {authLoading && <p role="status">Đang nhận phiên đăng nhập…</p>}
       {authError && <p className="fantasy-message" role="alert">Chưa xác định được tài khoản: {authError}</p>}
-      {!authLoading && !account && <p className="fantasy-message">Đăng nhập để lưu nháp và chốt đội cho một GW. Lựa chọn thử trong trình duyệt không tự tham gia cuộc thi.</p>}
-      {account && contestGameweek >= 6 && <FantasyResults key={`${account.id}:${contestGameweek}`} account={account} gameweek={contestGameweek} contestStatus={contestStatus} submittedVersion={entry.data?.submitted?.version ?? null} />}
+      {!authLoading && !account && <p className="fantasy-message">Đăng nhập để lưu đội hình của bạn cho Gameweek. Lựa chọn thử trong trình duyệt không tự tham gia cuộc thi.</p>}
       {account && <section className="fantasy-card fantasy-entry" aria-label="Đội dự thi của bạn" aria-busy={entry.loading || entry.busy}>
         <h2>Đội của {account.displayName} · GW{contestGameweek ?? '…'}</h2>
         {entry.loading && <p role="status">Đang tải đội từ server…</p>}
@@ -192,17 +195,14 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
         {(entry.error || entry.conflict) && <button type="button" className="fantasy-clear" disabled={entry.busy} onClick={entry.reload}>Tải lại đội từ server</button>}
         {entry.notice && <p className="fantasy-result" role="status">{entry.notice}</p>}
         {entry.ready && <>
-          <p><strong>{entry.data.submitted ? 'Đã chốt' : 'Chưa chốt'}</strong>{entry.data.submitted ? ` · ${formatDeadline(entry.data.submitted.submittedAt)} · Giờ Việt Nam · ${entry.data.submitted.totalOvr}/860 OVR` : ' · Chưa có đội dự thi cho GW này.'}</p>
-          {entry.data.draft && <p>Nháp lưu: {formatDeadline(entry.data.draft.savedAt)} · Giờ Việt Nam</p>}
-          {contestOpen && entry.data.submitted && !sameLineup(currentLineup, entry.data.submitted) && <p>Nháp khác đội đã chốt. Bạn cần chốt lại để thay đội dự thi; đội đã chốt trước vẫn có hiệu lực.</p>}
-          {contestOpen && !sameLineup(currentLineup, entry.data.draft) && <p>Đang có thay đổi chưa lưu trên server.</p>}
-          {!contestOpen && <p>GW chưa mở hoặc đã khóa. Bạn không thể lưu/chốt đội ở trạng thái này.</p>}
+          <p><strong>{entry.data.submitted ? 'Đã lưu đội hình' : 'Chưa lưu đội hình'}</strong>{entry.data.submitted ? ` · ${formatDeadline(entry.data.submitted.submittedAt)} · Giờ Việt Nam · ${entry.data.submitted.totalOvr}/860 OVR` : ' · Chưa có đội dự thi cho GW này.'}</p>
+          {contestOpen && !sameLineup(currentLineup, entry.data.submitted) && <p>Bấm Lưu đội hình để áp dụng thay đổi. Đội đã lưu trước đó vẫn được giữ cho tới khi lưu mới thành công.</p>}
+          {!contestOpen && ['LOCKED', 'AWAITING_RESULTS'].includes(contestStatus) && <p role="status">Đã hết deadline. Đội hình đã khóa; kết quả sẽ được công bố sau.</p>}
+          {!contestOpen && contestStatus === 'PUBLISHED' && <p role="status">Đội hình đã khóa. Kết quả đã được công bố bên dưới và trong tab BXH người chơi.</p>}
+          {!contestOpen && !contestStatus && <p>Vòng thi chưa mở hoặc chưa tải được trạng thái. Chưa thể lưu đội hình.</p>}
           <div className="fantasy-entry-actions">
-            <button type="button" className="fantasy-clear" disabled={privateBlocked || Boolean(unassigned.length)} onClick={() => entry.save(currentLineup)}>{entry.busy ? 'Đang lưu…' : 'Lưu nháp'}</button>
-            <button type="button" className="fantasy-primary" disabled={privateBlocked || Boolean(issues.length)} onClick={() => entry.submit(currentLineup)}>{entry.busy ? 'Đang chốt…' : entry.data.submitted ? 'Chốt lại đội hình' : 'Chốt đội hình'}</button>
+            <button type="button" className="fantasy-primary" disabled={privateBlocked || Boolean(issues.length) || Boolean(unassigned.length)} onClick={() => entry.submit(currentLineup)}>{entry.busy ? 'Đang lưu…' : 'Lưu đội hình'}</button>
           </div>
-          {entry.data.submitted && <details className="fantasy-submitted"><summary>Đội đã chốt · {entry.data.submitted.formation}</summary>
-            {entry.data.submitted.players.map(player => <p key={player.slotKey}>{player.requiredPosition} · {player.name} · {player.club} · OVR {player.ovr}</p>)}</details>}
         </>}
       </section>}
       {!authLoading && <ResultPanel status={status} error={error} count={players.length} itemName="cầu thủ Fantasy" keepContent={Boolean(account)}
@@ -274,6 +274,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
         </div>
       </fieldset>
       </ResultPanel>}
+      {account && contestGameweek >= 6 && <FantasyResults key={`${account.id}:${contestGameweek}`} account={account} gameweek={contestGameweek} contestStatus={contestStatus} submittedVersion={entry.data?.submitted?.version ?? null} active={view === 'user'} />}
       </div>
     </div>
     {view === 'user' && activeSlot && <div className="fantasy-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKey(null) }}>

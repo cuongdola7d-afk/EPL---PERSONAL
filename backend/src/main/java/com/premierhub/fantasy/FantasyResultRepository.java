@@ -28,6 +28,7 @@ public class FantasyResultRepository {
     }
     public record Participant(long accountId, String formation, long submittedVersion, Instant submittedAt) { }
     public record Publication(int version, String sourceHash, Instant publishedAt, String action, String reason, long publishedBy) { }
+    public record Standing(long accountId, String displayName, BigDecimal totalPoints, int gameweeksPlayed) { }
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     public FantasyResultRepository(JdbcTemplate jdbc, ObjectMapper json) { this.jdbc=jdbc; this.json=json; }
@@ -80,6 +81,25 @@ public class FantasyResultRepository {
         return jdbc.query("SELECT * FROM fantasy_result_publications WHERE season=2026 AND gameweek=? ORDER BY version DESC",
                 (r,n)->new Publication(r.getInt("version"),r.getString("source_hash"),r.getTimestamp("published_at").toLocalDateTime().toInstant(ZoneOffset.UTC),
                         r.getString("action"),r.getString("reason"),r.getLong("published_by")),gw);
+    }
+    public List<Standing> standings(Integer gameweek) {
+        return jdbc.query("""
+                SELECT r.account_id,a.display_name,SUM(r.total_points) AS total_points,COUNT(*) AS gameweeks_played
+                FROM fantasy_team_results r JOIN accounts a ON a.id=r.account_id
+                JOIN fantasy_gameweeks g ON g.season=r.season AND g.gameweek=r.gameweek
+                WHERE r.season=2026 AND g.workflow_status='PUBLISHED' AND g.results_published_at IS NOT NULL
+                  AND r.version=(SELECT MAX(p.version) FROM fantasy_result_publications p
+                                 WHERE p.season=r.season AND p.gameweek=r.gameweek)
+                """+(gameweek==null ? "" : " AND r.gameweek=?")+" GROUP BY r.account_id,a.display_name ORDER BY total_points DESC,r.account_id LIMIT 200",
+                (r,n)->new Standing(r.getLong("account_id"),r.getString("display_name"),r.getBigDecimal("total_points"),r.getInt("gameweeks_played")),
+                gameweek==null ? new Object[0] : new Object[]{gameweek});
+    }
+    public int publishedGameweeks() {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM fantasy_gameweeks g WHERE g.season=2026 AND g.workflow_status='PUBLISHED'
+                AND g.results_published_at IS NOT NULL AND EXISTS
+                  (SELECT 1 FROM fantasy_result_publications p WHERE p.season=g.season AND p.gameweek=g.gameweek)
+                """,Integer.class);
     }
     public void publication(int gw, int version, String hash, Instant now, long actor, String action, String reason) {
         jdbc.update("INSERT INTO fantasy_result_publications VALUES (2026,?,?,?,?,?,?,?)",gw,version,hash,GameweekRepository.timestamp(now),actor,action,reason);

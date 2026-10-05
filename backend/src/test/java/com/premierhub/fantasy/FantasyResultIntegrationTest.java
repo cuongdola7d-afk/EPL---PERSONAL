@@ -109,6 +109,52 @@ class FantasyResultIntegrationTest {
         Files.writeString(stats,csv);Files.writeString(unrated,absent);
     }
     private FantasyResultService.Published publish() { return service.publish(6,0,101,"Publish verified local results",false); }
+    @Test void publicLeaderboardDoesNotExposeProvisionalPointsOrPrivateData() throws Exception {
+        var waiting=service.leaderboard(6);assertEquals("AWAITING_RESULTS",waiting.status());assertTrue(waiting.players().isEmpty());
+        assertTrue(service.leaderboard(null).players().isEmpty());
+        mvc.perform(get("/api/fantasy/2026/leaderboard").param("gameweek","6"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+                .andExpect(jsonPath("$.players.length()").value(0));
+        publish();
+        mvc.perform(get("/api/fantasy/2026/leaderboard").param("gameweek","6"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.players.length()").value(2))
+                .andExpect(jsonPath("$.players[0].totalPoints").value(66.77))
+                .andExpect(jsonPath("$.players[0].email").doesNotExist()).andExpect(jsonPath("$.players[0].picks").doesNotExist());
+        mvc.perform(get("/api/fantasy/2026/leaderboard").param("gameweek","1")).andExpect(status().isBadRequest());
+    }
+    @Test void leaderboardTiesShareRankAndRecalculationUsesOnlyTheLatestVersion() throws Exception {
+        jdbc.update("INSERT INTO accounts VALUES (105,'c@example.test','Player C',NULL,'USER',CURRENT_TIMESTAMP)");
+        jdbc.update("INSERT INTO fantasy_entries SELECT 105,season,gameweek,version,draft_formation,draft_saved_at,submitted_formation,submitted_at,submitted_version,submitted_total_ovr FROM fantasy_entries WHERE account_id=102 AND gameweek=6");
+        jdbc.update("INSERT INTO fantasy_submitted_picks SELECT 105,season,gameweek,slot_key,player_id,required_position,club_id,player_name,club_name,ovr,primary_position,eligible_positions FROM fantasy_submitted_picks WHERE account_id=102 AND gameweek=6");
+        jdbc.update("UPDATE fantasy_submitted_picks SET player_id=100,player_name='Player 100' WHERE account_id=105 AND player_id=9");
+        publish();
+        var board=service.leaderboard(6);assertEquals(List.of(1,1,3),board.players().stream().map(FantasyResultService.Ranked::rank).toList());
+        assertEquals(List.of(102L,103L,105L),board.players().stream().map(FantasyResultService.Ranked::accountId).toList());
+        assertEquals(new BigDecimal("64.66"),board.players().get(2).totalPoints());
+        jdbc.update("UPDATE manual_fixture_player_stats SET rating=9.23 WHERE fixture_id=601 AND player_id=5");
+        files();evidence.importFiles(stats,unrated,sources);service.publish(6,1,101,"Verified rating correction",true);
+        var updated=service.leaderboard(6);assertEquals(2,updated.version());assertEquals(3,updated.players().size());
+        assertEquals(new BigDecimal("67.77"),updated.players().getFirst().totalPoints());
+        assertEquals(List.of(1,1,3),updated.players().stream().map(FantasyResultService.Ranked::rank).toList());
+        assertEquals(2,repository.history(6).size());
+    }
+    @Test void seasonLeaderboardAddsPublishedGameweeksOnlyAndNeverDoubleCountsHistory() throws Exception {
+        publish();
+        jdbc.update("INSERT INTO fantasy_gameweeks SELECT season,7,deadline_utc,deadline_published_at,first_fixture_id,first_kickoff_utc,'OPEN',NULL,revision,updated_at,roster_as_of FROM fantasy_gameweeks WHERE gameweek=6");
+        jdbc.update("INSERT INTO fantasy_entries SELECT account_id,season,7,version,draft_formation,draft_saved_at,submitted_formation,submitted_at,submitted_version,submitted_total_ovr FROM fantasy_entries WHERE account_id=102 AND gameweek=6");
+        repository.publication(7,1,"a".repeat(64),now.get(),101,"PUBLISH","Synthetic stored result for leaderboard test");
+        repository.team(7,1,new FantasyResultRepository.Participant(102,"4-2-1-3",1,Instant.parse("2026-10-06T00:00:00Z")),service.mine(102,6).result());
+        assertEquals(1,service.leaderboard(null).publishedGameweeks()); // Stored rows without completed publication are excluded.
+        assertEquals(EXPECTED,service.leaderboard(null).players().getFirst().totalPoints());
+        repository.markPublished(7,now.get());
+        var season=service.leaderboard(null);assertEquals(2,season.publishedGameweeks());
+        assertEquals(new BigDecimal("133.54"),season.players().getFirst().totalPoints());assertEquals(2,season.players().getFirst().gameweeksPlayed());
+        assertEquals(EXPECTED,season.players().get(1).totalPoints());assertEquals(1,season.players().get(1).gameweeksPlayed());
+        jdbc.update("UPDATE manual_fixture_player_stats SET rating=9.23 WHERE fixture_id=601 AND player_id=5");
+        files();evidence.importFiles(stats,unrated,sources);service.publish(6,1,101,"Verified correction for season totals",true);
+        assertEquals(new BigDecimal("134.54"),service.leaderboard(null).players().getFirst().totalPoints());
+        assertEquals(new BigDecimal("67.77"),service.leaderboard(null).players().get(1).totalPoints());
+    }
     @Test void decimalRatingsDnpAndConfirmedUnratedPublishOnlyStoredSubmittedTeams() {
         assertTrue(service.readiness(6).ready());
         assertEquals("AWAITING_RESULTS",service.mine(102,6).status());assertNull(service.mine(102,6).result());

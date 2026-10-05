@@ -58,7 +58,7 @@ export default function FantasyGameweek({ onSelectionChange }) {
     {loading && <p role="status">Đang cập nhật trạng thái từ server…</p>}
     {view && <>
       <div className="fantasy-gameweek-details">
-        <div><span>Hạn chỉnh/chốt đội · Giờ Việt Nam</span><strong>{formatDeadline(view.deadlineUtc)}</strong></div>
+        <div><span>Hạn lưu đội hình · Giờ Việt Nam</span><strong>{formatDeadline(view.deadlineUtc)}</strong></div>
         <div><span>Trạng thái GW{view.gameweek}</span><strong>{expired ? 'Đã đến hạn · đang xác nhận trạng thái' : GAMEWEEK_LABELS[view.status] ?? (view.mode === 'REPLAY' ? 'Replay · chưa mở' : 'Chưa công bố deadline')}</strong></div>
         {view.status === 'OPEN' && !expired && <div><span>Còn lại theo giờ server</span><strong className="fantasy-gameweek-countdown" role="timer">{countdownLabel(remaining)}</strong></div>}
       </div>
@@ -68,6 +68,6 @@ export default function FantasyGameweek({ onSelectionChange }) {
       {view.deadlineChanges.filter(change => change.revision > 1).map(change => <p key={change.revision}>
         Điều chỉnh hạn: {formatDeadline(change.oldDeadlineUtc)} → {formatDeadline(change.newDeadlineUtc)} · {change.reason}</p>)}
     </>}
-    <p className="fantasy-gameweek-note">Đội dự thi chỉ có hiệu lực sau khi bạn chủ động chốt thành công trước hạn.</p>
+    <p className="fantasy-gameweek-note">Lưu đội hình trước deadline. Đội được lưu gần nhất sẽ tự khóa khi hết hạn.</p>
   </section>
 }

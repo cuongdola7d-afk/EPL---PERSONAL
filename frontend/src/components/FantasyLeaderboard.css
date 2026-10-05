@@ -1,0 +1,14 @@
+.fantasy-leaderboard { padding: 18px; min-width: 0; }
+.fantasy-feature-tabs { max-width: 100%; flex-wrap: wrap; }
+.fantasy-leaderboard-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.fantasy-leaderboard h2 { font-size: 18px; margin: 0; }
+.fantasy-leaderboard button { border: 1px solid var(--f-line); border-radius: 18px; background: var(--f-subtle); color: var(--f-text); padding: 7px 12px; }
+.fantasy-leaderboard button[aria-pressed=true] { background: var(--f-accent); color: var(--f-on-accent); }
+.fantasy-leaderboard table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.fantasy-leaderboard th, .fantasy-leaderboard td { text-align: left; padding: 12px 6px; border-bottom: 1px solid var(--f-line); overflow-wrap: anywhere; }
+.fantasy-leaderboard th:first-child { width: 44px; }
+.fantasy-leaderboard th:nth-child(3) { width: 65px; }
+.fantasy-leaderboard th:nth-child(4) { width: 30px; }
+.fantasy-leaderboard tr.is-me { background: var(--f-chip); }
+.fantasy-leaderboard small { color: var(--f-accent); }
+@media (max-width: 480px) { .fantasy-leaderboard { padding: 12px; } .fantasy-leaderboard th, .fantasy-leaderboard td { font-size: 12px; } }

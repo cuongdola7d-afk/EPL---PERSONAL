@@ -2,6 +2,8 @@
 
 ## Mục tiêu và phạm vi lượt này
 
+**Checkpoint luồng người chơi và BXH — 05/10/2026:** người dùng chốt lại giao diện sân 11 người với một nút **Lưu đội hình**; lưu thành công là đội dự thi hiện hành, có thể lưu lại trước deadline, từ deadline giữ sân/khóa thay đổi/chờ công bố. Đã nối đúng transaction `/submit` hiện có, thêm thông báo điểm trong trang và tab BXH GW/mùa lấy phiên bản đã công bố mới nhất, bằng điểm đồng hạng. Kiểm chứng local: 17 test backend, 13 test frontend/build, browser Spring/H2 thật desktop/390px từ chọn/lưu/lưu lại → khóa → công bố → kết quả/BXH. Chưa nhập/phát hành production. Chi tiết/file commit ở [fantasy-player-flow-2026.md](fantasy-player-flow-2026.md). Quyết định này thay yêu cầu UI tách Lưu nháp/Chốt đội của checkpoint cũ; API/dữ liệu cũ giữ tương thích.
+
 **Checkpoint sửa sân sau đăng nhập — 05/10/2026:** production overview GW đang 500; đọc schema xác nhận chưa nhập chín bảng Fantasy bước 2–4. Frontend local đã sửa giữ sân 11 ô khi API lỗi, khóa thao tác đúng trạng thái, không nhầm GW chưa tải thành Replay, không lộ snapshot chủ/GW cũ. 7 test frontend/build và trình duyệt desktop/390px đạt. Chưa ghi/phát hành production; cần backup và bốn migration đã chuẩn bị trước khi mở cuộc thi. Chi tiết ở [fantasy-pitch-recovery-2026.md](fantasy-pitch-recovery-2026.md).
 
 **Checkpoint bước 4 — 05/10/2026, hoàn thiện local:** đã có xác nhận không được SofaScore chấm và xác nhận dữ liệu fixture trong database, giữ nguyên CSV thống kê 10 cột/rating NULL. Readiness ADMIN kiểm tra toàn GW và từng người được chọn; công bố/tái tính transaction, BigDecimal, phiên bản/lý do/lịch sử, API và giao diện kết quả riêng 11 người. Kiểm tra scoped H2/MySQL cô lập và desktop/390px đạt; chưa nhập/công bố/phát hành production hay cuộc thi thật GW1–5. Hướng dẫn, giới hạn, kiểm chứng và file commit ở [fantasy-results-2026.md](fantasy-results-2026.md). Bước tiếp theo là BXH GW/mùa ở bước 5 khi được giao; các checkpoint chưa chấm điểm dưới đây là lịch sử trước bước này.
@@ -35,8 +37,8 @@ Lượt tạo tài liệu ban đầu chỉ lưu context và kế hoạch. Bướ
 3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 860. Giữ các sơ đồ Fantasy đang có.
 4. Hạn chốt là **00:00 giờ Việt Nam của ngày liền trước ngày trận đầu tiên của GW diễn ra**. Lưu thời điểm trong database bằng UTC.
 5. Hạn đã công bố giữ cố định nếu lịch trận thay đổi; chỉ quản trị viên được điều chỉnh, có thông báo.
-6. Người chơi sửa nháp thoải mái trước hạn. Muốn đổi đội dự thi phải bấm chốt lại; đội đã chốt gần nhất vẫn có hiệu lực cho đến khi chốt mới thành công. Sửa nháp không tự thay đội đã chốt.
-7. Sau hạn backend từ chối thay đổi. Không chốt đúng hạn thì không tham gia GW; không tự lấy đội vòng trước.
+6. Trước hạn người chơi chỉnh đội trên sân rồi bấm **Lưu đội hình**. Mỗi lần lưu đủ 11 người hợp lệ cập nhật đội dự thi; đội đã lưu gần nhất vẫn có hiệu lực cho tới khi lưu mới thành công. Chỉnh mà chưa lưu không thay đội dự thi. Giao diện không yêu cầu thêm một thao tác chốt riêng.
+7. Sau hạn backend từ chối thay đổi, sân vẫn giữ đội đã lưu và thông báo chờ kết quả/công bố. Không lưu đội hợp lệ đúng hạn thì không tham gia GW; không tự lấy đội vòng trước.
 8. Trước hạn chỉ xem đội mình. Sau hạn có thể xem đội đã chốt của người khác; không lộ nháp qua API.
 9. Điểm đội bằng tổng rating của 11 người. Người xác nhận không ra sân hoặc không được SofaScore chấm nhận 0 điểm trong cuộc thi.
 10. Rating chưa thu thập là dữ liệu đang chờ, không tự coi là 0.
@@ -98,6 +100,8 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 - Chạy lại không tạo trùng. Sửa rating sau công bố cần thao tác tính lại được ghi nhận, cập nhật cả BXH GW và mùa nhất quán. Không tự ghi đè thống kê bóng đá hoặc membership.
 
 ### Bước 5 — Kết quả và BXH
+
+**Đã hoàn thiện local theo yêu cầu luồng người chơi:** tab BXH Gameweek/Cả mùa, chỉ latest version của GW PUBLISHED, tổng thập phân, đồng hạng, tên/điểm không email; tự cập nhật có giới hạn và kết quả riêng dưới sân. Danh sách Top 200, chưa phân trang hoặc xem đội người khác. Chưa phát hành production; chi tiết ở fantasy-player-flow-2026.md.
 
 - Xem đội đã chốt, điểm từng người, tổng điểm và thứ hạng; bộ chọn GW, BXH mùa và xem đội người khác sau deadline.
 - BXH mùa chỉ cộng các GW đã công bố; bằng điểm đồng hạng, không dùng OVR hoặc ID làm tiêu chí phụ để tách hạng. Cách hiển thị thứ tự trong nhóm đồng hạng không đổi hạng/điểm.

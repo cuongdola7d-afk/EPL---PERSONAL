@@ -19,6 +19,8 @@ public class FantasyResultController {
     public FantasyResultController(FantasyResultService results,AccountService accounts) { this.results=results;this.accounts=accounts; }
     @GetMapping("/admin/gameweeks/{gameweek}/readiness")
     public ResponseEntity<?> readiness(@PathVariable int gameweek) { return noStore(results.readiness(gameweek)); }
+    @GetMapping("/leaderboard")
+    public ResponseEntity<?> leaderboard(@RequestParam(required=false) Integer gameweek) { return noStore(results.leaderboard(gameweek)); }
     @PostMapping("/admin/gameweeks/{gameweek}/publish-results")
     public ResponseEntity<?> publish(@PathVariable int gameweek,@Valid @RequestBody PublicationRequest body,Authentication auth) {
         return noStore(results.publish(gameweek,body.expectedVersion(),accounts.current(auth.getName()).id(),body.reason(),false));

@@ -47,17 +47,27 @@ function AdminResults({ gameweek, onPublished }) {
   </section>
 }
 
-export default function FantasyResults({ account, gameweek, contestStatus, submittedVersion }) {
+export default function FantasyResults({ account, gameweek, contestStatus, submittedVersion, active = true }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
   const refresh = () => setRevision(n => n + 1)
   useEffect(() => {
+    if (!active || data?.status !== 'AWAITING_RESULTS' || !['LOCKED', 'AWAITING_RESULTS', 'PUBLISHED'].includes(contestStatus)) return
+    const update = () => { if (document.visibilityState === 'visible') setRevision(n => n + 1) }
+    const timer = setInterval(update, 60000)
+    document.addEventListener('visibilitychange', update)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', update) }
+  }, [active, data?.status, contestStatus])
+  useEffect(() => {
     const controller = new AbortController()
     setData(null); setError(''); setLoading(true)
     fetchFantasyResult(account.id, gameweek, controller.signal).then(value => {
-      if (!controller.signal.aborted) setData(value)
+      if (!controller.signal.aborted) {
+        setData(value)
+        if (value.status === 'PUBLISHED' && contestStatus !== 'PUBLISHED') window.dispatchEvent(new Event('prismaxi-results-published'))
+      }
     }).catch(failure => { if (!controller.signal.aborted) setError(failure.message) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
@@ -68,10 +78,10 @@ export default function FantasyResults({ account, gameweek, contestStatus, submi
         <button type="button" className="fantasy-clear" disabled={loading} onClick={refresh}>Cập nhật kết quả</button></div>
       {loading && <p role="status">Đang tải kết quả…</p>}
       {error && <p role="alert">{error} <button type="button" onClick={refresh}>Thử lại</button></p>}
-      {data?.status === 'NOT_PARTICIPATING' && <p>Bạn chưa chốt đội tham gia GW này.</p>}
+      {data?.status === 'NOT_PARTICIPATING' && <p>Bạn chưa lưu đội hình tham gia GW này.</p>}
       {data?.status === 'AWAITING_RESULTS' && <p role="status">Đang chờ kết quả. Điểm sẽ hiển thị sau khi quản trị viên công bố.</p>}
       {data?.status === 'PUBLISHED' && <>
-        <p className="fantasy-result-total"><strong>{formatPoints(data.result.totalPoints)}</strong> điểm · Đã công bố · phiên bản {data.version}</p>
+        <p className="fantasy-result-total" role="status">Kết quả đội của bạn đã được công bố: <strong>{formatPoints(data.result.totalPoints)}</strong> điểm · phiên bản {data.version}</p>
         <p>{formatDeadline(data.publishedAt)} · Giờ Việt Nam · {data.result.formation}</p>
         <ol className="fantasy-result-players">{data.result.players.map(player => <li key={player.slotKey}>
           <div><strong>{player.position} · {player.name}</strong><span>{player.club}</span></div>
