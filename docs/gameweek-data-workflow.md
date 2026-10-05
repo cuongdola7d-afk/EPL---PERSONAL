@@ -216,7 +216,7 @@ Sau thống kê và bộ đội hình thực đã được xác nhận/nhập, d
 
 Khi được giao công bố riêng: ADMIN lấy GET `/api/fantasy/2026/admin/gameweeks/6/readiness`, xử lý mọi blocker của cả vòng, rồi chủ động POST `publish-results` có CSRF/currentVersion/lý do. Nhập xong một số trận hoặc toàn thống kê không tự công bố; trận hoãn/chưa FINISHED tiếp tục chặn kết quả cuối. Tái tính sau sửa nguồn dùng `recalculate-results` cho toàn vòng sau xác nhận lại/readiness, không gửi điểm từ client. BXH chỉ đọc phiên bản đã công bố mới nhất.
 
-GW6 production đã OPEN và lưu đội thật đã kiểm chứng, không lặp migration/luồng lưu khi thu thập. Trước deadline người chơi có một nút **Lưu đội hình**, được lưu lại; sau hạn giữ sân/khóa/chờ kết quả, sau công bố có điểm 11 người/tổng/BXH GW và mùa. Theo checkpoint production, chưa có ADMIN; UI/API quản trị đã có nhưng cần quyền được chủ dự án cho phép cấp riêng, không tự nâng quyền khi làm dữ liệu.
+GW6 production đã OPEN và lưu đội thật đã kiểm chứng, không lặp migration/luồng lưu khi thu thập. Trước deadline người chơi có một nút **Lưu đội hình**, được lưu lại; sau hạn giữ sân/khóa/chờ kết quả, sau công bố có điểm 11 người/tổng/BXH GW và mùa. Chủ dự án đã cho phép cấp ADMIN riêng ID 2 để vận hành; phiên mới đã kiểm chứng readiness 200/ready=false, USER ID 1 bị 403. Việc thu thập/nhập vẫn không tự công bố điểm hoặc cho phép đổi quyền tài khoản khác. Xem [checkpoint production](fantasy-production-2026-10-05.md).
 
 ## 7. Báo cáo cuối mỗi lượt
 

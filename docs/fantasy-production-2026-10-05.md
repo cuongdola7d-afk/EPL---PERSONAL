@@ -1,5 +1,24 @@
 # Fantasy production — mở GW6 ngày 05/10/2026
 
+## Cấp ADMIN có xác nhận riêng — 05/10/2026
+
+Sau khi chốt quy trình kết quả, chủ dự án cho phép cấp ADMIN **chỉ ID 2 — Cường Murdock**. Đã đọc lại biến Railway của backend/MySQL trong bộ nhớ và đối chiếu đúng database `railway`, server UUID `8835db23-b8ca-11f1-89a0-a2aa18198d9d`, MySQL 9.7.2; truy vấn ID 2 khớp tên và quyền USER trước ghi. Schema hiện chỉ có một cột role với USER/ADMIN, không hỗ trợ nhiều quyền; ADMIN vẫn dùng các chức năng người chơi qua API authenticated, không thay đổi mặc định đăng ký USER.
+
+Backup riêng ngoài Git trước cập nhật, dump từng bảng với điều kiện chỉ ID 2; cả hai exit 0, đủ CREATE/INSERT và dấu hoàn tất, đã ghi SHA-256, chưa thử restore:
+
+- `backend/local-backups/admin-production-20261005-150946/accounts-id2-before-admin.sql`: **2.391 byte**, SHA-256 `e81655d77277e85cd4c6918a4a5ba70cd75b601e70d0a7dbd2eca97df99666af`.
+- `backend/local-backups/admin-production-20261005-150946/account_identities-id2-before-admin.sql`: **2.337 byte**, SHA-256 `4191ef02238ac7bd0d5a766b7994725bf7a1edf6c0dad5537b72f1d722607056`.
+
+Thao tác quản trị một lần bằng SQL trong transaction: khóa ID 2, UPDATE riêng role USER → ADMIN với điều kiện đúng ID/tên/quyền cũ. Cập nhật **1 dòng** lúc `2026-10-05T08:10:17.069159Z` (15:10:17 Việt Nam). Đọc database sau ghi xác nhận ID 2 ADMIN, ID 1 vẫn USER; so sánh dữ liệu ngoài role/liên kết Google và quyền tài khoản khác không đổi. Không tạo tài khoản, sửa đăng ký, sửa mã/schema, deadline/roster/thống kê, công bố điểm, commit/push/deploy hoặc chạy test/build. Nếu ID 2 đã ADMIN, helper không UPDATE.
+
+Audit ngoài Git: `backend/local-backups/admin-production-20261005-150946/role-change-audit.json`, có quyền cũ/mới, ID, thời gian, xác nhận của chủ dự án, backup/hash và số dòng thay đổi. Không có bảng audit quyền riêng trong schema hiện tại, không tự bổ sung bảng. Không in password/hash/email/provider subject/cookie/token; dump riêng chứa dữ liệu tài khoản nên không commit.
+
+**Phiên ADMIN và readiness đã kiểm chứng:** sau hướng dẫn đăng xuất/đăng nhập lại, người dùng gửi /me đúng ID 2/ADMIN. Lúc `2026-10-05T08:22:39.793689Z` (15:22:39 Việt Nam), đọc đúng session JDBC ID 2 còn hạn có ROLE_ADMIN và gọi GET qua Vercel: `/api/auth/me` **200/id=2/role=ADMIN**, `/api/fantasy/2026/admin/gameweeks/6/readiness` **200**, ready=false, fixtures=10, participants=1, currentVersion=0. Không còn chặn quyền. Có 83 blocker dữ liệu/điều kiện: 10 FIXTURE_PENDING, 20 LINEUP_UNCONFIRMED, 20 STARTERS_UNCONFIRMED, 10 FIXTURE_UNCONFIRMED, 11 SELECTED_STAT_MISSING, 11 PLAYER_MATCH_UNRESOLVED và 1 DEADLINE_PENDING. Đây là các kiểm tra có thể cùng áp dụng cho một fixture/cầu thủ, không phải 83 trận/người; GW6 chưa diễn ra và chưa đến deadline nên chờ là đúng. Không công bố kết quả. Cookie/security blob chỉ giữ trong bộ nhớ, không in hoặc ghi ra file; không tạo phiên thử.
+
+Chính sách `/admin/**` vẫn hasRole ADMIN và API riêng vẫn session/CSRF/proxy. Người dùng thử ID 1 và báo ACCESS_DENIED. Đối chiếu GET qua Vercel bằng đúng phiên thật còn hạn, giữ cookie trong bộ nhớ: `/api/auth/me` **200/id=1/role=USER**, readiness **403/ACCESS_DENIED** lúc `2026-10-05T08:17:44.724196Z`. Đây là từ chối quyền USER; GET không yêu cầu CSRF dù thông báo lỗi dùng chung nhắc phiên/CSRF. Không tạo tài khoản/phiên thử, giả tạo hoặc khôi phục phiên hết hạn. Phiên USER này không còn hạn ở lần đọc ADMIN 08:22 UTC; bằng chứng 403 là lần đối chiếu thật trước đó, không tái tạo phiên để chạy lại.
+
+Các mục mở GW6 bên dưới là lịch sử trước lần cấp quyền riêng này; ghi nhận lúc đó hai tài khoản USER không mô tả quyền hiện tại.
+
 Người dùng cho phép backup, bốn migration Fantasy và công bố riêng GW6 mùa 2026/27 với deadline/mốc roster cụ thể. Người dùng chọn ID 1 “song cock lee” để ghi lịch sử. Không commit/push, không đổi quyền tài khoản, không tạo đội thử hoặc công bố kết quả.
 
 ## Database, backup và migration

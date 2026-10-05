@@ -41,11 +41,13 @@ Không có người không được chấm: bỏ đối số `unrated-file` nế
 
 Lặp cùng input: thống kê `inserted=0`; đội hình `clubChanges=0 fixtureChanges=0 playerChanges=0`; bằng chứng `fixture_changes=0 unrated_changes=0`. Các command chạy một lần ở chế độ không mở HTTP rồi đóng context. Tổng mùa bóng đá là bước riêng theo giới hạn service đã ghi trong quy trình Gameweek; scoring không dùng `player_season_stats` để cộng điểm, không ép thêm dòng giả để qua giới hạn tổng mùa.
 
-### ADMIN production: công cụ có, quyền còn thiếu
+### ADMIN production: công cụ và tài khoản đã được cấp quyền
 
 Code đã có khu vực **Quản trị kết quả** trong tab **Đội hình của bạn**, bên dưới phần kết quả, chỉ hiện khi `account.role === 'ADMIN'`. Chọn GW6 → **Kiểm tra readiness** → xử lý danh sách blocker → nhập lý do → **Công bố kết quả**; có phiên bản rồi thì nút thành **Tái tính và công bố phiên bản mới**. UI tự lấy CSRF và gửi đúng currentVersion, hiển thị lịch sử/lý do/người công bố. Đăng nhập qua `https://premierhub.vercel.app`, không gọi auth/admin trực tiếp Railway để tránh mất phiên/proof proxy.
 
-Theo checkpoint production sau mở GW6, **ID 1 và ID 2 đều USER**, chưa có ADMIN. Repo chưa có API/UI/command cấp quyền quản trị. Vì vậy hiện tài khoản người chơi không thể công bố: backend `/admin/**` yêu cầu ADMIN dù có tự gọi URL. Còn cần chủ dự án chọn và cho phép cấp quyền cho một tài khoản cụ thể trong một lượt riêng; không tự nâng quyền hoặc dùng helper mở deadline để bỏ qua phân quyền công bố. Khi quyền được cấp có kiểm soát, đăng xuất/đăng nhập lại để phiên Security nhận quyền mới; reload đơn thuần chưa đủ. `/api/auth/me` cần trả role ADMIN trước khi thao tác. Lượt này không thay quyền hoặc phiên.
+Chủ dự án đã cho phép và đã cấp **ADMIN riêng ID 2 — Cường Murdock** ngày 05/10/2026 sau backup/đối chiếu danh tính; ID 1 vẫn USER. [Checkpoint/audit cấp quyền](fantasy-production-2026-10-05.md#cấp-admin-có-xác-nhận-riêng--05102026) ghi chi tiết. Repo chưa có API/UI cấp quyền; đây là thao tác vận hành có kiểm soát bằng SQL, không phải quyền tự đăng ký ADMIN. Schema hỗ trợ một quyền duy nhất; đăng ký mới vẫn USER. Backend `/admin/**` vẫn yêu cầu ADMIN dù tự gọi URL, không dùng helper mở deadline để bỏ qua phân quyền công bố.
+
+Sau cập nhật role, **đăng xuất/đăng nhập lại ID 2** để phiên Security nhận ROLE_ADMIN; reload đơn thuần chưa đủ. Đã kiểm chứng phiên thật ngày 05/10: `/api/auth/me` 200/id=2/role=ADMIN, GET readiness 200/ready=false, 10 fixture/1 người tham gia/currentVersion=0. Readiness báo chưa đến deadline, các trận chưa FINISHED và chưa có thống kê/đội hình/bằng chứng: đây là điều kiện dữ liệu đang chờ, không phải lỗi quyền. ID 1 USER đã kiểm chứng readiness 403 ACCESS_DENIED bằng phiên thật trước đó. Chưa công bố điểm.
 
 ### API có thể dùng trực tiếp
 
@@ -232,7 +234,7 @@ Schema local: [fantasy-result-schema.sql](../backend/src/main/resources/fantasy-
 
 ## Còn lại và bước tiếp theo
 
-GW6 đã OPEN, schema/mã và luồng lưu production đã đạt. Để vòng chạy trọn: chủ dự án chọn/cho phép cấp quyền ADMIN cho tài khoản cụ thể; thu thập đủ chỉ số và danh sách/sơ đồ thực cả hai đội của từng trận FINISHED; nhận rating SofaScore hoặc xác nhận không chấm; chuẩn bị/kiểm tra file, backup mới và nhập thống kê/đội hình/bằng chứng khi được giao; sau deadline và mọi fixture FINISHED, xử lý readiness rồi ADMIN công bố. Sau đó đối chiếu điểm 11 người/tổng/BXH GW/mùa bằng tài khoản thật. Chưa thực thi nhập GW6/công bố/nâng quyền trong lượt tài liệu.
+GW6 đã OPEN, schema/mã và luồng lưu production đã đạt; ID 2 đã được cấp ADMIN và readiness bằng phiên mới đã 200, USER ID 1 vẫn bị 403. Để vòng chạy trọn: thu thập đủ chỉ số và danh sách/sơ đồ thực cả hai đội của từng trận FINISHED; nhận rating SofaScore hoặc xác nhận không chấm; chuẩn bị/kiểm tra file, backup mới và nhập thống kê/đội hình/bằng chứng khi được giao; sau deadline và mọi fixture FINISHED, xử lý readiness rồi ADMIN công bố. Sau đó đối chiếu điểm 11 người/tổng/BXH GW/mùa bằng tài khoản thật. Chưa nhập thống kê/công bố kết quả GW6.
 
 Transaction toàn GW cần giữ khóa nguồn/đội trong lúc chấm; đã kiểm chứng rollback/nhất quán local, chưa đo tải công bố production. Source_ref lưu đường dẫn/nguồn và hash dữ liệu database; phải giữ file nguồn/checkpoint, không coi file nguồn tồn tại là bằng chứng đã thu thập xong. BXH GW/mùa đã phát hành; xem đội người khác/phân trang/thông báo ngoài website chưa có. Sửa rating đã có số còn thiếu command hiệu chỉnh được duyệt; không tự ghi đè để vượt xung đột.
 

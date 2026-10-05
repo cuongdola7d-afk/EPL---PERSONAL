@@ -41,7 +41,7 @@ BXH chỉ tải/poll khi tab BXH được mở; cập nhật 60 giây lúc trìn
 
 Production đã có chín bảng Fantasy và bản mã hiện hành; GW6 OPEN, deadline 09/10/2026 00:00 Việt Nam, rosterAsOf 05/10/2026. Lưu/lưu lại/reload bằng tài khoản thật đã đạt, không kiểm tra lại. Kết quả GW6 còn chờ thu thập/nhập/xác nhận nguồn đầy đủ và thao tác ADMIN. Quy trình command, readiness, quyền còn thiếu, công bố và tái tính ở [chấm điểm](fantasy-results-2026.md). Nhập dữ liệu trận không tự công bố kết quả.
 
-Kiểm tra chỉ đọc production ngày 05/10/2026: BXH GW6 và cả mùa đều HTTP 200/no-store, AWAITING_RESULTS, version null, publishedGameweeks=0, players=[]; không có điểm giả hoặc lỗi 500. Theo checkpoint production, hai tài khoản đều USER; UI/API ADMIN đã có nhưng cần chủ dự án cho phép cấp quyền cho tài khoản cụ thể riêng, không tự nâng quyền.
+Kiểm tra chỉ đọc production ngày 05/10/2026: BXH GW6 và cả mùa đều HTTP 200/no-store, AWAITING_RESULTS, version null, publishedGameweeks=0, players=[]; không có điểm giả hoặc lỗi 500. Sau lượt quy trình, chủ dự án đã cho phép cấp ADMIN riêng ID 2; ID 1 giữ USER. Đã đối chiếu phiên ID 2 mới: /me ADMIN và readiness 200/ready=false với blocker đúng; ID 1 đã bị readiness 403. UI/API quản trị giữ phân quyền/CSRF/proxy, không tự công bố điểm. Xem [checkpoint cấp quyền](fantasy-production-2026-10-05.md).
 
 Bước 5 nay đã có BXH GW/mùa và kết quả của mình; xem đội người khác sau deadline, phân trang và thông báo ngoài website vẫn chưa triển khai. Cuộc thi thật chưa được công bố trong lượt này.
 
