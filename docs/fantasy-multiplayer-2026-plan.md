@@ -2,6 +2,8 @@
 
 ## Mục tiêu và phạm vi lượt này
 
+**Checkpoint vận hành kết quả GW6 — 05/10/2026:** đã chốt hướng dẫn hiện hành một nút **Lưu đội hình**, lưu lại trước deadline, giữ sân/khóa sau hạn/chờ công bố; sau công bố có 11 dòng điểm/tổng/BXH GW và mùa. Đã nối thu thập → nhập thống kê/đội hình → nhập bằng chứng unrated/fixture → readiness → ADMIN công bố → kiểm tra/tái tính theo command/API thật trong [fantasy-results-2026.md](fantasy-results-2026.md). Lượt này chỉ tài liệu và đọc BXH production: cả hai scope trả 200/AWAITING_RESULTS/version null/players rỗng. Không lặp migration/luồng lưu đã đạt. Còn thiếu dữ liệu GW6 đã xác minh và quyền ADMIN: checkpoint có hai USER, chưa có công cụ cấp quyền; không tự nâng quyền. Rating có số cần sửa khác nội dung còn thiếu command hiệu chỉnh, phải xử lý được duyệt riêng trước xác nhận lại/tái tính. Nhập thống kê không tự công bố điểm.
+
 **Checkpoint production — 05/10/2026:** đã được người dùng cho phép, xác nhận MySQL backend đang dùng, tạo/kiểm tra backup mới 26 bảng, nhập bốn migration Fantasy và kiểm tra chạy lại không đổi schema. Đã công bố riêng **GW6 OPEN**, deadline **09/10/2026 00:00 Việt Nam = 08/10 17:00 UTC**, rosterAsOf **05/10/2026**, audit revision 1 dưới ID 1 do người dùng chọn; không nâng quyền tài khoản hoặc mở GW khác/công bố điểm. API qua Vercel hết 500; roster 534 người/20 CLB, backend hiện tại không cần redeploy. Browser production chưa đăng nhập có sân 11 ô/danh sách chọn ở desktop/390px. Người dùng xác nhận tài khoản thật lưu lại/reload đúng đội; đọc ID 1/GW6 xác nhận version 2, đúng 11 người/vị trí, 850 OVR, tối đa 3/CLB và lưu trước deadline. Không tạo đội thử production. Chi tiết backup, API và giới hạn ở [fantasy-production-2026-10-05.md](fantasy-production-2026-10-05.md). Các ghi nhận chưa nhập production bên dưới là lịch sử trước checkpoint này.
 
 **Checkpoint luồng người chơi và BXH — 05/10/2026:** người dùng chốt lại giao diện sân 11 người với một nút **Lưu đội hình**; lưu thành công là đội dự thi hiện hành, có thể lưu lại trước deadline, từ deadline giữ sân/khóa thay đổi/chờ công bố. Đã nối đúng transaction `/submit` hiện có, thêm thông báo điểm trong trang và tab BXH GW/mùa lấy phiên bản đã công bố mới nhất, bằng điểm đồng hạng. Kiểm chứng local: 17 test backend, 13 test frontend/build, browser Spring/H2 thật desktop/390px từ chọn/lưu/lưu lại → khóa → công bố → kết quả/BXH. Chưa nhập/phát hành production. Chi tiết/file commit ở [fantasy-player-flow-2026.md](fantasy-player-flow-2026.md). Quyết định này thay yêu cầu UI tách Lưu nháp/Chốt đội của checkpoint cũ; API/dữ liệu cũ giữ tương thích.
@@ -18,9 +20,9 @@
 
 Hoàn thiện Fantasy có tài khoản trước hạn chốt GW6 mùa 2026/27 để thử nghiệm với người chơi thật. Triển khai từng bước nhỏ, không làm toàn bộ trong một lượt. Chỉ phát triển mùa 2026/27, không sửa mùa 2024/25 hoặc thống kê bóng đá đã có.
 
-Lượt tạo tài liệu ban đầu chỉ lưu context và kế hoạch. Bước 1 đã có **email/mật khẩu, Google OIDC, liên kết và giới hạn xác thực được kiểm chứng local**; reload/đăng nhập lại giữ ID, không tạo tài khoản trùng. Nay đã chuẩn bị **proxy cùng origin Vercel–Railway, cookie/Google callback và migration MySQL**, kiểm chứng trên MySQL 9.6/proxy HTTPS riêng; chưa phát hành hoặc đổi production. Xem [tài khoản](auth-local-2026.md), [Google](google-auth-2026.md), [phát hành](auth-release-2026.md). Khôi phục mật khẩu làm sau; chưa triển khai chốt đội, chấm điểm hoặc BXH người chơi. Deadline thực tế GW6 chưa được xác minh; không xem mục tiêu này là quyền mở cuộc thi hay mở lại vòng đã hết hạn.
+Trạng thái hiện hành: auth email/Google/liên kết/giới hạn đã phát hành; quản lý GW, rosterAsOf, lưu đội, chấm/công bố và BXH đã có mã/schema production. GW6 OPEN với deadline 09/10/2026 00:00 Việt Nam, lưu/lưu lại/reload đã đạt. Chưa nhập/công bố dữ liệu kết quả GW6; còn quyền ADMIN có kiểm soát và thu thập/xác nhận nguồn. Khôi phục mật khẩu làm riêng. Quy trình vận hành chỉ nhập/công bố khi được giao rõ ràng; mở GW6 trước đây không cho phép tự mở GW khác.
 
-## Hiện trạng và điểm đã đối chiếu trong repo
+## Bối cảnh ban đầu đã đối chiếu trong repo — lịch sử trước các checkpoint
 
 - Theo context người dùng: backend Spring Boot, frontend React/Vite, MySQL trên Railway, frontend trên Vercel. Lượt tài khoản chỉ kiểm tra H2 local, không đọc/ghi production hoặc thử deployment.
 - [backend/pom.xml](../backend/pom.xml) giữ Java mục tiêu 21 và Spring Boot 4.1.1, Security/Session JDBC và starter kiểm thử Security theo BOM hiện có (Security 7.1.1, Session 4.1.1); thêm OAuth2 Client cho Google. Email, provider OIDC local và Google thật local đã qua kiểm tra; deployment chưa xác minh. Lượt giới hạn không thêm dependency.
@@ -35,7 +37,7 @@ Lượt tạo tài liệu ban đầu chỉ lưu context và kế hoạch. Bướ
 ## Quy tắc sản phẩm đã chốt
 
 1. Đăng ký/đăng nhập bằng email–mật khẩu và Google. Bản đầu không yêu cầu email xác thực trước khi chơi.
-2. Mỗi tài khoản có đúng một đội dự thi và một sơ đồ cho mỗi GW. Có thể lưu nháp, nhưng không tạo nhiều đội dự thi có hiệu lực cho cùng user/season/GW.
+2. Mỗi tài khoản có đúng một đội dự thi hiện hành và một sơ đồ cho mỗi GW, cập nhật bằng **Lưu đội hình**. API nháp cũ giữ tương thích, không phải bước người chơi phải thực hiện trước lưu đội.
 3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 860. Giữ các sơ đồ Fantasy đang có.
 4. Hạn chốt là **00:00 giờ Việt Nam của ngày liền trước ngày trận đầu tiên của GW diễn ra**. Lưu thời điểm trong database bằng UTC.
 5. Hạn đã công bố giữ cố định nếu lịch trận thay đổi; chỉ quản trị viên được điều chỉnh, có thông báo.
@@ -69,32 +71,32 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 
 - **Hoàn thiện local:** hai bảng GW/audit; publication đóng băng hạn, adjustment ADMIN có CSRF/proxy/reason/revision; OPEN/LOCKED/AWAITING_RESULTS tính mỗi request bằng Clock, PUBLISHED dành riêng luồng kết quả chưa triển khai. GW chưa công bố không tham gia; GW1–GW5 chỉ Replay chưa mở. Có API/no-store, countdown theo giờ server và cập nhật lúc hết hạn, giữ lựa chọn đội trong trình duyệt.
 - Kiểm tra: 19 test backend đúng phạm vi và đóng gói thành công bằng artifact kiểm tra riêng sau lỗi rename JAR Windows; 5 test frontend và build một lượt qua. Clock đọc sau SQL và test truy vấn qua deadline tránh quyết định OPEN cũ. Migration chạy hai lần trên MySQL 9.6 riêng giữ dữ liệu/constraints; không gọi H2 là kiểm chứng MySQL. Browser desktop/390px, đổi GW giữ đội và tự tải lại trạng thái LOCKED khi hết countdown đạt; chi tiết và giới hạn trong fantasy-gameweeks-2026.md.
-- **Còn trước phát hành:** backup/migration hai bảng mới, deploy được giao, quyền quản trị có kiểm soát và thao tác công bố deadline rõ ràng. Chưa lưu/chốt đội, chấm điểm/BXH, nhập SQL production, commit/push/deploy; bước tiếp theo là bước 3 khi được giao.
+- **Production hiện hành:** migration và công bố GW6 đã xong theo checkpoint, không chạy lại. Deadline/rosterAsOf được giữ cố định; vẫn cần quyền ADMIN có kiểm soát cho vận hành kết quả, không tự cấp quyền hoặc mở GW khác. Các số liệu kiểm tra local trên là lịch sử bước 2.
 
 - Lưu season, GW, deadline và trạng thái `OPEN`, `LOCKED`, `AWAITING_RESULTS`, `PUBLISHED`.
 - Kiểm tra giờ server tại mỗi lần chốt; không phụ thuộc đồng hồ trình duyệt hay cron chạy đúng giờ. Cách lưu/truy xuất trạng thái phải giữ đúng quy tắc ngay cả khi chưa có tác vụ nền đổi trạng thái.
 - Đọc lịch GW6 và UTC đã lưu để xác định deadline thực tế trước khi mở cuộc thi. Không tự mở lại vòng hết hạn; hạn đã công bố không tự đổi theo lịch sync mới.
 - Luồng quản trị điều chỉnh deadline phải có thông báo và ghi nhận thay đổi. Phân biệt dữ liệu cuộc thi chính thức với thử nghiệm/Replay GW1–GW5.
 
-### Bước 3 — Đội nháp và đội đã chốt
+### Bước 3 — Lưu đội tham gia và lưu lại trước hạn
 
-**Đã hoàn thành local:** ba bảng cho metadata, lựa chọn nháp và snapshot đội chốt; khóa database, expectedVersion, CSRF/session/kiểm tra proxy và quyền chủ tài khoản. Nháp có thể thiếu người; đội chốt đủ 11 người đúng sơ đồ/vị trí, tối đa 3 người/CLB, OVR không quá 860. Chỉnh nháp giữ nguyên đội chốt; chốt lại lỗi hoặc vượt deadline rollback toàn bộ. Clock được kiểm tra sau khi lấy khóa và trước/sau SQL ghi. API chỉ phục vụ chủ tài khoản, chưa mở xem đội người khác.
+**Đã phát hành:** ba bảng metadata/draft/snapshot, khóa database, expectedVersion, CSRF/session/proxy và quyền chủ. Website dùng một nút **Lưu đội hình**: đủ 11 người đúng sơ đồ/vị trí, tối đa 3/CLB, OVR không quá 860. Sửa trên sân chưa thay đội dự thi; lưu lại lỗi/vượt hạn rollback toàn bộ và giữ đội cũ. Clock được kiểm tra sau khóa và trước/sau SQL. API nháp thiếu người vẫn tương thích, không yêu cầu dùng trước `/submit`. Từ deadline giữ snapshot trên sân và khóa chỉnh sửa; kết quả/BXH chỉ xuất hiện sau công bố. API đội chỉ phục vụ chủ, chưa mở xem đội người khác.
 
-**Kiểm chứng:** 31 test backend và 15 test frontend đúng phạm vi đạt; build phần thay đổi đạt. Các sửa phát hiện trong kiểm tra được chạy lại đúng phần liên quan. Trình duyệt đã qua lưu nháp → chốt → sửa → chốt lại → reload, đổi GW, tab cũ xung đột, logout/đổi tài khoản và vòng khóa ở 390px. MySQL 9.6 local đã kiểm tra migration chạy lại, khóa/index/check/FK và rollback; đây chưa phải kiểm chứng service đầu cuối trên MySQL production.
+**Kiểm chứng đã có:** 31 test backend/15 frontend và MySQL 9.6 cô lập của bước 3; kiểm tra luồng một nút local trong fantasy-player-flow-2026.md. Người dùng đã thử lưu → sửa → lưu lại → reload production; ID 1/GW6 version 2, 11 người đúng vị trí/850 OVR/tối đa 3 CLB đã đối chiếu. Không lặp các kiểm tra đạt trong lượt tài liệu.
 
-**Còn lại:** backup/migration/phát hành khi được giao; chính sách roster theo GW đã hoàn thiện local trong checkpoint bổ sung. Khóa cấu hình GW vẫn tuần tự hóa các thao tác ghi cùng vòng; phép đo 20 tài khoản local đã ghi nhận hàng đợi, chưa thay khóa hoặc suy rộng sang tải production. Không tự mở lại vòng hết hạn. Bước tiếp theo là bước 4 khi người dùng yêu cầu, không tự bắt đầu chấm điểm.
+**Còn lại:** giữ cơ chế khóa hiện có; phép đo 20 tài khoản local có hàng đợi, chưa suy rộng thành benchmark production. Không tự mở lại vòng hết hạn. Tiếp tục vận hành dữ liệu/readiness/công bố khi được giao, không thay mốc rosterAsOf/snapshot đã lưu.
 
 - Lưu theo tài khoản trong MySQL để dùng trên nhiều thiết bị; mỗi user/season/GW chỉ có một đội dự thi có hiệu lực.
-- Kiểm tra lại mọi luật bằng dữ liệu server khi chốt, không tin OVR/CLB/vị trí do client gửi. Giữ các ngoại lệ OVR/vị trí đã được người dùng xác nhận trong dữ liệu hiện có.
-- Chốt lại atomically, xử lý hai request đồng thời, kiểm tra deadline trong luồng ghi; chỉ chủ tài khoản được sửa đội. Request không thành công không làm mất đội đã chốt trước đó.
-- Lưu thông tin OVR, CLB, vị trí dùng lúc chốt; cập nhật hồ sơ sau này không đổi đội đã khóa. Quyết định khóa/transaction/phiên bản và cấu trúc lưu được chốt khi triển khai bước này.
-- Tận dụng giao diện Fantasy hiện có; không tự chốt hoặc tự đưa lựa chọn cũ từ localStorage vào cuộc thi. Người chơi phải chọn vòng và chủ động chốt đội hợp lệ.
+- Backend kiểm tra mọi luật bằng database khi lưu, không tin OVR/CLB/vị trí từ client; giữ ngoại lệ dữ liệu đã được xác nhận.
+- Lưu lại atomically, xử lý đồng thời và deadline; chỉ chủ được sửa, lỗi giữ đội đã lưu trước.
+- Snapshot giữ OVR/CLB/quyền vị trí lúc lưu; hồ sơ thay đổi không viết lại đội đã khóa.
+- Người chơi chọn vòng và chủ động bấm **Lưu đội hình**; không tự nhập/chốt lựa chọn localStorage và không yêu cầu nút chốt thứ hai.
 
 ### Bước 4 — Chấm và công bố
 
-**Đã hoàn thành local:** hai bảng bằng chứng nguồn và hai bảng kết quả/version; importer xác nhận dùng file hiện có, không sửa thống kê thô; kiểm tra thiếu rating/dòng/vai trò/trận hoãn và deadline. Chỉ đội chốt hợp lệ có kết quả, nhiều trận cộng từng khóa một lần, 0 chỉ từ DNP hoặc xác nhận không chấm. Công bố ADMIN+CSRF tự kiểm tra nguồn, rollback toàn GW khi lỗi; tái tính có lý do và lịch sử, gọi lặp không tạo trùng. Giao diện riêng không trả điểm tạm và tải lại trạng thái PUBLISHED. Chi tiết ở fantasy-results-2026.md.
+**Mã/schema đã phát hành:** bằng chứng nguồn, kết quả/version, importer dùng file hiện có không sửa thống kê thô; readiness thiếu rating/dòng/vai trò/trận hoãn/deadline. Chỉ đội tham gia đã lưu hợp lệ có kết quả; nhiều trận cộng từng khóa một lần, 0 chỉ từ DNP hoặc xác nhận không chấm trong database. ADMIN+CSRF công bố transaction toàn GW, tái tính có lý do/lịch sử, gọi lặp không tạo trùng. Nhập dữ liệu không tự PUBLISHED. Command/API và trình tự vận hành ở [fantasy-results-2026.md](fantasy-results-2026.md).
 
-**Kiểm chứng:** 10 test backend và 4 test frontend đúng phạm vi; package/build đạt. Service MySQL local có hai đội/2 version, 66.77 → 67.77, giữ NULL thô và gọi lặp không tạo bản; migration lặp giữ kết quả. Desktop/390px đã thử công bố, chờ không điểm, blocker fixture, 11 dòng, reload/đổi GW. Chưa kiểm tra/cuộc thi thật hoặc production. **Còn lại:** backup/migration/xác nhận nguồn/phát hành khi được giao, BXH và xem đội người khác thuộc bước 5.
+**Kiểm chứng lịch sử:** 10 test backend/4 frontend, build và MySQL local hai đội/2 phiên bản, 66.77 → 67.77, NULL thô/idempotence/rollback, browser desktop/390px. **Còn lại cho GW6 thật:** thu thập/nhập/xác nhận đủ hai đội mỗi trận, rating do người dùng gửi, xử lý blocker readiness và có ADMIN được cấp quyền rõ ràng; chỉ công bố khi được giao và ready=true. Chưa công bố cuộc thi thật hay gọi kiểm chứng local là công bố production.
 
 - Nối rating đã nhập bằng [quy trình Gameweek](gameweek-data-workflow.md), đúng fixture/player_id/mùa/GW, không tự tìm rating hoặc thu thập lại chỉ số đã có.
 - Có trạng thái phân biệt rating chưa nhập với người đã xác nhận không được chấm; không suy luận mọi NULL là 0. Chưa đủ trận/dữ liệu thì vòng tiếp tục AWAITING_RESULTS, không công bố một phần như kết quả cuối.
@@ -103,7 +105,7 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 
 ### Bước 5 — Kết quả và BXH
 
-**Đã hoàn thiện local theo yêu cầu luồng người chơi:** tab BXH Gameweek/Cả mùa, chỉ latest version của GW PUBLISHED, tổng thập phân, đồng hạng, tên/điểm không email; tự cập nhật có giới hạn và kết quả riêng dưới sân. Danh sách Top 200, chưa phân trang hoặc xem đội người khác. Chưa phát hành production; chi tiết ở fantasy-player-flow-2026.md.
+**Đã phát hành:** tab BXH Gameweek/Cả mùa, chỉ latest version của GW PUBLISHED, tổng thập phân, đồng hạng, tên/điểm không email; tự cập nhật có giới hạn và kết quả riêng dưới sân. Top 200, chưa phân trang/xem đội người khác. BXH production hiện trống hợp lệ vì chưa công bố GW nào; chi tiết ở fantasy-player-flow-2026.md.
 
 - Xem đội đã chốt, điểm từng người, tổng điểm và thứ hạng; bộ chọn GW, BXH mùa và xem đội người khác sau deadline.
 - BXH mùa chỉ cộng các GW đã công bố; bằng điểm đồng hạng, không dùng OVR hoặc ID làm tiêu chí phụ để tách hạng. Cách hiển thị thứ tự trong nhóm đồng hạng không đổi hạng/điểm.

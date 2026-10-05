@@ -1,6 +1,6 @@
 # Luồng người chơi: lưu đội, khóa deadline, kết quả và BXH — 05/10/2026
 
-Quyết định mới của người dùng thay cách trình bày hai thao tác “Lưu nháp/Chốt đội” bằng **Lưu đội hình**. Đã triển khai và kiểm chứng local. Không nhập MySQL production, tự mở GW, commit/push/deploy hoặc sửa mùa 2024/25.
+Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp đội tham gia, không có bước bắt buộc lưu nháp rồi chốt riêng. Đã phát hành và mở GW6 production; người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Xem [checkpoint production](fantasy-production-2026-10-05.md). Lượt cập nhật quy trình chỉ sửa tài liệu/đọc BXH, không nhập thống kê, công bố điểm, đổi deadline hoặc chạy lại test/build.
 
 ## Hành vi
 
@@ -39,11 +39,13 @@ BXH chỉ tải/poll khi tab BXH được mở; cập nhật 60 giây lúc trìn
 
 ## Production và giới hạn
 
-Website production ở checkpoint trước chưa có chín bảng Fantasy bước 2–4 và overview trả 500. Bản sửa luồng/BXH này chưa phát hành, không giải quyết production bằng dùng roster khách hoặc bỏ guard. Trước thử thật vẫn cần xác nhận đích/backup mới, nhập bốn migration gameweeks → entries → roster-reference → results đã chuẩn bị, deploy backend/frontend khi được giao, rồi quản trị mở GW còn hạn với deadline và rosterAsOf hợp lệ. Không chép seed/H2, không mở lại vòng đã khóa. Xem [checkpoint sân](fantasy-pitch-recovery-2026.md) và [chấm điểm](fantasy-results-2026.md).
+Production đã có chín bảng Fantasy và bản mã hiện hành; GW6 OPEN, deadline 09/10/2026 00:00 Việt Nam, rosterAsOf 05/10/2026. Lưu/lưu lại/reload bằng tài khoản thật đã đạt, không kiểm tra lại. Kết quả GW6 còn chờ thu thập/nhập/xác nhận nguồn đầy đủ và thao tác ADMIN. Quy trình command, readiness, quyền còn thiếu, công bố và tái tính ở [chấm điểm](fantasy-results-2026.md). Nhập dữ liệu trận không tự công bố kết quả.
+
+Kiểm tra chỉ đọc production ngày 05/10/2026: BXH GW6 và cả mùa đều HTTP 200/no-store, AWAITING_RESULTS, version null, publishedGameweeks=0, players=[]; không có điểm giả hoặc lỗi 500. Theo checkpoint production, hai tài khoản đều USER; UI/API ADMIN đã có nhưng cần chủ dự án cho phép cấp quyền cho tài khoản cụ thể riêng, không tự nâng quyền.
 
 Bước 5 nay đã có BXH GW/mùa và kết quả của mình; xem đội người khác sau deadline, phân trang và thông báo ngoài website vẫn chưa triển khai. Cuộc thi thật chưa được công bố trong lượt này.
 
-File cần commit:
+File của triển khai luồng/BXH trước đây:
 
 - backend/src/main/java/com/premierhub/config/SecurityConfiguration.java
 - backend/src/main/java/com/premierhub/fantasy/FantasyResultRepository.java, FantasyResultService.java, FantasyResultController.java

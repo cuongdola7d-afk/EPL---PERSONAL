@@ -1,6 +1,139 @@
 # Chấm điểm và công bố Fantasy 2026/27 — bước 4
 
-Checkpoint 05/10/2026: hoàn thiện trên local, chỉ dùng dữ liệu giả lập cô lập. Chưa nhập migration/xác nhận nguồn lên production, chưa công bố cuộc thi thật, không xử lý cuộc thi chính thức GW1–5. Không xây BXH trong lượt này.
+Trạng thái 05/10/2026: mã chấm điểm, công bố và BXH GW/mùa đã phát hành; bốn migration Fantasy đã nhập và GW6 đã OPEN. Người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Chưa nhập thống kê/xác nhận nguồn hoặc công bố kết quả GW6. Lượt chốt quy trình này chỉ sửa tài liệu và đọc API BXH, không chạy lại migration/luồng lưu/test/build. Xem [checkpoint production](fantasy-production-2026-10-05.md).
+
+## Luồng cuối của người chơi và GW6
+
+Một nút **Lưu đội hình** cập nhật trực tiếp đội tham gia qua `/submit`. Trước deadline có thể chỉnh và lưu lại; chỉnh chưa lưu không thay đội dự thi, lưu lỗi giữ đội trước. Không yêu cầu lưu nháp rồi chốt riêng. Từ đúng deadline, giữ đội đã lưu trên sân, khóa chỉnh sửa và báo chờ kết quả. Sau công bố, hiển thị điểm từng người, tổng, phiên bản và BXH Gameweek/Cả mùa; người chưa lưu đội hợp lệ không tự có đội/kết quả.
+
+GW6 đã công bố deadline **09/10/2026 00:00 Asia/Ho_Chi_Minh = 08/10/2026 17:00 UTC**, rosterAsOf **05/10/2026**. Không đổi deadline khi lịch sync thay đổi. Hệ thống dùng Clock server, không cần cron khóa đội. Thông báo điểm nằm trong website; chưa có email/push. Chi tiết polling/Top 200 và API BXH ở [luồng người chơi](fantasy-player-flow-2026.md).
+
+## Vận hành GW6 từ thu thập đến kết quả
+
+Đây là hướng dẫn cho các lượt được giao sau, **không phải yêu cầu thực thi nhập/công bố trong lượt cập nhật tài liệu**. “Tổng hợp GW6” chỉ chuẩn bị và kiểm tra file; quyền nhập SQL không đồng nghĩa quyền công bố Fantasy.
+
+1. Tiếp tục checkpoint GW6 theo [quy trình Gameweek](gameweek-data-workflow.md), lấy đủ dữ liệu **cả hai đội của từng fixture FINISHED**. Trận hoãn/chưa xong ghi chờ; tiếp tục phần độc lập. Lịch/UTC/trạng thái/tỉ số từ football-data.org, phút/bàn/kiến tạo/thẻ từ StatMuse; rating SofaScore chỉ từ ảnh/bảng người dùng cung cấp. Không thu thập lại dữ liệu đã hoàn thành.
+2. Dùng một CSV thống kê cuối 10 cột, `sources.md`, `missing.csv`, bộ CSV đội hình/sơ đồ hiện có và `confirmed-unrated.csv` nếu có ngoại lệ không được chấm. Không thêm cột vào CSV thống kê, suy ra đá chính từ phút/rating hoặc ép 40 người/trận. Xác nhận không chấm phải được nhập database; ghi chú đơn thuần chưa đủ cho scoring. Rating chưa thu thập vẫn là blocker, không tính 0.
+3. Khi được giao nhập đúng đích: kiểm tra input/membership/xung đột, backup SQL mới ngoài Git và kiểm tra hoàn tất, nhập thống kê → đội hình → bằng chứng Fantasy bằng các command dưới đây; lặp xác nhận không thay đổi, đối chiếu API từng fixture. Giữ dữ liệu thô NULL của người không được chấm. **Các command này không công bố kết quả, không chuyển GW sang PUBLISHED.**
+4. Sau deadline, ADMIN kiểm tra readiness toàn GW. Mọi trận phải FINISHED và có bằng chứng đầy đủ; từng người của đội tham gia phải có rating hoặc căn cứ 0. Thiếu dòng thống kê không mặc nhiên DNP. Trận hoãn giữ cả vòng chờ; nhập xong vài trận không đủ công bố cuối.
+5. Khi ready=true, ADMIN chủ động công bố bằng UI hoặc API + CSRF. Backend tự tính tổng/breakdown, ghi cả GW trong transaction và chỉ đặt PUBLISHED sau khi thành công. Kiểm tra kết quả tài khoản thật và cả hai BXH. Không công bố điểm tạm hoặc đội thử.
+6. Nếu rating được sửa sau công bố, cập nhật nguồn có kiểm soát, xác nhận lại và kiểm tra readiness rồi **tái tính cả GW với lý do/phiên bản**. BXH lấy phiên bản mới nhất, không cộng trùng bản cũ.
+
+### Command nhập thật — chỉ chạy khi được giao nhập SQL
+
+Chạy từ `backend/` bằng JAR đã được duyệt khớp mã phát hành. Datasource production lấy từ môi trường: `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; command không tự nạp `.env.local`. Private hostname Railway chỉ dùng trong mạng Railway; nếu vận hành từ máy ngoài, cấu hình kết nối public proxy đã xác minh với TLS/UTC qua môi trường, không đưa password lên command line/log. Không đổi start command của service, bật runner thường trực, tạo cron hoặc Pre-deploy Command.
+
+Các đường dẫn dưới đây là bộ file **sẽ chuẩn bị** khi thu thập GW6, không phải dữ liệu đã có/đã nhập. `$releaseJar` trỏ artifact đúng phiên bản; nếu tên artifact khác thì thay bằng tên thực tế, không build lại chỉ để nhập dữ liệu.
+
+```powershell
+$releaseJar = 'target/premierhub-backend-0.1.0-SNAPSHOT.jar'
+$statsFile = 'data/gw6-2026/manual-match-stats-2026-GW6.csv'
+$sourceFile = 'data/gw6-2026/sources.md'
+$unratedFile = 'data/gw6-2026/confirmed-unrated.csv'
+$lineupsDirectory = 'data/gw6-2026/lineups'
+
+java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-match-stats.enabled=true "--premierhub.manual-match-stats.file=$statsFile"
+java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.match-lineups.enabled=true "--premierhub.match-lineups.directory=$lineupsDirectory"
+java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.fantasy-evidence.enabled=true "--premierhub.fantasy-evidence.stats-file=$statsFile" "--premierhub.fantasy-evidence.unrated-file=$unratedFile" "--premierhub.fantasy-evidence.source-file=$sourceFile"
+```
+
+Không có người không được chấm: bỏ đối số `unrated-file` nếu chưa từng có xác nhận của các fixture đó, hoặc dùng file chỉ header làm danh sách cuối rỗng. Khi cần bỏ xác nhận cũ đã hết hiệu lực, phải truyền sidecar cuối hiện hành (có thể chỉ header) cùng CSV đầy đủ. Importer không coi file rating đang chờ là xác nhận không chấm. Bộ đội hình đọc `clubs.csv`, `formations.csv`, `players.csv` theo header ở quy trình Gameweek; kiểm tra không ghi đè metadata CLB/sơ đồ khác nội dung trước nhập.
+
+Lặp cùng input: thống kê `inserted=0`; đội hình `clubChanges=0 fixtureChanges=0 playerChanges=0`; bằng chứng `fixture_changes=0 unrated_changes=0`. Các command chạy một lần ở chế độ không mở HTTP rồi đóng context. Tổng mùa bóng đá là bước riêng theo giới hạn service đã ghi trong quy trình Gameweek; scoring không dùng `player_season_stats` để cộng điểm, không ép thêm dòng giả để qua giới hạn tổng mùa.
+
+### ADMIN production: công cụ có, quyền còn thiếu
+
+Code đã có khu vực **Quản trị kết quả** trong tab **Đội hình của bạn**, bên dưới phần kết quả, chỉ hiện khi `account.role === 'ADMIN'`. Chọn GW6 → **Kiểm tra readiness** → xử lý danh sách blocker → nhập lý do → **Công bố kết quả**; có phiên bản rồi thì nút thành **Tái tính và công bố phiên bản mới**. UI tự lấy CSRF và gửi đúng currentVersion, hiển thị lịch sử/lý do/người công bố. Đăng nhập qua `https://premierhub.vercel.app`, không gọi auth/admin trực tiếp Railway để tránh mất phiên/proof proxy.
+
+Theo checkpoint production sau mở GW6, **ID 1 và ID 2 đều USER**, chưa có ADMIN. Repo chưa có API/UI/command cấp quyền quản trị. Vì vậy hiện tài khoản người chơi không thể công bố: backend `/admin/**` yêu cầu ADMIN dù có tự gọi URL. Còn cần chủ dự án chọn và cho phép cấp quyền cho một tài khoản cụ thể trong một lượt riêng; không tự nâng quyền hoặc dùng helper mở deadline để bỏ qua phân quyền công bố. Khi quyền được cấp có kiểm soát, đăng xuất/đăng nhập lại để phiên Security nhận quyền mới; reload đơn thuần chưa đủ. `/api/auth/me` cần trả role ADMIN trước khi thao tác. Lượt này không thay quyền hoặc phiên.
+
+### API có thể dùng trực tiếp
+
+Các route đầy đủ cho GW6:
+
+| Thao tác | Method/path |
+| --- | --- |
+| Readiness/lịch sử | GET `/api/fantasy/2026/admin/gameweeks/6/readiness` |
+| Công bố lần đầu | POST `/api/fantasy/2026/admin/gameweeks/6/publish-results` |
+| Tái tính toàn vòng | POST `/api/fantasy/2026/admin/gameweeks/6/recalculate-results` |
+| Kết quả của mình | GET `/api/fantasy/2026/me/gameweeks/6/result`, header `X-PrismaXI-Account-ID` bằng ID của tài khoản đang đăng nhập |
+| BXH GW6 | GET `/api/fantasy/2026/leaderboard?gameweek=6` |
+| BXH cả mùa | GET `/api/fantasy/2026/leaderboard` |
+
+Nếu không dùng nút UI, đoạn sau chạy trong DevTools **ngay tại website Vercel**, sau khi đã đăng nhập ADMIN. Chỉ khai báo helper và gọi GET readiness, chưa công bố; không in CSRF/cookie:
+
+```javascript
+async function fantasyAdminGw6(action, body) {
+  if (location.origin !== 'https://premierhub.vercel.app') throw new Error('Mở đúng website production.');
+  if (!['readiness', 'publish-results', 'recalculate-results'].includes(action)) throw new Error('Thao tác không hợp lệ.');
+  const headers = { Accept: 'application/json' };
+  if (body) {
+    const csrfResponse = await fetch('/api/auth/csrf', { credentials: 'include' });
+    if (!csrfResponse.ok) throw new Error('Không lấy được CSRF.');
+    const csrf = await csrfResponse.json();
+    headers[csrf.headerName] = csrf.token;
+    headers['Content-Type'] = 'application/json';
+  }
+  const response = await fetch('/api/fantasy/2026/admin/gameweeks/6/' + action, {
+    credentials: 'include', headers,
+    ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error('HTTP ' + response.status + ' · ' + (data.message ?? 'Không thực hiện được.'));
+  return data;
+}
+let readiness = await fantasyAdminGw6('readiness');
+console.table(readiness.issues);
+```
+
+Chỉ khi được giao công bố và đã đọc readiness ready=true/currentVersion=0, **chủ động chạy riêng**:
+
+```javascript
+if (!readiness.ready || readiness.currentVersion !== 0) throw new Error('Chưa sẵn sàng công bố lần đầu.');
+await fantasyAdminGw6('publish-results', {
+  expectedVersion: readiness.currentVersion,
+  reason: 'Đã xác nhận đầy đủ dữ liệu và rating SofaScore GW6 của cả hai đội mỗi trận.',
+});
+```
+
+Backend kiểm tra lại readiness và version trong transaction; không nhận điểm từ client. 409 `RESULTS_NOT_READY`: đọc GET readiness lại để lấy fixtureId/playerId/accountId/code/message, hoàn thiện phần thiếu rồi thử khi đủ; không tắt CSRF/bỏ validator. 409 phiên bản: tải lại readiness/lịch sử, không đoán expectedVersion. Dữ liệu không đổi có thể trả `unchanged=true` và giữ phiên bản, không phải lỗi.
+
+Kiểm tra BXH chỉ đọc từ PowerShell, không cần account/cookie:
+
+```powershell
+Invoke-RestMethod 'https://premierhub.vercel.app/api/fantasy/2026/leaderboard?gameweek=6'
+Invoke-RestMethod 'https://premierhub.vercel.app/api/fantasy/2026/leaderboard'
+```
+
+Lần đọc production trong lượt tài liệu 05/10/2026: cả hai **HTTP 200**, `Cache-Control: no-store`, `status: "AWAITING_RESULTS"`, `version: null`, `publishedGameweeks: 0`, `players: []`; gameweek là 6 hoặc null cho mùa. Đây là trạng thái trống hợp lệ, không lỗi 500/điểm giả. Sau công bố phải thấy PUBLISHED, phiên bản mới nhất/điểm đúng; BXH mùa chỉ cộng GW đã công bố và bằng điểm đồng hạng. Kết quả riêng cần session chủ và header ID; dùng nút **Cập nhật kết quả** hoặc reload để đối chiếu 11 dòng/tổng/version.
+
+### Rating sửa: công cụ hiện có và phần còn thiếu
+
+**NULL → rating được người dùng bổ sung:** patch importer chỉ nhận một fixture và chỉ lấp NULL; ô trống không thay dữ liệu. Sau backup/đối chiếu và quyền nhập, chuẩn bị file patch 10 cột riêng cho đúng fixture, giữ CSV cuối chung đã cập nhật, rồi dùng command thật:
+
+```powershell
+# Gán $patchFile và $fixtureId bằng file/ID nội bộ thật đã được xác nhận trước khi chạy.
+java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-match-stats.enabled=true "--premierhub.manual-match-stats.file=$patchFile" "--premierhub.manual-match-stats.fill-missing-fixture=$fixtureId"
+```
+
+Lặp phải `updated=0 filled_cells=0`. Nếu NULL trước đó được xác nhận không chấm, bỏ người đó khỏi sidecar cuối, rồi chạy lại evidence command với CSV cuối/sidecar/nguồn. Importer loại xác nhận cũ trong phạm vi các fixture đầy đủ đã truyền và cập nhật hash.
+
+**Rating đã có số → số khác:** importer thường từ chối xung đột; patch không ghi đè số đã có. Repo chưa có command sửa rating khác nội dung. Cần một lượt xử lý được chủ dự án duyệt rõ fixture/player_id, giá trị cũ/mới và nguồn, backup mới, cập nhật có kiểm soát; không ghi tên một cờ overwrite không tồn tại hoặc xóa dòng để nhập lại. Trong lượt quy trình này chưa sửa dữ liệu. Sau khi nguồn database thực sự đã sửa, cập nhật CSV cuối/nguồn, chạy evidence command xác nhận lại. Hash cũ không còn hợp lệ sẽ chặn tái tính cho tới khi xác nhận lại đầy đủ.
+
+Sau cập nhật và evidence, ADMIN lấy readiness mới, chỉ tái tính khi ready=true và currentVersion>0, nhập lý do thật nêu phạm vi sửa:
+
+```javascript
+readiness = await fantasyAdminGw6('readiness');
+if (!readiness.ready || readiness.currentVersion < 1) throw new Error('Chưa đủ điều kiện tái tính GW đã công bố.');
+const correctionReason = prompt('Ghi lý do thực tế: fixture/player_id, rating cũ/mới và nguồn đã xác nhận');
+if (!correctionReason || correctionReason.trim().length < 3) throw new Error('Cần lý do tái tính.');
+await fantasyAdminGw6('recalculate-results', {
+  expectedVersion: readiness.currentVersion,
+  reason: correctionReason.trim(),
+});
+```
+
+Đối chiếu version/11 dòng/tổng và BXH GW/mùa sau tái tính; bản cũ vẫn có lịch sử. Website đã nhận PUBLISHED dừng polling chờ điểm, nên người chơi dùng **Cập nhật kết quả**/reload để nhận bản sửa; BXH đang mở vẫn cập nhật định kỳ. Không hứa thông báo riêng tức thời cho mỗi lần hiệu chỉnh.
 
 ## Điểm và bằng chứng nguồn
 
@@ -78,7 +211,7 @@ Issue có `fixtureId`, `playerId`, `accountId` khi xác định được, `code`
 
 Công bố dùng transaction SERIALIZABLE, khóa GW rồi đọc/khóa nguồn và đội tham gia. Lưu phiên bản, kết quả tất cả đội, cuối cùng mới đặt GW PUBLISHED; lỗi một đội rollback toàn GW. Hash phiên bản dựa trên nguồn đã xác nhận và snapshot đội chốt, không dựa bản nháp. Gọi lại với cùng dữ liệu trả `unchanged=true`, không tạo phiên bản/lịch sử giả. Dữ liệu đổi cần xác nhận nguồn mới, version đúng và thao tác tái tính có lý do. Tái tính lưu bản mới cho toàn vòng, giữ bản cũ và lịch sử; API đọc một phiên bản nhất quán. Trong lúc chờ tái tính thành công, bản đã công bố trước tiếp tục là kết quả hiện hành.
 
-Hai bảng kết quả: `fantasy_result_publications` (PK mùa/GW/version, hash, người/thời điểm, PUBLISH/RECALCULATE, lý do) và `fantasy_team_results` (PK tài khoản/mùa/GW/version, submitted_version, tổng và JSON breakdown). Không có bảng BXH trong lượt này.
+Hai bảng kết quả: `fantasy_result_publications` (PK mùa/GW/version, hash, người/thời điểm, PUBLISH/RECALCULATE, lý do) và `fantasy_team_results` (PK tài khoản/mùa/GW/version, submitted_version, tổng và JSON breakdown). BXH GW/mùa truy vấn phiên bản mới nhất từ hai bảng này, không có bảng BXH riêng.
 
 ## Giao diện và dữ liệu riêng
 
@@ -86,7 +219,7 @@ Fantasy có khu vực kết quả đội mình: tải/lỗi/thử lại, “Đan
 
 Đổi account/GW hủy request cũ và xóa kết quả trước; backend luôn xác định chủ từ session. API/result không công khai email hoặc bản nháp. Không tự nhập lựa chọn localStorage, không đổi đội chốt, không có API xem kết quả người khác trong bước này.
 
-## Migration và kiểm chứng
+## Migration và kiểm chứng lịch sử
 
 Schema local: [fantasy-result-schema.sql](../backend/src/main/resources/fantasy-result-schema.sql). Migration: [2026-10-05-fantasy-results-mysql.sql](../backend/sql/2026-10-05-fantasy-results-mysql.sql), MySQL 8.0.17+, bốn bảng bổ sung, FK/index/unique, UTC, CREATE TABLE IF NOT EXISTS; cần các migration tài khoản/GW/entry và bảng dữ liệu bóng đá trước đó. Không có DROP/reset/seed hay sao chép tài khoản H2. Production giữ SQL init tắt; bước backup/nhập migration/phát hành chỉ thực hiện khi được giao riêng.
 
@@ -99,11 +232,11 @@ Schema local: [fantasy-result-schema.sql](../backend/src/main/resources/fantasy-
 
 ## Còn lại và bước tiếp theo
 
-Chưa nhập xác nhận cho dữ liệu thực, chưa khẳng định GW nào thật đã sẵn sàng. Trước dùng production cần backup, migration các bước chưa phát hành, ADMIN có kiểm soát, nhập thống kê/đội hình/ngoại lệ thực đã được xác nhận và kiểm tra readiness. Không có dữ liệu thực nào được thay bằng seed local.
+GW6 đã OPEN, schema/mã và luồng lưu production đã đạt. Để vòng chạy trọn: chủ dự án chọn/cho phép cấp quyền ADMIN cho tài khoản cụ thể; thu thập đủ chỉ số và danh sách/sơ đồ thực cả hai đội của từng trận FINISHED; nhận rating SofaScore hoặc xác nhận không chấm; chuẩn bị/kiểm tra file, backup mới và nhập thống kê/đội hình/bằng chứng khi được giao; sau deadline và mọi fixture FINISHED, xử lý readiness rồi ADMIN công bố. Sau đó đối chiếu điểm 11 người/tổng/BXH GW/mùa bằng tài khoản thật. Chưa thực thi nhập GW6/công bố/nâng quyền trong lượt tài liệu.
 
-Transaction toàn GW cần giữ khóa nguồn/đội trong lúc chấm; đã kiểm chứng rollback/nhất quán, chưa đo tải production. Source_ref lưu đường dẫn/nguồn và hash dữ liệu database; phải giữ file nguồn/checkpoint, không coi file nguồn tồn tại là bằng chứng đã thu thập xong. BXH GW/mùa và xem đội người khác thuộc bước 5, chỉ bắt đầu khi được giao.
+Transaction toàn GW cần giữ khóa nguồn/đội trong lúc chấm; đã kiểm chứng rollback/nhất quán local, chưa đo tải công bố production. Source_ref lưu đường dẫn/nguồn và hash dữ liệu database; phải giữ file nguồn/checkpoint, không coi file nguồn tồn tại là bằng chứng đã thu thập xong. BXH GW/mùa đã phát hành; xem đội người khác/phân trang/thông báo ngoài website chưa có. Sửa rating đã có số còn thiếu command hiệu chỉnh được duyệt; không tự ghi đè để vượt xung đột.
 
-File cần commit (target/dist không commit):
+File của triển khai bước 4 trước đây (target/dist không commit):
 
 - `backend/sql/2026-10-05-fantasy-results-mysql.sql`
 - `backend/src/main/resources/fantasy-result-schema.sql`, `application.properties`

@@ -47,6 +47,7 @@ gw6-2026/
 ├── manual-match-stats-2026-GW6.csv
 ├── sources.md
 ├── missing.csv
+├── confirmed-unrated.csv    # Khi có người đã được xác nhận SofaScore không chấm; không phải rating đang chờ
 └── lineups/                 # Chỉ tạo khi có dữ liệu cần nhập bằng LineupBatchImporter
     ├── clubs.csv
     ├── formations.csv
@@ -83,6 +84,7 @@ Giữ một checkpoint ngắn ngay trong `sources.md`, cập nhật sau mỗi ba
 - Chỉ số/rating/đội hình đã hoàn thành; ảnh hoặc trường còn thiếu, ngoại lệ đã xác nhận.
 - File thống kê dùng để nhập, lần kiểm tra reader/membership gần nhất; phần thay đổi kể từ checkpoint.
 - Trạng thái riêng: chuẩn bị file, kiểm tra local, đã nhập local, đã nhập production, API đã đối chiếu, tổng mùa cập nhật đến GW nào. Chưa làm bước nào thì ghi “chưa”.
+- Fantasy ghi riêng: đã nhập bằng chứng fixture/unrated chưa, readiness còn blocker gì, kết quả đã công bố chưa/currentVersion. “Đã nhập thống kê” không đồng nghĩa “đã công bố Fantasy”.
 - Bước tiếp theo cụ thể. Phiên sau tiếp tục bước đó, không bắt đầu lại từ đầu.
 
 ### Dữ liệu đội hình: giữ định dạng importer hiện có
@@ -207,6 +209,14 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=
 - Với **từng** fixture FINISHED đã nhập: `GET /api/matches/{fixture_id}/details?season=2026`, đối chiếu đúng hai CLB, tập playerId, participationStatus, minutes/goals/assists/yellowCards/redCards/rating/fantasyPoints với CSV và membership ngày trận. Không ép 20 người/đội khi nguồn thực tế khác. PLAYED không được chấm phải có cả rating/fantasyPoints NULL; DID_NOT_PLAY có fantasyPoints=0.
 - Nếu nhập đội hình: đối chiếu homeLineup/awayLineup, role, formation/source và ID; thiếu dữ liệu phải hiện thiếu, không suy từ sơ đồ giao diện.
 - Không báo API đã phản ánh nếu chưa kiểm tra hoặc backend đang chạy chưa có chức năng tương ứng. Dữ liệu đơn thuần không cần deploy; nếu cần sửa mã thì xử lý phạm vi đó khi được giao, chạy test/build liên quan một lần.
+
+### Nối sang kết quả Fantasy — thao tác công bố riêng
+
+Sau thống kê và bộ đội hình thực đã được xác nhận/nhập, dùng `FantasyEvidenceCommand` với CSV cuối 10 cột, `sources.md` và sidecar `confirmed-unrated.csv` hiện hành để ghi hai bảng bằng chứng. Command không sửa rating thô hoặc công bố điểm. Rating chưa thu thập không vào sidecar và không tính 0; người được xác nhận không chấm giữ rating/fantasy_points NULL, scoring chỉ có căn cứ 0 sau khi xác nhận trong database. Header, command production/local, cách chạy lại và xử lý rating sửa đã đối chiếu code ở [quy trình kết quả GW6](fantasy-results-2026.md#vận-hành-gw6-từ-thu-thập-đến-kết-quả).
+
+Khi được giao công bố riêng: ADMIN lấy GET `/api/fantasy/2026/admin/gameweeks/6/readiness`, xử lý mọi blocker của cả vòng, rồi chủ động POST `publish-results` có CSRF/currentVersion/lý do. Nhập xong một số trận hoặc toàn thống kê không tự công bố; trận hoãn/chưa FINISHED tiếp tục chặn kết quả cuối. Tái tính sau sửa nguồn dùng `recalculate-results` cho toàn vòng sau xác nhận lại/readiness, không gửi điểm từ client. BXH chỉ đọc phiên bản đã công bố mới nhất.
+
+GW6 production đã OPEN và lưu đội thật đã kiểm chứng, không lặp migration/luồng lưu khi thu thập. Trước deadline người chơi có một nút **Lưu đội hình**, được lưu lại; sau hạn giữ sân/khóa/chờ kết quả, sau công bố có điểm 11 người/tổng/BXH GW và mùa. Theo checkpoint production, chưa có ADMIN; UI/API quản trị đã có nhưng cần quyền được chủ dự án cho phép cấp riêng, không tự nâng quyền khi làm dữ liệu.
 
 ## 7. Báo cáo cuối mỗi lượt
 
