@@ -10,6 +10,8 @@ import TeamOfWeek from './TeamOfWeek.jsx'
 import FantasyGameweek from './FantasyGameweek.jsx'
 import FantasyResults from './FantasyResults.jsx'
 import FantasyLeaderboard from './FantasyLeaderboard.jsx'
+import FantasyRules from './FantasyRules.jsx'
+import { ArrowIcon } from './HomeArtwork.jsx'
 import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
 import { emptyLineup, entryLineup } from '../fantasy/entry.js'
 import { useFantasyResult } from '../hooks/useFantasyResult.js'
@@ -29,6 +31,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [contestGameweek, setContestGameweek] = useState(null)
   const [contestOpen, setContestOpen] = useState(false)
   const [contestStatus, setContestStatus] = useState(null)
+  const [contestDeadline, setContestDeadline] = useState(null)
   const [rosterAsOf, setRosterAsOf] = useState(null)
   const requestPlayers = useCallback((signal) => {
     if (authLoading || account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
@@ -37,8 +40,8 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
   const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
-  const contestSelection = useCallback((gw, open, asOf, status) => {
-    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status)
+  const contestSelection = useCallback((gw, open, asOf, status, deadline) => {
+    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status); setContestDeadline(deadline)
   }, [])
   const lockedSubmission = account && entry.ready && !contestOpen && entry.data?.submitted
   const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({
@@ -135,9 +138,19 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
 
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
-      <header className="fantasy-head">
-        <div><p className="fantasy-kicker">prismaXI · FANTASY 2026/27</p><h1 id="fantasy-heading">{VIEWS.find(([key]) => key === view)[1]}</h1>
-          <p>{view === 'user' ? `Chọn 11 cầu thủ và lưu đội hình trước deadline · tối đa 3/CLB · OVR tối đa ${MAX_OVR}.` : view === 'team' ? '11 cầu thủ · 4-3-3 · tổng rating SofaScore cao nhất mỗi vòng.' : 'Điểm cao xếp trên · chỉ tính các GW đã công bố.'}</p></div>
+      <header className="fantasy-head fantasy-hero">
+        <div><p className="fantasy-kicker">prismaXI / Fantasy · 2026/27</p>
+          <h1 id="fantasy-heading" className="fantasy-hero-title"><span>Chọn XI trong mơ của bạn.</span><span>Chinh phục từng vòng đấu.</span></h1>
+          <p>Chọn 11 cầu thủ theo sơ đồ và giới hạn {MAX_OVR} OVR. Lưu đội hình trước hạn rồi cạnh tranh điểm số qua từng Gameweek.</p>
+          <button type="button" className="fantasy-hero-cta" onClick={() => {
+            setView('user'); setActiveKey(null)
+            requestAnimationFrame(() => {
+              const builder = document.getElementById('fantasy-lineup-builder')
+              builder?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
+              builder?.focus({ preventScroll: true })
+            })
+          }}>Tạo đội hình<ArrowIcon diagonal /></button>
+        </div>
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
@@ -157,6 +170,9 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
       {view === 'leaderboard' && <div id="fantasy-panel-leaderboard" role="tabpanel" aria-labelledby="fantasy-tab-leaderboard">
         <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>
+      <div className="fantasy-builder-head" id="fantasy-lineup-builder" tabIndex={-1}>
+        <h2>Chọn đội hình</h2><FantasyRules gameweek={contestGameweek} deadlineUtc={contestDeadline} />
+      </div>
       {authLoading && <p role="status">Đang nhận phiên đăng nhập…</p>}
       {authError && <p className="fantasy-message" role="alert">Chưa xác định được tài khoản: {authError}</p>}
       {!authLoading && !account && <p className="fantasy-message">Đăng nhập để lưu đội hình của bạn cho Gameweek. Lựa chọn thử trong trình duyệt không tự tham gia cuộc thi.</p>}

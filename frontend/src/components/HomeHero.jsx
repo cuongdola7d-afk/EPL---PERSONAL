@@ -9,10 +9,10 @@ export default function HomeHero({ active, onChange, fixtures, week }) {
   const moved = useRef(false)
   activeRef.current = active
   const slides = [
-    { key: 'clubs', label: 'Câu lạc bộ', title: 'Một giải đấu.', highlight: 'Nhiều câu chuyện.',
-      description: 'Bắt đầu khám phá Premier League qua danh sách câu lạc bộ. Tìm tên đội bạn quan tâm từ dữ liệu của prismaXI.', cta: 'Xem câu lạc bộ' },
-    { key: 'fantasy', label: 'Fantasy · 2026/27', title: 'Đội hình của bạn.', highlight: 'Điểm số của bạn.',
-      description: `Chọn 11 cầu thủ đúng vị trí trong giới hạn ${MAX_OVR} OVR, rồi theo dõi điểm số từ rating mỗi vòng đấu.`, cta: 'Xếp đội hình', href: '#fantasy' },
+    { key: 'clubs', label: 'Câu lạc bộ', title: '20 câu lạc bộ.', highlight: 'Một cuộc đua.',
+      description: 'Khám phá các đội bóng Premier League, đội hình và hành trình của họ qua từng vòng đấu.', cta: 'Khám phá câu lạc bộ' },
+    { key: 'fantasy', label: 'Fantasy · 2026/27', title: 'Chọn XI trong mơ của bạn.', highlight: 'Chinh phục từng vòng đấu.',
+      description: `Chọn 11 cầu thủ theo sơ đồ và giới hạn ${MAX_OVR} OVR. Lưu đội hình trước hạn rồi cạnh tranh điểm số qua từng Gameweek.`, cta: 'Tạo đội hình', href: '#fantasy' },
     { key: 'matches', label: 'Lịch đấu', title: 'Từng vòng đấu.', highlight: 'Đừng bỏ lỡ.',
       description: 'Xem lịch và kết quả từng vòng, bấm vào một trận để mở đội hình, điểm đánh giá và thống kê cầu thủ.', cta: 'Xem lịch đấu', href: '#matches' },
     { key: 'players', label: 'Cầu thủ', title: 'Mỗi cầu thủ.', highlight: 'Một lăng kính.',
@@ -64,7 +64,7 @@ export default function HomeHero({ active, onChange, fixtures, week }) {
       onClickCapture={event => { if (moved.current) { event.preventDefault(); event.stopPropagation(); moved.current = false } }}>
       {slides.map((slide, index) => {
         const Heading = index === 0 ? 'h1' : 'h2'
-        return <article className="cx-slide" key={slide.key} inert={index !== active} aria-hidden={index !== active}
+        return <article className={`cx-slide${slide.key === 'fantasy' ? ' cx-slide-fantasy' : ''}`} key={slide.key} inert={index !== active} aria-hidden={index !== active}
           aria-roledescription="slide" aria-label={`${index + 1} trên ${slides.length}`}>
           <div className="cx-slide-inner"><div className="cx-slide-copy">
             <p className="cx-eyebrow"><i aria-hidden="true" />prismaXI / {slide.label}</p>

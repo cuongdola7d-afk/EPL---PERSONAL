@@ -1,0 +1,17 @@
+.fantasy-rules-trigger { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 0; border: 0; background: transparent; color: var(--f-accent); font-size: .85rem !important; font-weight: 650 !important; cursor: pointer; }
+.fantasy-rules-trigger > span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid currentColor; border-radius: 50%; font-family: Georgia, serif; font-size: 1rem; font-weight: 700; }
+.fantasy-rules-dialog { width: min(680px, calc(100% - 32px)); max-width: none; max-height: min(82dvh, 760px); margin: auto; padding: 0; border: 1px solid #46e2b54d; border-radius: 22px; background: #12272f; color: #eaf5f2; color-scheme: dark; font-family: 'Be Vietnam Pro', system-ui, sans-serif; box-shadow: 0 24px 80px #0009; overflow: hidden; }
+.fantasy-rules-dialog[open] { display: flex; flex-direction: column; }
+.fantasy-rules-dialog::backdrop { background: #041016c9; backdrop-filter: blur(4px); }
+.fantasy-rules-head { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 16px; padding: 20px 24px; border-bottom: 1px solid #ffffff1a; }
+.fantasy-rules-head h2 { margin: 0; font-size: 1.15rem; line-height: 1.45; }
+.fantasy-rules-dialog .fantasy-rules-close { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 1px solid #ffffff33; border-radius: 50%; background: #183039; color: #eaf5f2; font: inherit; font-size: 1.5rem; cursor: pointer; }
+.fantasy-rules-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 24px 24px; font-size: .88rem; line-height: 1.75; }
+.fantasy-rules-body > p { color: #a2bbc1; }
+.fantasy-rules-body section + section { margin-top: 24px; }
+.fantasy-rules-body h3 { color: #46e2b5; margin: 14px 0 8px; font-size: 1rem; }
+.fantasy-rules-body ul { margin: 0; padding-left: 20px; }
+.fantasy-rules-body li + li { margin-top: 8px; }
+.fantasy-rules-deadline { padding: 10px 12px; border: 1px solid #46e2b530; border-radius: 12px; background: #46e2b50c; }
+.fantasy-rules-dialog :focus-visible { outline: 2px solid #46e2b5; outline-offset: -2px; }
+@media (max-width: 480px) { .fantasy-rules-dialog { max-height: 88dvh; border-radius: 18px; }.fantasy-rules-head { padding: 16px; gap: 10px; }.fantasy-rules-head h2 { font-size: 1rem; }.fantasy-rules-body { padding: 6px 16px 20px; } }

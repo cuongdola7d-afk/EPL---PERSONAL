@@ -19,6 +19,17 @@
 .fantasy-kicker { margin: 0 0 4px; color: var(--f-accent-2); font-size: .69rem; font-weight: 800; letter-spacing: .12em; }
 .fantasy-head h1 { margin: 0; font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -.035em; }
 .fantasy-head p:last-child { margin: 4px 0 0; color: var(--f-muted); font-size: .86rem; }
+.fantasy-hero { align-items: flex-start; padding-block: 12px 24px; }
+.fantasy-head .fantasy-hero-title { max-width: 27ch; font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 800; line-height: 1.12; }
+.fantasy-hero-title span { display: block; text-wrap: balance; }
+.fantasy-hero-title span:last-child { color: var(--f-accent); }
+.fantasy-hero .fantasy-kicker { margin-bottom: 14px; }
+.fantasy-hero-title + p { max-width: 640px; margin: 18px 0 20px; color: var(--f-muted); line-height: 1.7; font-size: .95rem; }
+.fantasy-hero-cta { display: inline-flex; align-items: center; gap: 12px; padding: 6px 2px 8px; border: 0; border-bottom: 2px solid var(--f-text); background: transparent; color: var(--f-text); font-weight: 700 !important; cursor: pointer; }
+.fantasy-hero-cta svg { width: 16px; height: 16px; }
+.fantasy-hero-cta:hover { color: var(--f-accent); border-color: var(--f-accent); }
+.fantasy-builder-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 14px; scroll-margin-top: 170px; }
+.fantasy-builder-head h2 { margin: 0; font-size: 1.05rem; }
 .fantasy-theme { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--f-line); border-radius: 50%; background: var(--f-card); color: var(--f-text); font-size: 1.5rem !important; }
 .fantasy-card { border: 1px solid var(--f-line); border-radius: 22px; background: var(--f-card); box-shadow: 0 12px 32px rgba(16,44,54,.08); }
 .fantasy-summary { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 12px; margin-bottom: 12px; }

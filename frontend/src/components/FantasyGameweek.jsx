@@ -38,8 +38,8 @@ export default function FantasyGameweek({ onSelectionChange }) {
   const remaining = view?.deadlineUtc ? remainingMilliseconds(view.deadlineUtc, data.serverTimeUtc, data.receivedAt, tick) : 0
   const expired = shouldRefreshDeadline(view, remaining)
   useEffect(() => {
-    onSelectionChange?.(selected ?? 6, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null, view?.status ?? null)
-  }, [selected, view?.canEdit, view?.rosterAsOf, view?.status, expired, loading, error, onSelectionChange])
+    onSelectionChange?.(selected ?? 6, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null, view?.status ?? null, view?.deadlineUtc ?? null)
+  }, [selected, view?.canEdit, view?.rosterAsOf, view?.status, view?.deadlineUtc, expired, loading, error, onSelectionChange])
   useEffect(() => {
     const key = `${selected}:${view?.revision}:${data?.serverTimeUtc}`
     if (!expired || loading || error || refreshed.current === key) return

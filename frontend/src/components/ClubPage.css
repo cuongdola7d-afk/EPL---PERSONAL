@@ -40,6 +40,8 @@
 .cx-headline { margin: 0; font-size: clamp(40px, 6.2vw, 78px); font-weight: 800; line-height: 1.08; letter-spacing: -.045em; }
 .cx-headline span { display: block; }
 .cx-headline span:last-child { color: var(--cx-accent); }
+.cx-slide-fantasy .cx-headline { font-size: clamp(32px, 4.2vw, 54px); }
+.cx-slide-fantasy .cx-headline span { text-wrap: balance; }
 .cx-lead { max-width: 470px; margin: 20px 0 26px; color: var(--cx-muted); font-size: 16px; line-height: 1.7; }
 .cx-cta { display: inline-flex; align-items: center; gap: 12px; padding: 6px 2px 8px; border: 0; border-bottom: 2px solid var(--cx-text); background: none; color: var(--cx-text); font-weight: 700; transition: gap .2s, color .2s; }
 .cx-cta svg { width: 16px; height: 16px; }
