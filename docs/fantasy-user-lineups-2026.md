@@ -8,7 +8,7 @@ Luồng hiện hành: một nút **Lưu đội hình** cập nhật trực tiế
 - fantasy_draft_picks cho phép thiếu người hoặc rỗng. Người đã chọn vẫn phải hợp lệ theo sơ đồ, quyền vị trí, OVR và giới hạn CLB.
 - fantasy_submitted_picks lưu snapshot sơ đồ/ô, ID, tên cầu thủ, CLB, OVR, vị trí chính, eligiblePositions và quyền vị trí dùng để xác nhận. Thay đổi hồ sơ hoặc membership về sau không viết lại snapshot.
 - Các khóa chính, khóa duy nhất và khóa ngoại bảo đảm một entry hiện hành mỗi tài khoản/GW và không lặp cầu thủ trong từng đội. Snapshot không phụ thuộc khóa ngoại tới hồ sơ bóng đá có thể thay đổi.
-- Dùng validator Fantasy hiện có: 11 ID khác nhau khi chốt, đúng ô của bốn sơ đồ hiện có, eligiblePositions hợp lệ, không thiếu OVR, tối đa 3 người/CLB và tổng OVR ≤ 910 theo yêu cầu 06/10 (local, chưa phát hành migration bổ sung). Không nhận CLB/OVR/quyền vị trí từ client.
+- Dùng validator Fantasy hiện có: 11 ID khác nhau khi chốt, đúng ô của bốn sơ đồ hiện có, eligiblePositions hợp lệ, không thiếu OVR, tối đa 3 người/CLB và tổng OVR ≤ 910 theo yêu cầu 06/10 (backend/MySQL production đã đồng bộ sau backup và migration được cho phép riêng). Không nhận CLB/OVR/quyền vị trí từ client.
 - Mỗi GW lưu rosterAsOf khi quản trị công bố/mở vòng: mặc định ngày công bố theo giờ Việt Nam, hoặc ngày được chọn có roster hiệu lực trong database. Danh sách chọn và validator dùng cùng mốc lưu này; không đổi theo ngày hiện tại. Mốc 2026-10-02 chỉ còn trong phần luyện tập của khách. Xem [bổ sung roster và đo khóa MySQL](fantasy-roster-reference-2026.md).
 - Chỉ phục vụ GW6–GW38 mùa 2026/27; GW1–GW5 chưa triển khai Replay.
 

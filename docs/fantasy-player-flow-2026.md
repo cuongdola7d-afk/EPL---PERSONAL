@@ -1,6 +1,6 @@
 # Luồng người chơi: lưu đội, khóa deadline, kết quả và BXH — 05/10/2026
 
-Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp đội tham gia, không có bước bắt buộc lưu nháp rồi chốt riêng. Đã phát hành và mở GW6 production; người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Xem [checkpoint production](fantasy-production-2026-10-05.md). Lượt quy trình 05/10 chỉ sửa tài liệu/đọc BXH; các điều chỉnh giao diện/OVR 06/10 ở dưới đã hoàn thiện local và chưa phát hành.
+Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp đội tham gia, không có bước bắt buộc lưu nháp rồi chốt riêng. Đã phát hành và mở GW6 production; người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Xem [checkpoint production](fantasy-production-2026-10-05.md). Lượt quy trình 05/10 chỉ sửa tài liệu/đọc BXH; các điều chỉnh giao diện/OVR 06/10 đã được người dùng push, backend và MySQL production đã đồng bộ 910 sau migration được cho phép riêng.
 
 ## Hành vi
 
@@ -13,11 +13,31 @@ Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp 
 
 API nháp cũ vẫn giữ để tương thích dữ liệu/client cũ, không còn là thao tác bắt buộc trong giao diện. Mỗi lần Lưu đội hình cập nhật draft/snapshot đồng bộ bằng service đã có; các sửa chưa lưu chỉ nằm trong bộ nhớ giao diện. Giữ các luật 11 người duy nhất, vị trí hợp lệ, tối đa 3/CLB; giới hạn OVR mới là 910 theo yêu cầu ngày 06/10/2026. Nút Lưu đội hình nằm tại thanh chọn sơ đồ, thay nút Kiểm tra đội hình; bỏ khung metadata đội đã lưu. Thông báo “Đã lưu đội hình thành công.” tự mất sau 2,5 giây, lỗi vẫn giữ để người chơi xử lý.
 
-## Điều chỉnh local ngày 06/10/2026, chưa phát hành
+## Điều chỉnh ngày 06/10/2026 — đã đồng bộ production
 
 Frontend, validator backend, kiểm tra snapshot khi chấm điểm và schema H2 dùng cùng giới hạn 910. Snapshot đã lưu trước đây giữ nguyên. Migration bổ sung [2026-10-06-fantasy-ovr-limit-mysql.sql](../backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql) thay riêng CHECK OVR, giữ toàn bộ kiểm tra NULL/sơ đồ/version và dữ liệu hiện có; chạy lại không thay đổi khi đã là 910. Không sửa migration 860 đã áp dụng trước đây.
 
-Production vẫn ở giới hạn 860 cho tới khi được phép backup mới, áp dụng migration bổ sung trên MySQL đích và phát hành đồng bộ backend/frontend. Không đổi deadline, rosterAsOf, đội thật hoặc công bố kết quả trong lượt giao diện này. Lệnh mysql sau khi xác nhận đích/backup: `source backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql;` từ client chạy ở gốc repo, đã chọn đúng database. Với client MySQL 9.6 cần bật `--commands=ON` để dùng `source` (mặc định tắt); không thêm vào cron hoặc Pre-deploy Command. Tài khoản chạy migration cần quyền ALTER và CREATE/EXECUTE/DROP ROUTINE cho procedure kiểm tra tạm; procedure được xóa khi hoàn tất, không tạo hệ thống migration mới.
+Production hiện đã đồng bộ 910 sau lần chủ dự án cho phép migration riêng ngày 06/10, xem biên bản bên dưới. Không đổi deadline, rosterAsOf, đội thật hoặc công bố kết quả. Lệnh mysql cho đích mới, sau khi được giao/xác nhận đích/backup: `source backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql;` từ client chạy ở gốc repo, đã chọn đúng database. Với client MySQL 9.6 cần bật `--commands=ON` để dùng `source` (mặc định tắt); không thêm vào cron hoặc Pre-deploy Command. Tài khoản chạy migration cần quyền ALTER và CREATE/EXECUTE/DROP ROUTINE cho procedure kiểm tra tạm; procedure được xóa khi hoàn tất, không tạo hệ thống migration mới.
+
+### Lỗi lưu trên production sau khi push — 06/10/2026
+
+Người dùng đã push `a94343a4e857754200b4e2f13cbd61973c0d82b8`; Railway deployment `a835f711-4c0e-425b-8eb2-af7a99a15c3d` SUCCESS chạy mã giới hạn 910. Kiểm tra chỉ đọc đúng backend/MySQL đích (database railway, UUID đã đối chiếu checkpoint) xác nhận CHECK `fantasy_entries_chk_3` vẫn có `submitted_total_ovr BETWEEN 11 AND 860`. Log lúc 09:30–09:31 UTC ghi CHECK này bị vi phạm khi POST `/api/fantasy/2026/me/gameweeks/6/submit`, dẫn tới HTTP 500 và “An unexpected error occurred”. Đây là thiếu migration production sau phát hành mã, không cần đổi thông báo thành công hoặc chạy lại build để sửa nguyên nhân.
+
+Đội đã lưu ID 1/GW6 còn version/submitted_version 4/4 và tổng OVR 850 tại lần đọc; các lần lưu thất bại không thay thế đội đó. Bước cần được cho phép tiếp theo: tạo/kiểm tra backup SQL mới ngoài Git, áp dụng migration 910 đã kiểm chứng local, đọc lại CHECK và snapshot để xác nhận dữ liệu giữ nguyên; người dùng tự bấm lưu lại rồi đối chiếu API/database đúng tài khoản/GW. Chưa ghi production, chạy migration, redeploy hoặc tạo đội thử trong lượt chẩn đoán; không chạy lại test/build vì không sửa mã.
+
+### Migration 910 production đã hoàn tất — 06/10/2026
+
+Sau lần cho phép rõ ràng riêng migration 910, đối chiếu biến JDBC backend/MySQL bằng bộ nhớ và xác nhận database `railway`, MySQL 9.7.2, UUID `8835db23-b8ca-11f1-89a0-a2aa18198d9d`. Backend deployment `a835f711-4c0e-425b-8eb2-af7a99a15c3d` SUCCESS/commit `a94343a4e857754200b4e2f13cbd61973c0d82b8`; không cần redeploy.
+
+Backup mới ngoài Git trước khi ghi: `backend/local-backups/fantasy-ovr910-production-20261006-164254/railway-before-ovr910-20261006-164254.sql`, 863.675 byte, SHA-256 `bd5160839334c6617c0ec881cd6bf4cf57b92ec9c6a63c5b4b378a22f143eeea`. Dump single-transaction exit 0, đủ CREATE TABLE của 35 bảng và footer hoàn tất; đối chiếu hash lần nữa trước migration. Chưa thử restore. Backup chứa dữ liệu riêng tư, không đưa vào Git.
+
+Áp dụng đúng `backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql`, SHA-256 `1ce33655edbbfede554aa65802208f0702cd24c7de48ddb63dce9eaea6d14e4b`. Kết quả lần đầu nâng 860 → 910; lần hai trả already 910/unchanged. CHECK submission giữ nguyên điều kiện NULL/sơ đồ/version, chỉ nâng cap; các CHECK khác không đổi, procedure tạm đã được xóa. Dấu đối chiếu dữ liệu của cả chín bảng Fantasy trước/sau giống nhau, gồm metadata đội, draft, snapshot, deadline/audit, bằng chứng và kết quả. Không chạy lại bốn migration cũ, sửa bảng bóng đá hay công bố điểm.
+
+Kiểm tra database bằng UPDATE tổng OVR của một entry đã tồn tại trong transaction rồi ROLLBACK: 910 được chấp nhận; 911 bị CHECK từ chối (MySQL 3819). Đối chiếu lại cả chín bảng xác nhận đội thật/deadline không đổi; không INSERT hoặc commit tổng giả. Qua Vercel, gọi riêng API `/api/fantasy/2026/validate?gameweek=6` chỉ SELECT: mẫu đủ 11 người đúng vị trí/không trùng/tối đa 3 CLB/tổng 910 trả HTTP 200/valid=true/issues=[]; mẫu 911 trả HTTP 200/valid=false và duy nhất OVR_LIMIT. Endpoint validator không ghi đội; service lưu dùng cùng validator, không gọi /submit hoặc /draft trong kiểm tra này.
+
+GW6 vẫn OPEN, deadline `2026-10-08T17:00:00Z` = 09/10/2026 00:00 Việt Nam, rosterAsOf `2026-10-05`. Không tạo tài khoản/đội thử production, đọc/in cookie/token/password, commit/push/deploy hoặc chạy test/build vì không sửa mã. Audit chi tiết ngoài Git cùng thư mục backup: prepare-audit.json, migration-audit.json, backend-validation-audit.json. Còn chờ người dùng tự lưu đội bằng tài khoản thật rồi phản hồi để đối chiếu ID/GW/version/tổng/snapshot; chưa gọi đó là đã kiểm chứng lưu thành công thực tế sau migration.
+
+File cần commit riêng lượt migration: docs/fantasy-player-flow-2026.md, docs/fantasy-multiplayer-2026-plan.md, docs/fantasy-user-lineups-2026.md, docs/fantasy-results-2026.md. Commit message đề xuất: `docs(fantasy): record production OVR 910 migration`. Không commit backup, audit riêng hoặc helper trong target; danh sách mã dưới đây thuộc lượt triển khai trước đã được người dùng push.
 
 ## Kiểm chứng và file cần commit — 06/10/2026
 

@@ -40,7 +40,7 @@ Trạng thái hiện hành: auth email/Google/liên kết/giới hạn đã phá
 
 1. Đăng ký/đăng nhập bằng email–mật khẩu và Google. Bản đầu không yêu cầu email xác thực trước khi chơi.
 2. Mỗi tài khoản có đúng một đội dự thi hiện hành và một sơ đồ cho mỗi GW, cập nhật bằng **Lưu đội hình**. API nháp cũ giữ tương thích, không phải bước người chơi phải thực hiện trước lưu đội.
-3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 910 (quyết định 06/10/2026; local đã sửa, production còn chờ migration/phát hành). Giữ các sơ đồ Fantasy đang có.
+3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 910 (quyết định 06/10/2026; đã đồng bộ backend/MySQL production qua migration được cho phép riêng). Giữ các sơ đồ Fantasy đang có.
 4. Hạn chốt là **00:00 giờ Việt Nam của ngày liền trước ngày trận đầu tiên của GW diễn ra**. Lưu thời điểm trong database bằng UTC.
 5. Hạn đã công bố giữ cố định nếu lịch trận thay đổi; chỉ quản trị viên được điều chỉnh, có thông báo.
 6. Trước hạn người chơi chỉnh đội trên sân rồi bấm **Lưu đội hình**. Mỗi lần lưu đủ 11 người hợp lệ cập nhật đội dự thi; đội đã lưu gần nhất vẫn có hiệu lực cho tới khi lưu mới thành công. Chỉnh mà chưa lưu không thay đội dự thi. Giao diện không yêu cầu thêm một thao tác chốt riêng.
@@ -150,7 +150,7 @@ Email/mật khẩu + Google, logout, khôi phục mật khẩu, quyền người
 
 Bỏ khung thông tin đội đã lưu. Nút Lưu đội hình thay Kiểm tra đội hình tại thanh chọn sơ đồ, vẫn dùng transaction/session/CSRF/expectedVersion và deadline hiện có. Thông báo thành công tự mất sau 2,5 giây. Điểm từng cầu thủ của GW đã công bố nằm góc trên phải avatar, giữ OVR/các yếu tố sân; kết quả dưới sân chỉ hiện tổng. Dùng chung một luồng tải kết quả cho sân và tổng, gắn điểm theo player_id và kiểm tra đúng tài khoản/GW.
 
-OVR 910 được áp dụng đồng bộ validator, kiểm tra snapshot chấm điểm, frontend và schema local; MySQL cần migration bổ sung [2026-10-06-fantasy-ovr-limit-mysql.sql](../backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql). Không thay đội cũ, dữ liệu bóng đá, mùa 2024/25 hoặc deadline. Đây là thay đổi local chưa phát hành; production đang dùng giới hạn 860. Xem [luồng người chơi](fantasy-player-flow-2026.md) để biết bước backup/migration/phát hành còn lại.
+OVR 910 được áp dụng đồng bộ validator, kiểm tra snapshot chấm điểm, frontend và schema. Sau khi chủ dự án push a94343a và cho phép migration riêng, đã backup đủ 35 bảng và áp dụng [2026-10-06-fantasy-ovr-limit-mysql.sql](../backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql) trên MySQL production; lần hai unchanged. Database nhận 910/chặn 911 bằng rollback; validator qua Vercel nhận 910/chặn 911, không lưu đội thử. Dữ liệu cả chín bảng Fantasy/deadline giữ nguyên; không thay dữ liệu bóng đá/mùa 2024/25/các luật khác. Không redeploy, commit/push hoặc test/build mã. Chi tiết backup/audit ở [luồng người chơi](fantasy-player-flow-2026.md); còn chờ người dùng tự lưu lại bằng tài khoản thật sau migration.
 
 ## Trạng thái bàn giao bước 1 — email và Google local (lịch sử)
 
