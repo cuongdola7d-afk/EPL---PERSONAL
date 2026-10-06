@@ -65,6 +65,12 @@ class FantasyLineupServiceTest {
         assertEquals(10, jdbc.queryForObject("SELECT goals FROM player_season_stats WHERE season_year=2024", Integer.class));
         assertNull(jdbc.queryForObject("SELECT goals FROM player_season_stats WHERE season_year=2026 AND player_id=1", Integer.class));
         jdbc.update("UPDATE player_season_profiles SET fc27_overall=81 WHERE player_id=1");
+        assertTrue(check("4-2-1-3").valid());
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=82 WHERE season_year=2026");
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=90 WHERE player_id=1 AND season_year=2026");
+        assertTrue(check("4-2-1-3").valid());
+        assertEquals(910, check("4-2-1-3").totalOvr());
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=91 WHERE player_id=1 AND season_year=2026");
         hasCode("OVR_LIMIT", check("4-2-1-3"));
     }
 

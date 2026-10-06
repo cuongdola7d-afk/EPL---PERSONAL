@@ -40,7 +40,7 @@ Trạng thái hiện hành: auth email/Google/liên kết/giới hạn đã phá
 
 1. Đăng ký/đăng nhập bằng email–mật khẩu và Google. Bản đầu không yêu cầu email xác thực trước khi chơi.
 2. Mỗi tài khoản có đúng một đội dự thi hiện hành và một sơ đồ cho mỗi GW, cập nhật bằng **Lưu đội hình**. API nháp cũ giữ tương thích, không phải bước người chơi phải thực hiện trước lưu đội.
-3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 860. Giữ các sơ đồ Fantasy đang có.
+3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 910 (quyết định 06/10/2026; local đã sửa, production còn chờ migration/phát hành). Giữ các sơ đồ Fantasy đang có.
 4. Hạn chốt là **00:00 giờ Việt Nam của ngày liền trước ngày trận đầu tiên của GW diễn ra**. Lưu thời điểm trong database bằng UTC.
 5. Hạn đã công bố giữ cố định nếu lịch trận thay đổi; chỉ quản trị viên được điều chỉnh, có thông báo.
 6. Trước hạn người chơi chỉnh đội trên sân rồi bấm **Lưu đội hình**. Mỗi lần lưu đủ 11 người hợp lệ cập nhật đội dự thi; đội đã lưu gần nhất vẫn có hiệu lực cho tới khi lưu mới thành công. Chỉnh mà chưa lưu không thay đội dự thi. Giao diện không yêu cầu thêm một thao tác chốt riêng.
@@ -146,7 +146,13 @@ Email/mật khẩu + Google, logout, khôi phục mật khẩu, quyền người
 - Không tự commit, push, deploy hoặc ghi production. Khi cần migration production, trình bày schema/phạm vi, backup, kiểm tra và kế hoạch phát hành trước bước được giao thực hiện. Không tạo cron/Pre-deploy Command để thay kiểm tra deadline ở server.
 - Mỗi lượt báo file cần commit, commit message, kiểm tra đã chạy/chưa chạy và giới hạn còn lại. Phần local và bước nhập SQL/phát hành phải tách rõ.
 
-## Trạng thái bàn giao bước 1 — email và Google local
+## Điều chỉnh giao diện Fantasy — 06/10/2026
+
+Bỏ khung thông tin đội đã lưu. Nút Lưu đội hình thay Kiểm tra đội hình tại thanh chọn sơ đồ, vẫn dùng transaction/session/CSRF/expectedVersion và deadline hiện có. Thông báo thành công tự mất sau 2,5 giây. Điểm từng cầu thủ của GW đã công bố nằm góc trên phải avatar, giữ OVR/các yếu tố sân; kết quả dưới sân chỉ hiện tổng. Dùng chung một luồng tải kết quả cho sân và tổng, gắn điểm theo player_id và kiểm tra đúng tài khoản/GW.
+
+OVR 910 được áp dụng đồng bộ validator, kiểm tra snapshot chấm điểm, frontend và schema local; MySQL cần migration bổ sung [2026-10-06-fantasy-ovr-limit-mysql.sql](../backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql). Không thay đội cũ, dữ liệu bóng đá, mùa 2024/25 hoặc deadline. Đây là thay đổi local chưa phát hành; production đang dùng giới hạn 860. Xem [luồng người chơi](fantasy-player-flow-2026.md) để biết bước backup/migration/phát hành còn lại.
+
+## Trạng thái bàn giao bước 1 — email và Google local (lịch sử)
 
 - Hoàn thành local: đăng ký, đăng nhập, đăng xuất, tài khoản hiện tại; hash BCrypt, email unique/chuẩn hóa, chỉ USER, phiên JDBC/cookie HttpOnly và CSRF; form cùng loading/lỗi trong PrismaXI. Không thay đội Fantasy trong trình duyệt.
 - Kiểm tra lượt email trước: 49 test backend qua và Maven package thành công trên H2 cô lập; 15 test frontend qua, Vite build thành công. Chrome desktop 1440px/390px gọi server thật đã thử đăng ký → đăng nhập → reload → đăng xuất, lỗi trùng email/sai mật khẩu, API riêng 401 sau logout, cookie và giữ localStorage Fantasy. Không kiểm kê hoặc nhập lại dữ liệu bóng đá.

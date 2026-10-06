@@ -14,6 +14,11 @@ export function useFantasyEntry(account, gameweek, setLineup) {
   const writeRequest = useRef(null)
   const reload = useCallback(() => setReloadVersion(value => value + 1), [])
   useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(''), 2500)
+    return () => clearTimeout(timer)
+  }, [notice])
+  useEffect(() => {
     const version = ++generation.current
     const controller = new AbortController()
     setData(null); setError(''); setNotice(''); setConflict(false); setBusy(false)
@@ -38,7 +43,7 @@ export function useFantasyEntry(account, gameweek, setLineup) {
       const value = await action(account.id, gameweek, { formation: lineup.formation,
         picks: lineup.picks, expectedVersion: data.version }, controller.signal)
       if (controller.signal.aborted || generation.current !== version) return
-      setData(value); setNotice(submit ? 'Đã lưu đội hình thành công. Bạn có thể lưu lại trước deadline.' : 'Đã lưu bản nháp trên server.')
+      setData(value); setNotice(submit ? 'Đã lưu đội hình thành công.' : 'Đã lưu bản nháp trên server.')
     } catch (failure) {
       if (!controller.signal.aborted && version === generation.current) {
         setError(failure.message)

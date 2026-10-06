@@ -103,12 +103,23 @@ class FantasyEntryIntegrationTest {
         assertThrows(FantasyEntryService.InvalidLineup.class,()->save(Map.of("0-0",1),1,true));
         jdbc.update("UPDATE player_season_profiles SET fc27_overall=NULL WHERE player_id=1");
         assertThrows(FantasyEntryService.InvalidLineup.class,()->save(picks,1,true));
-        jdbc.update("UPDATE player_season_profiles SET fc27_overall=81 WHERE player_id=1");
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=99");
         assertThrows(FantasyEntryService.InvalidLineup.class,()->save(picks,1,true));
-        jdbc.update("UPDATE player_season_profiles SET fc27_overall=78 WHERE player_id=1");
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=78");
         jdbc.update("DELETE FROM player_eligible_positions WHERE player_id=1");
         assertThrows(FantasyEntryService.InvalidLineup.class,()->save(picks,1,true));
         assertEquals(1,service.read(101,6).version());assertEquals(picks,service.read(101,6).submitted().picks());
+    }
+    @Test void savesExactly910AndRejects911WithoutReplacingSnapshot() {
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=82 WHERE season_year=2026");
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=90 WHERE player_id=1 AND season_year=2026");
+        var original=save(picks,0,true).submitted();
+        assertEquals(910,original.totalOvr());
+        assertEquals(910,jdbc.queryForObject("SELECT submitted_total_ovr FROM fantasy_entries WHERE account_id=101",Integer.class));
+        jdbc.update("UPDATE player_season_profiles SET fc27_overall=91 WHERE player_id=1 AND season_year=2026");
+        assertThrows(FantasyEntryService.InvalidLineup.class,()->save(picks,1,true));
+        assertEquals(original,service.read(101,6).submitted());
+        assertEquals(1,service.read(101,6).version());
     }
     @Test void draftStillRejectsWrongPermissionMissingOvrAndClubLimitButAllowsEmpty() {
         assertNotNull(save(Map.of(),0,false).draft());

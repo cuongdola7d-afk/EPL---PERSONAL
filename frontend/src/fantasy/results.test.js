@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { validResult, formatPoints } from './results.js'
+import { validResult, formatPoints, publishedPlayerPoints } from './results.js'
 import { fetchFantasyResult } from '../api/fantasyEntries.js'
 import { fetchFantasyReadiness, publishFantasyResults } from '../api/fantasyResults.js'
 
@@ -23,6 +23,18 @@ test('pending results cannot carry provisional points; published results need al
   data.result.players.pop()
   assert.equal(validResult(data, 102, 6), false)
 })
+test('pitch scores use player IDs, include confirmed zero and never expose another owner or GW', () => {
+  const data = published()
+  data.result.players.reverse()
+  assert.equal(publishedPlayerPoints(data, 102, 6).get(1), 0)
+  assert.equal(publishedPlayerPoints(data, 102, 6).get(11), 7.11)
+  assert.equal(publishedPlayerPoints(data, 103, 6).size, 0)
+  assert.equal(publishedPlayerPoints(data, 102, 7).size, 0)
+  assert.equal(publishedPlayerPoints(waiting, 102, 6).size, 0)
+  assert.equal(publishedPlayerPoints(null, 102, 6).size, 0)
+  assert.equal(publishedPlayerPoints(null, undefined, null).size, 0)
+})
+
 test('a zero requires a confirmed reason; a player-fixture cannot occur twice', () => {
   const data = published()
   data.result.players[0].matches[0].reason = 'RATING_PENDING'

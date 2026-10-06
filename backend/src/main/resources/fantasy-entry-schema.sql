@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS fantasy_entries (
     CHECK ((submitted_formation IS NULL AND submitted_at IS NULL AND submitted_version IS NULL AND submitted_total_ovr IS NULL)
         OR (submitted_formation IS NOT NULL AND submitted_formation IN ('4-2-1-3','4-3-3','4-4-2','3-5-2') AND submitted_at IS NOT NULL
             AND submitted_version IS NOT NULL AND submitted_total_ovr IS NOT NULL
-            AND submitted_version BETWEEN 1 AND version AND submitted_total_ovr BETWEEN 11 AND 860))
+            AND submitted_version BETWEEN 1 AND version AND submitted_total_ovr BETWEEN 11 AND 910))
 );
 
 CREATE TABLE IF NOT EXISTS fantasy_draft_picks (

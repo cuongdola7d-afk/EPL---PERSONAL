@@ -1,6 +1,6 @@
 # Luồng người chơi: lưu đội, khóa deadline, kết quả và BXH — 05/10/2026
 
-Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp đội tham gia, không có bước bắt buộc lưu nháp rồi chốt riêng. Đã phát hành và mở GW6 production; người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Xem [checkpoint production](fantasy-production-2026-10-05.md). Lượt cập nhật quy trình chỉ sửa tài liệu/đọc BXH, không nhập thống kê, công bố điểm, đổi deadline hoặc chạy lại test/build.
+Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp đội tham gia, không có bước bắt buộc lưu nháp rồi chốt riêng. Đã phát hành và mở GW6 production; người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Xem [checkpoint production](fantasy-production-2026-10-05.md). Lượt quy trình 05/10 chỉ sửa tài liệu/đọc BXH; các điều chỉnh giao diện/OVR 06/10 ở dưới đã hoàn thiện local và chưa phát hành.
 
 ## Hành vi
 
@@ -8,10 +8,49 @@ Luồng cuối đã chốt là **Lưu đội hình** cập nhật trực tiếp 
 2. GW OPEN: chọn/đổi cầu thủ và sơ đồ theo luật hiện có; bấm Lưu đội hình khi đủ 11 người hợp lệ. Có thể sửa và lưu lại nhiều lần trước deadline. Chỉnh trên màn hình chưa thay đội dự thi cho tới khi lưu thành công.
 3. Backend lưu đội có hiệu lực và snapshot trong transaction hiện có, dùng expectedVersion, session owner, CSRF, rosterAsOf và Clock server sau khóa/trước-sau SQL. Lưu mới lỗi giữ đội đã lưu trước. Nút duy nhất dùng endpoint `/submit` đã có; không thêm cơ chế tự chốt hoặc phụ thuộc cron.
 4. Từ đúng deadline: server từ chối lưu, sân giữ đội đã lưu gần nhất ở trạng thái khóa. Hiển thị “Đã hết deadline. Đội hình đã khóa; kết quả sẽ được công bố sau.” Người chưa lưu đội hợp lệ không tự tham gia và không được cấp đội/điểm 0.
-5. Công bố kết quả vẫn theo readiness và ADMIN + CSRF của bước 4; nhập rating đơn thuần chưa phải công bố. Dưới sân hiển thị thông báo kết quả, tổng, 11 dòng điểm, thời gian và version. Không thay rating NULL thô hay cách xác nhận không chấm.
+5. Công bố kết quả vẫn theo readiness và ADMIN + CSRF của bước 4; nhập rating đơn thuần chưa phải công bố. Điểm GW từng người ở góc trên bên phải avatar trên sân, giữ OVR ở vị trí cũ; ô kết quả dưới sân chỉ hiển thị tổng điểm. Khi chưa công bố không hiện điểm tạm. Không thay rating NULL thô hay cách xác nhận không chấm.
 6. Tab BXH người chơi có Gameweek/Cả mùa. Điểm cao xếp trên, bằng điểm đồng hạng 1,1,3; account ID chỉ ổn định thứ tự trong nhóm bằng điểm, không tách hạng. Highlight tài khoản hiện tại bằng ID.
 
-API nháp cũ vẫn giữ để tương thích dữ liệu/client cũ, không còn là thao tác bắt buộc trong giao diện. Dữ liệu submitted cũ được trình bày là “Đội đã lưu”. Mỗi lần Lưu đội hình cập nhật draft/snapshot đồng bộ bằng service đã có; các sửa chưa lưu chỉ nằm trong bộ nhớ giao diện. Giữ các luật 11 người duy nhất, vị trí hợp lệ, tối đa 3/CLB và OVR không quá 860.
+API nháp cũ vẫn giữ để tương thích dữ liệu/client cũ, không còn là thao tác bắt buộc trong giao diện. Mỗi lần Lưu đội hình cập nhật draft/snapshot đồng bộ bằng service đã có; các sửa chưa lưu chỉ nằm trong bộ nhớ giao diện. Giữ các luật 11 người duy nhất, vị trí hợp lệ, tối đa 3/CLB; giới hạn OVR mới là 910 theo yêu cầu ngày 06/10/2026. Nút Lưu đội hình nằm tại thanh chọn sơ đồ, thay nút Kiểm tra đội hình; bỏ khung metadata đội đã lưu. Thông báo “Đã lưu đội hình thành công.” tự mất sau 2,5 giây, lỗi vẫn giữ để người chơi xử lý.
+
+## Điều chỉnh local ngày 06/10/2026, chưa phát hành
+
+Frontend, validator backend, kiểm tra snapshot khi chấm điểm và schema H2 dùng cùng giới hạn 910. Snapshot đã lưu trước đây giữ nguyên. Migration bổ sung [2026-10-06-fantasy-ovr-limit-mysql.sql](../backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql) thay riêng CHECK OVR, giữ toàn bộ kiểm tra NULL/sơ đồ/version và dữ liệu hiện có; chạy lại không thay đổi khi đã là 910. Không sửa migration 860 đã áp dụng trước đây.
+
+Production vẫn ở giới hạn 860 cho tới khi được phép backup mới, áp dụng migration bổ sung trên MySQL đích và phát hành đồng bộ backend/frontend. Không đổi deadline, rosterAsOf, đội thật hoặc công bố kết quả trong lượt giao diện này. Lệnh mysql sau khi xác nhận đích/backup: `source backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql;` từ client chạy ở gốc repo, đã chọn đúng database. Với client MySQL 9.6 cần bật `--commands=ON` để dùng `source` (mặc định tắt); không thêm vào cron hoặc Pre-deploy Command. Tài khoản chạy migration cần quyền ALTER và CREATE/EXECUTE/DROP ROUTINE cho procedure kiểm tra tạm; procedure được xóa khi hoàn tất, không tạo hệ thống migration mới.
+
+## Kiểm chứng và file cần commit — 06/10/2026
+
+Kiểm chứng điều chỉnh 06/10: 10 test backend scoped trên H2 và Maven package đạt; 17 test frontend entry/lineup/results đạt. Sau khi sửa trạng thái ban đầu chưa có phiên/kết quả, chạy lại riêng 5 test results và Vite build; sau tinh chỉnh badge mobile chỉ build lại frontend. MySQL 9.6 local loopback 33027 chạy migration hai lần: dữ liệu cũ nguyên vẹn, 910 hợp lệ, 911 và submission NULL một phần bị CHECK chặn. Chrome với API giả lập cô lập: lưu 910 → thay người/lưu 909 → reload đúng đội; thông báo thành công tồn tại khoảng 2,5 giây; desktop/390px không tràn, điểm 0 vẫn hiển thị, OVR giữ nguyên, khóa đội sau công bố, tổng 71,10 và đổi GW xóa điểm cũ. Không coi kiểm tra giao diện giả lập là kiểm chứng production hoặc chạy lại Google thật.
+
+File cần commit cho điều chỉnh này (không gồm helper/build/ảnh trong `backend/target`):
+
+```text
+backend/sql/2026-10-06-fantasy-ovr-limit-mysql.sql
+backend/src/main/java/com/premierhub/fantasy/FantasyResultService.java
+backend/src/main/java/com/premierhub/service/FantasyLineupService.java
+backend/src/main/resources/fantasy-entry-schema.sql
+backend/src/test/java/com/premierhub/fantasy/FantasyEntryIntegrationTest.java
+backend/src/test/java/com/premierhub/fantasy/FantasyResultIntegrationTest.java
+backend/src/test/java/com/premierhub/service/FantasyLineupServiceTest.java
+frontend/src/components/FantasyEntry.css
+frontend/src/components/FantasyPage.css
+frontend/src/components/FantasyPage.jsx
+frontend/src/components/FantasyPlayerAvatar.jsx
+frontend/src/components/FantasyResults.jsx
+frontend/src/fantasy/lineup.js
+frontend/src/fantasy/lineup.test.js
+frontend/src/fantasy/results.js
+frontend/src/fantasy/results.test.js
+frontend/src/hooks/useFantasyEntry.js
+frontend/src/hooks/useFantasyResult.js
+docs/fantasy-multiplayer-2026-plan.md
+docs/fantasy-player-flow-2026.md
+docs/fantasy-results-2026.md
+docs/fantasy-user-lineups-2026.md
+```
+
+Commit message đề xuất: `feat(fantasy): streamline lineup saving and raise OVR cap to 910`.
 
 ## Thông báo và cập nhật
 

@@ -138,7 +138,7 @@ public class FantasyResultService {
                     && picks.stream().map(FantasyEntryRepository.Snapshot::slotKey).distinct().count()==11
                     && picks.stream().allMatch(p->Objects.equals(slots.get(p.slotKey()),p.requiredPosition()) && p.eligiblePositions().contains(p.requiredPosition())
                         && p.ovr()>=1 && p.ovr()<=99)
-                    && picks.stream().mapToInt(FantasyEntryRepository.Snapshot::ovr).sum()<=860
+                    && picks.stream().mapToInt(FantasyEntryRepository.Snapshot::ovr).sum()<=FantasyLineupService.MAX_OVR
                     && picks.stream().collect(java.util.stream.Collectors.groupingBy(FantasyEntryRepository.Snapshot::clubId,java.util.stream.Collectors.counting()))
                         .values().stream().allMatch(n->n<=3)
                     && configuration!=null && participant.submittedAt().isBefore(configuration.deadlineUtc());

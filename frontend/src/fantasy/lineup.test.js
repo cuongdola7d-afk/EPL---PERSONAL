@@ -12,7 +12,7 @@ function fixture(formation = '4-2-1-3', overall = 78) {
   return { slots, players, picks }
 }
 
-test('all four formations normalize CB/CM and accept eleven players under 860', () => {
+test('all four formations normalize CB/CM and accept eleven players under 910', () => {
   for (const formation of Object.keys(FORMATIONS)) {
     const { slots, players, picks } = fixture(formation)
     assert.equal(slots.length, 11)
@@ -38,15 +38,16 @@ test('missing OVR or positions block selection; actual stored Dowman 72 is used'
 })
 
 test('duplicates, wrong slot, club cap and OVR cap include replacement budget', () => {
-  const { slots, players, picks } = fixture()
+  const { slots, players, picks } = fixture('4-2-1-3', 82)
   players[0].eligiblePositions.push('ST')
   assert.match(pickError(players[0], slots[1], picks, players), /đã có/)
   assert.match(pickError(players[1], slots[0], {}, players), /không được/)
   const fourth = { ...players[0], id: 99 }
   assert.match(pickError(fourth, slots[1], picks, players), /3.*CLB/)
-  assert.match(pickError({ ...fourth, clubId: 9, fc27Overall: 81 }, slots[1], picks, players), /861.*860/)
-  assert.equal(pickError({ ...fourth, clubId: 9, fc27Overall: 80 }, slots[1], picks, players), '')
-  assert.match(validateLineup('4-2-1-3', picks, players.map(p => ({ ...p, fc27Overall: 79 }))), /869.*860/)
+  assert.match(pickError({ ...fourth, clubId: 9, fc27Overall: 91 }, slots[1], picks, players), /911.*910/)
+  assert.equal(pickError({ ...fourth, clubId: 9, fc27Overall: 90 }, slots[1], picks, players), '')
+  assert.equal(validateLineup('4-2-1-3', picks, players.map((p, i) => ({ ...p, fc27Overall: i === 0 ? 90 : 82 }))), '')
+  assert.match(validateLineup('4-2-1-3', picks, players.map(p => ({ ...p, fc27Overall: 83 }))), /913.*910/)
   assert.match(validateLineup('4-2-1-3', { ...picks, [slots[1].key]: players[0].id }, players), /trùng/)
 })
 
@@ -86,7 +87,7 @@ test('reload preserves invalid picks, warns on duplicates and rechecks legacy ca
   const high = players.map(p => ({ ...p, fc27Overall: 85 }))
   const legacy = normalizeLineup({ formation: '4-2-1-3', picks }, high)
   assert.equal(Object.keys(legacy.picks).length, 11)
-  assert.match(validateLineup(legacy.formation, legacy.picks, high), /935.*860/)
+  assert.match(validateLineup(legacy.formation, legacy.picks, high), /935.*910/)
   assert.match(validateLineup(normalized.formation, normalized.picks, players, normalized.unassigned), /chưa xếp/)
 })
 

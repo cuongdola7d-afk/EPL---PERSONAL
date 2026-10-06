@@ -155,6 +155,14 @@ class FantasyResultIntegrationTest {
         assertEquals(new BigDecimal("134.54"),service.leaderboard(null).players().getFirst().totalPoints());
         assertEquals(new BigDecimal("67.77"),service.leaderboard(null).players().get(1).totalPoints());
     }
+    @Test void ratingScoringAccepts910SnapshotWithoutUsingOvrAsPoints() {
+        jdbc.update("UPDATE fantasy_submitted_picks SET ovr=82 WHERE season=2026");
+        jdbc.update("UPDATE fantasy_submitted_picks SET ovr=90 WHERE season=2026 AND player_id=1");
+        jdbc.update("UPDATE fantasy_entries SET submitted_total_ovr=910 WHERE submitted_formation IS NOT NULL");
+        assertTrue(service.readiness(6).ready());
+        publish();
+        assertEquals(EXPECTED,service.mine(102,6).result().totalPoints());
+    }
     @Test void decimalRatingsDnpAndConfirmedUnratedPublishOnlyStoredSubmittedTeams() {
         assertTrue(service.readiness(6).ready());
         assertEquals("AWAITING_RESULTS",service.mine(102,6).status());assertNull(service.mine(102,6).result());

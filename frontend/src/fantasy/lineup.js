@@ -1,6 +1,6 @@
 export const FANTASY_STORAGE_KEY = 'premierhub:fantasy:2026:lineup'
 export const FANTASY_AS_OF = '2026-10-02'
-export const MAX_OVR = 860
+export const MAX_OVR = 910
 // OVR 72 của Dowman là mức ước tính do người dùng chọn; không phải rating EA đã xác minh.
 export const ESTIMATED_OVR_PLAYER_IDS = new Set([2000001025])
 

@@ -8,7 +8,7 @@ Luồng hiện hành: một nút **Lưu đội hình** cập nhật trực tiế
 - fantasy_draft_picks cho phép thiếu người hoặc rỗng. Người đã chọn vẫn phải hợp lệ theo sơ đồ, quyền vị trí, OVR và giới hạn CLB.
 - fantasy_submitted_picks lưu snapshot sơ đồ/ô, ID, tên cầu thủ, CLB, OVR, vị trí chính, eligiblePositions và quyền vị trí dùng để xác nhận. Thay đổi hồ sơ hoặc membership về sau không viết lại snapshot.
 - Các khóa chính, khóa duy nhất và khóa ngoại bảo đảm một entry hiện hành mỗi tài khoản/GW và không lặp cầu thủ trong từng đội. Snapshot không phụ thuộc khóa ngoại tới hồ sơ bóng đá có thể thay đổi.
-- Dùng validator Fantasy hiện có: 11 ID khác nhau khi chốt, đúng ô của bốn sơ đồ hiện có, eligiblePositions hợp lệ, không thiếu OVR, tối đa 3 người/CLB và tổng OVR ≤ 860. Không nhận CLB/OVR/quyền vị trí từ client.
+- Dùng validator Fantasy hiện có: 11 ID khác nhau khi chốt, đúng ô của bốn sơ đồ hiện có, eligiblePositions hợp lệ, không thiếu OVR, tối đa 3 người/CLB và tổng OVR ≤ 910 theo yêu cầu 06/10 (local, chưa phát hành migration bổ sung). Không nhận CLB/OVR/quyền vị trí từ client.
 - Mỗi GW lưu rosterAsOf khi quản trị công bố/mở vòng: mặc định ngày công bố theo giờ Việt Nam, hoặc ngày được chọn có roster hiệu lực trong database. Danh sách chọn và validator dùng cùng mốc lưu này; không đổi theo ngày hiện tại. Mốc 2026-10-02 chỉ còn trong phần luyện tập của khách. Xem [bổ sung roster và đo khóa MySQL](fantasy-roster-reference-2026.md).
 - Chỉ phục vụ GW6–GW38 mùa 2026/27; GW1–GW5 chưa triển khai Replay.
 
@@ -38,7 +38,7 @@ Giữ cookie HttpOnly/Secure theo cấu hình auth, CSRF cho POST và kiểm tra
 
 AccountMenu chia sẻ trạng thái tài khoản với App; đổi GW không gọi lại /me. Fantasy tải đúng dữ liệu server theo tài khoản/GW, hủy hoặc bỏ response của request cũ. Không tự chốt, tự nhập đội khách từ localStorage hay ghi đội riêng vào localStorage.
 
-Giao diện có một nút **Lưu đội hình**, loading/lỗi, tổng OVR, trạng thái Đã lưu/Chưa lưu, thời điểm lưu và lời nhắc khi thay đổi chưa được lưu. Trước deadline có thể sửa rồi lưu lại; reload đọc đúng đội server. Từ deadline giữ snapshot trên sân, khóa chỉnh sửa/lưu và báo chờ kết quả. Sau công bố hiển thị điểm 11 người/tổng/phiên bản và tab BXH GW/cả mùa. Xung đột cần người dùng tải lại bản server; không retry ghi tự động.
+Giao diện có một nút **Lưu đội hình** tại thanh chọn sơ đồ, loading/lỗi, tổng OVR; bỏ khung metadata đội đã lưu theo yêu cầu 06/10. Lưu thành công hiển thị thông báo 2,5 giây. Trước deadline có thể sửa rồi lưu lại; reload đọc đúng đội server. Từ deadline giữ snapshot trên sân, khóa chỉnh sửa/lưu và báo chờ kết quả. Sau công bố điểm từng người hiện góc trên phải avatar, ô kết quả dưới sân chỉ hiện tổng điểm; tab BXH GW/cả mùa giữ nguyên. Xung đột cần người dùng tải lại bản server; không retry ghi tự động.
 
 Thông báo giữa các tab chỉ mang tín hiệu đổi session và ID tab, không mang tài khoản, đội hoặc token. Đăng xuất/đổi tài khoản xóa đội riêng ở các tab trước khi tải session mới. Không thay lựa chọn luyện tập của khách.
 

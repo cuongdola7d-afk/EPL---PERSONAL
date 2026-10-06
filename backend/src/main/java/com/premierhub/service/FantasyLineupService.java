@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FantasyLineupService {
-    public static final int MAX_OVR = 860;
+    public static final int MAX_OVR = 910;
     public static final LocalDate AS_OF = LocalDate.of(2026, 10, 2);
     // Rows and keys mirror frontend/src/fantasy/lineup.js. Side-specific CB/CM
     // labels are normalized here; these are permissions, not broad groups.

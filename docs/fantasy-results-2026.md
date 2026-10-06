@@ -142,7 +142,7 @@ await fantasyAdminGw6('recalculate-results', {
 - Đọc đội đã chốt từ `fantasy_entries` và snapshot `fantasy_submitted_picks`; không lấy bản nháp, lựa chọn trình duyệt hoặc đội của GW trước.
 - Đọc `manual_fixture_player_stats` của league 39, season 2026, fixture thuộc đúng GW. Rating có giá trị là điểm SofaScore. `DID_NOT_PLAY` đã xác nhận nhận 0; `PLAYED` chỉ nhận 0 khi có xác nhận SofaScore không chấm. NULL chưa thu thập chặn công bố.
 - Tính bằng `BigDecimal`; tổng lưu `DECIMAL(12,2)`. Một người có nhiều trận trong GW được cộng từng khóa fixture/player đúng một lần. Không dùng `fantasy_points` v1 hay OVR làm điểm.
-- Kiểm tra tính hợp lệ bằng snapshot lúc chốt: 11 người/ô duy nhất, đúng sơ đồ và quyền vị trí đã lưu, tối đa 3 người/CLB, OVR không quá 860, thời điểm chốt trước deadline. Không áp lại rosterAsOf/hồ sơ hiện tại để thay đổi đội chốt.
+- Kiểm tra tính hợp lệ bằng snapshot lúc chốt: 11 người/ô duy nhất, đúng sơ đồ và quyền vị trí đã lưu, tối đa 3 người/CLB, OVR không quá 910 theo yêu cầu 06/10 (local, chờ migration/phát hành), thời điểm chốt trước deadline. Không áp lại rosterAsOf/hồ sơ hiện tại để thay đổi đội chốt.
 - Breakdown giữ ô, ID, tên, CLB snapshot, vị trí, điểm người và từng fixture với CLB thực tế trong dòng thống kê, rating thô, điểm và mã lý do `SOFASCORE_RATING`, `DID_NOT_PLAY`, `SOFASCORE_UNRATED_CONFIRMED`.
 
 Trước bước này, xác nhận người không được chấm chỉ có trong `confirmed-unrated.csv`/ghi chú nguồn. Hai bảng mới lưu bằng chứng tối thiểu:
@@ -217,7 +217,7 @@ Hai bảng kết quả: `fantasy_result_publications` (PK mùa/GW/version, hash,
 
 ## Giao diện và dữ liệu riêng
 
-Fantasy có khu vực kết quả đội mình: tải/lỗi/thử lại, “Đang chờ kết quả” không kèm điểm; khi công bố hiển thị tổng, version, thời gian Việt Nam và 11 dòng gồm điểm từng trận/lý do 0. Không chốt đội thì NOT_PARTICIPATING, không tự tạo điểm 0. ADMIN có kiểm tra readiness, danh sách blocker, lý do, nút công bố/tái tính và lịch sử phiên bản. Sự kiện công bố tải lại trạng thái GW.
+Fantasy có khu vực kết quả đội mình: tải/lỗi/thử lại, “Đang chờ kết quả” không kèm điểm; giao diện mới ngày 06/10 (local, chưa phát hành) đưa điểm từng người lên góc trên phải avatar và ô kết quả chỉ hiển thị tổng điểm. API vẫn giữ breakdown/version/thời gian và lý do 0 để đối chiếu; không trả điểm tạm. Không lưu đội thì NOT_PARTICIPATING, không tự tạo điểm 0. ADMIN có kiểm tra readiness, danh sách blocker, lý do, nút công bố/tái tính và lịch sử phiên bản. Sự kiện công bố tải lại trạng thái GW.
 
 Đổi account/GW hủy request cũ và xóa kết quả trước; backend luôn xác định chủ từ session. API/result không công khai email hoặc bản nháp. Không tự nhập lựa chọn localStorage, không đổi đội chốt, không có API xem kết quả người khác trong bước này.
 

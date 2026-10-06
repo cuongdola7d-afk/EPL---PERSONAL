@@ -7,6 +7,10 @@ export const formatPoints = value => new Intl.NumberFormat('vi-VN', {
   minimumFractionDigits: 2, maximumFractionDigits: 2,
 }).format(value)
 const points = value => typeof value === 'number' && Number.isFinite(value) && value >= 0
+export function publishedPlayerPoints(data, accountId, gameweek) {
+  if (!data || !validResult(data, accountId, gameweek) || data.status !== 'PUBLISHED') return new Map()
+  return new Map(data.result.players.map(player => [player.playerId, player.points]))
+}
 export function validResult(data, accountId, gameweek) {
   if (data?.accountId !== accountId || data.season !== 2026 || data.gameweek !== gameweek) return false
   if (['NOT_PARTICIPATING', 'AWAITING_RESULTS'].includes(data.status)) {
