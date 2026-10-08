@@ -7,7 +7,7 @@ test('Vercel routes API before SPA fallback and injects only an environment-back
   const api = config.routes[0]
   const path = '/api/auth/google/callback'
   const match = new RegExp(`^${api.src}$`).exec(path)
-  assert.equal(api.dest.replace('$1', match[1]), 'https://epl-personal-production.up.railway.app' + path)
+  assert.equal(api.dest.replace('$1', match[1]), 'https://epl-personal.onrender.com' + path)
   assert.deepEqual(api.transforms, [{
     type: 'request.headers', op: 'set', target: { key: 'x-prismaxi-proxy-secret' },
     args: '$PREMIERHUB_AUTH_PROXY_SECRET', env: ['PREMIERHUB_AUTH_PROXY_SECRET'],

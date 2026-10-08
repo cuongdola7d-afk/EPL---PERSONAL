@@ -2,6 +2,10 @@
 
 Ngày kiểm tra: **08/10/2026, giờ Việt Nam**. Lượt này chỉ chuẩn bị file, đọc cấu hình/metadata nguồn và kiểm tra local. **Chưa tạo dịch vụ, đổi proxy/kết nối production, xuất dump mới, nhập Aiven, dừng Railway, commit hoặc push.** Giữ nguyên các thay đổi tài liệu Minigame đang có.
 
+**Checkpoint tiếp theo:** người dùng đã deploy Render tại `https://epl-personal.onrender.com`, cấu hình Aiven database `defaultdb` và cho phép backup/copy Railway sang Aiven. Kết quả thực hiện được ghi riêng ở [render-aiven-rehearsal-2026-10-08.md](render-aiven-rehearsal-2026-10-08.md). Các URL/schema placeholder trong phần chuẩn bị bên dưới không phải cấu hình production hiện tại. Proxy Vercel vẫn trỏ Railway cho đến lượt cutover được giao riêng.
+
+**Cutover được giao riêng:** Google đã sửa và xác minh khớp nguồn; người dùng đã cho phép final backup/restore, dừng backend nguồn và chuyển Vercel bằng API, giữ MySQL Railway. Kế hoạch, rollback và kết quả thực hiện mới nhất ở [render-aiven-final-cutover-2026-10-08.md](render-aiven-final-cutover-2026-10-08.md). Phần dưới giữ lại bằng chứng của lượt chuẩn bị; trạng thái runtime/deployment/traffic phải đọc ở checkpoint cuối.
+
 ## Kiến trúc và file chuẩn bị
 
 ```mermaid

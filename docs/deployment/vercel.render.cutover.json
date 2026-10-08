@@ -11,9 +11,13 @@
         {
           "type": "request.headers",
           "op": "set",
-          "target": { "key": "x-prismaxi-proxy-secret" },
+          "target": {
+            "key": "x-prismaxi-proxy-secret"
+          },
           "args": "$PREMIERHUB_AUTH_PROXY_SECRET",
-          "env": ["PREMIERHUB_AUTH_PROXY_SECRET"]
+          "env": [
+            "PREMIERHUB_AUTH_PROXY_SECRET"
+          ]
         }
       ],
       "headers": {
@@ -23,7 +27,12 @@
         "x-vercel-enable-rewrite-caching": "0"
       }
     },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
