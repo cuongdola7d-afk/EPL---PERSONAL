@@ -148,6 +148,8 @@ Nếu trang báo lỗi API, mở `http://localhost:8080/actuator/health` rồi t
 
 Minigame 2026/27 đã có tab frontend theo mockup và nối API daily/luyện tập/BXH. Để chạy local, dùng profile backend `minigame-local`, mở `http://localhost:5173/#minigame`; xem [hướng dẫn và kết quả kiểm tra](docs/player-guess-minigame-frontend.md). Profile tự nạp snapshot đã chốt gồm 534 cầu thủ/20 CLB vào H2 riêng, có 364 đáp án đủ dữ liệu. Xem [nguồn dữ liệu và cơ chế nạp local](docs/player-guess-minigame-local-data.md).
 
+Minigame chưa bật trên production. Migration MySQL, preflight và quy trình backup → migration → deploy backend/frontend → kiểm tra tài khoản thật ở [hướng dẫn phát hành Minigame](docs/player-guess-minigame-release.md); không dùng profile/DB/bootstrap H2 local trên Railway.
+
 ## Deploy frontend lên Vercel, dùng backend Railway
 
 Frontend là ứng dụng Vite tĩnh; backend Spring Boot tiếp tục chạy trên Railway. Trước khi triển khai, kiểm tra URL backend Railway công khai qua `https://<railway-domain>/actuator/health` và `https://<railway-domain>/api/clubs`. URL này là **origin** (giao thức + host, có thể có cổng), không chứa `/api` hay đường dẫn khác. Repo không lưu sẵn domain Railway hoặc Vercel.

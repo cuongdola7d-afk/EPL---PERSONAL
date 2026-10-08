@@ -20,8 +20,12 @@ public class AuthProxyFilter extends OncePerRequestFilter {
 
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
+        boolean privateMinigame = path.startsWith("/api/minigame/2026/player-guess/")
+                && !("GET".equals(request.getMethod()) && (path.equals("/api/minigame/2026/player-guess/info")
+                || path.equals("/api/minigame/2026/player-guess/leaderboard")));
         return !(path.equals("/api/auth") || path.startsWith("/api/auth/")
-                || path.startsWith("/api/fantasy/2026/admin/") || path.startsWith("/api/fantasy/2026/me/"));
+                || path.startsWith("/api/fantasy/2026/admin/") || path.startsWith("/api/fantasy/2026/me/")
+                || privateMinigame);
     }
 
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,

@@ -1,6 +1,6 @@
 # Minigame Đoán cầu thủ — đặc tả và kế hoạch PrismaXI 2026/27
 
-Ngày ghi nhận: 08/10/2026. Trạng thái hiện tại: **backend đã hoàn thành và kiểm thử local; frontend chưa nối**. Các mục phạm vi lượt lưu kế hoạch bên dưới ghi lại lượt đầu; phần cập nhật triển khai ở cuối tài liệu và [hợp đồng API](player-guess-minigame-api.md).
+Ngày ghi nhận: 08/10/2026. Trạng thái hiện tại: **backend/frontend đã chơi được local; đã chuẩn bị migration và kiểm tra MySQL cô lập, chưa phát hành production**. Các mục phạm vi lượt lưu kế hoạch bên dưới ghi lại lượt đầu; phần cập nhật triển khai ở cuối tài liệu, [hợp đồng API](player-guess-minigame-api.md) và [hướng dẫn phát hành](player-guess-minigame-release.md).
 
 ## Đặc tả chính thức của người dùng
 
@@ -341,3 +341,9 @@ Còn chuẩn bị dữ liệu cầu thủ thật có căn cứ trên local nếu
 Người dùng giao làm nốt phần dữ liệu local. Profile `minigame-local` hiện tự nạp snapshot roster 30/09 và hồ sơ/vị trí cuối 04/10 từ file có căn cứ trong repo vào đúng H2 `target/minigame-local`; không truy cập production. Đã nạp 534 cầu thủ/20 CLB, 532 bộ vị trí; 364 người đủ 8 gợi ý và OVR >=75. Trường thiếu/OVR thủ công và khoảng membership giữ nguyên nguồn.
 
 Reimport thêm 0, giữ tiến trình và selector. 52 test backend liên quan qua; Chrome 1440px/390px chơi daily/luyện tập bằng roster thật trên bản sao H2 riêng, không tạo điểm test trong database local dùng để chơi. Cách chạy, bảo vệ database đích và bằng chứng ở [dữ liệu Minigame local](player-guess-minigame-local-data.md). Chưa ghi production, commit, push hoặc deploy; MySQL thử/migration vẫn thuộc bước phát hành sau.
+
+## 18. Chuẩn bị phát hành sau xác nhận local
+
+Người dùng xác nhận local đúng và giao rà Git, migration MySQL, pool thật, cấu hình daily/tiến trình/BXH và hướng dẫn phát hành. Đã chuẩn bị migration additive bảy bảng, preflight chỉ đọc, test MySQL cô lập và bổ sung proof proxy cho API Minigame cá nhân như Fantasy. Nguồn đáp án vẫn là membership/hồ sơ/vị trí 2026/27 trên datasource runtime, không có fallback mockup. Ván mới có ba gợi ý miễn phí; dữ liệu 2024/25, tài khoản và Fantasy được giữ nguyên trong kiểm tra.
+
+Chi tiết kiểm chứng, thứ tự backup → migration → backend/frontend → tài khoản thật, biến môi trường, file cần commit và điểm chặn production ở [hướng dẫn phát hành](player-guess-minigame-release.md). Không chạy toàn suite, ghi production, commit, push hoặc deploy trong lượt này.

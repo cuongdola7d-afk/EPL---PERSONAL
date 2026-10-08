@@ -162,10 +162,10 @@ Lượt toàn backend gần nhất chạy 408 test: 7 thất bại, 0 lỗi. Sá
 
 Lượt chạy đầu gặp lỗi cleanup `@TempDir` do thư mục Windows Temp ngoài workspace; chạy lại với `TEMP`/`TMP` trong `target/test-tmp` đã hết lỗi này, kể cả test persistence. Log/report/bản HEAD đối chiếu đều nằm dưới `target/`, không phải nguồn để commit.
 
-Chưa kiểm chứng khóa/migration trên MySQL thật; phần đó thuộc chuẩn bị phát hành sau khi được giao.
+Ở lượt backend ban đầu chưa kiểm chứng khóa/migration trên MySQL. Lượt chuẩn bị phát hành đã thêm migration riêng và kiểm tra trên MySQL 9.6 cô lập; xem [hướng dẫn phát hành](player-guess-minigame-release.md). Chưa đối chiếu hoặc áp dụng lên production.
 
 ## Trạng thái sau lượt nối frontend
 
 Tab/hash Minigame, chọn chế độ, gợi ý, chọn ID, lịch sử đoán/daily, kết quả, BXH, countdown và đăng nhập đã nối API. Frontend chỉ đọc tiến trình khi vào trang; bắt đầu ván do người chơi bấm. Xem kết quả kiểm tra và cách chạy trong [tài liệu frontend](player-guess-minigame-frontend.md).
 
-Roster local có căn cứ đã được nạp và kiểm tra daily/luyện tập qua giao diện. Trước phát hành còn review migration và kiểm tra MySQL thử; chưa được phép ghi production/commit/push/deploy.
+Roster local có căn cứ đã được nạp và kiểm tra daily/luyện tập qua giao diện. Migration MySQL, preflight và thứ tự backup → migration → backend/frontend → tài khoản thật đã được chuẩn bị ở [hướng dẫn phát hành](player-guess-minigame-release.md). Production vẫn cần xác nhận schema/pool hiện tại và backup mới trước khi được phép áp dụng; chưa ghi production/commit/push/deploy trong lượt chuẩn bị.

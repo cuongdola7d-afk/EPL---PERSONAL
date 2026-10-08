@@ -126,4 +126,38 @@ class AuthProxyFilterTest {
         environment.withProperty("PREMIERHUB_GOOGLE_CALLBACK_URI", "https://premierhub.vercel.app/api/auth/google/callback");
         assertDoesNotThrow(() -> new AuthProxySettings(environment));
     }
+
+    @Test void privateMinigameUsesProxyProofWhilePublicGetAndLocalPlayRemainAvailable() throws Exception {
+        var filter = new AuthProxyFilter(new AuthProxySettings(environment()));
+        for (String path : new String[] {"daily/current", "practice/current", "daily/start", "practice/start",
+                "players", "daily/history", "games/id", "games/id/guesses", "games/id/hints/next"}) {
+            var request = request();
+            request.setServletPath("/api/minigame/2026/player-guess/" + path);
+            request.removeHeader(AuthProxyFilter.PROXY_SECRET);
+            var response = new MockHttpServletResponse();
+            filter.doFilter(request, response, (req, res) -> fail("Private Minigame bypassed proxy proof"));
+            assertEquals(403, response.getStatus());
+            request.addHeader(AuthProxyFilter.PROXY_SECRET, SECRET);
+            filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> {
+                var verified = (HttpServletRequest) req;
+                assertTrue(verified.isSecure());
+                assertNull(verified.getHeader(AuthProxyFilter.PROXY_SECRET));
+            });
+            request.removeHeader(AuthProxyFilter.PROXY_SECRET);
+            new AuthProxyFilter(new AuthProxySettings(new MockEnvironment())).doFilter(request,
+                    new MockHttpServletResponse(), (req, res) -> assertFalse(((HttpServletRequest) req).isSecure()));
+        }
+        for (String path : new String[] {"info", "leaderboard"}) {
+            var request = request();
+            request.setServletPath("/api/minigame/2026/player-guess/" + path);
+            request.removeHeader(AuthProxyFilter.PROXY_SECRET);
+            var called = new AtomicBoolean();
+            filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> called.set(true));
+            assertTrue(called.get());
+            request.setMethod("POST");
+            var response = new MockHttpServletResponse();
+            filter.doFilter(request, response, (req, res) -> fail("Only GET is public"));
+            assertEquals(403, response.getStatus());
+        }
+    }
 }
