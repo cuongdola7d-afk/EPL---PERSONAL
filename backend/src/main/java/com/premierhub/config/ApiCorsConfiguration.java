@@ -27,6 +27,11 @@ public class ApiCorsConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/minigame/2026/player-guess/**")
+                .allowedOrigins(allowedOrigins.toArray(String[]::new))
+                .allowedMethods("GET", "POST")
+                .allowedHeaders("Accept", "Content-Type", "X-CSRF-TOKEN", "X-PrismaXI-Account-ID")
+                .allowCredentials(true);
         registry.addMapping("/api/fantasy/2026/me/**")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("GET", "POST")
