@@ -1,6 +1,6 @@
 # Minigame Đoán cầu thủ — đặc tả và kế hoạch PrismaXI 2026/27
 
-Ngày ghi nhận: 08/10/2026. Trạng thái hiện tại: **backend/frontend đã chơi được local; đã chuẩn bị migration và kiểm tra MySQL cô lập, chưa phát hành production**. Các mục phạm vi lượt lưu kế hoạch bên dưới ghi lại lượt đầu; phần cập nhật triển khai ở cuối tài liệu, [hợp đồng API](player-guess-minigame-api.md) và [hướng dẫn phát hành](player-guess-minigame-release.md).
+Ngày ghi nhận: 08/10/2026. Trạng thái hiện tại: **Đoán cầu thủ đã bật production sau backup/restore và migration MySQL; API/Chrome desktop/mobile đạt, người dùng xác nhận chơi bằng tài khoản thật và reload giữ tiến trình**. Xem [biên bản production](player-guess-minigame-production-2026-10-08.md). Các mục phạm vi lượt lưu kế hoạch bên dưới ghi lại lượt đầu; phần cập nhật triển khai ở cuối tài liệu, [hợp đồng API](player-guess-minigame-api.md) và [hướng dẫn phát hành](player-guess-minigame-release.md).
 
 ## Đặc tả chính thức của người dùng
 

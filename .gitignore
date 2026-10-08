@@ -33,6 +33,11 @@ frontend/dist/
 frontend/.env*.local
 frontend/.vercel/
 /backend/.env.local
+/backend/.env*.local
+/backend/secrets/
+aiven-ca.pem
+*.p12
+*.jks
 /backend/local-backups/
 backend/premierhub-local*.db
 .npm-cache/

@@ -1,5 +1,7 @@
 # Chuẩn bị phát hành Minigame PrismaXI — 08/10/2026
 
+**Cập nhật sau lượt chuẩn bị:** người dùng đã giao hoàn thiện trên web và xác nhận riêng backup/restore. Migration đã áp dụng/chạy lại an toàn, feature bật, backend/frontend cùng SHA, kiểm tra API/Chrome đạt và người dùng xác nhận chơi bằng tài khoản thật/reload giữ tiến trình. Xem [biên bản production 08/10](player-guess-minigame-production-2026-10-08.md). Các trạng thái “chưa production” dưới đây ghi nhận lượt chuẩn bị trước đó.
+
 ## Phạm vi và trạng thái
 
 Người dùng đã chơi và xác nhận local hoạt động đúng. Lượt này chuẩn bị phát hành, không kết nối/ghi production, commit, push hay deploy. Bản local đã được người dùng commit tới `c944be8`; không cần commit lại ba commit Minigame `da93711`, `901cda2`, `c944be8`.

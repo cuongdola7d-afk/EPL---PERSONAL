@@ -1,0 +1,19 @@
+# Allow only the application inputs required by Dockerfile.
+**
+!pom.xml
+!src/
+!src/main/
+!src/main/**
+!data/
+!data/match-lineups-2026-10-04/
+!data/match-lineups-2026-10-04/clubs.csv
+!data/match-lineups-2026-10-04/players.csv
+!docker-entrypoint.sh
+# Never bake local secrets/certificates into the image, even if misplaced in resources.
+**/.env*
+**/*.pem
+**/*.p12
+**/*.jks
+**/*.db
+**/*.log
+**/*private*.json

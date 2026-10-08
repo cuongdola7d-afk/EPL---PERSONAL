@@ -18,3 +18,16 @@ test('Vercel routes API before SPA fallback and injects only an environment-back
   assert.equal(config.routes[1].handle, 'filesystem')
   assert.equal(config.routes.at(-1).dest, '/index.html')
 })
+
+test('Prepared Render proxy keeps the current same-origin routing, secret and cache protections', async () => {
+  const current = JSON.parse(await fs.readFile(new URL('../../vercel.json', import.meta.url), 'utf8'))
+  const prepared = JSON.parse(await fs.readFile(new URL('../../../docs/deployment/vercel.render.example.json', import.meta.url), 'utf8'))
+  const api = prepared.routes[0]
+  assert.equal(new URL(api.dest).hostname, 'your-render-service.onrender.com')
+  for (const path of ['/api/auth/google/callback', '/api/fantasy/2026/me/gameweeks/6', '/api/minigame/2026/player-guess/practice/start']) {
+    const match = new RegExp(`^${api.src}$`).exec(path)
+    assert.equal(new URL(api.dest.replace('$1', match[1])).pathname, path)
+  }
+  prepared.routes[0].dest = current.routes[0].dest
+  assert.deepEqual(prepared, current, 'Only the upstream destination may change at cutover')
+})

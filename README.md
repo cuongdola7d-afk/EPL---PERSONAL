@@ -148,9 +148,11 @@ Nếu trang báo lỗi API, mở `http://localhost:8080/actuator/health` rồi t
 
 Minigame 2026/27 đã có tab frontend theo mockup và nối API daily/luyện tập/BXH. Để chạy local, dùng profile backend `minigame-local`, mở `http://localhost:5173/#minigame`; xem [hướng dẫn và kết quả kiểm tra](docs/player-guess-minigame-frontend.md). Profile tự nạp snapshot đã chốt gồm 534 cầu thủ/20 CLB vào H2 riêng, có 364 đáp án đủ dữ liệu. Xem [nguồn dữ liệu và cơ chế nạp local](docs/player-guess-minigame-local-data.md).
 
-Minigame chưa bật trên production. Migration MySQL, preflight và quy trình backup → migration → deploy backend/frontend → kiểm tra tài khoản thật ở [hướng dẫn phát hành Minigame](docs/player-guess-minigame-release.md); không dùng profile/DB/bootstrap H2 local trên Railway.
+Minigame Đoán cầu thủ đã bật trên [production](https://premierhub.vercel.app/#minigame): MySQL có đủ bảy bảng, frontend/backend cùng SHA, pool thật 2026/27 có 364 đáp án hợp lệ tại ngày phát hành. Backup đã thử restore, migration chạy lại an toàn, kiểm tra API/Chrome desktop/mobile đạt; người dùng xác nhận chơi bằng tài khoản thật và reload giữ đúng tiến trình. Xem [biên bản production 08/10](docs/player-guess-minigame-production-2026-10-08.md) và [hướng dẫn phát hành](docs/player-guess-minigame-release.md); không dùng profile/DB/bootstrap H2 local trên Railway.
 
 ## Deploy frontend lên Vercel, dùng backend Railway
+
+Đã chuẩn bị phương án chuyển backend sang Render Free + Aiven MySQL Free, giữ frontend/domain Vercel: [cấu hình, danh sách biến và quy trình chuyển toàn database](docs/render-aiven-migration.md). Đây là bản chuẩn bị, chưa đổi proxy/kết nối production hoặc dừng Railway.
 
 Frontend là ứng dụng Vite tĩnh; backend Spring Boot tiếp tục chạy trên Railway. Trước khi triển khai, kiểm tra URL backend Railway công khai qua `https://<railway-domain>/actuator/health` và `https://<railway-domain>/api/clubs`. URL này là **origin** (giao thức + host, có thể có cổng), không chứa `/api` hay đường dẫn khác. Repo không lưu sẵn domain Railway hoặc Vercel.
 

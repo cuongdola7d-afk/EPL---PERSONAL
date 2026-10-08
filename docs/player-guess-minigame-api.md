@@ -1,6 +1,6 @@
-# Backend Minigame Đoán cầu thủ — local 2026/27
+# Backend Minigame Đoán cầu thủ — 2026/27
 
-Ngày triển khai: 08/10/2026. Đặc tả chính thức: [kế hoạch Minigame](player-guess-minigame-plan.md). Backend đã có luật, snapshot, tiến trình, daily/practice, lịch sử và BXH. Frontend đã nối API theo mockup; xem [hướng dẫn giao diện local](player-guess-minigame-frontend.md). Chưa áp dụng migration hoặc dữ liệu lên production.
+Ngày triển khai: 08/10/2026. Đặc tả chính thức: [kế hoạch Minigame](player-guess-minigame-plan.md). Backend đã có luật, snapshot, tiến trình, daily/practice, lịch sử và BXH. Frontend đã nối API theo mockup; xem [hướng dẫn giao diện local](player-guess-minigame-frontend.md). Production đã bật sau backup/restore và migration MySQL; kiểm tra API/Chrome đạt, người dùng xác nhận chơi bằng tài khoản thật và reload giữ đúng tiến trình. Xem [biên bản production](player-guess-minigame-production-2026-10-08.md). Các mục “chưa production” phía dưới là trạng thái lịch sử của lượt local/chuẩn bị.
 
 ## Mockup và quyết định đã chốt
 

@@ -1,0 +1,55 @@
+# Preparation only. Syncing this Blueprint creates/deploys a service; do not sync before approval.
+# Add the plaintext secret file aiven-ca.pem in Render before starting the service.
+services:
+  - type: web
+    name: prismaxi-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    autoDeployTrigger: "off"
+    healthCheckPath: /actuator/health
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod,render
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=50.0 -XX:InitialRAMPercentage=10.0 -Duser.timezone=UTC
+      - key: PREMIERHUB_JDBC_URL
+        sync: false
+      - key: PREMIERHUB_DB_USER
+        sync: false
+      - key: PREMIERHUB_DB_PASSWORD
+        sync: false
+      - key: PREMIERHUB_AUTH_PROXY_SECRET
+        sync: false
+      - key: PREMIERHUB_AUTH_PUBLIC_ORIGIN
+        value: https://premierhub.vercel.app
+      - key: PREMIERHUB_AUTH_TRUSTED_PROXIES
+        value: ""
+      - key: PREMIERHUB_CORS_ALLOWED_ORIGINS
+        value: https://premierhub.vercel.app
+      - key: PREMIERHUB_GOOGLE_CLIENT_ID
+        sync: false
+      - key: PREMIERHUB_GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: PREMIERHUB_GOOGLE_FRONTEND_ORIGIN
+        value: https://premierhub.vercel.app
+      - key: PREMIERHUB_GOOGLE_CALLBACK_URI
+        value: https://premierhub.vercel.app/api/auth/google/callback
+      - key: PREMIERHUB_MINIGAME_ENABLED
+        value: "true"
+      - key: PREMIERHUB_MINIGAME_LOCAL_DATA_ENABLED
+        value: "false"
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: none
+      - key: SERVER_SERVLET_SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SERVER_SERVLET_SESSION_COOKIE_HTTP_ONLY
+        value: "true"
+      - key: SERVER_SERVLET_SESSION_COOKIE_SAME_SITE
+        value: lax
+      - key: SERVER_SERVLET_SESSION_COOKIE_PATH
+        value: /
