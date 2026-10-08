@@ -182,7 +182,7 @@ function App() {
       <footer className="site-footer">
         <div className="container footer-inner">
           <span className="footer-brand"><img src="/prismaxi-logo.svg" alt="" width="37" height="33" />prismaXI</span>
-          {page === 'clubs' && <><p className="cx-footer-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Danh sách cầu thủ được nhập thủ công.</p>
+          {page === 'clubs' && <><p className="cx-footer-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>
             <nav className="cx-footer-links" aria-label="Điều hướng cuối trang">{Object.entries(PAGES).map(([name, item]) =>
               <a key={name} href={`#${name}`}>{item.navLabel}</a>)}</nav></>}
         </div>

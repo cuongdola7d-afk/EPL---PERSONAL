@@ -116,7 +116,7 @@ function StandingsPage({ season, tab, onTabChange }) {
         ref={element => { tabRefs.current[index] = element }} onKeyDown={event => handleTabKey(event, index)} onClick={() => onTabChange(key)}>{label}</button>)}</div>
     <section className="st-panel" role="tabpanel" id={`st-panel-${tab}`} aria-labelledby={`st-tab-${tab}`} tabIndex={0}>
       {tab === 'clubs' ? <ClubsTable season={season} /> : <PlayersTable season={season} />}</section>
-    <p className="st-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>. Danh sách cầu thủ được nhập thủ công.</p>
+    <p className="st-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>
   </div></section>
 }
 

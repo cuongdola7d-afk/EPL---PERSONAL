@@ -78,6 +78,27 @@ class PlayerGuessIntegrationTest {
     Mutation hint(GameView game) { return service.change(game.accountId(), game.gameId(), key(), game.version(), null); }
     int count(String table) { return jdbc.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class); }
 
+    @Test void dailyAndPracticeStartWithHeightFootAndAgeAndChargeOnlyForTheNextHint() {
+        assertEquals(3, service.info().initiallyRevealedHints());
+        for (Mode mode : Mode.values()) {
+            var game = start(101, mode);
+            assertEquals(100, game.currentScore());
+            assertEquals(0, game.guessesUsed());
+            assertEquals(3, game.revealedHintCount());
+            assertEquals(List.of("height", "foot", "age"), game.hints().stream()
+                    .filter(Hint::revealed).map(Hint::key).toList());
+            assertEquals("26 tuổi", game.hints().get(2).value());
+            assertEquals("ovr", game.nextHintKey());
+            assertTrue(game.hints().stream().skip(3).allMatch(hint -> !hint.revealed() && hint.value() == null));
+            assertEquals(game, service.read(101, game.gameId()));
+            var revealed = hint(game);
+            assertEquals("ovr", revealed.effect().revealedHintKey());
+            assertEquals(90, revealed.game().currentScore());
+            assertEquals(0, revealed.game().guessesUsed());
+            assertEquals(4, revealed.game().revealedHintCount());
+        }
+    }
+
     @Test void readsNeverStartGamesAndPracticeResumesUntilExplicitNextGame() {
         assertEquals("NOT_STARTED", service.current(101, Mode.DAILY).status());
         assertEquals("NOT_STARTED", service.current(101, Mode.PRACTICE).status());
@@ -111,9 +132,8 @@ class PlayerGuessIntegrationTest {
         var resumed = service.read(101, first.gameId());
         assertEquals("180 cm", resumed.hints().getFirst().value());
         assertEquals("Hai chân", resumed.hints().get(1).value());
-        var age = hint(resumed).game();
-        assertEquals("26 tuổi", age.hints().get(2).value());
-        assertEquals("RW", guess(age, id).game().answer().primaryPosition());
+        assertEquals("26 tuổi", resumed.hints().get(2).value());
+        assertEquals("RW", guess(resumed, id).game().answer().primaryPosition());
         assertEquals(1, count("player_guess_questions"));
     }
 
@@ -146,8 +166,8 @@ class PlayerGuessIntegrationTest {
         var wrong = guess(game, 6).game();
         assertEquals(80, wrong.currentScore());
         assertEquals(2, wrong.guessesRemaining());
-        assertEquals(3, wrong.revealedHintCount());
-        assertEquals("age", wrong.guesses().getFirst().autoRevealedHint());
+        assertEquals(4, wrong.revealedHintCount());
+        assertEquals("ovr", wrong.guesses().getFirst().autoRevealedHint());
         var repeated = guess(wrong, 6);
         assertEquals("PLAYER_ALREADY_GUESSED", repeated.code());
         assertEquals(wrong, repeated.game());
@@ -156,8 +176,12 @@ class PlayerGuessIntegrationTest {
         assertTrue(service.players(101, game.gameId(), "7").isEmpty());
     }
 
-    @Test void correctAtZeroIsWinAndPracticeNeverAddsLeaderboardPoints() {
+    @Test void legacyTwoHintGameStillWinsAtZeroAndPracticeNeverAddsLeaderboardPoints() {
         var game = start(101, Mode.PRACTICE);
+        jdbc.update("UPDATE player_guess_games SET revealed_hints=2 WHERE id=?", game.gameId());
+        game = service.read(101, game.gameId());
+        assertEquals(2, game.revealedHintCount());
+        assertNull(game.hints().get(2).value());
         for (int i = 0; i < 6; i++) game = hint(game).game();
         var all = hint(game);
         assertEquals("ALL_HINTS_REVEALED", all.code());
@@ -368,7 +392,9 @@ class PlayerGuessIntegrationTest {
         assertFalse(started.getResponse().getContentAsString().contains("questionId"));
         assertFalse(started.getResponse().getContentAsString().contains("birthDate"));
         assertFalse(started.getResponse().getContentAsString().contains("fc27Overall"));
-        for (int i = 2; i < 8; i++) assertTrue(state.path("hints").get(i).path("value").isNull());
+        assertEquals(3, state.path("revealedHintCount").asInt());
+        assertEquals("26 tuổi", state.path("hints").get(2).path("value").asText());
+        for (int i = 3; i < 8; i++) assertTrue(state.path("hints").get(i).path("value").isNull());
         String gameId = state.path("gameId").asText();
         mvc.perform(get(API + "/games/" + gameId).with(user("b@example.test")).header("X-PrismaXI-Account-ID", 102))
                 .andExpect(status().isNotFound());

@@ -62,7 +62,7 @@ Mỗi ván có tám gợi ý, theo thứ tự:
 7. CLB.
 8. Số áo.
 
-Ban đầu mở sẵn **chiều cao và chân thuận**.
+Ban đầu mở sẵn **chiều cao, chân thuận và tuổi**. Đây là luật cho ván mới; ván đã lưu giữ số gợi ý và điểm theo tiến trình cũ.
 
 Các gợi ý còn lại bị ẩn. Người chơi chỉ được mở gợi ý tiếp theo, không được nhảy thẳng đến CLB hoặc số áo.
 
@@ -170,7 +170,7 @@ Mockup có thể chứa dữ liệu mẫu, logic chạy trong trình duyệt ho�
 
 Một lớp luật Java nhỏ nhận trạng thái hiện tại và hành động, trả trạng thái mới; không đọc HTTP, CSV hay database. Service chịu trách nhiệm xác thực, thời gian, truy vấn và lưu transaction. Cách tách này giúp kiểm tra phép tính trước khi ghép API.
 
-Trạng thái đề xuất: `IN_PROGRESS`, `WON`, `LOST`, `EXPIRED`. Ván lưu riêng `currentScore` và `finalScore`: điểm cuối chưa có khi đang chơi; kết thúc thắng lấy điểm còn lại, thua/hết hạn là 0. `revealedHintCount` khởi tạo 2; gợi ý đã mở luôn là một đoạn liên tiếp của danh sách tám mục. Không nhận điểm, trạng thái, số lượt hay vị trí gợi ý muốn mở từ client.
+Trạng thái đề xuất: `IN_PROGRESS`, `WON`, `LOST`, `EXPIRED`. Ván lưu riêng `currentScore` và `finalScore`: điểm cuối chưa có khi đang chơi; kết thúc thắng lấy điểm còn lại, thua/hết hạn là 0. `revealedHintCount` khởi tạo 3; gợi ý đã mở luôn là một đoạn liên tiếp của danh sách tám mục. Không nhận điểm, trạng thái, số lượt hay vị trí gợi ý muốn mở từ client.
 
 | Hành động | Điều kiện | Thay đổi |
 | --- | --- | --- |
@@ -182,7 +182,7 @@ Trạng thái đề xuất: `IN_PROGRESS`, `WON`, `LOST`, `EXPIRED`. Ván lưu r
 | Thao tác vào ván kết thúc | Đã thắng/thua/hết hạn | Không thay đổi kết quả; có thể đọc đáp án và toàn bộ gợi ý. |
 | Mở tiếp khi đã đủ tám gợi ý | Đang chơi | Báo đã mở hết; không trừ điểm hay mất lượt. |
 
-Ví dụ: sai lượt đầu từ trạng thái ban đầu còn 80 điểm, hai lượt và mở tới tuổi. Mở tiếp OVR còn 70; đoán đúng kết thúc 70 điểm. Mở sáu gợi ý bằng tay còn 40; sai hai lần còn 0; đoán đúng lượt ba vẫn là thắng 0. Sai cả ba lượt luôn có điểm cuối 0, dù điểm tạm còn dương.
+Ví dụ với ván mới: sai lượt đầu từ trạng thái ban đầu còn 80 điểm, hai lượt và mở tới OVR. Mở tiếp quốc tịch còn 70; đoán đúng kết thúc 70 điểm. Mở cả năm gợi ý còn lại bằng tay còn 50; sai hai lần còn 10; đoán đúng lượt ba thắng 10 điểm. Ván cũ mở sẵn hai gợi ý vẫn có thể thắng ở 0 điểm. Sai cả ba lượt luôn có điểm cuối 0, dù điểm tạm còn dương.
 
 Khi kết thúc, response hiển thị toàn bộ gợi ý miễn phí; không giả lập sáu hành động mở tiếp để trừ điểm. Lịch sử vẫn phân biệt gợi ý mở chủ động và tự mở nếu cần giải thích kết quả.
 
@@ -289,7 +289,7 @@ Chỉ chạy các kiểm tra này ở lượt triển khai được giao, không
 
 | Nhóm | Trường hợp phải xác minh |
 | --- | --- |
-| Luật | 100 điểm, hai gợi ý mở sẵn, thứ tự sáu gợi ý tiếp; mở tay -10 không mất lượt; sai -20 và tự mở miễn phí; sai khi đủ tám gợi ý; đúng 0 điểm; sai ba lần điểm cuối 0; ID lỗi/trùng không thay đổi ván. |
+| Luật | 100 điểm, ba gợi ý mở sẵn, thứ tự năm gợi ý tiếp; mở tay -10 không mất lượt; sai -20 và tự mở miễn phí; sai khi đủ tám gợi ý; đúng 0 điểm cho ván theo luật cũ; sai ba lần điểm cuối 0; ID lỗi/trùng không thay đổi ván. |
 | Pool/snapshot | Membership start/end đúng khoảng nửa mở, CLB thuộc mùa, OVR 74/75/NULL/thủ công, từng trường thiếu, vị trí cụ thể, chân BOTH, tuổi tại sinh nhật, pool rỗng/chỉ một người; sửa hồ sơ không đổi snapshot. |
 | Chọn đáp án | Daily không lặp trong chu kỳ, tránh lặp ở biên chu kỳ khi >=2; restart giữ lịch sử; nhiều người cùng ngày cùng snapshot; practice luôn loại daily lúc tạo, xử lý lịch sử/pool nhỏ không lặp vô hạn. |
 | Thời gian | Ngay trước/đúng/sau 00:00 Việt Nam; request chờ khóa qua hạn; daily hôm cũ EXPIRED/0 và vẫn xem đáp án; ngày mới 100/3; practice không hết hạn; tạo câu hỏi qua nửa đêm. |
@@ -335,3 +335,9 @@ Người dùng đã giao làm giao diện frontend và nối backend. Tab/hash M
 Kiểm tra: 103 test frontend qua, build Vite qua; Chrome desktop/mobile với backend/H2 test riêng đã xác nhận luồng chơi, reload, bấm đúp, retry cùng action ID sau mất phản hồi, xung đột version, thắng ở 0 điểm, đăng xuất và sáng/tối. Chi tiết ở [hướng dẫn frontend](player-guess-minigame-frontend.md). Không sửa backend/POM, ghi production, commit, push hoặc deploy.
 
 Còn chuẩn bị dữ liệu cầu thủ thật có căn cứ trên local nếu cần chơi bằng roster thực tế; trước phát hành vẫn cần migration và kiểm tra MySQL thử. Các lựa chọn đã chốt ở mục 15 giữ nguyên.
+
+## 17. Hoàn tất dữ liệu để chơi local — 08/10/2026
+
+Người dùng giao làm nốt phần dữ liệu local. Profile `minigame-local` hiện tự nạp snapshot roster 30/09 và hồ sơ/vị trí cuối 04/10 từ file có căn cứ trong repo vào đúng H2 `target/minigame-local`; không truy cập production. Đã nạp 534 cầu thủ/20 CLB, 532 bộ vị trí; 364 người đủ 8 gợi ý và OVR >=75. Trường thiếu/OVR thủ công và khoảng membership giữ nguyên nguồn.
+
+Reimport thêm 0, giữ tiến trình và selector. 52 test backend liên quan qua; Chrome 1440px/390px chơi daily/luyện tập bằng roster thật trên bản sao H2 riêng, không tạo điểm test trong database local dùng để chơi. Cách chạy, bảo vệ database đích và bằng chứng ở [dữ liệu Minigame local](player-guess-minigame-local-data.md). Chưa ghi production, commit, push hoặc deploy; MySQL thử/migration vẫn thuộc bước phát hành sau.

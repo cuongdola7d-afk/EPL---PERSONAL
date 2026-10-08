@@ -24,7 +24,7 @@ Mở `http://localhost:5173/#minigame`. Liên kết trực tiếp:
 
 Backend cần cổng 8080, frontend 5173 để khớp proxy và origin local đã được cho phép. Nếu Vite báo cổng 5173 bận, dùng đúng tiến trình đang chạy hoặc dừng tiến trình đó trước khi chạy lại. Dùng một host nhất quán khi đăng nhập; cookie localhost và 127.0.0.1 là hai phiên khác nhau. Tài khoản email/mật khẩu dùng được khi Google chưa được cấu hình.
 
-`minigame-local` dùng H2 riêng dưới `backend/target/minigame-local`, không tự nhập roster. Thấy “Chưa có đủ cầu thủ…” khi bấm bắt đầu nghĩa là API đã hoạt động nhưng pool chưa đủ hồ sơ/membership/OVR thật. Không thêm dữ liệu giả vào database này để che trạng thái thiếu dữ liệu. Chưa bật feature thì API 404 và trang báo Minigame chưa sẵn sàng; cần chạy đúng profile. H2 dưới `target/` bị xóa khi `mvn clean`; restart thông thường giữ tiến trình.
+`minigame-local` dùng H2 riêng dưới `backend/target/minigame-local` và hiện tự nạp snapshot đã chốt: 534 cầu thủ/20 CLB, 364 đáp án đủ điều kiện. Xem [nguồn dữ liệu và kết quả kiểm tra](player-guess-minigame-local-data.md). Nếu tắt bootstrap và database chưa có pool hợp lệ, bấm bắt đầu sẽ báo thiếu cầu thủ. Chưa bật feature thì API 404 và trang báo Minigame chưa sẵn sàng; cần chạy đúng profile. H2 dưới `target/` bị xóa khi `mvn clean`; restart thông thường giữ tiến trình.
 
 ## Hành vi giao diện
 
@@ -53,10 +53,10 @@ Chrome thật đã kiểm tra ở 1440px và 390px với Vite cổng 5185 nối 
 
 Kiểm tra lỗi riêng trên cùng backend thật: cho POST mở hint thành công rồi giả lập mất phản hồi tại lớp fetch; gửi lại cùng key chỉ mất 10 điểm một lần. Gửi hint từ phiên request khác rồi thao tác với version cũ: UI nhận 409 và tiến trình mới, không thêm phạt. Mở toàn bộ hint, sai hai lần rồi đúng lần ba: hiển thị thắng +0. Logout từ request khác rồi tiếp tục: UI bỏ game và yêu cầu đăng nhập. Sáng/tối, hộp chọn chế độ và tab Minigame mobile đã được kiểm tra hình ảnh/focus/geometry. Script, database và ảnh kiểm tra nằm trong `backend/target/minigame-ui-check/`, bị Git bỏ qua.
 
-Lượt này không sửa backend/POM, không chạy lại toàn suite backend. Luật nửa đêm/persistence đã được kiểm tra trong bước backend; test countdown frontend kiểm tra mốc giờ nhưng không giả vờ đã chờ đến 00:00 thật. Kết quả backend trước đó và các lỗi sẵn có của toàn suite vẫn được ghi trong tài liệu API.
+Ở lượt nối frontend, không sửa backend/POM hoặc chạy lại toàn suite backend. Luật nửa đêm/persistence đã được kiểm tra trong bước backend; test countdown frontend kiểm tra mốc giờ nhưng không giả vờ đã chờ đến 00:00 thật. Kết quả backend trước đó và các lỗi sẵn có của toàn suite vẫn được ghi trong tài liệu API. Lượt hoàn tất dữ liệu local sau đó đã thêm command nạp snapshot, chạy 52 test backend liên quan và kiểm tra Chrome desktop/mobile bằng roster thật; chi tiết ở tài liệu dữ liệu local.
 
 ## Còn lại
 
-Chuẩn bị roster thật có căn cứ trong database local riêng nếu cần chơi bằng cầu thủ thực tế. Trước phát hành còn kiểm thử migration/khóa trên MySQL thử và cấu hình môi trường phát hành. Chưa ghi production, commit, push hoặc deploy.
+Roster có căn cứ đã nạp vào H2 local riêng, có thể chơi daily/luyện tập ngay. Trước phát hành còn kiểm thử migration/khóa trên MySQL thử và cấu hình môi trường phát hành. Chưa ghi production, commit, push hoặc deploy.
 
 Bài thực hành nhỏ: chọn một chuỗi mở hint/đoán sai/đoán đúng, tính điểm trên giấy, rồi đối chiếu số điểm/lượt trong tab Network và UI; thử reload giữa ván để xác nhận không sinh ván mới. Không cần sửa luật hay dữ liệu để làm bài này.

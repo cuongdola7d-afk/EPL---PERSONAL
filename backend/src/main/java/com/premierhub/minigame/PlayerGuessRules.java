@@ -7,7 +7,7 @@ public final class PlayerGuessRules {
 
     private PlayerGuessRules() { }
 
-    public static State initial() { return new State(Status.IN_PROGRESS, 100, 0, 2, null); }
+    public static State initial() { return new State(Status.IN_PROGRESS, 100, 0, 3, null); }
 
     public static State reveal(State state) {
         requirePlaying(state);

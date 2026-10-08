@@ -28,7 +28,7 @@ Profile [minigame-local](../backend/src/main/resources/application-minigame-loca
 
 Feature mặc định tắt ở các profile khác. `application.properties` và cấu hình datasource production không bị sửa; production vẫn `spring.sql.init.mode=never`. [Schema Minigame](../backend/src/main/resources/player-guess-schema.sql) hiện phục vụ H2 local/test, chưa phải migration MySQL đã được xác minh.
 
-Profile không tự nhập cầu thủ/membership/hồ sơ. Database mới có pool rỗng sẽ trả `INSUFFICIENT_DATA`; đây là trạng thái đúng. Bộ test dùng roster giả có nhãn rõ, chỉ trong database test cô lập. Dữ liệu demo của mockup không phải dữ liệu thật. File H2 local nằm trong `target/`, mất nếu chạy `clean`; restart thông thường giữ dữ liệu trên file.
+Profile hiện tự nạp roster/membership/hồ sơ/vị trí từ snapshot đã chốt trong repo vào H2 riêng: 534 cầu thủ/20 CLB, 364 đáp án đủ điều kiện. Nạp lại cùng snapshot thêm 0 dòng, không tạo ván hay sửa tiến trình. Xem [quy trình và kiểm tra dữ liệu local](player-guess-minigame-local-data.md). Có thể tắt bước này bằng `--premierhub.minigame.local-data.enabled=false`; database rỗng khi tắt vẫn trả `INSUFFICIENT_DATA`. Dữ liệu demo của mockup không được nhập. File H2 local nằm trong `target/`, mất nếu chạy `clean`; restart thông thường giữ dữ liệu trên file.
 
 Maven hiện chạy **JDK 26** theo môi trường người dùng; POM hiện giữ `<java.version>21</java.version>`, tức mã được biên dịch với release 21. JavaSE 26 của IDE và release Maven là hai cấu hình khác nhau; lượt này chưa sửa POM hoặc IDE.
 
@@ -98,7 +98,7 @@ POST trả `code`, `message`, `game` và `effect`. Khi thành công `code=OK`; r
 | `gameId`, `accountId`, `season`, `mode`, `questionDate`, `version` | Chế độ, thông tin phiên và request kế tiếp. Không phải ID câu hỏi/đáp án. |
 | `status`, `currentScore`, `finalScore` | Điểm tạm lúc chơi, điểm cuối ở thẻ kết quả. Thua/hết hạn dùng `finalScore=0` dù điểm tạm còn dương. |
 | `guessesUsed`, `guessesRemaining` | Ba dấu lượt đoán và thông báo còn bao nhiêu lượt. Lượt đúng cũng là một lượt hợp lệ. |
-| `revealedHintCount`, `totalHints` | Số gợi ý mở khi chơi (ban đầu 2/8); khi kết thúc đủ tám ô hiển thị dù số gợi ý đã mua/tự mở vẫn giữ giá trị lịch sử. |
+| `revealedHintCount`, `totalHints` | Số gợi ý mở khi chơi (ván mới ban đầu 3/8: chiều cao, chân thuận, tuổi); khi kết thúc đủ tám ô hiển thị dù số gợi ý đã mua/tự mở vẫn giữ giá trị lịch sử. Ván đã lưu theo luật cũ có thể bắt đầu từ 2/8. |
 | `canGuess`, `canRevealHint`, `nextHintKey` | Khóa nút và tô ô gợi ý kế tiếp. Ván kết thúc khóa cả hai hành động. |
 | `hints[]` | Đúng tám mục theo thứ tự, mỗi mục có `key`, `label`, `revealed`, `value`. Khi ẩn `value=null`; khi kết thúc mọi `revealed=true`. |
 | `guesses[]` | `number`, `playerId`, tên snapshot, `correct`, `penalty` (0/20) và `autoRevealedHint`; đủ hiển thị lịch sử và nhãn đã đoán. |
@@ -168,4 +168,4 @@ Chưa kiểm chứng khóa/migration trên MySQL thật; phần đó thuộc chu
 
 Tab/hash Minigame, chọn chế độ, gợi ý, chọn ID, lịch sử đoán/daily, kết quả, BXH, countdown và đăng nhập đã nối API. Frontend chỉ đọc tiến trình khi vào trang; bắt đầu ván do người chơi bấm. Xem kết quả kiểm tra và cách chạy trong [tài liệu frontend](player-guess-minigame-frontend.md).
 
-Còn chuẩn bị roster local có căn cứ để người dùng chơi bằng dữ liệu thật. Profile local mới không tự có dữ liệu. Trước phát hành còn review migration và kiểm tra MySQL thử; chưa được phép ghi production/commit/push/deploy.
+Roster local có căn cứ đã được nạp và kiểm tra daily/luyện tập qua giao diện. Trước phát hành còn review migration và kiểm tra MySQL thử; chưa được phép ghi production/commit/push/deploy.

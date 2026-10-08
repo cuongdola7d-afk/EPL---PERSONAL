@@ -12,14 +12,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class PlayerGuessRulesTest {
     @Test void wrongGuessRevealsOnlyNextHintWithoutExtraCharge() {
         State state = guess(initial(), false);
-        assertEquals(new State(Status.IN_PROGRESS, 80, 1, 3, null), state);
+        assertEquals(new State(Status.IN_PROGRESS, 80, 1, 4, null), state);
         state = reveal(state);
-        assertEquals(new State(Status.IN_PROGRESS, 70, 1, 4, null), state);
-        assertEquals(new State(Status.WON, 70, 2, 4, 70), guess(state, true));
+        assertEquals(new State(Status.IN_PROGRESS, 70, 1, 5, null), state);
+        assertEquals(new State(Status.WON, 70, 2, 5, 70), guess(state, true));
     }
 
     @Test void correctThirdGuessCanWinAtZero() {
-        State state = initial();
+        // A persisted game created under the previous two-hint rule can still reach zero.
+        State state = new State(Status.IN_PROGRESS, 100, 0, 2, null);
         for (int i = 0; i < 6; i++) state = reveal(state);
         state = guess(guess(state, false), false);
         assertEquals(0, state.score());
@@ -28,22 +29,30 @@ class PlayerGuessRulesTest {
 
     @Test void thirdWrongGuessLosesEvenWithPositiveTemporaryScore() {
         State state = guess(guess(guess(initial(), false), false), false);
-        assertEquals(new State(Status.LOST, 40, 3, 5, 0), state);
+        assertEquals(new State(Status.LOST, 40, 3, 6, 0), state);
         assertThrows(IllegalArgumentException.class, () -> reveal(state));
         assertThrows(IllegalArgumentException.class, () -> guess(state, true));
     }
 
     @Test void allHintsAndExpiryDoNotChangeAlreadyFinishedResult() {
         State state = initial();
-        for (int i = 0; i < 6; i++) state = reveal(state);
+        for (int i = 0; i < 5; i++) state = reveal(state);
         State all = state;
         assertThrows(IllegalArgumentException.class, () -> reveal(all));
         State expired = expire(all);
         assertEquals(Status.EXPIRED, expired.status());
         assertEquals(0, expired.finalScore());
-        assertEquals(40, expired.score());
+        assertEquals(50, expired.score());
         State won = guess(all, true);
         assertEquals(won, expire(won));
+    }
+
+    @Test void threeFreeHintsLeaveFivePaidHintsAndTenPointsAfterTwoWrongGuesses() {
+        State state = initial();
+        for (int i = 0; i < 5; i++) state = reveal(state);
+        assertEquals(new State(Status.IN_PROGRESS, 50, 0, 8, null), state);
+        state = guess(guess(state, false), false);
+        assertEquals(new State(Status.WON, 10, 3, 8, 10), guess(state, true));
     }
 
     static Stream<PlayerGuessData.Candidate> invalidCandidates() {

@@ -8,10 +8,10 @@ const actionId = '22345678-1234-1234-1234-123456789012'
 const serverTime = '2026-10-08T05:00:00Z', nextDailyAt = '2026-10-08T17:00:00Z'
 function game(overrides = {}) {
   return { gameId, accountId: 101, season: 2026, mode: 'DAILY', questionDate: '2026-10-08', status: 'IN_PROGRESS', version: 1,
-    currentScore: 100, finalScore: null, guessesUsed: 0, guessesRemaining: 3, revealedHintCount: 2, totalHints: 8,
-    canGuess: true, canRevealHint: true, nextHintKey: 'age', serverTime, nextDailyAt, expiresAt: nextDailyAt,
+    currentScore: 100, finalScore: null, guessesUsed: 0, guessesRemaining: 3, revealedHintCount: 3, totalHints: 8,
+    canGuess: true, canRevealHint: true, nextHintKey: 'ovr', serverTime, nextDailyAt, expiresAt: nextDailyAt,
     hints: ['height', 'foot', 'age', 'ovr', 'nationality', 'position', 'club', 'shirtNumber'].map((key, index) =>
-      ({ key, label: key, revealed: index < 2, value: index < 2 ? 'Test hint' : null })), guesses: [], answer: null, ...overrides }
+      ({ key, label: key, revealed: index < 3, value: index < 3 ? 'Test hint' : null })), guesses: [], answer: null, ...overrides }
 }
 async function withFetch(mock, run) {
   const previous = globalThis.fetch
@@ -43,8 +43,11 @@ test('game validation rejects another owner, hidden answers and hidden hint valu
   assert.equal(validGame(game(), 101), true)
   assert.equal(validGame(game(), 102), false)
   assert.equal(validGame(game({ answer: { playerId: 1, name: 'Secret', club: 'Secret' } }), 101), false)
-  const leaked = game(); leaked.hints[2].value = '26'
+  const leaked = game(); leaked.hints[3].value = '80'
   assert.equal(validGame(leaked, 101), false)
+  const legacy = game({ revealedHintCount: 2, nextHintKey: 'age' })
+  legacy.hints[2] = { ...legacy.hints[2], revealed: false, value: null }
+  assert.equal(validGame(legacy, 101), true)
   const finished = game({ status: 'LOST', finalScore: 0, currentScore: 40,
     hints: game().hints.map(hint => ({ ...hint, revealed: true, value: 'Test hint' })),
     answer: { playerId: 1, name: 'Answer', club: 'Club' }, canGuess: false, canRevealHint: false, nextHintKey: null })

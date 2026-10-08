@@ -37,7 +37,7 @@ public class PlayerGuessService {
         Instant now = clock.instant();
         var hints = new ArrayList<Hint>();
         for (int i = 0; i < 8; i++) hints.add(new Hint(KEYS.get(i), LABELS.get(i), false, null));
-        return new PlayerGuessInfo(2026, ZONE.getId(), now, nextDay(today(now)), true, 100, 3, 2, 10, 20, List.copyOf(hints));
+        return new PlayerGuessInfo(2026, ZONE.getId(), now, nextDay(today(now)), true, 100, 3, initial().revealedHints(), 10, 20, List.copyOf(hints));
     }
 
     @Transactional

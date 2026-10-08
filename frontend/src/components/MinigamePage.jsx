@@ -63,9 +63,9 @@ function Sheet({ title, onClose, children }) {
 function Rules({ onClose }) {
   return <Sheet title="Cách chơi" onClose={onClose}>
     <ol className="mg-rules">{[
-      'Bắt đầu với 100 điểm, 2 gợi ý và tối đa 3 lần đoán. Cả daily và luyện tập đều cần đăng nhập.',
+      'Bắt đầu với 100 điểm, mở sẵn chiều cao, chân thuận và tuổi; tối đa 3 lần đoán. Cả daily và luyện tập đều cần đăng nhập.',
       'Gợi ý mở theo thứ tự: chiều cao, chân thuận, tuổi, OVR FC 27, quốc tịch, vị trí, câu lạc bộ, số áo.',
-      'Mở gợi ý tiếp theo mất 10 điểm, không mất lượt đoán. Đoán sai mất 20 điểm, 1 lượt và tự mở thêm 1 gợi ý miễn phí.',
+      'Mở gợi ý tiếp theo mất 10 điểm. Đoán sai mất 20 điểm, 1 lượt và tự mở thêm 1 gợi ý miễn phí.',
       'Chọn cầu thủ trong danh sách rồi xác nhận. Đoán lại cùng cầu thủ hoặc tên chưa được chọn không trừ điểm hay lượt.',
       'Đoán đúng giữ số điểm hiện tại, kể cả 0 điểm. Sai cả 3 lần nhận 0 điểm. Điểm luôn từ 0 trở lên.',
       'Daily có một câu hỏi chung mỗi ngày; chỉ điểm daily hoàn tất được cộng vào BXH. Ván dở hết hạn lúc 00:00 giờ Việt Nam nhận 0 điểm. Luyện tập không hết hạn theo ngày và không cộng BXH.',
@@ -109,7 +109,7 @@ function Hub({ account, source, onRefresh, onPick }) {
     <ErrorBox message={daily.error} onRetry={daily.refresh} disabled={daily.loading} retryLabel="Kiểm tra tiến trình" />
     <h2 className="mg-section-title">Chọn trò chơi</h2><div className="mg-game-grid">
       {[
-        ['guess', 'Đoán cầu thủ qua gợi ý', 'Bắt đầu với 100 điểm và hai gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.'],
+        ['guess', 'Đoán cầu thủ qua gợi ý', 'Bắt đầu với 100 điểm và ba gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.'],
         ['higher', 'Cao hay thấp', 'Hai cầu thủ xuất hiện, bạn đoán ai có chỉ số cao hơn. Đoán đúng liên tiếp để lập kỷ lục.'],
         ['lineup', 'Đội hình bí ẩn', 'Nhận diện các cầu thủ trong đội hình. Thử trí nhớ của bạn qua những gương mặt quen thuộc.'],
       ].map(([id, title, description], index) => <article className={`mg-game-card ${index ? 'mg-soon' : ''}`} key={id}>
@@ -138,7 +138,6 @@ function Leaderboard({ account, revision }) {
       </li>)}</ol>
       <div className="mg-pagination"><button className="mg-secondary" disabled={offset === 0} onClick={() => setOffset(value => value - 20)}>← Trước</button><span>Trang {offset / 20 + 1}</span><button className="mg-secondary" disabled={state.data.players.length < 20 || offset >= 100000} onClick={() => setOffset(value => value + 20)}>Sau →</button></div>
     </>}
-    <p className="mg-footnote">Cùng điểm nhận cùng hạng (1, 1, 3). Luyện tập không cộng điểm vào bảng này.</p>
   </section>
 }
 function GuessForm({ accountId, game, locked, onGuess }) {
@@ -185,7 +184,7 @@ function GuessForm({ accountId, game, locked, onGuess }) {
 function GuessHistory({ game }) {
   return <div className="mg-history"><h3>Lịch sử đoán</h3>{!game.guesses.length && <p className="mg-no-guesses">Chưa có lượt đoán nào. Bạn sẽ chọn ai?</p>}
     {game.guesses.map(guess => <div className={`mg-guess ${guess.correct ? 'mg-correct' : ''}`} key={guess.number}><span className="mg-guess-mark">{guess.correct ? '✓' : '×'}</span>
-      <div><b>{guess.name}</b><small>{guess.correct ? 'Chính xác!' : 'Sai · mất 1 lượt'}{guess.autoRevealedHint ? ' · đã mở thêm gợi ý' : ''}</small></div><strong>{guess.correct ? `+${game.finalScore}` : `−${guess.penalty}`}</strong></div>)}
+      <div><b>{guess.name}</b><small>{guess.correct ? 'Chính xác!' : 'Sai'}</small></div><strong>{guess.correct ? `+${game.finalScore}` : `−${guess.penalty}`}</strong></div>)}
   </div>
 }
 function GameBoard({ game, accountId, state, historical = false, onBoard }) {
@@ -199,7 +198,7 @@ function GameBoard({ game, accountId, state, historical = false, onBoard }) {
       <div className="mg-hint-grid">{game.hints.map(hint => <div key={hint.key} className={`mg-hint ${hint.revealed ? 'mg-open' : 'mg-locked'} ${hint.key === game.nextHintKey ? 'mg-next' : ''} ${state.effect?.revealedHintKey === hint.key ? 'mg-new' : ''}`}>
         <span className="mg-hint-icon"><Icon name={hint.key} /></span><div><span className="mg-hint-label">{hint.label}</span><b className={hint.key === 'ovr' && hint.revealed ? 'mg-ovr' : ''}>{hint.revealed ? hint.value : '•••'}</b></div>
       </div>)}</div>
-      <button className="mg-reveal" disabled={locked || !game.canRevealHint} onClick={state.reveal}>{finished ? 'Đã hiển thị toàn bộ gợi ý' : game.canRevealHint ? 'Mở gợi ý tiếp theo · −10 điểm' : 'Đã mở hết gợi ý'}<small>Không mất lượt đoán</small></button>
+      <button className="mg-reveal" disabled={locked || !game.canRevealHint} onClick={state.reveal}>{finished ? 'Đã hiển thị toàn bộ gợi ý' : game.canRevealHint ? 'Mở gợi ý tiếp theo · −10 điểm' : 'Đã mở hết gợi ý'}</button>
     </section>
     <section className={`mg-panel ${state.effect?.type === 'WRONG' ? 'mg-shake' : ''}`} aria-label="Dự đoán và kết quả">
       {finished ? <div className={`mg-result ${game.status === 'WON' ? 'mg-win' : ''}`}><div className="mg-result-points">{game.status === 'WON' ? '+' : ''}{game.finalScore}</div>
@@ -246,12 +245,12 @@ function GamePage({ account, authLoading, authError, mode, source, onRules }) {
         <ErrorBox message={state.error} onRetry={state.refresh} disabled={state.loading || state.busy} retryLabel="Kiểm tra tiến trình">{state.pending && <button className="mg-secondary" disabled={state.busy || state.loading} onClick={state.retry}>Gửi lại cùng thao tác</button>}</ErrorBox>
         {historical ? <><div className="mg-history-heading"><span>Daily ngày {historical.questionDate} · Lịch sử</span><button className="mg-secondary" onClick={() => setHistorical(null)}>Về ván hôm nay</button></div><GameBoard game={historical} accountId={account.id} state={state} historical onBoard={() => setTab('board')} /></> :
           state.game ? <GameBoard game={state.game} accountId={account.id} state={state} onBoard={() => setTab('board')} /> : state.loading ? <Loading /> : <div className="mg-panel mg-empty"><Icon name={mode === 'DAILY' ? 'age' : 'position'} />
-            <h2>{mode === 'DAILY' ? 'Sẵn sàng cho thử thách hôm nay?' : 'Thử tài trí nhớ bóng đá'}</h2><p>100 điểm · 2 gợi ý đầu tiên · 3 lượt đoán</p><p className="mg-muted">{mode === 'DAILY' ? 'Mỗi tài khoản một ván, hết hạn lúc 00:00 giờ Việt Nam.' : 'Chơi bao nhiêu ván tùy bạn. Tiến trình ván dở sẽ được lưu.'}</p>
+            <h2>{mode === 'DAILY' ? 'Sẵn sàng cho thử thách hôm nay?' : 'Thử tài trí nhớ bóng đá'}</h2><p>100 điểm · 3 gợi ý đầu tiên · 3 lượt đoán</p><p className="mg-muted">{mode === 'DAILY' ? 'Mỗi tài khoản một ván, hết hạn lúc 00:00 giờ Việt Nam.' : 'Chơi bao nhiêu ván tùy bạn. Tiến trình ván dở sẽ được lưu.'}</p>
             <button className="mg-primary" disabled={blocked || !state.current} onClick={state.start}>Bắt đầu {mode === 'DAILY' ? 'daily' : 'luyện tập'}</button></div>}
         {mode === 'DAILY' && <><button className="mg-history-toggle mg-secondary" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen}>{historyOpen ? 'Ẩn lịch sử daily' : 'Xem lịch sử daily'}</button>{historyOpen && <DailyHistory accountId={account.id} onView={setHistorical} revision={state.game?.version} />}</>}
       </>}
     </>}
-    {fx && <div className={`mg-fx ${fx.type === 'CORRECT' ? 'mg-win' : ''}`} aria-hidden="true" key={fx.actionId}><div>{fx.type === 'CORRECT' ? '✓ Chính xác!' : 'Chưa đúng rồi'}<small>{fx.type === 'CORRECT' ? `+${state.game?.finalScore ?? 0} điểm` : `${fx.scoreChange} điểm · mất 1 lượt`}</small></div></div>}
+    {fx && <div className={`mg-fx ${fx.type === 'CORRECT' ? 'mg-win' : ''}`} aria-hidden="true" key={fx.actionId}><div>{fx.type === 'CORRECT' ? '✓ Chính xác!' : 'Chưa đúng rồi'}<small>{fx.type === 'CORRECT' ? `+${state.game?.finalScore ?? 0} điểm` : `${fx.scoreChange} điểm`}</small></div></div>}
   </>
 }
 export default function MinigamePage({ account, authLoading, authError, route }) {
