@@ -327,3 +327,11 @@ Người dùng cập nhật project sang JavaSE 26. Maven đã chạy JDK 26; PO
 Không sửa frontend hoặc dữ liệu mùa 2024/25; không đọc/ghi production, commit, push hay deploy. Migration MySQL thật chưa áp dụng và cần kiểm chứng trên database thử ở bước phát hành.
 
 Kiểm tra cuối: 46 test Minigame và 33 test tích hợp Fantasy/auth liên quan đều qua (79 test, 0 thất bại/lỗi). Toàn suite gần nhất còn 7 thất bại có sẵn; đã tái hiện cùng 7 trường hợp trên bản HEAD chưa có Minigame. Chi tiết môi trường, nguyên nhân và bằng chứng kiểm tra ở tài liệu API. Phần tiếp theo được đề xuất là nối frontend theo mockup và API, sau khi người dùng giao lượt đó.
+
+## 16. Lượt nối frontend local — 08/10/2026
+
+Người dùng đã giao làm giao diện frontend và nối backend. Tab/hash Minigame, bố cục theo mockup, daily/luyện tập, gợi ý/đoán/kết quả, lịch sử, BXH, đồng hồ server và phiên đăng nhập đã triển khai. Không dùng engine/dữ liệu mẫu của mockup làm nghiệp vụ hay roster.
+
+Kiểm tra: 103 test frontend qua, build Vite qua; Chrome desktop/mobile với backend/H2 test riêng đã xác nhận luồng chơi, reload, bấm đúp, retry cùng action ID sau mất phản hồi, xung đột version, thắng ở 0 điểm, đăng xuất và sáng/tối. Chi tiết ở [hướng dẫn frontend](player-guess-minigame-frontend.md). Không sửa backend/POM, ghi production, commit, push hoặc deploy.
+
+Còn chuẩn bị dữ liệu cầu thủ thật có căn cứ trên local nếu cần chơi bằng roster thực tế; trước phát hành vẫn cần migration và kiểm tra MySQL thử. Các lựa chọn đã chốt ở mục 15 giữ nguyên.

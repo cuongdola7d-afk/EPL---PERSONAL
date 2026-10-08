@@ -146,6 +146,8 @@ Lựa chọn CLB trong bộ lọc lấy từ Club API. Khi chạy bằng `npm.cm
 
 Nếu trang báo lỗi API, mở `http://localhost:8080/actuator/health` rồi thử trực tiếp `/api/clubs`, `/api/players`, `/api/matches` hoặc `/api/standings` trên cùng host. Nếu không phản hồi, kiểm tra terminal backend, JDK và biến `PORT` (local cần cổng 8080 để khớp proxy). Nếu backend trả dữ liệu nhưng frontend vẫn lỗi, xem tab Network trong Developer Tools để kiểm tra request `/api/...`, rồi xác nhận Vite đang chạy đúng cổng/đúng thư mục. Chạy `npm.cmd run build` trong `frontend/` để kiểm tra bản build; `frontend/dist/` và `frontend/node_modules/` được Git bỏ qua.
 
+Minigame 2026/27 đã có tab frontend theo mockup và nối API daily/luyện tập/BXH. Để chạy local, dùng profile backend `minigame-local`, mở `http://localhost:5173/#minigame`; xem [hướng dẫn và kết quả kiểm tra](docs/player-guess-minigame-frontend.md). Profile mới chưa tự có roster cầu thủ; không dùng dữ liệu giả của mockup để tạo câu hỏi.
+
 ## Deploy frontend lên Vercel, dùng backend Railway
 
 Frontend là ứng dụng Vite tĩnh; backend Spring Boot tiếp tục chạy trên Railway. Trước khi triển khai, kiểm tra URL backend Railway công khai qua `https://<railway-domain>/actuator/health` và `https://<railway-domain>/api/clubs`. URL này là **origin** (giao thức + host, có thể có cổng), không chứa `/api` hay đường dẫn khác. Repo không lưu sẵn domain Railway hoặc Vercel.

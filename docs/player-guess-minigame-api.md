@@ -1,6 +1,6 @@
 # Backend Minigame Đoán cầu thủ — local 2026/27
 
-Ngày triển khai: 08/10/2026. Đặc tả chính thức: [kế hoạch Minigame](player-guess-minigame-plan.md). Backend đã có luật, snapshot, tiến trình, daily/practice, lịch sử và BXH. Frontend chưa sửa; chưa áp dụng migration hoặc dữ liệu lên production.
+Ngày triển khai: 08/10/2026. Đặc tả chính thức: [kế hoạch Minigame](player-guess-minigame-plan.md). Backend đã có luật, snapshot, tiến trình, daily/practice, lịch sử và BXH. Frontend đã nối API theo mockup; xem [hướng dẫn giao diện local](player-guess-minigame-frontend.md). Chưa áp dụng migration hoặc dữ liệu lên production.
 
 ## Mockup và quyết định đã chốt
 
@@ -164,10 +164,8 @@ Lượt chạy đầu gặp lỗi cleanup `@TempDir` do thư mục Windows Temp 
 
 Chưa kiểm chứng khóa/migration trên MySQL thật; phần đó thuộc chuẩn bị phát hành sau khi được giao.
 
-## Phần còn lại cho lượt nối frontend
+## Trạng thái sau lượt nối frontend
 
-1. Giữ bố cục HTML đã gửi, nối tab/hash Minigame vào React và thay engine mô phỏng bằng API này.
-2. Dùng state tài khoản, cookie/CSRF, hủy request khi đổi phiên; vào trang chỉ GET current, start do người chơi bấm.
-3. Nối các ô gợi ý/lượt/điểm, chọn ID, lịch sử, hiệu ứng, kết quả, BXH và countdown; bổ sung màn hình hết hạn/thiếu pool/đăng nhập practice theo luật chính thức.
-4. Chuẩn bị dữ liệu local có căn cứ nếu muốn thử UI với roster thật; không lấy dữ liệu mẫu của mockup hoặc kết nối production để demo.
-5. Kiểm tra trải nghiệm desktop/mobile và điều hướng, mất mạng, retry, nhiều tab. Trước phát hành còn cần review migration MySQL và kiểm tra trên MySQL thử; chưa được phép ghi production/commit/push/deploy.
+Tab/hash Minigame, chọn chế độ, gợi ý, chọn ID, lịch sử đoán/daily, kết quả, BXH, countdown và đăng nhập đã nối API. Frontend chỉ đọc tiến trình khi vào trang; bắt đầu ván do người chơi bấm. Xem kết quả kiểm tra và cách chạy trong [tài liệu frontend](player-guess-minigame-frontend.md).
+
+Còn chuẩn bị roster local có căn cứ để người dùng chơi bằng dữ liệu thật. Profile local mới không tự có dữ liệu. Trước phát hành còn review migration và kiểm tra MySQL thử; chưa được phép ghi production/commit/push/deploy.

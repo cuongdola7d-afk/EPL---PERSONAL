@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ClubPage from './components/ClubPage.jsx'
 import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
@@ -7,6 +7,8 @@ import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import ClubDetailPage from './components/ClubDetailPage.jsx'
 import AccountMenu from './components/AccountMenu.jsx'
+import MinigamePage from './components/MinigamePage.jsx'
+import { parseMinigameRoute } from './minigame/playerGuess.js'
 import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
 import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
 import { parseMatchRoute } from './utils/matchRoute.js'
@@ -44,16 +46,21 @@ const PAGES = {
     navLabel: 'Fantasy', label: 'Fantasy · 2026/27', title: 'Đội hình của bạn.', highlight: 'Theo OVR FC 27.',
     description: 'Chọn 11 cầu thủ từ roster mùa 2026/27.', component: FantasyPage, fullPage: true,
   },
+  minigame: {
+    navLabel: 'Minigame', label: 'Minigame · 2026/27', component: MinigamePage, fullPage: true,
+  },
 }
 
 function pageFromHash(hash) {
   const name = hash.slice(1)
+  if (parseMinigameRoute(hash)) return 'minigame'
   if (parsePlayerDetailHash(hash) || parsePlayerListHash(hash)) return 'players'
   if (parseMatchRoute(hash)) return 'matches'
   return PAGES[name] ? name : 'clubs'
 }
 
 function App() {
+  const navigation = useRef(null)
   const [session, setSession] = useState({ account: null, loading: true, error: '' })
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
   const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ??
@@ -61,6 +68,7 @@ function App() {
   const [playerDetail, setPlayerDetail] = useState(() => parsePlayerDetailHash(window.location.hash))
   const [matchRoute, setMatchRoute] = useState(() => parseMatchRoute(window.location.hash))
   const [clubRoute, setClubRoute] = useState(() => parseClubRoute(window.location.hash))
+  const [minigameRoute, setMinigameRoute] = useState(() => parseMinigameRoute(window.location.hash))
   const [homeState, setHomeState] = useState({ query: '', slide: 0 })
   const [homeTheme, setHomeTheme] = useState('dark')
   const [standingsTab, setStandingsTab] = useState('clubs')
@@ -74,6 +82,7 @@ function App() {
       setPlayerDetail(detail)
       setMatchRoute(match)
       setClubRoute(club)
+      setMinigameRoute(parseMinigameRoute(window.location.hash))
       if (detail?.season || playerList?.season || match?.season || club?.season) {
         setSeason(detail?.season ?? playerList?.season ?? match?.season ?? club?.season)
       }
@@ -89,6 +98,11 @@ function App() {
   const CurrentPage = current.component
 
   useEffect(() => {
+    // The new tab is at the end of the horizontally scrolling mobile navigation.
+    if (page === 'minigame' && navigation.current) navigation.current.scrollLeft = navigation.current.scrollWidth
+  }, [page])
+
+  useEffect(() => {
     document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
   }, [current.label, playerDetail, clubRoute, page])
 
@@ -101,7 +115,7 @@ function App() {
             <span>prisma<span className="brand-accent">XI</span></span>
           </a>
 
-          <nav className="site-nav" aria-label="Điều hướng chính">
+          <nav ref={navigation} className="site-nav" aria-label="Điều hướng chính">
             {Object.entries(PAGES).map(([name, item]) => (
               <a key={name} className={`nav-link${page === name ? ' active' : ''}`} href={`#${name}`} aria-current={page === name ? 'page' : undefined}>
                 {item.navLabel}
@@ -156,8 +170,9 @@ function App() {
         {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
           playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
-          <CurrentPage key={page === 'fantasy' ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
-            {...(page === 'fantasy' ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
+          <CurrentPage key={['fantasy', 'minigame'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
+            {...(['fantasy', 'minigame'].includes(page) ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
+            {...(page === 'minigame' ? { route: minigameRoute } : {})}
             {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
             {...(page === 'standings' ? { tab: standingsTab, onTabChange: setStandingsTab } : {})}

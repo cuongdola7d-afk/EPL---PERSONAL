@@ -129,6 +129,12 @@ export default function AccountMenu({ onSessionChange }) {
   const tabId = useRef(crypto.randomUUID())
 
   useEffect(() => {
+    const openAccount = () => setOpen(true)
+    window.addEventListener('prismaxi-open-account', openAccount)
+    return () => window.removeEventListener('prismaxi-open-account', openAccount)
+  }, [])
+
+  useEffect(() => {
     const controller = new AbortController()
     sessionRequest.current = controller
     currentAccount(controller.signal).then(value => {
