@@ -1,5 +1,19 @@
 # Bước 2 — Gameweek và deadline Fantasy 2026/27
 
+## Cập nhật 09/10/2026 — admin chủ động bắt đầu vòng mới
+
+Đã triển khai local theo yêu cầu người dùng:
+
+- Màn hình mặc định giữ **GW đã công bố gần nhất**, kể cả khi hết deadline hoặc đang chờ kết quả. `recommendedGameweek` trả GW đó; khi chưa công bố vòng nào trả `null`. Lịch/deadline dự kiến không tự chuyển màn hình sang GW tiếp theo.
+- Tài khoản ADMIN thấy nút **Bắt đầu GW7** khi GW6 đã khóa (tương tự với các vòng kế tiếp). Nút gọi `publish-deadline` hiện có bằng phiên/CSRF, gửi lý do công khai tự điền; server tính hạn từ lịch hiện tại và lấy rosterAsOf mặc định tại ngày công bố Việt Nam. Không gửi deadline/status từ client, không đổi mốc roster của vòng cũ. Lịch thiếu hoặc deadline dự kiến đã qua thì không mở được; backend cũng từ chối công bố mới khi deadline dự kiến đã hết.
+- Chỉ sau khi API thành công và overview xác nhận cấu hình mới, giao diện chuyển sang GW mới. Nếu API lỗi, giữ vòng cũ và báo lỗi. GW tương lai chưa công bố bị khóa trong danh sách chọn; vẫn chọn lại được các vòng đã công bố để xem đội/kết quả.
+- Giao diện đọc trạng thái công khai mỗi 30 giây khi tab đang hiển thị, khi quay lại tab và tại deadline. Vòng mới do admin mở ở phiên khác được nhận trong lần đọc tiếp theo; sau đó việc chủ động chọn vòng cũ được giữ qua các lần cập nhật thông thường. Không polling tài khoản, không cần cron.
+- Đội đã lưu của GW6 vẫn hiển thị sau deadline, khóa các nút chọn/thay/bỏ cầu thủ, đổi sơ đồ, xóa và lưu. Các nút trong vùng đội hình bị khóa có opacity 1, nên ảnh/icon và giá trị giữ độ sáng bình thường. GW7 bắt đầu với đội riêng của GW7, không sao chép đội GW6.
+
+Kiểm tra: **22 test backend** (`GameweekIntegrationTest`, `FantasyEntryIntegrationTest`), **18 test frontend** (gameweek/roster/results/entry) và Vite build đạt. Maven chạy JDK 26, POM vẫn mục tiêu Java 21. Trình duyệt Chrome với dữ liệu/API mô phỏng local ở 1440px và 390px xác nhận hết deadline/reload giữ GW6, USER không thấy nút mở, nút khóa không làm mờ/không sửa được, lỗi công bố giữ GW6, ADMIN mở GW7 với hạn 16/10/2026 00:00 Việt Nam, đội mới rỗng, chọn lại GW6 và không tràn ngang/lỗi JavaScript. API ADMIN thật được kiểm tra bằng MockMvc/H2; kiểm tra trình duyệt không dùng tài khoản/database production. Artifacts local ở `backend/target/gw-admin-check/`, được ignore.
+
+Chưa commit, push, deploy hoặc mở GW7 production. Các checkpoint bước 2 bên dưới ghi nhận lịch sử trước thay đổi này.
+
 **Bổ sung sau bước 3:** cấu hình GW có rosterAsOf cố định khi công bố, mặc định ngày mở theo giờ Việt Nam hoặc ngày quản trị chọn có dữ liệu. POST publish-deadline nhận thêm trường rosterAsOf tùy chọn dạng YYYY-MM-DD; bỏ trường này để dùng mặc định. GET thông tin GW trả mốc đã lưu; GET /api/fantasy/2026/gameweeks/{gameweek}/players trả roster tại mốc đó. Điều chỉnh deadline không đổi rosterAsOf. Cần migration bổ sung trước phát hành code; xem [fantasy-roster-reference-2026.md](fantasy-roster-reference-2026.md). Kiểm tra/checkpoint dưới đây ghi nhận lượt bước 2 trước phần bổ sung.
 
 Checkpoint 05/10/2026: hoàn thiện mã local, migration và kiểm tra đúng phạm vi. Chưa nhập production, công bố deadline production hoặc phát hành. Không triển khai lưu/chốt đội, chấm điểm, BXH hoặc Replay; không thay luật Fantasy, dữ liệu bóng đá, membership hay mùa 2024/25. Phần auth đang dùng được giữ nguyên, không kiểm tra lại Google thật.
@@ -37,7 +51,7 @@ Migration [2026-10-05-fantasy-gameweeks-mysql.sql](../backend/sql/2026-10-05-fan
 | AWAITING_RESULTS | Đã khóa và có fixture đang/đã đấu, hoặc đã tới kickoff của fixture SCHEDULED. Giữ trạng thái này khi tất cả trận FINISHED hoặc còn chờ trận/dữ liệu. |
 | PUBLISHED | Chỉ dữ liệu do luồng công bố kết quả sau này ghi workflow PUBLISHED cùng results_published_at. Không có endpoint đặt trạng thái này trong bước 2. |
 
-Chưa công bố cấu hình: `configured=false`, `status=null`, `deadlineUtc=null`, `canEdit=false`. `candidateDeadlineUtc` chỉ là dự kiến theo lịch đầy đủ. Không gán OPEN hoặc cho tham gia từ deadline dự kiến. `recommendedGameweek` chọn vòng còn hạn, đủ lịch, từ GW6; có thể là vòng chưa công bố, giao diện phải ghi rõ điều đó.
+Chưa công bố cấu hình: `configured=false`, `status=null`, `deadlineUtc=null`, `canEdit=false`. `candidateDeadlineUtc` chỉ là dự kiến theo lịch đầy đủ. Không gán OPEN hoặc cho tham gia từ deadline dự kiến. Từ cập nhật 09/10/2026, `recommendedGameweek` chọn GW đã công bố gần nhất (từ GW6), không phụ thuộc còn hạn hay lịch dự kiến; chưa công bố vòng nào thì trả `null`.
 
 `requireOpen(gameweek)` từ chối GW chưa mở hoặc đã khóa bằng giờ server, kể cả row lưu còn OPEN. Bước 3 phải gọi guard bên trong transaction lưu/chốt, sau khi giữ lock cấu hình/đội và ngay trước thao tác ghi. Bước 2 chưa có API lưu/chốt để gắn guard; endpoint validate cũ vẫn chỉ kiểm tra đội hình local, không phải tham gia cuộc thi.
 
@@ -53,7 +67,7 @@ API ghi dùng cùng phiên auth hiện có, role ADMIN, cookie/CSRF, origin và 
 - `POST /api/fantasy/2026/admin/gameweeks/{gw}/publish-deadline`, body `{"reason":"Thông báo mở vòng ..."}`. Server tính hạn từ lịch đã lưu, ghi snapshot, publication và audit trong một transaction. Không nhận deadline/role/status từ client. Publication lặp trả 409, không đổi hạn cũ.
 - `POST /api/fantasy/2026/admin/gameweeks/{gw}/adjust-deadline`, body `{"deadlineUtc":"2026-10-07T17:00:00Z","expectedRevision":1,"reason":"Lý do điều chỉnh công khai ..."}`. Lock row, kiểm tra revision, ghi audit atomically. Hạn mới khác hạn cũ, ở tương lai, trước kickoff snapshot; lý do 3–500 ký tự. Vòng đã khóa không được mở lại/điều chỉnh trong bước này. HTTP 409 cho xung đột/vòng khóa; 400 cho đầu vào sai.
 
-Thay lịch sync không gọi hai API trên và không ghi lại deadline. Giao diện hiển thị lịch sử điều chỉnh như thông báo, giữ thời điểm publication ban đầu. Chưa có màn hình quản trị riêng hoặc gửi notification/email; thao tác rõ ràng hiện là API có xác thực.
+Thay lịch sync không gọi hai API trên và không ghi lại deadline. Giao diện hiển thị lịch sử điều chỉnh như thông báo, giữ thời điểm publication ban đầu. Từ cập nhật 09/10/2026, ADMIN có nút bắt đầu vòng kế tiếp trong khối Vòng thi gọi API có xác thực; chưa có màn hình quản trị riêng hoặc gửi notification/email.
 
 GET overview đọc fixtures, cấu hình và audit theo ba query, không query từng GW và không tải JDBC session. POST admin mới được AuthProxyFilter kiểm tra như /api/auth; CSRF không được miễn cho các thao tác ghi này. Không thay cookie, Google/LINK, giới hạn auth hoặc cache phản hồi tài khoản.
 

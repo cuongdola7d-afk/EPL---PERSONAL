@@ -154,7 +154,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
         <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
-      <FantasyGameweek onSelectionChange={contestSelection} />
+      <FantasyGameweek account={account} onSelectionChange={contestSelection} />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
         {VIEWS.map(([key, label], index) => <button key={key} type="button" role="tab"
           id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}

@@ -9,4 +9,6 @@
 .fantasy-gameweek-details strong { margin-top: 4px; font-size: .93rem; }
 .fantasy-gameweek-countdown { font-variant-numeric: tabular-nums; color: var(--f-accent); }
 .fantasy-gameweek p { margin-bottom: 0; overflow-wrap: anywhere; }
+.fantasy-gameweek-admin { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--f-line); }
+.fantasy-gameweek-admin button { margin: 10px 0 0; border-color: var(--f-accent); color: var(--f-accent); font-weight: 700; }
 @media (max-width: 560px) { .fantasy-gameweek { padding: 14px; }.fantasy-gameweek-details { flex-direction: column; gap: 12px; } }

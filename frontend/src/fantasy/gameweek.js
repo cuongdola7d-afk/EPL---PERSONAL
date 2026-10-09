@@ -2,6 +2,25 @@ export const GAMEWEEK_LABELS = {
   OPEN: 'Đang mở', LOCKED: 'Đã khóa', AWAITING_RESULTS: 'Chờ kết quả', PUBLISHED: 'Đã công bố kết quả',
 }
 
+export function latestPublishedGameweek(gameweeks) {
+  return gameweeks.filter(gw => gw.gameweek >= 6 && gw.configured)
+    .reduce((latest, gw) => Math.max(latest, gw.gameweek), 0) || null
+}
+
+export function displayedGameweek(gameweeks, selected, previousLatest) {
+  const latest = latestPublishedGameweek(gameweeks)
+  if (latest !== null && latest > (previousLatest ?? 0)) return latest
+  const view = gameweeks.find(gw => gw.gameweek === selected)
+  if (view && (view.gameweek < 6 || view.configured)) return selected
+  return latest ?? 6
+}
+
+export function nextGameweekToOpen(gameweeks) {
+  const latest = latestPublishedGameweek(gameweeks)
+  if (latest && gameweeks.find(gw => gw.gameweek === latest)?.status === 'OPEN') return null
+  return gameweeks.find(gw => gw.gameweek === (latest === null ? 6 : latest + 1) && !gw.configured) ?? null
+}
+
 export function formatDeadline(value) {
   if (!value) return 'Chưa công bố'
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh',

@@ -48,9 +48,10 @@ public class GameweekService {
         Instant now = clock.instant();
         var views = IntStream.rangeClosed(1, 38).mapToObj(gw -> view(gw, fixtures.getOrDefault(gw, List.of()),
                 configurations.get(gw), changes.getOrDefault(gw, List.of()), now)).toList();
-        Integer recommended = views.stream().filter(v -> v.gameweek() >= 6 && v.scheduleComplete()
-                && (v.configured() ? v.canEdit() : v.candidateDeadlineUtc().isAfter(now)))
-                .map(View::gameweek).findFirst().orElse(null);
+        // Keep the latest published round on screen, even after its deadline.
+        // A future schedule alone does not start a new contest.
+        Integer recommended = views.stream().filter(v -> v.gameweek() >= 6 && v.configured())
+                .map(View::gameweek).max(Integer::compareTo).orElse(null);
         return new Overview(now, recommended, views);
     }
 
@@ -111,6 +112,8 @@ public class GameweekService {
         var info = info(gameweek);
         if (!info.scheduleComplete()) throw conflict("Chưa đủ 10 trận có thời điểm UTC xác định để công bố deadline.");
         Instant now = clock.instant();
+        if (!now.isBefore(info.candidateDeadlineUtc()))
+            throw conflict("Deadline dự kiến đã hết; không thể bắt đầu vòng này.");
         LocalDate rosterAsOf = selectedRosterAsOf == null ? now.atZone(VIETNAM).toLocalDate() : selectedRosterAsOf;
         if (!repository.hasRoster(rosterAsOf))
             throw conflict("Chưa có dữ liệu roster hiệu lực tại ngày " + rosterAsOf + ". Chọn ngày đã có dữ liệu.");

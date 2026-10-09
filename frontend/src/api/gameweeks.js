@@ -1,5 +1,10 @@
 import { fetchApiJson } from './request.js'
 import { GAMEWEEK_LABELS } from '../fantasy/gameweek.js'
+import { fantasyAdminRequest } from './fantasyAdmin.js'
+
+export const publishGameweek = (gameweek, signal) => fantasyAdminRequest(gameweek, 'publish-deadline', {
+  reason: `Bắt đầu GW${gameweek} mùa 2026/27 với deadline theo lịch.`,
+}, signal)
 
 const timestamp = value => typeof value === 'string' && value.includes('T') && Number.isFinite(Date.parse(value))
 export async function fetchGameweeks(signal) {

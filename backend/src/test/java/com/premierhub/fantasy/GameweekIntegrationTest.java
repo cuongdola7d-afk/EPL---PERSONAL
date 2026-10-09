@@ -156,19 +156,46 @@ class GameweekIntegrationTest {
         assertThrows(ResponseStatusException.class, this::publish);
     }
 
-    @Test void initialPublicationOfExpiredRoundDoesNotOpenIt() {
+    @Test void initialPublicationOfExpiredRoundIsRejectedWithoutWritingConfigurationOrAudit() {
         at(DEADLINE.plusSeconds(1));
-        publish();
-        assertEquals(GameweekService.Status.LOCKED, service.info(6).status());
+        assertThrows(ResponseStatusException.class, this::publish);
+        assertFalse(service.info(6).configured());
+        assertTrue(service.info(6).deadlineChanges().isEmpty());
         assertFalse(service.info(6).canEdit());
         assertThrows(ResponseStatusException.class, () -> service.requireOpen(6));
+    }
+
+    @Test void latestPublishedRoundStaysRecommendedUntilAdminStartsNextRound() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            jdbc.update("INSERT INTO fixtures VALUES (?,39,2026,991,992,7,'2026-10-17','SCHEDULED','TIMED',NULL,NULL,?,CURRENT_TIMESTAMP)",
+                    1000 + i, "c".repeat(64));
+            jdbc.update("INSERT INTO football_data_fixtures VALUES (?,?,?,'TIMED')", 1000 + i, 1000 + i,
+                    FIRST.plusSeconds(7 * 86400L + i * 3600L).toString());
+        }
+        assertNull(service.overview().recommendedGameweek());
+        publish();
+        at(DEADLINE);
+        assertEquals(6, service.overview().recommendedGameweek());
+        assertEquals(GameweekService.Status.LOCKED, service.info(6).status());
+        assertFalse(service.info(7).configured());
+        mvc.perform(post("/api/fantasy/2026/admin/gameweeks/7/publish-deadline")
+                .with(user("admin@example.test").roles("ADMIN")).with(csrf())
+                .contentType("application/json").content("{\"reason\":\"Bắt đầu GW7 theo lịch\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OPEN"))
+                .andExpect(jsonPath("$.deadlineUtc").value("2026-10-15T17:00:00Z"));
+        assertEquals(7, service.overview().recommendedGameweek());
+        assertEquals(GameweekService.Status.LOCKED, service.info(6).status());
+        at(Instant.parse("2026-10-15T17:00:00Z"));
+        assertEquals(7, service.overview().recommendedGameweek());
+        assertEquals(GameweekService.Status.LOCKED, service.info(7).status());
     }
 
     @Test void publicApiAndAdminRequireRoleCsrfAndRejectStateInjection() throws Exception {
         mvc.perform(get("/api/fantasy/2026/gameweeks")).andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.serverTimeUtc").value("2026-10-05T00:00:00Z"))
-                .andExpect(jsonPath("$.recommendedGameweek").value(6));
+                .andExpect(jsonPath("$.recommendedGameweek").isEmpty());
         String path = "/api/fantasy/2026/admin/gameweeks/6/publish-deadline";
         mvc.perform(post(path).with(csrf()).contentType("application/json").content("{\"reason\":\"Test\"}"))
                 .andExpect(status().isUnauthorized());
