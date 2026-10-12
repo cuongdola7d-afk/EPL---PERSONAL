@@ -13,7 +13,7 @@ GW6 đã công bố deadline **09/10/2026 00:00 Asia/Ho_Chi_Minh = 08/10/2026 17
 Đây là hướng dẫn cho các lượt được giao sau, **không phải yêu cầu thực thi nhập/công bố trong lượt cập nhật tài liệu**. “Tổng hợp GW6” chỉ chuẩn bị và kiểm tra file; quyền nhập SQL không đồng nghĩa quyền công bố Fantasy.
 
 1. Tiếp tục checkpoint GW6 theo [quy trình Gameweek](gameweek-data-workflow.md), lấy đủ dữ liệu **cả hai đội của từng fixture FINISHED**. Trận hoãn/chưa xong ghi chờ; tiếp tục phần độc lập. Lịch/UTC/trạng thái/tỉ số từ football-data.org, phút/bàn/kiến tạo/thẻ từ StatMuse; rating SofaScore chỉ từ ảnh/bảng người dùng cung cấp. Không thu thập lại dữ liệu đã hoàn thành.
-2. Dùng một CSV thống kê cuối 10 cột, `sources.md`, `missing.csv`, bộ CSV đội hình/sơ đồ hiện có và `confirmed-unrated.csv` nếu có ngoại lệ không được chấm. Không thêm cột vào CSV thống kê, suy ra đá chính từ phút/rating hoặc ép 40 người/trận. Xác nhận không chấm phải được nhập database; ghi chú đơn thuần chưa đủ cho scoring. Rating chưa thu thập vẫn là blocker, không tính 0.
+2. Dùng một CSV thống kê cuối 10 cột, `sources.md`, `missing.csv`, bộ CSV đội hình/sơ đồ hiện có, `confirmed-unrated.csv` nếu có ngoại lệ không được chấm và `confirmed-not-registered.csv` nếu có người được xác nhận ngoài danh sách trận. Không thêm cột vào CSV thống kê, suy ra đá chính từ phút/rating hoặc ép 40 người/trận. Các xác nhận phải được nhập database; ghi chú đơn thuần chưa đủ cho scoring. Rating chưa thu thập vẫn là blocker, không tính 0.
 3. Khi được giao nhập đúng đích: kiểm tra input/membership/xung đột, backup SQL mới ngoài Git và kiểm tra hoàn tất, nhập thống kê → đội hình → bằng chứng Fantasy bằng các command dưới đây; lặp xác nhận không thay đổi, đối chiếu API từng fixture. Giữ dữ liệu thô NULL của người không được chấm. **Các command này không công bố kết quả, không chuyển GW sang PUBLISHED.**
 4. Sau deadline, ADMIN kiểm tra readiness toàn GW. Mọi trận phải FINISHED và có bằng chứng đầy đủ; từng người của đội tham gia phải có rating hoặc căn cứ 0. Thiếu dòng thống kê không mặc nhiên DNP. Trận hoãn giữ cả vòng chờ; nhập xong vài trận không đủ công bố cuối.
 5. Khi ready=true, ADMIN chủ động công bố bằng UI hoặc API + CSRF. Backend tự tính tổng/breakdown, ghi cả GW trong transaction và chỉ đặt PUBLISHED sau khi thành công. Kiểm tra kết quả tài khoản thật và cả hai BXH. Không công bố điểm tạm hoặc đội thử.
@@ -30,16 +30,17 @@ $releaseJar = 'target/premierhub-backend-0.1.0-SNAPSHOT.jar'
 $statsFile = 'data/gw6-2026/manual-match-stats-2026-GW6.csv'
 $sourceFile = 'data/gw6-2026/sources.md'
 $unratedFile = 'data/gw6-2026/confirmed-unrated.csv'
+$notRegisteredFile = 'data/gw6-2026/confirmed-not-registered.csv'
 $lineupsDirectory = 'data/gw6-2026/lineups'
 
 java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-match-stats.enabled=true "--premierhub.manual-match-stats.file=$statsFile"
 java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.match-lineups.enabled=true "--premierhub.match-lineups.directory=$lineupsDirectory"
-java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.fantasy-evidence.enabled=true "--premierhub.fantasy-evidence.stats-file=$statsFile" "--premierhub.fantasy-evidence.unrated-file=$unratedFile" "--premierhub.fantasy-evidence.source-file=$sourceFile"
+java -jar $releaseJar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.fantasy-evidence.enabled=true "--premierhub.fantasy-evidence.stats-file=$statsFile" "--premierhub.fantasy-evidence.unrated-file=$unratedFile" "--premierhub.fantasy-evidence.not-registered-file=$notRegisteredFile" "--premierhub.fantasy-evidence.source-file=$sourceFile"
 ```
 
 Không có người không được chấm: bỏ đối số `unrated-file` nếu chưa từng có xác nhận của các fixture đó, hoặc dùng file chỉ header làm danh sách cuối rỗng. Khi cần bỏ xác nhận cũ đã hết hiệu lực, phải truyền sidecar cuối hiện hành (có thể chỉ header) cùng CSV đầy đủ. Importer không coi file rating đang chờ là xác nhận không chấm. Bộ đội hình đọc `clubs.csv`, `formations.csv`, `players.csv` theo header ở quy trình Gameweek; kiểm tra không ghi đè metadata CLB/sơ đồ khác nội dung trước nhập.
 
-Lặp cùng input: thống kê `inserted=0`; đội hình `clubChanges=0 fixtureChanges=0 playerChanges=0`; bằng chứng `fixture_changes=0 unrated_changes=0`. Các command chạy một lần ở chế độ không mở HTTP rồi đóng context. Tổng mùa bóng đá là bước riêng theo giới hạn service đã ghi trong quy trình Gameweek; scoring không dùng `player_season_stats` để cộng điểm, không ép thêm dòng giả để qua giới hạn tổng mùa.
+Lặp cùng input: thống kê `inserted=0`; đội hình `clubChanges=0 fixtureChanges=0 playerChanges=0`; bằng chứng `fixture_changes=0 unrated_changes=0 absence_changes=0`. Các command chạy một lần ở chế độ không mở HTTP rồi đóng context. Tổng mùa bóng đá là bước riêng theo giới hạn service đã ghi trong quy trình Gameweek; scoring không dùng `player_season_stats` để cộng điểm, không ép thêm dòng giả để qua giới hạn tổng mùa.
 
 ### ADMIN production: công cụ và tài khoản đã được cấp quyền
 
@@ -140,10 +141,10 @@ await fantasyAdminGw6('recalculate-results', {
 ## Điểm và bằng chứng nguồn
 
 - Đọc đội đã chốt từ `fantasy_entries` và snapshot `fantasy_submitted_picks`; không lấy bản nháp, lựa chọn trình duyệt hoặc đội của GW trước.
-- Đọc `manual_fixture_player_stats` của league 39, season 2026, fixture thuộc đúng GW. Rating có giá trị là điểm SofaScore. `DID_NOT_PLAY` đã xác nhận nhận 0; `PLAYED` chỉ nhận 0 khi có xác nhận SofaScore không chấm. NULL chưa thu thập chặn công bố.
+- Đọc `manual_fixture_player_stats` của league 39, season 2026, fixture thuộc đúng GW. Rating có giá trị là điểm SofaScore. `DID_NOT_PLAY` đã xác nhận nhận 0; `PLAYED` chỉ nhận 0 khi có xác nhận SofaScore không chấm. Người ngoài danh sách trận chỉ nhận 0 khi có xác nhận riêng đúng fixture/player, không tạo thống kê giả. NULL chưa thu thập chặn công bố.
 - Tính bằng `BigDecimal`; tổng lưu `DECIMAL(12,2)`. Một người có nhiều trận trong GW được cộng từng khóa fixture/player đúng một lần. Không dùng `fantasy_points` v1 hay OVR làm điểm.
 - Kiểm tra tính hợp lệ bằng snapshot lúc chốt: 11 người/ô duy nhất, đúng sơ đồ và quyền vị trí đã lưu, tối đa 3 người/CLB, OVR không quá 910 theo yêu cầu 06/10 (backend/MySQL production đã đồng bộ), thời điểm chốt trước deadline. Không áp lại rosterAsOf/hồ sơ hiện tại để thay đổi đội chốt.
-- Breakdown giữ ô, ID, tên, CLB snapshot, vị trí, điểm người và từng fixture với CLB thực tế trong dòng thống kê, rating thô, điểm và mã lý do `SOFASCORE_RATING`, `DID_NOT_PLAY`, `SOFASCORE_UNRATED_CONFIRMED`.
+- Breakdown giữ ô, ID, tên, CLB snapshot, vị trí, điểm người và từng fixture với CLB thực tế trong dòng thống kê hoặc xác nhận vắng mặt, rating thô, điểm và mã lý do `SOFASCORE_RATING`, `DID_NOT_PLAY`, `SOFASCORE_UNRATED_CONFIRMED`, `INJURY_NOT_REGISTERED_CONFIRMED`.
 
 Trước bước này, xác nhận người không được chấm chỉ có trong `confirmed-unrated.csv`/ghi chú nguồn. Hai bảng mới lưu bằng chứng tối thiểu:
 
@@ -151,8 +152,9 @@ Trước bước này, xác nhận người không được chấm chỉ có tro
 | --- | --- |
 | `fantasy_unrated_confirmations` | PK fixture_id/player_id, nguồn, lý do, thời điểm xác nhận UTC; FK tới dòng thống kê thô |
 | `fantasy_fixture_confirmations` | Fixture, hash dữ liệu đã kiểm tra, nguồn, thời điểm xác nhận UTC |
+| `fantasy_match_absence_confirmations` | Cặp fixture/player ngoài danh sách vì chấn thương, CLB, nguồn và thời điểm xác nhận; không có dòng thống kê trận |
 
-Hash fixture bao gồm trạng thái/trận, chỉ số thô, xác nhận không chấm, đội hình/sơ đồ/vai trò đã xác minh. Thay đổi dữ liệu sau xác nhận chặn công bố/tái tính cho tới khi kiểm tra lại CSV cuối. Membership vẫn kiểm tra trực tiếp theo ngày trận, không sửa membership. Hash không phụ thuộc thời điểm chạy importer.
+Hash fixture bao gồm trạng thái/trận, chỉ số thô, xác nhận không chấm, đội hình/sơ đồ/vai trò đã xác minh. Xác nhận ngoài danh sách được lưu riêng và nằm trong hash nguồn tổng của lần công bố. Thay đổi dữ liệu sau xác nhận chặn công bố/tái tính cho tới khi kiểm tra lại CSV cuối. Membership vẫn kiểm tra trực tiếp theo ngày trận, không sửa membership. Hash không phụ thuộc thời điểm chạy importer.
 
 ## Nhập xác nhận bằng file hiện có
 
@@ -163,6 +165,8 @@ season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red
 ```
 
 `FantasyEvidenceImporter` kiểm tra CSV cuối bằng `ManualMatchStatsCsvReader`, đối chiếu chính xác các khóa và từng giá trị với database đã nhập. Nó chỉ ghi bảng xác nhận mới; không nhập/sửa rating, fantasy_points, roster hoặc thống kê bóng đá. File nguồn phải tồn tại, không rỗng. Người chạy phải dùng nguồn/danh sách trận đã được xác minh theo [quy trình Gameweek](gameweek-data-workflow.md).
+
+Nếu người chơi đã chốt một cầu thủ vắng mặt ngoài danh sách trận và có xác nhận rõ ràng, dùng thêm `confirmed-not-registered.csv` với header `fixture_id,player_id,club_id,reason`; `reason` hiện hỗ trợ `INJURY_NOT_REGISTERED`. Importer chỉ nhận fixture FINISHED, membership đúng CLB tại ngày trận, đồng thời từ chối nếu người đó đã có thống kê hoặc vai trò trong danh sách trận. Xác nhận chỉ có hiệu lực cho cặp fixture/player, không tạo `DID_NOT_PLAY`, không dùng cho GW khác. Khi truyền cùng CSV cuối, sidecar là danh sách xác nhận hiện hành cho các fixture trong CSV; chạy lại không tạo trùng.
 
 File xác nhận phải tên `confirmed-unrated.csv`; hỗ trợ ba header thực sự đã có trong repo:
 

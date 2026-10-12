@@ -56,7 +56,8 @@ public class FantasyResultService {
     static void issue(List<Issue> issues,Integer fixture,Integer player,Long account,String code,String message) {
         issues.add(new Issue(fixture,player,account,code,message));
     }
-    public List<Issue> fixtureIssues(Fixture f,List<Stat> stats,List<Unrated> unrated,List<Lineup> lineups,List<Role> roles,List<Member> members) {
+    public List<Issue> fixtureIssues(Fixture f,List<Stat> stats,List<Unrated> unrated,List<Lineup> lineups,List<Role> roles,
+            List<MatchAbsence> absences,List<Member> members) {
         var issues=new ArrayList<Issue>();
         if(!"FINISHED".equals(f.status())) issue(issues,f.id(),null,null,"FIXTURE_PENDING","Trận chưa FINISHED: "+f.status());
         var byPlayer=new HashMap<Integer,Stat>();stats.forEach(s->byPlayer.put(s.playerId(),s));
@@ -102,6 +103,15 @@ public class FantasyResultService {
             if(stat==null || !"PLAYED".equals(stat.status()) || stat.rating()!=null)
                 issue(issues,f.id(),confirmation.playerId(),null,"UNRATED_CONFLICT","Xác nhận không chấm không khớp thống kê hiện tại.");
         }
+        for(var absence:absences) {
+            var active=members.stream().filter(m->m.playerId()==absence.playerId() && m.applies(f)).toList();
+            if(!"FINISHED".equals(f.status()) || byPlayer.containsKey(absence.playerId())
+                    || roles.stream().anyMatch(r->r.playerId()==absence.playerId())
+                    || active.size()!=1 || active.getFirst().clubId()!=absence.clubId()
+                    || !"INJURY_NOT_REGISTERED".equals(absence.reason()) || !present(absence.sourceRef()))
+                issue(issues,f.id(),absence.playerId(),null,"ABSENCE_CONFLICT",
+                        "Xác nhận ngoài danh sách trận không khớp fixture, đội hình hoặc membership.");
+        }
         return issues;
     }
     private static boolean positive(Integer n) { return n!=null && n>0; }
@@ -113,14 +123,17 @@ public class FantasyResultService {
         var participants=repository.participants(gw,lock);
         var members=repository.members();
         var sources=new ArrayList<Source>();
+        var allAbsences=new ArrayList<MatchAbsence>();
         var confirmations=new ArrayList<Evidence>();
         if(configuration==null) issue(issues,null,null,null,"GW_NOT_OPENED","GW chưa được công bố cuộc thi.");
         if(fixtures.isEmpty()) issue(issues,null,null,null,"FIXTURES_MISSING","Chưa có danh sách fixture của GW.");
         for(var f:fixtures) {
             var stats=repository.stats(f.id(),lock);var unrated=repository.unrated(f.id(),lock);
             var lineups=repository.lineups(f.id(),lock);var roles=repository.roles(f.id(),lock);
+            var absences=repository.absences(f.id(),lock);
             sources.add(new Source(f,stats,unrated,lineups,roles));
-            issues.addAll(fixtureIssues(f,stats,unrated,lineups,roles,members));
+            allAbsences.addAll(absences);
+            issues.addAll(fixtureIssues(f,stats,unrated,lineups,roles,absences,members));
             var confirmation=repository.evidence(f.id(),lock);
             if(confirmation.isEmpty()) issue(issues,f.id(),null,null,"FIXTURE_UNCONFIRMED","Chưa xác nhận CSV cuối/danh sách đầy đủ của cả hai đội.");
             else {
@@ -149,10 +162,17 @@ public class FantasyResultService {
                 for(var source:sources) {
                     var f=source.fixture();
                     var stat=source.stats().stream().filter(s->s.playerId()==pick.playerId()).findFirst();
-                    boolean expected=stat.isPresent() || source.roles().stream().anyMatch(r->r.playerId()==pick.playerId())
+                    var absence=allAbsences.stream().filter(a->a.fixtureId()==f.id() && a.playerId()==pick.playerId()).findFirst();
+                    boolean expected=stat.isPresent() || absence.isPresent() || source.roles().stream().anyMatch(r->r.playerId()==pick.playerId())
                             || members.stream().anyMatch(m->m.playerId()==pick.playerId() && m.applies(f));
                     if(!expected) continue;
-                    if(stat.isEmpty()) { issue(issues,f.id(),pick.playerId(),participant.accountId(),"SELECTED_STAT_MISSING","Cầu thủ được chọn thiếu dòng thống kê; không tự coi là không ra sân.");continue; }
+                    if(stat.isEmpty()) {
+                        if(absence.isPresent()) matches.add(new MatchScore(f.id(),absence.get().clubId(),null,
+                                BigDecimal.ZERO.setScale(2),"INJURY_NOT_REGISTERED_CONFIRMED"));
+                        else issue(issues,f.id(),pick.playerId(),participant.accountId(),"SELECTED_STAT_MISSING",
+                                "Cầu thủ được chọn thiếu dòng thống kê; không tự coi là không ra sân.");
+                        continue;
+                    }
                     var row=stat.get();String reason;
                     BigDecimal points;
                     if("DID_NOT_PLAY".equals(row.status())) { points=BigDecimal.ZERO;reason="DID_NOT_PLAY"; }
@@ -173,7 +193,7 @@ public class FantasyResultService {
         var latest=repository.latest(gw);
         var readiness=new Readiness(2026,gw,issues.isEmpty(),fixtures.size(),participants.size(),latest.map(Publication::version).orElse(0),
                 List.copyOf(new LinkedHashSet<>(issues)),repository.history(gw));
-        return new Plan(readiness,hash(List.of(sources,confirmations,submitted)),participants,scores);
+        return new Plan(readiness,hash(List.of(sources,confirmations,submitted,allAbsences)),participants,scores);
     }
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Published publish(int gw,int expectedVersion,long actor,String reason,boolean recalculate) {

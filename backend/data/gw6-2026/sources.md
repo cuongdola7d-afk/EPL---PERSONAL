@@ -1,5 +1,11 @@
 # GW6 Premier League 2026/27 — checkpoint 12/10/2026
 
+Đã nhập xác nhận CSV cuối cho chín trận FINISHED và bốn xác nhận không được SofaScore chấm vào Aiven; readiness hiện còn Coventry–Newcastle cùng sáu cầu thủ được chọn nằm ngoài danh sách trận đã xác minh. Số lỗi và căn cứ từng người ở [checkpoint Fantasy](fantasy-readiness-2026-10-12.md). Các ghi chú “chưa nhập bằng chứng Fantasy” trong checkpoint cũ bên dưới mô tả trạng thái trước bước này.
+
+Người dùng xác nhận tiếp ngày 12/10/2026: Nicolò Savona, Nikola Milenković (Forest–Palace `1000560596`), Alexander Isak, Dominik Szoboszlai (Liverpool–Man City `1000560598`), Reece James (Chelsea–Bournemouth `1000560595`) và James Wright (Aston Villa–Brentford `1000560601`) **không được đăng ký trận vì chấn thương**. Chỉ áp dụng điểm Fantasy 0 cho đúng cặp fixture/player trong [confirmed-not-registered.csv](confirmed-not-registered.csv), gồm tám lượt chọn ở bốn đội đã chốt. Đây là vắng mặt ngoài danh sách trận, khác `SUB_UNUSED`/`DID_NOT_PLAY`; không tạo thống kê trận hoặc rating 0, không suy rộng sang GW khác. Trạng thái nhập và readiness sau xử lý sẽ được ghi ở checkpoint Fantasy.
+
+Đã nhập đủ sáu xác nhận vào Aiven, kiểm tra điểm 0 cho tám lượt chọn và chạy lại readiness bằng backend mã mới: chỉ còn sáu cảnh báo của Coventry–Newcastle. [Checkpoint sau xử lý](fantasy-absence-confirmed.md) ghi backup, kết quả importer, kiểm tra dữ liệu và phần backend cần deploy. Những dòng “còn sáu cầu thủ” ở checkpoint trước phía trên chỉ là lịch sử trước khi nhận xác nhận chấn thương.
+
 ## Sân 11v11 — đã nhập và kiểm tra production
 
 - Nguyên nhân chung: Aiven production chưa có dữ liệu ở ba bảng đội hình; bảng `club_season_formations` còn thiếu `default_source`, `source_note`. File trước đó có vai trò/thay người nhưng chưa có sơ đồ trận và vị trí sân; importer cũ chỉ chấp nhận URL SofaScore. Vì vậy API trả `startersStatus=MISSING` và frontend không vẽ sân.

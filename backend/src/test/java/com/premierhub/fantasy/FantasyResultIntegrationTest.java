@@ -39,7 +39,7 @@ class FantasyResultIntegrationTest {
     Path stats,unrated,sources;
     static final BigDecimal EXPECTED=new BigDecimal("66.77");
     @BeforeEach void setup() throws Exception {
-        for(String table:List.of("fantasy_team_results","fantasy_result_publications","fantasy_fixture_confirmations","fantasy_unrated_confirmations",
+        for(String table:List.of("fantasy_team_results","fantasy_result_publications","fantasy_fixture_confirmations","fantasy_unrated_confirmations","fantasy_match_absence_confirmations",
                 "fantasy_submitted_picks","fantasy_draft_picks","fantasy_entries","fantasy_deadline_changes","fantasy_gameweeks",
                 "fixture_lineup_players","fixture_lineups","manual_fixture_player_stats","football_data_fixtures","fixtures",
                 "manual_player_memberships","player_season_profiles","player_eligible_positions","player_specific_positions",
@@ -186,6 +186,37 @@ class FantasyResultIntegrationTest {
         assertTrue(service.readiness(6).issues().stream().anyMatch(i->Objects.equals(i.fixtureId(),601) && Objects.equals(i.playerId(),5) && i.code().equals("SELECTED_STAT_MISSING")));
         assertEquals("AWAITING_RESULTS",service.mine(102,6).status());assertNull(service.mine(102,6).result());
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM fantasy_result_publications",Integer.class));
+    }
+    @Test void confirmedInjuredPlayerOutsideMatchListScoresZeroOnlyForThatFixture() throws Exception {
+        player(999,1);
+        jdbc.update("UPDATE fantasy_submitted_picks SET player_id=999,player_name='Injured absent' WHERE gameweek=6 AND player_id=5");
+        assertEquals(2,service.readiness(6).issues().stream().filter(i->i.code().equals("SELECTED_STAT_MISSING") && Objects.equals(i.playerId(),999)).count());
+        var absent=directory.resolve("confirmed-not-registered.csv");
+        Files.writeString(absent,"fixture_id,player_id,club_id,reason\n601,999,1,INJURY_NOT_REGISTERED\n");
+        var first=evidence.importFiles(stats,unrated,absent,sources);
+        assertEquals(1,first.absenceChanges());
+        assertEquals(0,evidence.importFiles(stats,unrated,absent,sources).absenceChanges());
+        assertTrue(service.readiness(6).ready());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats WHERE player_id=999",Integer.class));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM fixture_lineup_players WHERE player_id=999",Integer.class));
+        publish();
+        for(long owner:List.of(102L,103L)) {
+            var player=service.mine(owner,6).result().players().stream().filter(p->p.playerId()==999).findFirst().orElseThrow();
+            assertEquals(new BigDecimal("0.00"),player.points());
+            assertEquals(1,player.matches().size());
+            assertEquals(601,player.matches().getFirst().fixtureId());
+            assertEquals("INJURY_NOT_REGISTERED_CONFIRMED",player.matches().getFirst().reason());
+            assertNull(player.matches().getFirst().rating());
+        }
+    }
+    @Test void matchAbsenceCannotReplaceRealLineupOrApplyToAnotherFixture() throws Exception {
+        var absent=directory.resolve("confirmed-not-registered.csv");
+        Files.writeString(absent,"fixture_id,player_id,club_id,reason\n601,5,1,INJURY_NOT_REGISTERED\n");
+        assertThrows(IllegalArgumentException.class,()->evidence.importFiles(stats,unrated,absent,sources));
+        player(999,1);
+        Files.writeString(absent,"fixture_id,player_id,club_id,reason\n602,999,1,INJURY_NOT_REGISTERED\n");
+        assertThrows(IllegalArgumentException.class,()->evidence.importFiles(stats,unrated,absent,sources));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM fantasy_match_absence_confirmations",Integer.class));
     }
     @Test void deadlinePostponedFixtureAndUnconfirmedScopeRemainBlocked() {
         now.set(Instant.parse("2026-10-08T16:59:59Z"));

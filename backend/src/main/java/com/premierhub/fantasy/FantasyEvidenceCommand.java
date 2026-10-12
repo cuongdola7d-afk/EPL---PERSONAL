@@ -12,9 +12,10 @@ public class FantasyEvidenceCommand implements ApplicationRunner {
     private final FantasyEvidenceImporter importer;
     public FantasyEvidenceCommand(FantasyEvidenceImporter importer) { this.importer=importer; }
     @Override public void run(ApplicationArguments args) throws Exception {
-        var result=importer.importFiles(path(args,"stats-file",false),path(args,"unrated-file",false),path(args,"source-file",true));
-        System.out.printf("FANTASY_EVIDENCE fixtures=%d fixture_changes=%d unrated_changes=%d%n",
-                result.fixtures(),result.fixtureChanges(),result.unratedChanges());
+        var result=importer.importFiles(path(args,"stats-file",false),path(args,"unrated-file",false),
+                path(args,"not-registered-file",false),path(args,"source-file",true));
+        System.out.printf("FANTASY_EVIDENCE fixtures=%d fixture_changes=%d unrated_changes=%d absence_changes=%d%n",
+                result.fixtures(),result.fixtureChanges(),result.unratedChanges(),result.absenceChanges());
     }
     private static Path path(ApplicationArguments args,String key,boolean required) {
         var values=args.getOptionValues("premierhub.fantasy-evidence."+key);

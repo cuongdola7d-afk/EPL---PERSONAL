@@ -16,6 +16,7 @@ public class FantasyResultRepository {
     public record Stat(int fixtureId, int playerId, int clubId, String status, BigDecimal rating,
                        Integer minutes, Integer goals, Integer assists, Integer yellowCards, Integer redCards) { }
     public record Unrated(int fixtureId, int playerId, String sourceRef, String reason) { }
+    public record MatchAbsence(int fixtureId, int playerId, int clubId, String reason, String sourceRef) { }
     public record Evidence(int fixtureId, String sourceHash, String sourceRef) { }
     public record Role(int fixtureId, int clubId, int playerId, String role) { }
     public record Lineup(int fixtureId, int clubId, String formation, LocalDate formationVerified,
@@ -50,6 +51,10 @@ public class FantasyResultRepository {
     public List<Unrated> unrated(int id, boolean lock) {
         return jdbc.query("SELECT * FROM fantasy_unrated_confirmations WHERE fixture_id=? ORDER BY player_id"+(lock?" FOR UPDATE":""),
                 (r,n)->new Unrated(id,r.getInt("player_id"),r.getString("source_ref"),r.getString("reason")),id);
+    }
+    public List<MatchAbsence> absences(int id, boolean lock) {
+        return jdbc.query("SELECT * FROM fantasy_match_absence_confirmations WHERE fixture_id=? ORDER BY player_id"+(lock?" FOR UPDATE":""),
+                (r,n)->new MatchAbsence(id,r.getInt("player_id"),r.getInt("club_id"),r.getString("reason"),r.getString("source_ref")),id);
     }
     public Optional<Evidence> evidence(int id, boolean lock) {
         return jdbc.query("SELECT * FROM fantasy_fixture_confirmations WHERE fixture_id=?"+(lock?" FOR UPDATE":""),
@@ -121,6 +126,14 @@ public class FantasyResultRepository {
         if(old.isPresent() && old.get().equals(row)) return false;
         if(old.isPresent()) throw new IllegalArgumentException("Conflicting unrated evidence fixture="+row.fixtureId()+" player="+row.playerId());
         jdbc.update("INSERT INTO fantasy_unrated_confirmations VALUES (?,?,?,?,?)",row.fixtureId(),row.playerId(),row.sourceRef(),row.reason(),GameweekRepository.timestamp(now));
+        return true;
+    }
+    public boolean saveAbsence(MatchAbsence row,Instant now) {
+        var old=absences(row.fixtureId(),false).stream().filter(r->r.playerId()==row.playerId()).findFirst();
+        if(old.isPresent() && old.get().equals(row)) return false;
+        if(old.isPresent()) throw new IllegalArgumentException("Conflicting match absence fixture="+row.fixtureId()+" player="+row.playerId());
+        jdbc.update("INSERT INTO fantasy_match_absence_confirmations VALUES (?,?,?,?,?,?)",
+                row.fixtureId(),row.playerId(),row.clubId(),row.reason(),row.sourceRef(),GameweekRepository.timestamp(now));
         return true;
     }
     public boolean confirm(int id,String hash,String source,Instant now) {
