@@ -67,7 +67,11 @@ public class LineupBatchImporter {
             season(row[2]); var key = team(row, clubRows, fixtures);
             Formation.lines(row[3]); var verified = date(row[4]);
             require(!verified.isBefore(fixtures.get(key.fixture()).date()), "Formation verification predates fixture " + key);
-            require(row[5].matches("https://(?:www\\.|api\\.)?sofascore\\.com/[^\\s]+"), "New formation evidence must use SofaScore: " + key);
+            boolean sofaScoreUrl = row[5].matches("https://(?:www\\.|api\\.)?sofascore\\.com/[^\\s]+");
+            boolean userScreenshot = row[5].startsWith("USER_SCREENSHOT: ")
+                    && !row[5].substring("USER_SCREENSHOT: ".length()).isBlank();
+            require(row[5].length() <= 500 && (sofaScoreUrl || userScreenshot),
+                    "Formation evidence needs a SofaScore URL or USER_SCREENSHOT: reference: " + key);
             require(observations.putIfAbsent(key, new Observed(row[3], verified, row[5])) == null, "Repeated formation " + key);
         }
         var groups = new LinkedHashMap<Team, List<String[]>>();

@@ -185,6 +185,43 @@ class LineupBatchImporterTest {
         assertThrows(IllegalArgumentException.class,()->importer.importDirectory(directory));
     }
 
+    @Test void userScreenshotEvidenceImportsWithoutInventingUrlAndKeepsStatistics() throws Exception {
+        String formations = Files.readString(directory.resolve("formations.csv"))
+                .replaceAll("https://www\\.sofascore\\.com/football/match/test-[a-c]",
+                        "USER_SCREENSHOT: SofaScore lineup images supplied 2026-10-04; source notes");
+        Files.writeString(directory.resolve("formations.csv"), formations);
+        var statistics = jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id");
+        var memberships = jdbc.queryForList("SELECT * FROM manual_player_memberships ORDER BY player_id");
+        importer.importDirectory(directory);
+        var repeat = importer.importDirectory(directory);
+        assertEquals(0, repeat.clubChanges());
+        assertEquals(0, repeat.fixtureChanges());
+        assertEquals(0, repeat.playerChanges());
+        var detail = queries.matchDetail(100, 2026).orElseThrow();
+        assertEquals("FIXTURE", detail.homeLineup().formationSource());
+        assertTrue(detail.homeLineup().formationSourceNote().startsWith("USER_SCREENSHOT: "));
+        assertEquals(11, detail.homeLineup().players().stream().filter(p -> p.role().equals("STARTER")).count());
+        assertEquals(statistics, jdbc.queryForList("SELECT * FROM manual_fixture_player_stats ORDER BY player_id"));
+        assertEquals(memberships, jdbc.queryForList("SELECT * FROM manual_player_memberships ORDER BY player_id"));
+    }
+
+    @Test void screenshotReferenceCannotBeBlankOrBypassStarterValidation() throws Exception {
+        String original = Files.readString(directory.resolve("formations.csv"));
+        for (String invalid : List.of("", "USER_SCREENSHOT: ", "https://example.com/lineup")) {
+            Files.writeString(directory.resolve("formations.csv"), original.replaceAll(
+                    "https://www\\.sofascore\\.com/football/match/test-[a-c]", invalid));
+            assertThrows(IllegalArgumentException.class, () -> importer.importDirectory(directory));
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM fixture_lineups", Integer.class));
+        }
+        Files.writeString(directory.resolve("formations.csv"), original.replaceAll(
+                "https://www\\.sofascore\\.com/football/match/test-[a-c]",
+                "USER_SCREENSHOT: SofaScore lineup images supplied 2026-10-04; source notes"));
+        write("players.csv", LineupBatchImporter.PLAYERS, playersCsv.replace(
+                "100,1,2026,1,STARTER,GK,0,0", "100,1,2026,1,SUB_USED,,,"));
+        assertThrows(IllegalArgumentException.class, () -> importer.importDirectory(directory));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM fixture_lineups", Integer.class));
+    }
+
     @Test void frequencyUsesOnlyVerifiedMatchesAndLatestFixtureBreaksTies() {
         var observations=List.of(new FormationSummary.Observation(1,LocalDate.of(2026,8,21),"4-3-3"),
                 new FormationSummary.Observation(2,LocalDate.of(2026,8,28),"3-4-2-1"));
