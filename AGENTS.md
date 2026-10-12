@@ -76,21 +76,22 @@ Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Stand
 
 ## Quy trình thống kê trận mùa 2026/27
 
-- Sau mỗi vòng Premier League 2026/27 đã thu thập đủ 10 trận, nhập và kiểm tra đúng 40 dòng thống kê cầu thủ cho từng trận (400 dòng cả vòng) trong `manual_fixture_player_stats`.
-- Ngay sau khi vòng hoàn chỉnh, tái tính các cột `appearances`, `minutes`, `goals`, `assists` của `player_season_stats` từ GW1 đến hết vòng vừa nhập; không dừng ở bảng thống kê theo trận. Importer có cơ chế tự tái tính khi vòng đủ dữ liệu, nhưng vẫn phải đọc lại MySQL để xác nhận.
-- Chạy lại thao tác tái tính để xác nhận `updated=0`, đối chiếu tổng số trận và số dòng theo trận, rồi báo rõ các chỉ số `PLAYED` còn thiếu. Chỉ số chưa xác minh giữ SQL `NULL`; `DID_NOT_PLAY` không cộng vào tổng. Không sửa dữ liệu mùa 2024/25.
+- Nhập đúng danh sách cầu thủ thực tế của mỗi fixture FINISHED; quy tắc cũ 40 dòng/trận, 400 dòng/vòng chỉ là giới hạn còn tồn tại trong service tổng mùa, không phải chuẩn dữ liệu để thêm cầu thủ hoặc dòng `DID_NOT_PLAY` giả.
+- Sau nhập, kiểm tra/tái tính `appearances`, `minutes`, `goals`, `assists` của `player_season_stats` bằng cơ chế hiện có theo đúng phạm vi nó hỗ trợ; đọc lại MySQL và chạy lặp xác nhận `updated=0` khi có thể. Nếu giới hạn 40/400 hoặc yêu cầu vòng đủ 10 trận chặn dữ liệu thực tế, báo rõ tổng mùa chưa theo kịp và xử lý giới hạn chung bằng thay đổi mã được kiểm tra đúng phạm vi; không chạy SQL thủ công để lách kiểm tra.
+- Chỉ số chưa xác minh giữ SQL `NULL`; `DID_NOT_PLAY` không cộng vào tổng. Không sửa dữ liệu mùa 2024/25.
 - Cách chạy và quy tắc kiểm tra chi tiết ở `docs/player-season-stats-2026.md`.
 
 ## Quy trình Gameweek cố định cho PrismaXI
 
-- Khi người dùng nhắn “tổng hợp GW…”, “thu thập Gameweek…” hoặc yêu cầu tương đương, bắt buộc đọc và áp dụng [docs/gameweek-data-workflow.md](docs/gameweek-data-workflow.md), tiếp tục từ checkpoint của Gameweek đó.
-- Chỉ xử lý mùa 2026/27, hoàn thiện cả hai đội của mọi fixture FINISHED trong vòng được giao; trận chưa xong ghi chờ. Batch 5 trận chỉ là cách chia nội bộ, không phải điểm dừng.
-- Quy trình mới lấy đúng danh sách thực tế, thay thế yêu cầu cố định 40 người/trận, 400 dòng/vòng và việc tự nhập SQL trong mục thống kê cũ khi thực hiện yêu cầu thu thập. Quy định cũ trong code/tài liệu tổng mùa là giới hạn hiện hữu phải báo rõ, không phải lý do thêm người hoặc tự tạo DID_NOT_PLAY. Vẫn kiểm tra và tái tính tổng mùa bằng service hiện có khi đủ điều kiện; không báo tổng mùa đã cập nhật nếu bị giới hạn này chặn.
-- “Tổng hợp” mặc định chỉ chuẩn bị file và kiểm tra đầu vào. Chỉ nhập production khi người dùng yêu cầu “nhập SQL” hoặc cho phép rõ ràng, sau khi xác nhận đúng MySQL và có backup ngoài Git. Không tự thu thập rating SofaScore, sửa membership vì chuyển nhượng, commit, push, deploy, tạo cron hoặc Pre-deploy Command.
+- Khi người dùng nhắn “Tổng hợp GW N mùa 2026/27”, “thu thập Gameweek…” hoặc tương đương, bắt buộc đọc và áp dụng [docs/gameweek-data-workflow.md](docs/gameweek-data-workflow.md), tiếp tục checkpoint; yêu cầu này cho phép hoàn thành và nhập production phần đã xác minh theo quy trình thường trực, không cần nhắc riêng từng lỗi.
+- Xác định đủ 10 fixture từ API PremierHub, đối chiếu ID nội bộ với football-data.org; đồng bộ lịch, trạng thái, tỉ số, BXH bằng mã hiện có. Chỉ nhập thống kê cho fixture đã xác nhận `FINISHED`; fixture chưa đá/chưa xong ghi pending và không tự đổi thành `FINISHED`.
+- Với hai đội mỗi fixture FINISHED, thu thập danh sách trận đầy đủ, 11 đá chính, dự bị vào sân/không vào sân, sơ đồ/vị trí, thống kê hiện hành; kiểm tra membership ngày trận và roster hiện tại, bổ sung khoảng có căn cứ bằng importer, không tạo khoảng một ngày hay chồng lấn. Ảnh Lineups người dùng gửi là nguồn hợp lệ, không bắt buộc hoặc bịa URL SofaScore; rating chỉ từ người dùng, PLAYED được xác nhận không chấm giữ rating/fantasy_points `NULL` và bằng chứng riêng.
+- Sau khi xác minh đúng production MySQL của backend và tạo/kiểm tra backup mới ngoài Git, nhập thống kê, đội hình/sơ đồ và bằng chứng CSV cuối/Fantasy; chạy importer lặp xác nhận không tạo trùng. Đối chiếu mọi cầu thủ của các đội Fantasy đã chốt với danh sách trận; người ngoài danh sách có căn cứ theo fixture/player_id được tính 0 riêng, không tạo thống kê/rating giả hoặc suy rộng sang GW khác. Người chưa rõ phải nêu tên để xác nhận.
+- Kiểm tra tổng mùa, API tỉ số/lịch sử cầu thủ/sân 11v11 và readiness theo từng fixture/nguyên nhân. Chỉ báo cả GW hoàn tất khi đủ 10 trận và readiness đạt; ADMIN tự công bố Fantasy sau đó, Codex không công bố/tái công bố. Giữ mùa 2024/25, snapshot đội, deadline, rosterAsOf; không tự commit, push, deploy, tạo cron hoặc Pre-deploy Command. CSV thuần không cần test riêng từng trận/full suite.
 
 ## Kế hoạch Fantasy có tài khoản — PrismaXI 2026/27
 
-- Khi triển khai tài khoản hoặc Fantasy nhiều người chơi, đọc [docs/fantasy-multiplayer-2026-plan.md](docs/fantasy-multiplayer-2026-plan.md), giữ các luật đã chốt và chỉ làm bước/phần được giao. Lượt lưu kế hoạch chưa triển khai hệ thống; bước tiếp theo là bước 1 — tài khoản khi người dùng yêu cầu. Dữ liệu rating tiếp tục theo quy trình Gameweek; không tự mở cuộc thi, ghi production, commit, push hoặc deploy.
+- Fantasy nhiều người chơi đã có tài khoản, đội đã chốt, readiness và luồng ADMIN công bố. Đọc [docs/fantasy-multiplayer-2026-plan.md](docs/fantasy-multiplayer-2026-plan.md) và [docs/fantasy-results-2026.md](docs/fantasy-results-2026.md) để giữ luật đã chốt. Quyền nhập dữ liệu GW đã xác minh theo quy trình trên không bao gồm mở GW mới, đổi đội/deadline/rosterAsOf hoặc công bố/tái công bố Fantasy.
 
 ## Lệnh kiểm tra
 

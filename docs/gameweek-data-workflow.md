@@ -1,13 +1,14 @@
 # Quy trình thu thập Gameweek PrismaXI — mùa 2026/27
 
-Áp dụng bắt buộc khi người dùng nhắn “tổng hợp GW…”, “thu thập Gameweek…” hoặc tương đương. Đây là quy trình chuẩn bị và nhập dữ liệu theo yêu cầu, không phải tác vụ tự động. Chỉ xử lý Premier League `league_id=39`, mùa 2026/27 (`season=2026` trong CSV/API, `season_year=2026` trong SQL). Không sửa mùa 2024/25.
+Áp dụng bắt buộc khi người dùng nhắn “Tổng hợp GW N mùa 2026/27”, “thu thập Gameweek…” hoặc tương đương. Một yêu cầu như vậy cho phép chuẩn bị, kiểm tra và nhập production dữ liệu **đã xác minh** của các fixture FINISHED theo quy trình dưới đây; không cần chờ yêu cầu “nhập SQL” riêng. Không tự chạy định kỳ, mở GW, công bố/tái công bố Fantasy, commit, push hoặc deploy. Chỉ xử lý Premier League `league_id=39`, mùa 2026/27 (`season=2026` trong CSV/API, `season_year=2026` trong SQL). Không sửa mùa 2024/25, snapshot đội Fantasy, deadline hoặc rosterAsOf.
 
 ## 1. Bắt đầu từ phần còn lại của vòng được giao
 
 1. Đọc checkpoint và file đã có của đúng GW; kiểm tra Git và dữ liệu liên quan. Nếu vòng đã hoàn thành, chỉ báo trạng thái hoặc xử lý phần người dùng yêu cầu bổ sung. Không thu thập lại GW đã xong, không kiểm kê toàn database.
-2. Xác nhận danh sách fixture của vòng bằng lịch hiện có/football-data.org. Dùng ID nội bộ `fixtures.id`, không nhầm với `football_data_fixtures.provider_id`; ánh xạ bằng `football_data_fixtures.fixture_id`. Giữ thời điểm UTC đầy đủ từ `utcDate`/`kickoff_utc`, không tự thêm giờ vào ngày không có giờ.
-3. Xử lý cả hai đội của **mọi fixture FINISHED** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa xác nhận vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã xong.
-4. Có thể chia nội bộ thành batch 5 trận nhưng phải tiếp tục hết danh sách FINISHED, không dừng ở batch đầu. Lấy đúng danh sách trận và cầu thủ thực tế, không ép 10 trận đã xong hoặc 40 người/trận.
+2. Lấy đúng 10 fixture của GW từ API PremierHub và đối chiếu database/provider. Dùng ID nội bộ `fixtures.id`, không nhầm với `football_data_fixtures.provider_id`; ánh xạ bằng `football_data_fixtures.fixture_id`. Giữ thời điểm UTC đầy đủ từ `utcDate`/`kickoff_utc`, không tự thêm giờ vào ngày không có giờ. Nếu API chưa trả đủ 10, báo thiếu/mapping sai trước khi kết luận vòng đủ; không bịa fixture.
+3. Chuẩn bị dữ liệu mùa đầy đủ cho mã đồng bộ football-data.org hiện có; sau khi xác minh đích và backup ở mục 6, chạy sync để cập nhật lịch, trạng thái, tỉ số và BXH, rồi đọc lại database/API và xác nhận mapping `fixture_id` từng trận. Không đưa JSON một GW vào batch yêu cầu 20 CLB/380 fixture/20 dòng BXH. Trận chưa đá hoặc chưa được provider xác nhận xong phải giữ trạng thái tương ứng, không tự đổi thành `FINISHED`.
+4. Xử lý cả hai đội của **mọi fixture FINISHED** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa xác nhận vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã xong.
+5. Có thể chia nội bộ thành batch 5 trận nhưng phải tiếp tục hết danh sách FINISHED, không dừng ở batch đầu. Lấy đúng danh sách trận và cầu thủ thực tế, không ép 10 trận đã xong hoặc 40 người/trận.
 
 Khi cần đọc database, chỉ truy vấn đúng GW/fixture/player liên quan. Ví dụ SQL chỉ đọc, thay `6` bằng GW được giao:
 
@@ -32,9 +33,9 @@ Importer membership dùng `fixtures.match_date`, không dùng ngày hiện tại
 | Rating | SofaScore do người dùng gửi ảnh hoặc bảng; không tự tìm rating, không dùng nguồn khác hoặc OVR |
 | Đá chính, dự bị, người vào thay, sơ đồ thực tế, vị trí trận | Bằng chứng đã có hoặc ảnh Lineups người dùng cung cấp |
 
-Ghi URL, ảnh/bảng do người dùng gửi, ngày kiểm tra và phạm vi nguồn theo fixture/CLB trong `sources.md`. Không suy ra đá chính từ rating, phút, eligiblePositions hay sơ đồ thường dùng. Giữ sơ đồ mặc định do người dùng chốt; không biến nó thành sơ đồ trận đã xác minh.
+Ghi URL **nếu nguồn có URL**, hoặc tham chiếu ảnh/bảng người dùng gửi, ngày kiểm tra và phạm vi nguồn theo fixture/CLB trong `sources.md`. Ảnh Lineups là bằng chứng hợp lệ; không yêu cầu hay bịa URL SofaScore khi nguồn là ảnh. Không suy ra đá chính từ rating, phút, eligiblePositions hay sơ đồ thường dùng. Giữ sơ đồ mặc định do người dùng chốt; không biến nó thành sơ đồ trận đã xác minh. Cần đủ danh sách trận của cả hai đội, 11 người đá chính không trùng ID mỗi đội, dự bị vào sân và dự bị không vào sân, sơ đồ/vị trí cần để dựng sân, cùng phút/bàn/kiến tạo/thẻ và trường CSV hiện hành.
 
-Tạm thời không theo dõi chuyển đến/chuyển đi, không thu thập chuyển nhượng hoặc sửa membership vì chuyển nhượng. Dùng ID và roster hiện có. Nếu chưa có player_id, có nhiều ID có thể khớp, thiếu dòng mùa/CLB hoặc thiếu membership hợp lệ tại ngày trận, ghi tên, fixture, CLB và vấn đề để người dùng xác nhận. Không âm thầm bỏ cầu thủ, đặt ID giả hoặc đặt ngày membership. Người chưa có ID được giữ trong danh sách nguồn/thiếu; chưa thể tạo dòng thống kê nhập được cho họ.
+Đối chiếu `player_id`, membership tại ngày trận và roster hiện đang hiển thị. Khi có căn cứ CLB/ngày bắt đầu, dùng importer membership hiện có xử lý khoảng cũ và thêm khoảng hiện hành `end_date` trống cho người xác nhận còn thuộc CLB; kiểm tra không chồng lấn, không đổi ID và không tự kéo dài từ đầu mùa hoặc chỉ thêm một ngày của GW. Nếu chưa có căn cứ ngày bắt đầu/CLB, có nhiều ID có thể khớp hoặc thiếu dòng mùa, ghi tên, fixture, CLB và phần cần xác nhận; không âm thầm bỏ người, đặt ID/ngày giả. Lịch sử trận phải dựa trên membership **tại ngày trận**, không phụ thuộc roster hiện tại.
 
 Chỉ bổ sung hồ sơ, OVR và vị trí của người mới khi được yêu cầu. Giữ mọi ngoại lệ người dùng đã xác nhận, dẫn lại bằng chứng thay vì yêu cầu xác nhận lại.
 
@@ -48,6 +49,7 @@ gw6-2026/
 ├── sources.md
 ├── missing.csv
 ├── confirmed-unrated.csv    # Khi có người đã được xác nhận SofaScore không chấm; không phải rating đang chờ
+├── confirmed-not-registered.csv # Khi có cầu thủ Fantasy được xác nhận ngoài danh sách trận
 └── lineups/                 # Chỉ tạo khi có dữ liệu cần nhập bằng LineupBatchImporter
     ├── clubs.csv
     ├── formations.csv
@@ -84,7 +86,7 @@ Giữ một checkpoint ngắn ngay trong `sources.md`, cập nhật sau mỗi ba
 - Chỉ số/rating/đội hình đã hoàn thành; ảnh hoặc trường còn thiếu, ngoại lệ đã xác nhận.
 - File thống kê dùng để nhập, lần kiểm tra reader/membership gần nhất; phần thay đổi kể từ checkpoint.
 - Trạng thái riêng: chuẩn bị file, kiểm tra local, đã nhập local, đã nhập production, API đã đối chiếu, tổng mùa cập nhật đến GW nào. Chưa làm bước nào thì ghi “chưa”.
-- Fantasy ghi riêng: đã nhập bằng chứng fixture/unrated chưa, readiness còn blocker gì, kết quả đã công bố chưa/currentVersion. “Đã nhập thống kê” không đồng nghĩa “đã công bố Fantasy”.
+- Fantasy ghi riêng: đã nhập bằng chứng CSV cuối/đủ danh sách hai đội, unrated và ngoài danh sách trận chưa; readiness còn blocker theo fixture/nguyên nhân gì, kết quả đã công bố chưa/currentVersion. “Đã nhập thống kê” hoặc “sân đã hiện 11v11” không đồng nghĩa readiness đạt.
 - Bước tiếp theo cụ thể. Phiên sau tiếp tục bước đó, không bắt đầu lại từ đầu.
 
 ### Dữ liệu đội hình: giữ định dạng importer hiện có
@@ -116,12 +118,13 @@ fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_inde
 - Không biến ô chưa biết thành 0. Chỉ ghi 0 khi nguồn/bằng chứng xác nhận không có sự kiện đó.
 - PLAYED cần đủ minutes, goals, assists, yellow_cards, red_cards và rating, hoặc ngoại lệ rating đã được người dùng xác nhận. Phút PLAYED phải dương hoặc còn trống trong bản chưa đầy đủ.
 - PLAYED không được SofaScore chấm: giữ rating trống và `fantasy_points` SQL NULL, ghi xác nhận trong sources.md. Phân biệt với “chưa gửi/chưa đọc được rating”; trường hợp sau vẫn nằm trong missing.csv. Không gán rating/fantasy_points bằng 0 cho người không được chấm.
-- Bước chấm Fantasy đã có importer xác nhận riêng: dùng `confirmed-unrated.csv` hiện có cùng nguồn để lưu ngoại lệ vào `fantasy_unrated_confirmations`; CSV cuối và đội hình đã xác minh dùng để xác nhận fixture. Giữ CSV thống kê 10 cột, không tự thêm cột hoặc ghi NULL thành 0. Chỉ nhập khi được giao nhập đúng database; “tổng hợp” vẫn chỉ chuẩn bị file. Lệnh/các header, xử lý rating sửa và điều kiện đầy đủ ở [fantasy-results-2026.md](fantasy-results-2026.md).
+- Bước chấm Fantasy đã có importer xác nhận riêng: dùng `confirmed-unrated.csv` cùng nguồn để lưu ngoại lệ vào `fantasy_unrated_confirmations`; CSV cuối và đội hình đã xác minh dùng để xác nhận fixture. Giữ CSV thống kê 10 cột, không tự thêm cột hoặc ghi NULL thành 0. Nhập bằng chứng đã xác minh cùng batch sau backup; lệnh/các header, xử lý rating sửa và điều kiện đầy đủ ở [fantasy-results-2026.md](fantasy-results-2026.md).
+- Đối chiếu **mọi lượt chọn trong các đội Fantasy đã chốt** với fixture và danh sách trận. `SUB_UNUSED`/`DID_NOT_PLAY` có dòng thống kê trận và điểm 0; người không được đăng ký trận cần căn cứ rõ cho đúng `(fixture_id,player_id)`, danh sách hai đội đầy đủ, và `confirmed-not-registered.csv` để chấm 0 riêng, không thêm dòng thống kê trận hoặc rating 0. Lý do hiện được importer hỗ trợ là `INJURY_NOT_REGISTERED`; chỉ ghi khi có xác nhận chấn thương/vắng mặt phù hợp, trường hợp chưa rõ nêu tên để người dùng xác nhận. Không suy rộng xác nhận sang GW khác.
 - DID_NOT_PLAY cần bằng chứng: rating trống, minutes=0; importer tính fantasy_points=0. Các sự kiện chỉ 0 khi có căn cứ; reader cho phép sự kiện trống và từ chối sự kiện dương đối với DID_NOT_PLAY.
 - Nếu nguồn không truy xuất được, báo một danh sách thiếu gộp theo trận/CLB/cầu thủ để người dùng cung cấp. Tiếp tục phần không phụ thuộc dữ liệu thiếu.
 - Chỉ gọi **toàn GW đầy đủ** khi danh sách trận đã xác nhận, không còn trận chờ và cả hai đội của mọi trận đã có dữ liệu/bằng chứng bắt buộc hoặc ngoại lệ được xác nhận. Nếu chỉ các trận FINISHED hiện có đã đủ, báo rõ số trận xử lý và số còn chờ. Tách độ đầy đủ của thống kê, đội hình và tổng mùa; không dùng “đủ 400 dòng” thay cho kiểm tra thực tế.
 
-## 5. Kiểm tra đầu vào, không nhập production khi chỉ “tổng hợp”
+## 5. Kiểm tra đầu vào trước khi nhập
 
 Reader/importer chung hiện có:
 
@@ -132,7 +135,7 @@ Reader/importer chung hiện có:
 | `ManualMatchStatsPatchImporter.fillMissing(Path,int)` | Chỉ bổ sung NULL của dòng đã tồn tại trong một fixture, kiểm tra membership/status, từ chối giá trị xung đột; ô trống không đổi dữ liệu |
 | `LineupBatchImporter.importDirectory(Path)` | Kiểm tra schema CSV đội hình, vai trò, 11 STARTER, ID/status khớp thống kê, tọa độ và phạm vi formation; sau đó mới upsert |
 
-Repo **không có cờ dry-run/validate-only** cho các command nhập này. Không gọi command trên production để thử validation; khởi động Spring cũng có thể chạy SQL init theo cấu hình hiện tại. Kiểm tra membership/khóa/xung đột bằng đọc hẹp trên dữ liệu đã có. Muốn chạy đầy đủ validator của importer, dùng bản database local tách biệt đã có đủ fixture, roster, membership và thống kê liên quan; báo rõ có nhập local hay chưa. Không tự chạy roster importer để vượt lỗi membership. Nếu chưa kiểm tra được một điều kiện, ghi rõ trong checkpoint.
+Repo **không có cờ dry-run/validate-only** cho các command nhập này. Không gọi command trên production để thử validation; khởi động Spring cũng có thể chạy SQL init theo cấu hình hiện tại. Kiểm tra membership/khóa/xung đột bằng đọc hẹp trên dữ liệu đã có. Muốn chạy đầy đủ validator của importer, dùng bản database local tách biệt đã có đủ fixture, roster, membership và thống kê liên quan; báo rõ có nhập local hay chưa. Chỉ dùng importer membership sau khi đã đối chiếu nguồn và khoảng cũ; không chạy roster importer hoặc tự gán ngày để che lỗi. Nếu chưa kiểm tra được một điều kiện, ghi rõ trong checkpoint.
 
 Ví dụ gọi reader chung từ `backend/` bằng JShell của JDK đang có, không khởi động Spring/database. Dùng lớp đã biên dịch khớp mã hiện tại; nếu chưa có lớp, chỉ biên dịch riêng reader dưới đây, không chạy Maven full test/build:
 
@@ -156,14 +159,14 @@ Membership theo importer: `manual_player_memberships.start_date <= fixtures.matc
 
 Khi nhận rating mới: ghép đúng `(fixture_id,player_id)` với ảnh/bảng, kiểm tra tên/CLB bằng ID hiện có; chỉ cập nhật rating được cung cấp, giữ các chỉ số cũ. Chạy reader chung và đối chiếu **phần thay đổi**, không thu thập lại phút/bàn/thẻ. Không dùng patch để thay giá trị khác đã lưu.
 
-## 6. Chỉ khi được yêu cầu “nhập SQL”
+## 6. Nhập production phần đã xác minh sau backup
 
-Yêu cầu nhập SQL là quyền thực hiện bước nhập; không hỏi lại quyền đã có nếu đích/file đã rõ. Trước khi ghi:
+Yêu cầu “Tổng hợp GW N mùa 2026/27” đã cho phép bước nhập dữ liệu **các fixture FINISHED được xác minh** theo quy trình thường trực. Nếu người dùng giới hạn rõ “chỉ chuẩn bị/chưa nhập SQL” thì giữ giới hạn đó. Không nhập phần còn thiếu ảnh, rating, membership hoặc trận chưa FINISHED. Trước khi ghi:
 
-1. Xác nhận đích MySQL production bằng cấu hình kết nối và đọc danh tính database/server; không mặc định H2 local là production, không in mật khẩu/URL chứa bí mật. Cấu hình prod hiện dùng `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; các import command không tự nạp ba biến này từ `.env.local`.
+1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server; không dùng Railway cũ hoặc mặc định H2 local là production, không in mật khẩu/URL chứa bí mật. Cấu hình prod hiện dùng `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; các import command không tự nạp ba biến này từ `.env.local`.
 2. Tạo SQL backup mới ngoài Git trước lần ghi, lưu đích/thời gian/phạm vi, đường dẫn, dung lượng và SHA-256 trong checkpoint. `backend/local-backups/` đã được ignore. Repo không có command backup MySQL 2026 chuyên dụng; dùng công cụ xuất SQL của môi trường đã xác minh, kiểm tra backup đọc được và có bảng sẽ bị tác động. Không dùng `premierhub.snapshot.mode`: đó là snapshot GW1 mùa 2024/25. Chưa tạo được backup thì chưa ghi.
 3. So sánh đầu vào với dữ liệu đích theo fixture/player_id và từng trường. Lỗi/xung đột báo fixture, player_id, tên, trường, giá trị đã lưu và giá trị dự kiến; không tự đổi hoặc xóa dữ liệu cũ. Kiểm tra schema cần thiết trước khi nhập đội hình; không âm thầm chạy migration.
-4. Chạy importer hiện có, đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt, **không phải lệnh cần chạy khi chỉ tổng hợp**. Không bật các runner sync/roster khác hoặc thay cấu hình deploy.
+4. Sau khi sync fixture/BXH và đối chiếu ID, nhập membership đã xác minh bằng importer hiện có, rồi thống kê → đội hình/sơ đồ → bằng chứng Fantasy (CSV cuối, unrated và vắng mặt nếu có). Đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt. Không bật runner thường trực hoặc thay cấu hình deploy.
 
 Nhập CSV thống kê chung của GW, ví dụ GW6:
 
@@ -193,9 +196,9 @@ Lặp phải có `clubChanges=0`, `fixtureChanges=0`, `playerChanges=0`; số ob
 
 `ManualMatchStatsImporter`/patch gọi `ManualSeasonStatsService.rebuildLatestComplete()` khi có thay đổi. Service hiện vẫn xác định vòng hoàn chỉnh bằng 10 fixture FINISHED/400 dòng, và `rebuildThroughGameweek` kiểm tra 40 dòng/trận, 20 người/CLB cho **mọi vòng từ GW1**. Đây là giới hạn code hiện hữu, không phải quy tắc thu thập mới. Số dòng thực tế khác 40 hoặc còn trận hoãn có thể làm tổng mùa chỉ dừng ở GW trước; ngay cả tổng 400 cũng chưa đủ nếu số người từng đội không khớp giới hạn cũ.
 
-Không bịa DID_NOT_PLAY/khóa người để qua kiểm tra, không tự sửa service khi chỉ làm dữ liệu. Vẫn xử lý các trận FINISHED độc lập; báo rõ thống kê trận đã nhập và tổng mùa chưa theo kịp. Nếu bị giới hạn này chặn, nêu nhu cầu sửa code trong một lượt được giao riêng; không chạy SQL tổng mùa thủ công để lách validator hoặc tuyên bố GW hoàn tất.
+Không bịa DID_NOT_PLAY/khóa người để qua kiểm tra. Vẫn xử lý các trận FINISHED độc lập; báo rõ thống kê trận đã nhập và tổng mùa chưa theo kịp. Nếu giới hạn service chặn cập nhật từ dữ liệu thực tế, kiểm tra và sửa **cơ chế chung** khi có đủ căn cứ/kiểm tra mã đúng phạm vi; nếu chưa xử lý được trong lượt thì ghi blocker và không tuyên bố tổng mùa đã cập nhật. Không chạy SQL tổng mùa thủ công để lách validator.
 
-Khi dữ liệu thực tế đáp ứng điều kiện service và đã được giao nhập SQL, chạy tái tính hiện có rồi lặp xác nhận `updated=0`:
+Khi dữ liệu thực tế đáp ứng điều kiện service, chạy tái tính hiện có rồi lặp xác nhận `updated=0`:
 
 ```powershell
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-season-stats.enabled=true --premierhub.manual-season-stats.through-gameweek=6
@@ -207,23 +210,24 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=
 
 - `GET /api/matches?season=2026&matchweek=6`: đúng danh sách fixture/trạng thái/tỉ số của vòng, không chỉ đếm trận đã nhập.
 - Với **từng** fixture FINISHED đã nhập: `GET /api/matches/{fixture_id}/details?season=2026`, đối chiếu đúng hai CLB, tập playerId, participationStatus, minutes/goals/assists/yellowCards/redCards/rating/fantasyPoints với CSV và membership ngày trận. Không ép 20 người/đội khi nguồn thực tế khác. PLAYED không được chấm phải có cả rating/fantasyPoints NULL; DID_NOT_PLAY có fantasyPoints=0.
-- Nếu nhập đội hình: đối chiếu homeLineup/awayLineup, role, formation/source và ID; thiếu dữ liệu phải hiện thiếu, không suy từ sơ đồ giao diện.
+- Với mỗi fixture FINISHED: đối chiếu homeLineup/awayLineup đúng 11 STARTER không trùng ID mỗi đội, SUB_USED/SUB_UNUSED đúng bằng chứng, formation/vị trí/source và sân 11v11 trên trình duyệt. Thiếu dữ liệu phải hiện thiếu, không suy từ sơ đồ giao diện.
+- Đọc API lịch sử và roster hiện tại của cầu thủ liên quan; GW cũ giữ nguyên, lịch sử trận dùng membership tại ngày trận. Kiểm tra readiness ADMIN sau khi nhập bằng chứng; phân nhóm cảnh báo theo fixture/nguyên nhân (CSV cuối, unrated, thiếu dòng, đội hình, fixture pending) và đối chiếu từng lượt chọn của đội Fantasy đã chốt.
 - Không báo API đã phản ánh nếu chưa kiểm tra hoặc backend đang chạy chưa có chức năng tương ứng. Dữ liệu đơn thuần không cần deploy; nếu cần sửa mã thì xử lý phạm vi đó khi được giao, chạy test/build liên quan một lần.
 
 ### Nối sang kết quả Fantasy — thao tác công bố riêng
 
-Sau thống kê và bộ đội hình thực đã được xác nhận/nhập, dùng `FantasyEvidenceCommand` với CSV cuối 10 cột, `sources.md` và sidecar `confirmed-unrated.csv` hiện hành để ghi hai bảng bằng chứng. Command không sửa rating thô hoặc công bố điểm. Rating chưa thu thập không vào sidecar và không tính 0; người được xác nhận không chấm giữ rating/fantasy_points NULL, scoring chỉ có căn cứ 0 sau khi xác nhận trong database. Header, command production/local, cách chạy lại và xử lý rating sửa đã đối chiếu code ở [quy trình kết quả GW6](fantasy-results-2026.md#vận-hành-gw6-từ-thu-thập-đến-kết-quả).
+Sau thống kê và bộ đội hình thực đã được xác nhận/nhập, dùng `FantasyEvidenceCommand` với CSV cuối 10 cột, `sources.md`, sidecar `confirmed-unrated.csv` và `confirmed-not-registered.csv` nếu có để ghi bằng chứng fixture, unrated và ngoài danh sách trận. **Phải nhập bằng chứng xác nhận CSV cuối/danh sách đầy đủ của cả hai đội cho từng fixture FINISHED**; chỉ có thống kê hoặc sân 11v11 chưa đủ readiness. Command không sửa rating thô hoặc công bố điểm. Rating chưa thu thập không vào sidecar và không tính 0; người được xác nhận không chấm giữ rating/fantasy_points NULL, scoring chỉ có căn cứ 0 sau khi xác nhận trong database. Header, command production/local, cách chạy lại và xử lý rating sửa ở [quy trình kết quả Fantasy](fantasy-results-2026.md#vận-hành-gw6-từ-thu-thập-đến-kết-quả).
 
-Khi được giao công bố riêng: ADMIN lấy GET `/api/fantasy/2026/admin/gameweeks/6/readiness`, xử lý mọi blocker của cả vòng, rồi chủ động POST `publish-results` có CSRF/currentVersion/lý do. Nhập xong một số trận hoặc toàn thống kê không tự công bố; trận hoãn/chưa FINISHED tiếp tục chặn kết quả cuối. Tái tính sau sửa nguồn dùng `recalculate-results` cho toàn vòng sau xác nhận lại/readiness, không gửi điểm từ client. BXH chỉ đọc phiên bản đã công bố mới nhất.
+Thay `{gw}` bằng vòng đang làm trong GET `/api/fantasy/2026/admin/gameweeks/{gw}/readiness`. Khi đủ 10 fixture và readiness đạt, báo để **ADMIN chủ động công bố**; Codex không gọi `publish-results` hoặc `recalculate-results` trong quy trình tổng hợp. Nhập xong một số trận hoặc toàn thống kê không tự công bố; trận hoãn/chưa FINISHED tiếp tục chặn kết quả cuối.
 
 GW6 production đã OPEN và lưu đội thật đã kiểm chứng, không lặp migration/luồng lưu khi thu thập. Trước deadline người chơi có một nút **Lưu đội hình**, được lưu lại; sau hạn giữ sân/khóa/chờ kết quả, sau công bố có điểm 11 người/tổng/BXH GW và mùa. Chủ dự án đã cho phép cấp ADMIN riêng ID 2 để vận hành; phiên mới đã kiểm chứng readiness 200/ready=false, USER ID 1 bị 403. Việc thu thập/nhập vẫn không tự công bố điểm hoặc cho phép đổi quyền tài khoản khác. Xem [checkpoint production](fantasy-production-2026-10-05.md).
 
 ## 7. Báo cáo cuối mỗi lượt
 
-1. Số fixture FINISHED đã hoàn thành cả hai đội, còn thiếu/chờ; danh sách trận hoãn/chưa kết thúc và trạng thái xác nhận danh sách vòng.
+1. Đủ 10 fixture API, mapping/sync trạng thái/tỉ số/BXH; số fixture FINISHED đã hoàn thành cả hai đội, còn thiếu/chờ và lý do. Riêng GW6 hiện tại: Coventry–Newcastle pending, không nhập thống kê/bằng chứng hoặc công bố trận đó trước khi FINISHED.
 2. Số PLAYED, DID_NOT_PLAY, PLAYED có rating, PLAYED không được chấm đã xác nhận và PLAYED còn chờ rating. Không gộp NULL của DID_NOT_PLAY vào “không được chấm”. Báo độ đầy đủ thống kê và đội hình riêng.
 3. Một danh sách thông tin còn thiếu gộp theo fixture/CLB/cầu thủ để người dùng bổ sung.
-4. CSV thống kê cuối dùng để nhập, nguồn/missing/checkpoint; trạng thái kiểm tra, nhập local/production, idempotence, đối chiếu API và tổng mùa thực tế. Nếu chưa nhập thì ghi rõ.
+4. CSV thống kê cuối, đội hình, bằng chứng Fantasy và nguồn/missing/checkpoint; trạng thái kiểm tra, backup, nhập local/production, idempotence, đối chiếu API/trình duyệt, tổng mùa thực tế và cảnh báo readiness theo fixture/nguyên nhân. Nêu rõ bước đã xong và bước chờ ảnh/rating/trận chưa đá. Nếu chưa nhập thì ghi rõ.
 5. File cần commit và commit message phù hợp phần thực sự đã thay đổi. Không tự commit, push, deploy, tạo cron hoặc Pre-deploy Command.
 
 Chỉ dữ liệu/tài liệu: không viết test Java cho từng GW, không chạy full test/build. Nếu mã/schema được yêu cầu sửa, chạy kiểm tra/build đúng phạm vi một lần; mọi hạn chế chưa xử lý phải được báo thay vì lách bằng dữ liệu giả.
@@ -232,8 +236,8 @@ Chỉ dữ liệu/tài liệu: không viết test Java cho từng GW, không ch�
 
 Tài liệu được đối chiếu với [reader](../backend/src/main/java/com/premierhub/manualstats/ManualMatchStatsCsvReader.java), [importer thống kê](../backend/src/main/java/com/premierhub/manualstats/ManualMatchStatsImporter.java), [patch importer](../backend/src/main/java/com/premierhub/manualstats/ManualMatchStatsPatchImporter.java), [stats command](../backend/src/main/java/com/premierhub/manualstats/ManualMatchStatsCommand.java), [service tổng mùa](../backend/src/main/java/com/premierhub/manualstats/ManualSeasonStatsService.java), [season command](../backend/src/main/java/com/premierhub/manualstats/ManualSeasonStatsCommand.java), [lineup importer](../backend/src/main/java/com/premierhub/lineups/LineupBatchImporter.java), [lineup command](../backend/src/main/java/com/premierhub/lineups/LineupBatchCommand.java), [schema](../backend/src/main/resources/schema.sql), [cấu hình chung](../backend/src/main/resources/application.properties), [cấu hình prod](../backend/src/main/resources/application-prod.properties) và [MatchController](../backend/src/main/java/com/premierhub/web/MatchController.java).
 
-football-data.org được xử lý bằng [FootballDataClient](../backend/src/main/java/com/premierhub/sync/FootballDataClient.java), [FootballDataBatch](../backend/src/main/java/com/premierhub/sync/FootballDataBatch.java), [FootballDataCommand](../backend/src/main/java/com/premierhub/sync/FootballDataCommand.java) và [FootballDataSync](../backend/src/main/java/com/premierhub/sync/FootballDataSync.java). Command sync hiện ghi database và batch parser đòi 20 đội/380 fixture/20 dòng BXH của cả mùa; không đưa JSON chỉ một GW vào importer này, không tự bật sync production khi chỉ tổng hợp. Tận dụng lịch/UTC/status đã có; thiếu cập nhật thì chuẩn bị phần còn thiếu và báo, không tự sửa provider mapping hoặc chuyển nhượng.
+football-data.org được xử lý bằng [FootballDataClient](../backend/src/main/java/com/premierhub/sync/FootballDataClient.java), [FootballDataBatch](../backend/src/main/java/com/premierhub/sync/FootballDataBatch.java), [FootballDataCommand](../backend/src/main/java/com/premierhub/sync/FootballDataCommand.java) và [FootballDataSync](../backend/src/main/java/com/premierhub/sync/FootballDataSync.java). Command sync ghi database và batch parser đòi 20 đội/380 fixture/20 dòng BXH của cả mùa; không đưa JSON chỉ một GW vào importer. Xác nhận mapping/provider và backup trước sync production; nếu không đủ dữ liệu hoặc mapping chưa rõ, báo blocker, không tự sửa fixture hay trạng thái. Đồng bộ không được tự thay deadline/rosterAsOf Fantasy.
 
 Câu lệnh nhắn cho vòng tiếp theo:
 
-> Tổng hợp GW6 mùa 2026/27 theo docs/gameweek-data-workflow.md, tiếp tục checkpoint và chỉ chuẩn bị file; chưa nhập SQL.
+> Tổng hợp GW N mùa 2026/27 theo docs/gameweek-data-workflow.md, tiếp tục checkpoint và hoàn thành các fixture FINISHED đã xác minh; báo trận pending và readiness, chưa công bố Fantasy.

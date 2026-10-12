@@ -24,7 +24,7 @@
 
 Hoàn thiện Fantasy có tài khoản trước hạn chốt GW6 mùa 2026/27 để thử nghiệm với người chơi thật. Triển khai từng bước nhỏ, không làm toàn bộ trong một lượt. Chỉ phát triển mùa 2026/27, không sửa mùa 2024/25 hoặc thống kê bóng đá đã có.
 
-Trạng thái hiện hành: auth email/Google/liên kết/giới hạn đã phát hành; quản lý GW, rosterAsOf, lưu đội, chấm/công bố và BXH đã có mã/schema production. GW6 OPEN với deadline 09/10/2026 00:00 Việt Nam, lưu/lưu lại/reload đã đạt. ID 2 được cấp ADMIN theo quyền chủ dự án, phiên mới/readiness đã kiểm chứng 200; USER ID 1 bị 403. Chưa nhập/công bố dữ liệu kết quả GW6; còn thu thập/xác nhận nguồn đầy đủ. Khôi phục mật khẩu làm riêng. Quy trình vận hành chỉ nhập/công bố khi được giao rõ ràng; mở GW6 trước đây không cho phép tự mở GW khác.
+Trạng thái vận hành hiện tại: auth, quản lý GW, rosterAsOf, lưu đội, chấm/công bố và BXH đã có mã/schema; đội GW6 đã chốt được giữ nguyên. Chín trận GW6 FINISHED đã nhập thống kê, đội hình và bằng chứng Fantasy theo [checkpoint GW6](../backend/data/gw6-2026/sources.md); Coventry–Newcastle còn pending, chưa công bố Fantasy. Các checkpoint triển khai cũ bên dưới là lịch sử. Từ lần sau, yêu cầu “Tổng hợp GW N mùa 2026/27” cho phép nhập phần dữ liệu trận đã xác minh sau backup theo [quy trình Gameweek](gameweek-data-workflow.md), nhưng không cho phép mở GW, thay đội/deadline/rosterAsOf hoặc công bố/tái công bố kết quả. Khôi phục mật khẩu làm riêng.
 
 ## Bối cảnh ban đầu đã đối chiếu trong repo — lịch sử trước các checkpoint
 
@@ -98,9 +98,9 @@ Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để 
 
 ### Bước 4 — Chấm và công bố
 
-**Mã/schema đã phát hành:** bằng chứng nguồn, kết quả/version, importer dùng file hiện có không sửa thống kê thô; readiness thiếu rating/dòng/vai trò/trận hoãn/deadline. Chỉ đội tham gia đã lưu hợp lệ có kết quả; nhiều trận cộng từng khóa một lần, 0 chỉ từ DNP hoặc xác nhận không chấm trong database. ADMIN+CSRF công bố transaction toàn GW, tái tính có lý do/lịch sử, gọi lặp không tạo trùng. Nhập dữ liệu không tự PUBLISHED. Command/API và trình tự vận hành ở [fantasy-results-2026.md](fantasy-results-2026.md).
+**Mã/schema đã phát hành:** bằng chứng nguồn, kết quả/version, importer dùng file hiện có không sửa thống kê thô; readiness thiếu rating/dòng/vai trò/trận hoãn/deadline. Chỉ đội tham gia đã lưu hợp lệ có kết quả; nhiều trận cộng từng khóa một lần. Điểm 0 có căn cứ từ `DID_NOT_PLAY`, PLAYED được xác nhận không chấm, hoặc xác nhận ngoài danh sách trận do chấn thương theo đúng `(fixture_id,player_id)`; trường hợp cuối không tạo dòng thống kê giả. ADMIN+CSRF công bố transaction toàn GW, tái tính có lý do/lịch sử, gọi lặp không tạo trùng. Nhập dữ liệu không tự PUBLISHED. Command/API và trình tự vận hành ở [fantasy-results-2026.md](fantasy-results-2026.md).
 
-**Kiểm chứng lịch sử:** 10 test backend/4 frontend, build và MySQL local hai đội/2 phiên bản, 66.77 → 67.77, NULL thô/idempotence/rollback, browser desktop/390px. **Còn lại cho GW6 thật:** thu thập/nhập/xác nhận đủ hai đội mỗi trận, rating do người dùng gửi, xử lý blocker readiness bằng phiên ADMIN mới của ID 2; chỉ công bố khi được giao và ready=true. Chưa công bố cuộc thi thật hay gọi kiểm chứng local là công bố production.
+**Kiểm chứng lịch sử:** 10 test backend/4 frontend, build và MySQL local hai đội/2 phiên bản, 66.77 → 67.77, NULL thô/idempotence/rollback, browser desktop/390px. **Còn lại cho GW6 thật:** chờ Coventry–Newcastle kết thúc, thu thập/xác minh cả hai đội và rating người dùng gửi, nhập ba phần dữ liệu theo workflow rồi kiểm tra readiness; khi ready=true, báo ADMIN chủ động công bố. Chưa công bố cuộc thi thật hay gọi kiểm chứng local là công bố production.
 
 - Nối rating đã nhập bằng [quy trình Gameweek](gameweek-data-workflow.md), đúng fixture/player_id/mùa/GW, không tự tìm rating hoặc thu thập lại chỉ số đã có.
 - Có trạng thái phân biệt rating chưa nhập với người đã xác nhận không được chấm; không suy luận mọi NULL là 0. Chưa đủ trận/dữ liệu thì vòng tiếp tục AWAITING_RESULTS, không công bố một phần như kết quả cuối.

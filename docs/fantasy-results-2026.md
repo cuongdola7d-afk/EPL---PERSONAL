@@ -1,6 +1,6 @@
 # Chấm điểm và công bố Fantasy 2026/27 — bước 4
 
-Trạng thái 05/10/2026: mã chấm điểm, công bố và BXH GW/mùa đã phát hành; bốn migration Fantasy đã nhập và GW6 đã OPEN. Người dùng đã kiểm chứng lưu → sửa → lưu lại → reload. Chưa nhập thống kê/xác nhận nguồn hoặc công bố kết quả GW6. Lượt chốt quy trình này chỉ sửa tài liệu và đọc API BXH, không chạy lại migration/luồng lưu/test/build. Xem [checkpoint production](fantasy-production-2026-10-05.md).
+Mã chấm điểm, công bố và BXH GW/mùa đã có; GW6 đã mở và có đội người chơi đã chốt. Trạng thái chi tiết của GW6 nằm trong [checkpoint GW6](../backend/data/gw6-2026/sources.md); các mốc 05/10 bên dưới là lịch sử triển khai. Quy trình thường trực cho yêu cầu “Tổng hợp GW N mùa 2026/27” ở [gameweek-data-workflow.md](gameweek-data-workflow.md): nhập dữ liệu FINISHED đã xác minh sau backup, kiểm tra readiness, nhưng không công bố/tái công bố Fantasy.
 
 ## Luồng cuối của người chơi và GW6
 
@@ -10,20 +10,20 @@ GW6 đã công bố deadline **09/10/2026 00:00 Asia/Ho_Chi_Minh = 08/10/2026 17
 
 ## Vận hành GW6 từ thu thập đến kết quả
 
-Đây là hướng dẫn cho các lượt được giao sau, **không phải yêu cầu thực thi nhập/công bố trong lượt cập nhật tài liệu**. “Tổng hợp GW6” chỉ chuẩn bị và kiểm tra file; quyền nhập SQL không đồng nghĩa quyền công bố Fantasy.
+Đây là hướng dẫn dùng cho GW6 và thay `{gw}`/đường dẫn tương ứng cho vòng sau. Trong lượt cập nhật tài liệu này không thực thi nhập hoặc công bố. Từ lần yêu cầu “Tổng hợp GW N mùa 2026/27” sau, quyền nhập phần đã xác minh theo workflow thường trực **không** bao gồm quyền công bố Fantasy.
 
 1. Tiếp tục checkpoint GW6 theo [quy trình Gameweek](gameweek-data-workflow.md), lấy đủ dữ liệu **cả hai đội của từng fixture FINISHED**. Trận hoãn/chưa xong ghi chờ; tiếp tục phần độc lập. Lịch/UTC/trạng thái/tỉ số từ football-data.org, phút/bàn/kiến tạo/thẻ từ StatMuse; rating SofaScore chỉ từ ảnh/bảng người dùng cung cấp. Không thu thập lại dữ liệu đã hoàn thành.
 2. Dùng một CSV thống kê cuối 10 cột, `sources.md`, `missing.csv`, bộ CSV đội hình/sơ đồ hiện có, `confirmed-unrated.csv` nếu có ngoại lệ không được chấm và `confirmed-not-registered.csv` nếu có người được xác nhận ngoài danh sách trận. Không thêm cột vào CSV thống kê, suy ra đá chính từ phút/rating hoặc ép 40 người/trận. Các xác nhận phải được nhập database; ghi chú đơn thuần chưa đủ cho scoring. Rating chưa thu thập vẫn là blocker, không tính 0.
-3. Khi được giao nhập đúng đích: kiểm tra input/membership/xung đột, backup SQL mới ngoài Git và kiểm tra hoàn tất, nhập thống kê → đội hình → bằng chứng Fantasy bằng các command dưới đây; lặp xác nhận không thay đổi, đối chiếu API từng fixture. Giữ dữ liệu thô NULL của người không được chấm. **Các command này không công bố kết quả, không chuyển GW sang PUBLISHED.**
-4. Sau deadline, ADMIN kiểm tra readiness toàn GW. Mọi trận phải FINISHED và có bằng chứng đầy đủ; từng người của đội tham gia phải có rating hoặc căn cứ 0. Thiếu dòng thống kê không mặc nhiên DNP. Trận hoãn giữ cả vòng chờ; nhập xong vài trận không đủ công bố cuối.
-5. Khi ready=true, ADMIN chủ động công bố bằng UI hoặc API + CSRF. Backend tự tính tổng/breakdown, ghi cả GW trong transaction và chỉ đặt PUBLISHED sau khi thành công. Kiểm tra kết quả tài khoản thật và cả hai BXH. Không công bố điểm tạm hoặc đội thử.
+3. Với fixture FINISHED đã xác minh: xác nhận đúng Aiven MySQL của backend Render, kiểm tra input/membership/xung đột, tạo và kiểm tra backup SQL mới ngoài Git; đồng bộ fixture/BXH và đối chiếu ID, nhập membership có căn cứ → thống kê → đội hình → bằng chứng Fantasy bằng các command hiện có. Lặp xác nhận không thay đổi, đối chiếu API từng fixture và sân 11v11. Giữ dữ liệu thô NULL của người không được chấm. **Các command nhập không công bố kết quả, không chuyển GW sang PUBLISHED.**
+4. Đối chiếu từng cầu thủ trong mọi đội Fantasy đã chốt: người có dòng `DID_NOT_PLAY` là dự bị không vào sân; người ngoài danh sách trận đầy đủ và có căn cứ chấn thương/xác nhận rõ ràng được ghi riêng theo `(fixture_id,player_id)` bằng `confirmed-not-registered.csv`, không tạo thống kê giả hay rating 0. Người chưa rõ thì nêu tên để người dùng xác nhận. Chạy readiness sau mỗi batch và báo từng fixture/nguyên nhân: fixture pending, CSV cuối/danh sách hai đội, đội hình/11 STARTER, rating chờ, unrated chưa xác nhận hoặc lượt chọn thiếu căn cứ. Thiếu dòng thống kê không mặc nhiên DNP.
+5. Khi đủ 10 fixture FINISHED và `ready=true`, báo để ADMIN chủ động công bố bằng UI hoặc API + CSRF; quy trình tổng hợp không thực hiện POST công bố. Trận hoãn giữ cả vòng chờ, không công bố điểm tạm.
 6. Nếu rating được sửa sau công bố, cập nhật nguồn có kiểm soát, xác nhận lại và kiểm tra readiness rồi **tái tính cả GW với lý do/phiên bản**. BXH lấy phiên bản mới nhất, không cộng trùng bản cũ.
 
-### Command nhập thật — chỉ chạy khi được giao nhập SQL
+### Command nhập thật — sau kiểm tra nguồn và backup
 
-Chạy từ `backend/` bằng JAR đã được duyệt khớp mã phát hành. Datasource production lấy từ môi trường: `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; command không tự nạp `.env.local`. Private hostname Railway chỉ dùng trong mạng Railway; nếu vận hành từ máy ngoài, cấu hình kết nối public proxy đã xác minh với TLS/UTC qua môi trường, không đưa password lên command line/log. Không đổi start command của service, bật runner thường trực, tạo cron hoặc Pre-deploy Command.
+Chạy từ `backend/` bằng JAR đã được duyệt khớp mã phát hành. Datasource production là Aiven MySQL mà backend Render thực sự dùng, xác nhận lại từ cấu hình và database trước mỗi batch; không dùng Railway cũ. Biến môi trường: `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; command không tự nạp `.env.local`. Không đưa password lên command line/log, đổi start command của service, bật runner thường trực, tạo cron hoặc Pre-deploy Command.
 
-Các đường dẫn dưới đây là bộ file **sẽ chuẩn bị** khi thu thập GW6, không phải dữ liệu đã có/đã nhập. `$releaseJar` trỏ artifact đúng phiên bản; nếu tên artifact khác thì thay bằng tên thực tế, không build lại chỉ để nhập dữ liệu.
+Các đường dẫn dưới đây là ví dụ của GW6; kiểm tra file/checkpoint thực tế và đổi GW cho vòng tiếp theo. `$releaseJar` trỏ artifact đúng phiên bản; nếu tên artifact khác thì thay bằng tên thực tế, không build lại chỉ để nhập dữ liệu. Chỉ đưa fixture FINISHED đã đủ dữ liệu vào bộ nhập; trận pending giữ ngoài CSV/bằng chứng xác nhận.
 
 ```powershell
 $releaseJar = 'target/premierhub-backend-0.1.0-SNAPSHOT.jar'
@@ -211,6 +211,7 @@ Readiness chặn nếu:
 - Thiếu sơ đồ thực tế/vai trò và nguồn đã xác minh, thiếu đúng 11 STARTER mỗi đội; người vào thay/dự bị dùng danh sách thực tế. Không suy từ phút, rating hay sơ đồ mặc định CLB.
 - ID/vai trò/CLB/status không khớp; thiếu membership hợp lệ tại ngày trận. PLAYED thiếu phút/bàn/kiến tạo/thẻ hoặc rating chưa xác nhận. DNP vi phạm phút 0/rating NULL hoặc có sự kiện dương.
 - Người được chọn thiếu dòng thống kê trong fixture của CLB họ thuộc tại ngày trận, hoặc không xác định được trận có căn cứ trong GW. Không tự coi mất dòng là DNP.
+- Người ngoài danh sách trận chỉ có căn cứ 0 sau khi xác minh danh sách hai đội đầy đủ và lưu xác nhận vắng mặt đúng `(fixture_id,player_id)`; phân biệt với `SUB_UNUSED` có dòng `DID_NOT_PLAY`. PLAYED rating NULL chỉ có căn cứ 0 khi đã lưu xác nhận SofaScore không chấm, không suy từ NULL.
 - Snapshot đội chốt không hợp lệ hoặc chốt từ deadline trở đi.
 
 Issue có `fixtureId`, `playerId`, `accountId` khi xác định được, `code`, `message`; không có điểm tạm. Lỗi POST chưa sẵn sàng là 409 `RESULTS_NOT_READY` cùng readiness. Danh sách fixture lấy từ database của GW, không suy danh sách/sự hoàn tất từ tổng số dòng; công bố cuộc thi GW ban đầu vẫn dùng kiểm tra lịch đã có ở bước 2.
@@ -238,7 +239,7 @@ Schema local: [fantasy-result-schema.sql](../backend/src/main/resources/fantasy-
 
 ## Còn lại và bước tiếp theo
 
-GW6 đã OPEN, schema/mã và luồng lưu production đã đạt; ID 2 đã được cấp ADMIN và readiness bằng phiên mới đã 200, USER ID 1 vẫn bị 403. Để vòng chạy trọn: thu thập đủ chỉ số và danh sách/sơ đồ thực cả hai đội của từng trận FINISHED; nhận rating SofaScore hoặc xác nhận không chấm; chuẩn bị/kiểm tra file, backup mới và nhập thống kê/đội hình/bằng chứng khi được giao; sau deadline và mọi fixture FINISHED, xử lý readiness rồi ADMIN công bố. Sau đó đối chiếu điểm 11 người/tổng/BXH GW/mùa bằng tài khoản thật. Chưa nhập thống kê/công bố kết quả GW6.
+GW6 đã OPEN và đội người chơi đã chốt được giữ nguyên. Theo [checkpoint hiện hành](../backend/data/gw6-2026/sources.md), chín trận FINISHED đã có thống kê/đội hình/bằng chứng Fantasy và xác nhận chấn thương ngoài danh sách cho sáu cầu thủ, tác động tám lượt chọn; Coventry–Newcastle vẫn pending. Chưa nhập hoặc công bố kết quả trận pending, chưa công bố kết quả Fantasy GW6. Tiếp tục từ checkpoint, không thu thập lại dữ liệu GW1–5 hoặc chín trận đã chốt. Các đoạn kiểm chứng 05/10 phía trên là lịch sử, không thay thế trạng thái này.
 
 Transaction toàn GW cần giữ khóa nguồn/đội trong lúc chấm; đã kiểm chứng rollback/nhất quán local, chưa đo tải công bố production. Source_ref lưu đường dẫn/nguồn và hash dữ liệu database; phải giữ file nguồn/checkpoint, không coi file nguồn tồn tại là bằng chứng đã thu thập xong. BXH GW/mùa đã phát hành; xem đội người khác/phân trang/thông báo ngoài website chưa có. Sửa rating đã có số còn thiếu command hiệu chỉnh được duyệt; không tự ghi đè để vượt xung đột.
 
