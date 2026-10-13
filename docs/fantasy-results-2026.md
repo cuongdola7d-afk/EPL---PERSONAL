@@ -1,5 +1,11 @@
 # Chấm điểm và công bố Fantasy 2026/27 — bước 4
 
+## Sửa đọc kết quả đã công bố — 13/10/2026
+
+Đọc Aiven xác nhận GW6 đã có kết quả phiên bản 1 cho bốn tài khoản. Frontend trước sửa từ chối lý do `INJURY_NOT_REGISTERED_CONFIRMED` dù backend đã công bố hợp lệ, gây thông báo “Dữ liệu đội hình/kết quả không đúng định dạng” và che cả tổng điểm/điểm trên sân. Đã bổ sung lý do xác nhận này vào validator, vẫn bắt buộc rating NULL và điểm 0; không chấp nhận rating 0 hoặc điểm khác 0 cho vắng mặt.
+
+Khung Kết quả chỉ hiện tổng điểm; 11 điểm cá nhân dùng dữ liệu đã công bố theo playerId, hiện ở góc trên bên phải avatar trên sân, gồm cả 0,00. Kiểm tra 18 test liên quan, build frontend, bốn payload thực tế và component React trên Chrome desktop/mobile đạt. Phiên ADMIN hết hạn nên không gọi API riêng bằng phiên live trong lượt sửa; payload kiểm chứng lấy read-only từ các bảng kết quả đã công bố. Không ghi database hoặc công bố/tái tính lại. Cần deploy frontend Vercel cho sửa validator; không cần sửa/deploy backend trong lượt này. Các checkpoint chờ deploy/công bố phía dưới là lịch sử trước xác nhận kết quả phiên bản 1 này.
+
 Mã chấm điểm, công bố và BXH GW/mùa đã có; GW6 đã mở và có đội người chơi đã chốt. Trạng thái chi tiết của GW6 nằm trong [checkpoint GW6](../backend/data/gw6-2026/sources.md); các mốc 05/10 bên dưới là lịch sử triển khai. Quy trình thường trực cho yêu cầu “Tổng hợp GW N mùa 2026/27” ở [gameweek-data-workflow.md](gameweek-data-workflow.md): nhập dữ liệu FINISHED đã xác minh sau backup, kiểm tra readiness, nhưng không công bố/tái công bố Fantasy.
 
 ## Luồng cuối của người chơi và GW6
