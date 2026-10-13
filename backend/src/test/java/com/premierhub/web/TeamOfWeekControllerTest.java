@@ -21,7 +21,7 @@ class TeamOfWeekControllerTest {
 
     @Test
     void exposesMissingDataForEverySupportedWeekButNoLegacyEndpoint() throws Exception {
-        for (int week = 1; week <= 5; week++) {
+        for (int week : new int[] {1, 5, 6, 7, 38}) {
             when(repository.read(week)).thenReturn(new TeamOfWeekRepository.Pool(List.of(), 0, 0));
             mvc.perform(get("/api/fantasy/2026/team-of-week").param("gameweek", String.valueOf(week)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.season").value(2026))
@@ -36,7 +36,7 @@ class TeamOfWeekControllerTest {
     @Test
     void invalidWeekIsRejectedInsteadOfSilentlyUsingAnotherRound() throws Exception {
         mvc.perform(get("/api/fantasy/2026/team-of-week?gameweek=0")).andExpect(status().isBadRequest());
-        mvc.perform(get("/api/fantasy/2026/team-of-week?gameweek=6")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/fantasy/2026/team-of-week?gameweek=39")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/fantasy/2026/team-of-week?gameweek=abc")).andExpect(status().isBadRequest());
     }
 }

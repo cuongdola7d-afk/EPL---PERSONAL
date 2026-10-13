@@ -76,11 +76,26 @@ class TeamOfWeekServiceTest {
         assertNull(team.picks().getLast().player());
         assertEquals(3, team.excludedMissingPositions());
         assertThrows(InvalidFilterException.class, () -> service.team(0));
-        assertThrows(InvalidFilterException.class, () -> service.team(6));
+        assertThrows(InvalidFilterException.class, () -> service.team(39));
         var empty = service.team(5);
         assertEquals("INSUFFICIENT_DATA", empty.status());
         assertEquals(TeamOfWeekOptimizer.SLOTS, empty.missingSlots());
         assertNull(empty.totalRating());
+    }
+
+    @Test
+    void laterRoundsReadFreshStatisticsAfterImportWithoutChangingEarlierTeams() {
+        var earlier = service.team(1);
+        assertEquals("INSUFFICIENT_DATA", service.team(6).status());
+        fixture(106, 6, 2026, "FINISHED");
+        for (int id = 1; id <= 11; id++) stats(id, 106, 2026, "PLAYED", "9.00");
+        var latest = service.team(6);
+        assertEquals("COMPLETE", latest.status());
+        assertEquals(new BigDecimal("99.00"), latest.totalRating());
+        assertEquals(11, latest.picks().stream().map(p -> p.player().playerId()).distinct().count());
+        assertEquals(1, latest.recordedFixtures());
+        assertEquals(earlier, service.team(1));
+        assertEquals("INSUFFICIENT_DATA", service.team(38).status());
     }
 
     @Test

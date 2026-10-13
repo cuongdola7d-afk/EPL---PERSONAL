@@ -1,4 +1,9 @@
 export const TEAM_OF_WEEK_SLOTS = ['GK', 'LB', 'LCB', 'RCB', 'RB', 'LCM', 'CM', 'RCM', 'LW', 'ST', 'RW']
+export function teamOfWeekGameweek(currentGameweek, selection) {
+  const current = Number.isInteger(currentGameweek) && currentGameweek >= 1 && currentGameweek <= 38 ? currentGameweek : 6
+  return selection?.currentGameweek === current && Number.isInteger(selection.gameweek) &&
+    selection.gameweek >= 1 && selection.gameweek <= 38 ? selection.gameweek : current
+}
 const permission = slot => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM' })[slot] ?? slot
 
 export function isValidTeamOfWeek(team, gameweek) {

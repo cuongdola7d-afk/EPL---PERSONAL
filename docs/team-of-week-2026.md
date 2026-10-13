@@ -1,12 +1,22 @@
 # Đội hình tiêu biểu PrismaXI 2026/27
 
-Trong tab Fantasy, chọn **Đội hình tiêu biểu**, rồi chọn GW1–GW5. Đội người dùng, sơ đồ, luật OVR và giới hạn CLB vẫn dùng luồng Fantasy hiện có. Đổi GW hoặc chuyển giữa hai tab con không thay đổi đội đã chọn.
+Trong tab Fantasy, chọn **Đội hình tiêu biểu**. Mặc định lấy GW đang hiển thị ở phần **Vòng thi**; khi Vòng thi chuyển GW, đội hình tiêu biểu theo vòng mới. Có thể chọn xem riêng một GW cũ; lựa chọn này được giữ đến khi đổi GW ở Vòng thi. Dropdown và API hỗ trợ GW1–GW38. Đội người dùng, sơ đồ, luật OVR và giới hạn CLB vẫn dùng luồng Fantasy hiện có. Đổi GW tiêu biểu hoặc chuyển tab không thay đổi đội đã chọn.
+
+Sau khi nhập thống kê/rating đã xác minh, đội hình tiêu biểu tự tính từ dữ liệu mới ở lần đọc API tiếp theo; không có bảng kết quả cần nhập riêng, không cần công bố Fantasy để cập nhật. Tab đang mở tải lại mỗi 60 giây khi trang hiển thị, khi quay lại trang, khi nhận sự kiện công bố hoặc khi bấm **Làm mới**. Đây là polling trên trình duyệt, không tạo cron. Chỉ coi dữ liệu vòng hoàn tất sau khi kiểm tra đủ trận theo workflow; `COMPLETE` riêng của API chỉ khẳng định xếp được 11 cầu thủ hợp lệ, không khẳng định dữ liệu toàn vòng đủ.
 
 ## API và dữ liệu
 
+### Kiểm chứng mở rộng GW — 13/10/2026
+
+Đã bỏ giới hạn cứng GW1–5 ở service và dropdown. Mã mới đọc Aiven trong kết nối read-only: GW6 COMPLETE, 11 playerId khác nhau, tổng rating **93.70**, 10/10 trận có thống kê; 315 PLAYED, 310 có rating, 292 ứng viên, 18 PLAYED thiếu vị trí được loại theo luật hiện có, 5 rating NULL không được thay bằng 0. Output GW1–5 giống toàn bộ payload API production hiện tại; GW7 trả INSUFFICIENT_DATA và 0 trận có thống kê.
+
+Kiểm tra 10 test backend service/controller/optimizer và 11 test frontend đội tiêu biểu/Gameweek đạt; build frontend đạt. Chrome local desktop/390px với payload service đọc Aiven và public Gameweek API được replay: mặc định GW6, 38 lựa chọn, 11 ID đúng, tổng 93.70, polling tự tải lại, giữ lựa chọn xem vòng cũ, đổi Vòng thi quay về vòng tương ứng, GW7 hiển thị thiếu, không tràn ngang/lỗi JavaScript. Đội luyện tập lưu trong browser giữ nguyên; không ghi database/snapshot người chơi hoặc công bố Fantasy. Polling được tăng tốc riêng trong script kiểm chứng; mã ứng dụng vẫn 60 giây. Báo cáo/ảnh nằm trong `backend/target/team-of-week-current/`, Git ignore.
+
+**Cần deploy backend Render và frontend Vercel** để API production hỗ trợ GW6–38 và giao diện nhận hành vi mới; chưa tự deploy/commit/push. Không cần migration, importer đội tiêu biểu hoặc cập nhật dữ liệu riêng. Bước kiểm tra API/tab sau mỗi GW đã thêm vào AGENTS.md và gameweek-data-workflow.md. Các kiểm chứng GW1–5 bên dưới là lịch sử, không phải giới hạn hiện hành.
+
 `GET /api/fantasy/2026/team-of-week?gameweek=1`
 
-- Chỉ hỗ trợ mùa 2026/27, Premier League `league_id=39`, GW1–GW5. GW ngoài khoảng trả HTTP 400; không có endpoint mùa 2024/25.
+- Chỉ hỗ trợ mùa 2026/27, Premier League `league_id=39`, GW1–GW38. GW ngoài khoảng trả HTTP 400; không có endpoint mùa 2024/25.
 - Mỗi request đọc `manual_fixture_player_stats`, nối `fixtures` để lấy đúng vòng. Chỉ `participation_status='PLAYED'` có rating khác SQL `NULL` và có `eligiblePositions` mới được phân công. Không lấy OVR, không fetch SofaScore và không lưu kết quả vào bảng SQL.
 - Tên CLB lấy qua `manual_fixture_player_stats.club_id`, là đội cầu thủ đại diện trong trận. Không lọc membership, ngày hiện tại, roster Fantasy hoặc `player_season_stats`.
 - `player_eligible_positions` được đọc theo đúng league/mùa/player. Không suy diễn CB, CM hoặc vị trí khác từ vị trí tổng quát. Chỉ chuẩn hóa tên ô LCB/RCB → CB và LCM/RCM → CM.

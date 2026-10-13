@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { fetchTeamOfWeek } from '../api/teamOfWeek.js'
 import { useApiResource } from '../hooks/useApiResource.js'
 import { formationSlots } from '../fantasy/lineup.js'
@@ -13,11 +13,22 @@ const slots = formationSlots('4-3-3')
 export default function TeamOfWeek({ gameweek, onGameweekChange }) {
   const request = useCallback(signal => fetchTeamOfWeek(gameweek, signal), [gameweek])
   const { data, status, error, reload } = useApiResource(request)
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') reload() }
+    const timer = setInterval(refresh, 60000)
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('prismaxi-results-published', refresh)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('prismaxi-results-published', refresh)
+    }
+  }, [reload])
   const bySlot = new Map(data?.picks.map(pick => [pick.slot, pick.player]) ?? [])
   const filled = data?.picks.filter(pick => pick.player !== null).length ?? 0
   return <div className="team-of-week">
     <div className="tow-controls"><label htmlFor="tow-gameweek">Gameweek <select id="tow-gameweek" value={gameweek}
-      onChange={event => onGameweekChange(Number(event.target.value))}>{[1, 2, 3, 4, 5].map(week => <option key={week} value={week}>GW{week}</option>)}</select></label>
+      onChange={event => onGameweekChange(Number(event.target.value))}>{Array.from({ length: 38 }, (_, i) => i + 1).map(week => <option key={week} value={week}>GW{week}</option>)}</select></label>
       <span>4-3-3 · SofaScore</span><button type="button" className="fantasy-clear" onClick={reload} disabled={status === 'loading'}>Làm mới</button></div>
     {status === 'loading' && <div className="fantasy-card tow-state" role="status"><span className="spinner" aria-hidden="true" /><strong>Đang tải đội hình GW{gameweek}…</strong></div>}
     {status === 'error' && <div className="fantasy-card tow-state" role="alert"><strong>Không tải được đội hình</strong><p>{error}</p><button className="fantasy-primary" type="button" onClick={reload}>Thử lại</button></div>}

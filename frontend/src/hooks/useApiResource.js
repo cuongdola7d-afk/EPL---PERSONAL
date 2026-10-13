@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export function useApiResource(request) {
   const [result, setResult] = useState({ data: null, status: 'loading', error: '' })
   const [revision, setRevision] = useState(0)
+  const reload = useCallback(() => setRevision(value => value + 1), [])
   useEffect(() => {
     const controller = new AbortController()
     setResult({ data: null, status: 'loading', error: '' })
@@ -13,5 +14,5 @@ export function useApiResource(request) {
     })
     return () => controller.abort()
   }, [request, revision])
-  return { ...result, reload: () => setRevision(value => value + 1) }
+  return { ...result, reload }
 }

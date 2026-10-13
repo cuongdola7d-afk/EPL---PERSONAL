@@ -1,8 +1,17 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { isValidTeamOfWeek, TEAM_OF_WEEK_SLOTS } from './teamOfWeek.js'
+import { isValidTeamOfWeek, TEAM_OF_WEEK_SLOTS, teamOfWeekGameweek } from './teamOfWeek.js'
 
 const permission = slot => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM' })[slot] ?? slot
+test('defaults to the current contest, preserves a manual replay and follows a changed contest', () => {
+  assert.equal(teamOfWeekGameweek(null, null), 6)
+  assert.equal(teamOfWeekGameweek(6, null), 6)
+  const replay = { currentGameweek: 6, gameweek: 1 }
+  assert.equal(teamOfWeekGameweek(6, replay), 1)
+  assert.equal(teamOfWeekGameweek(7, replay), 7)
+  assert.equal(teamOfWeekGameweek(38, null), 38)
+  assert.equal(teamOfWeekGameweek(6, { currentGameweek: 6, gameweek: 39 }), 6)
+})
 function team() {
   return { season: 2026, gameweek: 1, formation: '4-3-3', status: 'COMPLETE', totalRating: 88,
     playedCount: 12, ratedCount: 11, candidateCount: 11, excludedMissingPositions: 0, excludedNullRatings: 1,

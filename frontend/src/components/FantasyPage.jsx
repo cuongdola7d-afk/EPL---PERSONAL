@@ -16,6 +16,7 @@ import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
 import { emptyLineup, entryLineup } from '../fantasy/entry.js'
 import { useFantasyResult } from '../hooks/useFantasyResult.js'
 import { formatPoints, publishedPlayerPoints } from '../fantasy/results.js'
+import { teamOfWeekGameweek } from '../fantasy/teamOfWeek.js'
 import './FantasyPage.css'
 import './FantasyEntry.css'
 
@@ -29,6 +30,7 @@ function readSavedLineup() {
 
 function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [contestGameweek, setContestGameweek] = useState(null)
+  const [teamWeekSelection, setTeamWeekSelection] = useState(null)
   const [contestOpen, setContestOpen] = useState(false)
   const [contestStatus, setContestStatus] = useState(null)
   const [contestDeadline, setContestDeadline] = useState(null)
@@ -41,6 +43,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
   const contestSelection = useCallback((gw, open, asOf, status, deadline) => {
+    setTeamWeekSelection(current => current?.currentGameweek === gw ? current : null)
     setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status); setContestDeadline(deadline)
   }, [])
   const lockedSubmission = account && entry.ready && !contestOpen && entry.data?.submitted
@@ -57,7 +60,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [message, setMessage] = useState('')
   const [theme, setTheme] = useState('dark')
   const [view, setView] = useState('user')
-  const [gameweek, setGameweek] = useState(1)
+  const gameweek = teamOfWeekGameweek(contestGameweek, teamWeekSelection)
   const searchRef = useRef(null)
   const resultState = useFantasyResult(account, contestGameweek, contestStatus, entry.data?.submitted?.version ?? null, view === 'user')
   const playerPoints = publishedPlayerPoints(resultState.data, account?.id, contestGameweek)
@@ -166,7 +169,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
           }}>{label}</button>)}
       </div>
       {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
-        <TeamOfWeek gameweek={gameweek} onGameweekChange={setGameweek} /></div>}
+        <TeamOfWeek gameweek={gameweek} onGameweekChange={week => setTeamWeekSelection({ currentGameweek: contestGameweek ?? 6, gameweek: week })} /></div>}
       {view === 'leaderboard' && <div id="fantasy-panel-leaderboard" role="tabpanel" aria-labelledby="fantasy-tab-leaderboard">
         <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>

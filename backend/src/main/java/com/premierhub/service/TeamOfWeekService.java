@@ -24,7 +24,7 @@ public class TeamOfWeekService {
 
     @Transactional(readOnly = true)
     public TeamOfWeekResponse team(int gameweek) {
-        if (gameweek < 1 || gameweek > 5) throw new InvalidFilterException("Gameweek must be between 1 and 5");
+        if (gameweek < 1 || gameweek > 38) throw new InvalidFilterException("Gameweek must be between 1 and 38");
         var pool = repository.read(gameweek);
         var played = pool.appearances();
         var rated = played.stream().filter(row -> row.rating() != null).toList();
