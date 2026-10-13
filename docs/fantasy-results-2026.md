@@ -16,6 +16,8 @@ GW6 đã công bố deadline **09/10/2026 00:00 Asia/Ho_Chi_Minh = 08/10/2026 17
 
 ## Vận hành GW6 từ thu thập đến kết quả
 
+Quy tắc thường trực bổ sung ngày 13/10/2026: sau yêu cầu thu thập, đủ dữ liệu cả 10 trận thì tự kiểm tra/cập nhật đội hình tiêu biểu theo [workflow](gameweek-data-workflow.md), không chờ nhắc riêng. Người PLAYED được nguồn ảnh/bảng rating cuối xác minh không chấm mặc định có điểm Fantasy 0; người dùng đã cho phép tự lưu xác nhận đúng fixture/player_id qua sidecar và importer, không hỏi lại khi bằng chứng rõ. Không đổi PLAYED, rating/fantasy_points thô NULL hoặc thống kê thực tế; điểm 0 thuộc kết quả scoring. Rating chưa thu thập vẫn chặn readiness, không mặc định 0. Quyền này không bao gồm công bố/tái công bố kết quả.
+
 Đây là hướng dẫn dùng cho GW6 và thay `{gw}`/đường dẫn tương ứng cho vòng sau. Trong lượt cập nhật tài liệu này không thực thi nhập hoặc công bố. Từ lần yêu cầu “Tổng hợp GW N mùa 2026/27” sau, quyền nhập phần đã xác minh theo workflow thường trực **không** bao gồm quyền công bố Fantasy.
 
 1. Tiếp tục checkpoint GW6 theo [quy trình Gameweek](gameweek-data-workflow.md), lấy đủ dữ liệu **cả hai đội của từng fixture FINISHED**. Trận hoãn/chưa xong ghi chờ; tiếp tục phần độc lập. Lịch/UTC/trạng thái/tỉ số từ football-data.org, phút/bàn/kiến tạo/thẻ từ StatMuse; rating SofaScore chỉ từ ảnh/bảng người dùng cung cấp. Không thu thập lại dữ liệu đã hoàn thành.

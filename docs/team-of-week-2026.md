@@ -6,6 +6,8 @@ Sau khi nhập thống kê/rating đã xác minh, đội hình tiêu biểu tự
 
 ## API và dữ liệu
 
+Trong mọi yêu cầu “thu thập…”/“Tổng hợp GW…”, khi dữ liệu được xác minh và nhập đủ cả 10 trận FINISHED, Codex tự hoàn thành bước đọc/đối chiếu đội hình tiêu biểu của GW đó và ghi checkpoint, không chờ một yêu cầu cập nhật riêng. Nếu API/tab chưa cập nhật vì mã chưa deploy hoặc thiếu vị trí/nguồn, báo đúng phần còn chờ. Người PLAYED confirmed-unrated nhận 0 điểm Fantasy theo luật thường trực nhưng vẫn có rating thô NULL, nên không được đưa vào đội tiêu biểu bằng rating 0 giả; đội tiêu biểu chỉ chọn rating có thật và vị trí hợp lệ.
+
 ### Kiểm chứng mở rộng GW — 13/10/2026
 
 Đã bỏ giới hạn cứng GW1–5 ở service và dropdown. Mã mới đọc Aiven trong kết nối read-only: GW6 COMPLETE, 11 playerId khác nhau, tổng rating **93.70**, 10/10 trận có thống kê; 315 PLAYED, 310 có rating, 292 ứng viên, 18 PLAYED thiếu vị trí được loại theo luật hiện có, 5 rating NULL không được thay bằng 0. Output GW1–5 giống toàn bộ payload API production hiện tại; GW7 trả INSUFFICIENT_DATA và 0 trận có thống kê.
