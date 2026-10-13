@@ -58,4 +58,8 @@ Người dùng giao sửa membership để hiện trên web, cho phép nhập Ai
 - Đối chiếu toàn CSV GW6: 360/360 dòng có đúng một membership hiệu lực tại ngày trận; 0 lỗi membership. CSV thống kê SHA-256 vẫn `5fa0d29878b299c0c5c6e7f5e066bdc832e2b7ff5798d4bd72fbf7b06c2c1c87`; bốn ngoại lệ vẫn PLAYED và rating/fantasy_points trống ở CSV/sidecar. Không nhập thống kê GW6: database vẫn 0 dòng GW6, không tự tạo bốn dòng NULL trong SQL.
 - Frontend trang cầu thủ/chi tiết CLB/BXH gọi API roster ngày hiện tại, không ép asOf cũ. Fantasy dùng asOf riêng và snapshot đã lưu; không đổi asOf hoặc các snapshot đó.
 - Đã gọi trực tiếp API qua web Vercel `https://premierhub.vercel.app/api/players?season=2026`: đủ 22 người, từng payload/CLB khớp Render. Không chỉ kiểm tra kết nối trực tiếp backend.
+
+## Bổ sung trận cuối — 13/10/2026
+
+CSV hiện hành nay có 23 khoảng: giữ nguyên 22 khoảng đã nhập, thêm Jacob Murphy `2000030076`, Newcastle `1000000067`, từ `2026-10-12` đến NULL. Ảnh Lineups và nguồn trận cuối xác minh CLB, ngày bắt đầu có căn cứ; năm khoảng cũ GW1–5 giữ nguyên, không chồng lấn hoặc kéo lùi đầu mùa. Importer thêm đúng một khoảng và chạy lại 0; list/detail API Vercel hiện cầu thủ, lịch sử cũ giữ nguyên. Backup/kiểm chứng và thống kê mới ở [checkpoint trận cuối](final-fixture-2026-10-13.md). Các mục 22 người và chưa nhập thống kê phía trên là lịch sử trước bước này.
 - CSV membership hiện hành và bảng nguồn này là đầu vào/lịch sử nhập cần giữ. Không thu thập lại GW1–5, tái tính tổng mùa, nhập thống kê GW6, công bố Fantasy, commit, push hoặc deploy.

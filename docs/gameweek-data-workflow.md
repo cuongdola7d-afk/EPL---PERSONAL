@@ -224,7 +224,7 @@ GW6 production đã OPEN và lưu đội thật đã kiểm chứng, không lặ
 
 ## 7. Báo cáo cuối mỗi lượt
 
-1. Đủ 10 fixture API, mapping/sync trạng thái/tỉ số/BXH; số fixture FINISHED đã hoàn thành cả hai đội, còn thiếu/chờ và lý do. Riêng GW6 hiện tại: Coventry–Newcastle pending, không nhập thống kê/bằng chứng hoặc công bố trận đó trước khi FINISHED.
+1. Đủ 10 fixture API, mapping/sync trạng thái/tỉ số/BXH; số fixture FINISHED đã hoàn thành cả hai đội, còn thiếu/chờ và lý do. Trạng thái từng GW lấy từ checkpoint hiện hành, không giữ nhãn pending cũ khi đã xác nhận FINISHED. GW6 đã nhập trận cuối ngày 13/10/2026; còn chờ deploy backend xử lý căn cứ vắng mặt và kiểm tra readiness production trước khi ADMIN công bố.
 2. Số PLAYED, DID_NOT_PLAY, PLAYED có rating, PLAYED không được chấm đã xác nhận và PLAYED còn chờ rating. Không gộp NULL của DID_NOT_PLAY vào “không được chấm”. Báo độ đầy đủ thống kê và đội hình riêng.
 3. Một danh sách thông tin còn thiếu gộp theo fixture/CLB/cầu thủ để người dùng bổ sung.
 4. CSV thống kê cuối, đội hình, bằng chứng Fantasy và nguồn/missing/checkpoint; trạng thái kiểm tra, backup, nhập local/production, idempotence, đối chiếu API/trình duyệt, tổng mùa thực tế và cảnh báo readiness theo fixture/nguyên nhân. Nêu rõ bước đã xong và bước chờ ảnh/rating/trận chưa đá. Nếu chưa nhập thì ghi rõ.

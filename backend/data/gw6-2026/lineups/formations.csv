@@ -17,3 +17,5 @@ fixture_id,club_id,season_year,formation,verified_on,source_url
 1000560600,1000000073,2026,4-2-3-1,2026-10-12,USER_SCREENSHOT: SofaScore GW6 images 11-12; supplied 2026-10-12; fixture 1000560600; club 1000000073; sources.md
 1000560601,1000000058,2026,4-2-3-1,2026-10-12,USER_SCREENSHOT: SofaScore GW6 images 3-4; supplied 2026-10-12; fixture 1000560601; club 1000000058; sources.md
 1000560601,1000000402,2026,4-2-3-1,2026-10-12,USER_SCREENSHOT: SofaScore GW6 images 3-4; supplied 2026-10-12; fixture 1000560601; club 1000000402; sources.md
+1000560597,1000001076,2026,4-2-3-1,2026-10-13,USER_SCREENSHOT: SofaScore Coventry-Newcastle GW6 images supplied 2026-10-13; fixture 1000560597; club 1000001076; final-fixture-2026-10-13.md
+1000560597,1000000067,2026,4-2-3-1,2026-10-13,USER_SCREENSHOT: SofaScore Coventry-Newcastle GW6 images supplied 2026-10-13; fixture 1000560597; club 1000000067; final-fixture-2026-10-13.md
