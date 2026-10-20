@@ -92,6 +92,42 @@ class AuthProxyIntegrationTest {
         assertEquals(200, call("GET", "/api/clubs", null, false, null).statusCode());
     }
 
+    @Test void healthChecksWithoutCredentialsOrProxyProofSupportGetAndHead() throws Exception {
+        // Model UptimeRobot: no Origin, session cookie or proxy headers.
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/actuator/health"));
+        var get = client.send(request.GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, get.statusCode());
+        var health = mapper.readTree(get.body());
+        assertEquals("UP", health.path("status").asText());
+        assertFalse(health.has("components"));
+        assertFalse(health.has("details"));
+
+        var head = client.send(request.method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, head.statusCode());
+        assertEquals("", head.body());
+    }
+
+    @Test void healthHeadPermissionDoesNotExtendToOtherRoutesOrMethods() throws Exception {
+        for (String method : new String[] {"GET", "HEAD"}) {
+            assertEquals(403, call(method, "/api/auth/me", null, false, null).statusCode());
+            assertEquals(401, call(method, "/api/auth/me", null, true, null).statusCode());
+            assertEquals(403, call(method, "/api/fantasy/2026/admin/gameweeks", null, false, null).statusCode());
+            assertEquals(401, call(method, "/api/fantasy/2026/admin/gameweeks", null, true, null).statusCode());
+            for (String path : new String[] {"/actuator/env", "/actuator/beans", "/actuator/configprops",
+                    "/actuator/health/readiness", "/actuator/health/other"}) {
+                var denied = call(method, path, null, false, null);
+                assertEquals(401, denied.statusCode(), method + " " + path);
+                if (method.equals("GET")) assertEquals("AUTH_REQUIRED", mapper.readTree(denied.body()).path("code").asText());
+            }
+        }
+        assertEquals(401, call("HEAD", "/actuator/info", null, false, null).statusCode());
+        var clubsHead = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/clubs"))
+                .method("HEAD", HttpRequest.BodyPublishers.noBody()).build();
+        assertEquals(401, client.send(clubsHead, HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(403, call("POST", "/actuator/health", null, false, null).statusCode());
+    }
+
     @Test void googleLoginAndLinkCallbacksMatchTheFrontendOriginAndPreserveTheAccount() throws Exception {
         cancelGoogle("LOGIN");
         assertEquals(401, call("GET", "/api/auth/me", null, true, null).statusCode());
