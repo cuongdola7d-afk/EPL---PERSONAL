@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS fantasy_match_absence_confirmations (
     fixture_id INTEGER NOT NULL,
     player_id INTEGER NOT NULL,
     club_id INTEGER NOT NULL,
-    reason VARCHAR(40) NOT NULL CHECK (reason='INJURY_NOT_REGISTERED'),
+    reason VARCHAR(40) NOT NULL CHECK (reason IN ('INJURY_NOT_REGISTERED','NOT_REGISTERED')),
     source_ref VARCHAR(500) NOT NULL,
     confirmed_at TIMESTAMP(6) NOT NULL,
     PRIMARY KEY (fixture_id,player_id),

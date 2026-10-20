@@ -108,7 +108,7 @@ public class FantasyResultService {
             if(!"FINISHED".equals(f.status()) || byPlayer.containsKey(absence.playerId())
                     || roles.stream().anyMatch(r->r.playerId()==absence.playerId())
                     || active.size()!=1 || active.getFirst().clubId()!=absence.clubId()
-                    || !"INJURY_NOT_REGISTERED".equals(absence.reason()) || !present(absence.sourceRef()))
+                    || !Set.of("INJURY_NOT_REGISTERED","NOT_REGISTERED").contains(absence.reason()) || !present(absence.sourceRef()))
                 issue(issues,f.id(),absence.playerId(),null,"ABSENCE_CONFLICT",
                         "Xác nhận ngoài danh sách trận không khớp fixture, đội hình hoặc membership.");
         }
@@ -168,7 +168,7 @@ public class FantasyResultService {
                     if(!expected) continue;
                     if(stat.isEmpty()) {
                         if(absence.isPresent()) matches.add(new MatchScore(f.id(),absence.get().clubId(),null,
-                                BigDecimal.ZERO.setScale(2),"INJURY_NOT_REGISTERED_CONFIRMED"));
+                                BigDecimal.ZERO.setScale(2),absence.get().reason()+"_CONFIRMED"));
                         else issue(issues,f.id(),pick.playerId(),participant.accountId(),"SELECTED_STAT_MISSING",
                                 "Cầu thủ được chọn thiếu dòng thống kê; không tự coi là không ra sân.");
                         continue;

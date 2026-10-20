@@ -114,9 +114,9 @@ public class FantasyEvidenceImporter {
             if(fields.length!=4) throw new IllegalArgumentException("Wrong match absence columns at line "+(i+1));
             int fixture=Integer.parseInt(fields[0].strip()),player=Integer.parseInt(fields[1].strip()),club=Integer.parseInt(fields[2].strip());
             if(fixture<=0 || player<=0 || club<=0 || !seen.add(fixture+":"+player)
-                    || !"INJURY_NOT_REGISTERED".equals(fields[3].strip()))
+                    || !Set.of("INJURY_NOT_REGISTERED","NOT_REGISTERED").contains(fields[3].strip()))
                 throw new IllegalArgumentException("Invalid match absence at line "+(i+1));
-            result.add(new MatchAbsence(fixture,player,club,"INJURY_NOT_REGISTERED",source));
+            result.add(new MatchAbsence(fixture,player,club,fields[3].strip(),source));
         }
         return List.copyOf(result);
     }

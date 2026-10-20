@@ -1,5 +1,6 @@
 export const ZERO_REASONS = {
   DID_NOT_PLAY: 'Không ra sân · đã xác nhận',
+  NOT_REGISTERED_CONFIRMED: 'Ngoài danh sách trận · không ra sân',
   INJURY_NOT_REGISTERED_CONFIRMED: 'Chấn thương · ngoài danh sách trận đã xác nhận',
   SOFASCORE_UNRATED_CONFIRMED: 'SofaScore không chấm · đã xác nhận',
   SOFASCORE_RATING: 'Rating SofaScore',

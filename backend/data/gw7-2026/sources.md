@@ -1,6 +1,27 @@
 # GW7 Premier League 2026/27 — checkpoint 2026-10-21
 
-Trạng thái hiện hành: đã nhập Aiven đủ 10 fixture FINISHED, 400 thống kê, 20 đội hình/220 đá chính và bằng chứng Fantasy sau backup mới. Tổng mùa đã cập nhật qua GW7 và chạy lặp updatedRows=0. MySQL đối chiếu từng ô khớp CSV; dữ liệu trận cũ, mùa 2024/25, snapshot đội/deadline/rosterAsOf giữ nguyên. Đã đối chiếu API công khai đủ 10 trận/20 đội hình và lịch sử/chi tiết của sáu người liên quan; Chrome desktop/mobile đạt cả 10 sân. Đội hình tiêu biểu API/tab GW7 COMPLETE, 11 người đúng ID/vị trí/rating, tổng 93,80; đã kiểm tra tối ưu độc lập. Fantasy chưa đủ điều kiện công bố: readiness bằng service hiện tại đọc Aiven có đúng hai cảnh báo cho Pep Chavarría; không tự tính 0 khi chưa rõ lý do vắng mặt. Chưa công bố, commit, push hoặc deploy.
+Trạng thái hiện hành: đã nhập Aiven đủ 10 fixture FINISHED, 400 thống kê, 20 đội hình/220 đá chính và bằng chứng Fantasy sau backup mới. Tổng mùa đã cập nhật qua GW7 và chạy lặp updatedRows=0. API công khai, 10 sân desktop/mobile và Đội hình tiêu biểu GW7 COMPLETE/93,80 đã đối chiếu. Quyết định 21/10/2026 mặc định 0 điểm khi danh sách cuối xác minh cầu thủ không được đăng ký, bất kể lý do vắng. Đã nhập căn cứ NOT_REGISTERED của Pep vào Aiven, không suy chấn thương hoặc tạo thống kê giả. Service mã mới đọc Aiven: ready=true, fixtures=10, participants=1, currentVersion=0, issues=[]. Còn deploy backend/frontend mới và ADMIN kiểm readiness HTTP rồi công bố; chưa tự công bố, commit, push hoặc deploy.
+
+## Quyết định bổ sung và căn cứ Pep — 21/10/2026
+
+- Người dùng yêu cầu thường trực: trường hợp tương tự Pep hoặc không đá mặc định như người không ra sân; tự xử lý đến readiness khi được giao thu thập kèm ảnh đủ 10 trận, không hỏi lại lý do vắng mặt. Quyết định này thay thế yêu cầu làm rõ chấn thương trong checkpoint ban đầu.
+- Pep Chavarría, player_id 2000005020, Chelsea club_id 1000000061, là một trong 11 lượt chọn GW7 của một đội đã chốt. Ảnh 3–4 (sân + toàn bộ dự bị) và StatMuse trận 112827 đã thu thập xác nhận danh sách Everton–Chelsea đầy đủ không có Pep. Fixture 1000560603 FINISHED, membership tại ngày trận hợp lệ. Không có thống kê hoặc vai trò trận của Pep, không có bằng chứng chấn thương; không ghi nhãn INJURY_NOT_REGISTERED.
+- `confirmed-not-registered.csv`: đúng một dòng NOT_REGISTERED cho cặp 1000560603/2000005020; không áp dụng sang GW khác. `missing.csv` không còn trường vắng mặt chưa rõ: lý do vắng không còn là dữ liệu bắt buộc.
+- Backend/importer/schema/validator frontend được mở rộng giữ hỗ trợ lý do chấn thương cũ và nhận NOT_REGISTERED/NOT_REGISTERED_CONFIRMED. Test cả hai lý do: 0 điểm, rating NULL, idempotence, không tạo thống kê/lineup giả; thiếu nguồn/lineup hoặc trận hoãn vẫn chặn công bố.
+- Local H2 dựng từ dữ liệu Aiven GW7 đã nhập: thêm absenceChanges=1, chạy lặp cả ba loại thay đổi bằng 0; readiness ready=true, fixtures=10, participants=1, currentVersion=0, issues=[]; không công bố.
+- Production: sau backup mới đã áp dụng `backend/sql/2026-10-21-fantasy-match-absence-mysql.sql`, chạy lần hai unchanged. Importer thật trong transaction SERIALIZABLE nhập đúng một NOT_REGISTERED (Pep, fixture 1000560603), confirmed_at UTC 2026-10-20T18:33:42.510679Z, source_ref `data/gw7-2026/sources.md`. Lần đầu absenceChanges=1, fixtureChanges=0, unratedChanges=0; lần lặp cả ba bằng 0. Không cần nhập lại 400 thống kê/đội hình hoặc rebuild tổng mùa vì dữ liệu thô không đổi.
+- Đọc lại Aiven xác nhận 7 căn cứ vắng mặt, giữ nguyên đầy đủ 6 căn cứ injury cũ; không có thống kê/vai trò giả của Pep. Đối chiếu hash trước/sau: fixtures, thống kê, đội hình, membership, tổng mùa 2024/2026, bằng chứng fixture/unrated và toàn bộ đội/deadline/rosterAsOf/snapshot/kết quả Fantasy không thay đổi.
+- Service mã mới trên Aiven trả ready=true, fixtures=10, participants=1, currentVersion=0, issues=[], history=[]. Đây là kiểm tra service thật trên database production, chưa phải HTTP readiness của bản Render cũ. Backend/frontend đang chạy cần deploy mã hỗ trợ lý do mới; ADMIN đọc lại readiness bằng phiên đăng nhập thông thường rồi chủ động công bố.
+
+### Kiểm tra mã và schema của quy tắc mới
+
+- `cd backend; mvn -q "-Dtest=Fantasy*Test" test`: đạt 43 test, 0 lỗi/0 failure, gồm 19 FantasyResultIntegrationTest. Lần chạy đầu test mới lỗi do cố xóa parent lineup còn FK; đã sửa thiết lập test thành đánh dấu lineup chưa xác minh, chạy lại đạt. Không chạy lại toàn suite ngoài phạm vi Fantasy.
+- `cd backend; mvn -q -DskipTests package`: exit 0, build artifact thành công; đây là build sau test riêng, không gọi là full suite.
+- `cd frontend; node --test src/fantasy/results.test.js`: 7/7 đạt, gồm đọc kết quả 0 điểm cho cả lý do chấn thương cũ và NOT_REGISTERED_CONFIRMED mới; rating khác NULL hoặc điểm khác 0 vẫn bị từ chối.
+- `cd frontend; npm.cmd run build`: đạt. `npm run build` trước đó không chạy được do PowerShell chặn npm.ps1, đã dùng npm.cmd của tooling hiện có.
+- MySQL local 9.6 cô lập trên loopback 33037: migration nâng CHECK, giữ dòng injury cũ, nhận NOT_REGISTERED, từ chối UNKNOWN và chạy lặp không đổi. Sau kiểm tra đã shutdown instance riêng. Migration xử lý tiền tố charset trong CHECK_CLAUSE, không đoán tên constraint; điều kiện không nhận diện sẽ dừng trước ALTER.
+- Backup bổ sung trước thay đổi Aiven: `backend/local-backups/gw7-absence-rule-20261020-182845/aiven-before-absence-rule.sql`, 892.561 byte, SHA-256 `2aa47612d9c169aae4699d4eafa50c1437fb31b15b6afa044db4610ba939214b`, UTC 2026-10-20T18:29:35.006941Z. Đủ DDL và số dòng của 15 bảng, marker hoàn tất và Git ignore đã kiểm; chưa thử restore.
+- Render live được đọc qua API là commit `fed31e7723d2434262bd45eb2ba7cca85ce4c2ab`; đối chiếu code commit này vẫn chỉ chấp nhận INJURY_NOT_REGISTERED. Vì vậy cần deploy backend mới và frontend validator mới trước khi ADMIN công bố. Chưa gọi HTTP readiness bằng phiên ADMIN; ADMIN tự đọc UI bằng phiên đăng nhập thông thường sau deploy.
 
 ## Nhập và kiểm tra production — 21/10/2026
 
@@ -56,9 +77,9 @@ Trạng thái hiện hành: đã nhập Aiven đủ 10 fixture FINISHED, 400 th�
 
 ## Fantasy và bước tiếp theo
 
-- Baseline GW7 có một đội đã chốt/11 lượt chọn; 10 ID có trong danh sách trận đã xác minh. Pep Chavarría 2000005020 (Chelsea) nằm ngoài danh sách đầy đủ Everton–Chelsea 1000560603. Người dùng trả lời câu hỏi trong lượt này: “Chưa rõ hoặc vắng vì lý do khác”. Vì importer hiện chỉ hỗ trợ INJURY_NOT_REGISTERED, giữ blocker vắng mặt chưa xác minh; confirmed-not-registered.csv chỉ header. Không tự coi thiếu dòng là DID_NOT_PLAY, không tạo rating/thống kê giả hoặc chấm 0. Giữ đội/deadline/rosterAsOf/snapshot và trạng thái công bố.
-- Reader, H2/importer, backup, nhập Aiven, idempotence, tổng mùa, API công khai, 10 sân 11v11 và API/tab Đội hình tiêu biểu đã hoàn tất như checkpoint. Thống kê/đội hình đủ 10/10; Fantasy vẫn chưa ready vì căn cứ vắng mặt Pep chưa rõ. Không coi toàn bộ quy trình Fantasy GW7 là hoàn tất.
-- Trước công bố Fantasy, cần làm rõ căn cứ vắng mặt của Pep Chavarría cho đúng fixture 1000560603. Hiện chỉ hỗ trợ xác nhận chấn thương INJURY_NOT_REGISTERED; người dùng chưa xác nhận lý do này nên không tự nhập. ADMIN dùng phiên đăng nhập thông thường kiểm readiness; chỉ tự công bố khi ready=true. Codex không gọi publish/recalculate.
+- Baseline GW7 có một đội đã chốt/11 lượt chọn; 10 ID có trong danh sách trận, Pep ở ngoài danh sách. Phản hồi ban đầu “Chưa rõ hoặc vắng vì lý do khác” từng bị chặn bởi mã chỉ hỗ trợ chấn thương; quyết định 21/10/2026 phía trên thay thế điều kiện đó, không cần hỏi lại.
+- Reader/importer, tổng mùa, API công khai, 10 sân 11v11 và API/tab Đội hình tiêu biểu đã hoàn tất như checkpoint. Theo dõi riêng việc nhập căn cứ NOT_REGISTERED và deploy mã hỗ trợ trước công bố; không thu thập lại thống kê đã xong.
+- ADMIN dùng phiên đăng nhập thông thường kiểm readiness sau deploy; chỉ công bố khi ready=true. Codex không gọi publish/recalculate, không đổi đội/deadline/rosterAsOf/snapshot.
 
 ## API và giao diện đã đối chiếu
 
@@ -111,8 +132,8 @@ GET /api/fantasy/2026/team-of-week?gameweek=7: COMPLETE, sơ đồ 4-3-3, tổng
 
 - File cần commit: toàn bộ 9 file mới trong backend/data/gw7-2026/ (CSV cuối, membership, ba CSV lineup, hai sidecar, missing.csv và sources.md). Không commit backup, credentials hoặc artifacts target.
 - Commit message đề xuất: `data: import verified GW7 2026/27 stats and lineups`.
-- Bước còn lại: làm rõ lý do Pep Chavarría không có trong danh sách fixture 1000560603; không tự gán INJURY_NOT_REGISTERED vì người dùng trả lời chưa rõ/vắng vì lý do khác. Giữ hai blocker readiness, không công bố/tái công bố. ADMIN kiểm API/UI bằng phiên đăng nhập chuẩn; nếu có căn cứ mới thì tiếp tục đúng checkpoint, không thu thập lại 10 trận.
-- Không sửa mã ứng dụng/schema/dependency/cấu hình dịch vụ; không full test/build, commit, push, deploy, cron hoặc Pre-deploy Command.
+- Checkpoint nhập thống kê ban đầu đã hoàn tất; phần còn lại hiện theo quyết định bổ sung 21/10/2026 ở đầu file. Không cần làm rõ lý do vắng của Pep hoặc thu thập lại 10 trận.
+- Lượt nhập thống kê ban đầu không sửa mã/schema và không chạy full test/build. Lượt sửa quy tắc 21/10 có thay đổi mã/schema, test/build được ghi riêng phía trên. Không tự commit, push, deploy, cron, Pre-deploy Command hoặc công bố/tái công bố.
 
 ## Bảng đối chiếu từng người từ nguồn cuối
 

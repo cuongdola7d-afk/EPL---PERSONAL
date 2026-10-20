@@ -1,5 +1,11 @@
 # Chấm điểm và công bố Fantasy 2026/27 — bước 4
 
+## Quy tắc ngoài danh sách trận — 21/10/2026
+
+Cầu thủ được chọn, thuộc CLB tại ngày trận nhưng không có trong danh sách cuối đầy đủ của fixture FINISHED, mặc định nhận 0 điểm Fantasy với `NOT_REGISTERED_CONFIRMED`. Không cần xác nhận lý do vắng mặt, không tạo thống kê/vai trò giả; giữ nguyên snapshot đội và dữ liệu thô. Dự bị không vào sân và PLAYED confirmed-unrated giữ quy tắc riêng hiện có. Nguồn thiếu hoặc trận chưa xong vẫn chặn readiness.
+
+Cài đặt mới dùng `fantasy-result-schema.sql`; database đã có bảng cần chạy migration `backend/sql/2026-10-21-fantasy-match-absence-mysql.sql` sau backup (chạy lặp không đổi). Migration giữ nguyên căn cứ chấn thương cũ, chỉ mở rộng CHECK thêm `NOT_REGISTERED`. Backend phải hỗ trợ reason mới để readiness đạt; frontend cũng cần deploy validator mới để đọc kết quả sau công bố. Không tự deploy/công bố trong quy trình thu thập. Trạng thái GW7 cụ thể ở checkpoint GW7.
+
 ## Sửa đọc kết quả đã công bố — 13/10/2026
 
 Đọc Aiven xác nhận GW6 đã có kết quả phiên bản 1 cho bốn tài khoản. Frontend trước sửa từ chối lý do `INJURY_NOT_REGISTERED_CONFIRMED` dù backend đã công bố hợp lệ, gây thông báo “Dữ liệu đội hình/kết quả không đúng định dạng” và che cả tổng điểm/điểm trên sân. Đã bổ sung lý do xác nhận này vào validator, vẫn bắt buộc rating NULL và điểm 0; không chấp nhận rating 0 hoặc điểm khác 0 cho vắng mặt.
@@ -23,7 +29,7 @@ Quy tắc thường trực bổ sung ngày 13/10/2026: sau yêu cầu thu thập
 1. Tiếp tục checkpoint GW6 theo [quy trình Gameweek](gameweek-data-workflow.md), lấy đủ dữ liệu **cả hai đội của từng fixture FINISHED**. Trận hoãn/chưa xong ghi chờ; tiếp tục phần độc lập. Lịch/UTC/trạng thái/tỉ số từ football-data.org, phút/bàn/kiến tạo/thẻ từ StatMuse; rating SofaScore chỉ từ ảnh/bảng người dùng cung cấp. Không thu thập lại dữ liệu đã hoàn thành.
 2. Dùng một CSV thống kê cuối 10 cột, `sources.md`, `missing.csv`, bộ CSV đội hình/sơ đồ hiện có, `confirmed-unrated.csv` nếu có ngoại lệ không được chấm và `confirmed-not-registered.csv` nếu có người được xác nhận ngoài danh sách trận. Không thêm cột vào CSV thống kê, suy ra đá chính từ phút/rating hoặc ép 40 người/trận. Các xác nhận phải được nhập database; ghi chú đơn thuần chưa đủ cho scoring. Rating chưa thu thập vẫn là blocker, không tính 0.
 3. Với fixture FINISHED đã xác minh: xác nhận đúng Aiven MySQL của backend Render, kiểm tra input/membership/xung đột, tạo và kiểm tra backup SQL mới ngoài Git; đồng bộ fixture/BXH và đối chiếu ID, nhập membership có căn cứ → thống kê → đội hình → bằng chứng Fantasy bằng các command hiện có. Lặp xác nhận không thay đổi, đối chiếu API từng fixture và sân 11v11. Giữ dữ liệu thô NULL của người không được chấm. **Các command nhập không công bố kết quả, không chuyển GW sang PUBLISHED.**
-4. Đối chiếu từng cầu thủ trong mọi đội Fantasy đã chốt: người có dòng `DID_NOT_PLAY` là dự bị không vào sân; người ngoài danh sách trận đầy đủ và có căn cứ chấn thương/xác nhận rõ ràng được ghi riêng theo `(fixture_id,player_id)` bằng `confirmed-not-registered.csv`, không tạo thống kê giả hay rating 0. Người chưa rõ thì nêu tên để người dùng xác nhận. Chạy readiness sau mỗi batch và báo từng fixture/nguyên nhân: fixture pending, CSV cuối/danh sách hai đội, đội hình/11 STARTER, rating chờ, unrated chưa xác nhận hoặc lượt chọn thiếu căn cứ. Thiếu dòng thống kê không mặc nhiên DNP.
+4. Đối chiếu từng cầu thủ trong mọi đội Fantasy đã chốt: người có dòng `DID_NOT_PLAY` là dự bị không vào sân; người ngoài danh sách trận cuối đầy đủ được tự ghi `NOT_REGISTERED` riêng theo `(fixture_id,player_id)` bằng `confirmed-not-registered.csv`, không cần biết lý do vắng mặt, không tạo thống kê giả hay rating 0. Chỉ hỏi bổ sung khi nguồn/ID/membership thực sự chưa xác minh. Chạy readiness sau mỗi batch và báo từng fixture/nguyên nhân: fixture pending, CSV cuối/danh sách hai đội, đội hình/11 STARTER, rating chờ, unrated chưa xác nhận hoặc lượt chọn thiếu căn cứ. Thiếu dòng thống kê không mặc nhiên DNP.
 5. Khi đủ 10 fixture FINISHED và `ready=true`, báo để ADMIN chủ động công bố bằng UI hoặc API + CSRF; quy trình tổng hợp không thực hiện POST công bố. Trận hoãn giữ cả vòng chờ, không công bố điểm tạm.
 6. Nếu rating được sửa sau công bố, cập nhật nguồn có kiểm soát, xác nhận lại và kiểm tra readiness rồi **tái tính cả GW với lý do/phiên bản**. BXH lấy phiên bản mới nhất, không cộng trùng bản cũ.
 
@@ -152,7 +158,7 @@ await fantasyAdminGw6('recalculate-results', {
 - Đọc `manual_fixture_player_stats` của league 39, season 2026, fixture thuộc đúng GW. Rating có giá trị là điểm SofaScore. `DID_NOT_PLAY` đã xác nhận nhận 0; `PLAYED` chỉ nhận 0 khi có xác nhận SofaScore không chấm. Người ngoài danh sách trận chỉ nhận 0 khi có xác nhận riêng đúng fixture/player, không tạo thống kê giả. NULL chưa thu thập chặn công bố.
 - Tính bằng `BigDecimal`; tổng lưu `DECIMAL(12,2)`. Một người có nhiều trận trong GW được cộng từng khóa fixture/player đúng một lần. Không dùng `fantasy_points` v1 hay OVR làm điểm.
 - Kiểm tra tính hợp lệ bằng snapshot lúc chốt: 11 người/ô duy nhất, đúng sơ đồ và quyền vị trí đã lưu, tối đa 3 người/CLB, OVR không quá 910 theo yêu cầu 06/10 (backend/MySQL production đã đồng bộ), thời điểm chốt trước deadline. Không áp lại rosterAsOf/hồ sơ hiện tại để thay đổi đội chốt.
-- Breakdown giữ ô, ID, tên, CLB snapshot, vị trí, điểm người và từng fixture với CLB thực tế trong dòng thống kê hoặc xác nhận vắng mặt, rating thô, điểm và mã lý do `SOFASCORE_RATING`, `DID_NOT_PLAY`, `SOFASCORE_UNRATED_CONFIRMED`, `INJURY_NOT_REGISTERED_CONFIRMED`.
+- Breakdown giữ ô, ID, tên, CLB snapshot, vị trí, điểm người và từng fixture với CLB thực tế trong dòng thống kê hoặc xác nhận vắng mặt, rating thô, điểm và mã lý do `SOFASCORE_RATING`, `DID_NOT_PLAY`, `SOFASCORE_UNRATED_CONFIRMED`, `INJURY_NOT_REGISTERED_CONFIRMED`, `NOT_REGISTERED_CONFIRMED`.
 
 Trước bước này, xác nhận người không được chấm chỉ có trong `confirmed-unrated.csv`/ghi chú nguồn. Hai bảng mới lưu bằng chứng tối thiểu:
 
@@ -160,7 +166,7 @@ Trước bước này, xác nhận người không được chấm chỉ có tro
 | --- | --- |
 | `fantasy_unrated_confirmations` | PK fixture_id/player_id, nguồn, lý do, thời điểm xác nhận UTC; FK tới dòng thống kê thô |
 | `fantasy_fixture_confirmations` | Fixture, hash dữ liệu đã kiểm tra, nguồn, thời điểm xác nhận UTC |
-| `fantasy_match_absence_confirmations` | Cặp fixture/player ngoài danh sách vì chấn thương, CLB, nguồn và thời điểm xác nhận; không có dòng thống kê trận |
+| `fantasy_match_absence_confirmations` | Cặp fixture/player đã xác minh ngoài danh sách trận bất kể lý do vắng, CLB, nguồn và thời điểm xác nhận; không có dòng thống kê trận |
 
 Hash fixture bao gồm trạng thái/trận, chỉ số thô, xác nhận không chấm, đội hình/sơ đồ/vai trò đã xác minh. Xác nhận ngoài danh sách được lưu riêng và nằm trong hash nguồn tổng của lần công bố. Thay đổi dữ liệu sau xác nhận chặn công bố/tái tính cho tới khi kiểm tra lại CSV cuối. Membership vẫn kiểm tra trực tiếp theo ngày trận, không sửa membership. Hash không phụ thuộc thời điểm chạy importer.
 
@@ -174,7 +180,7 @@ season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red
 
 `FantasyEvidenceImporter` kiểm tra CSV cuối bằng `ManualMatchStatsCsvReader`, đối chiếu chính xác các khóa và từng giá trị với database đã nhập. Nó chỉ ghi bảng xác nhận mới; không nhập/sửa rating, fantasy_points, roster hoặc thống kê bóng đá. File nguồn phải tồn tại, không rỗng. Người chạy phải dùng nguồn/danh sách trận đã được xác minh theo [quy trình Gameweek](gameweek-data-workflow.md).
 
-Nếu người chơi đã chốt một cầu thủ vắng mặt ngoài danh sách trận và có xác nhận rõ ràng, dùng thêm `confirmed-not-registered.csv` với header `fixture_id,player_id,club_id,reason`; `reason` hiện hỗ trợ `INJURY_NOT_REGISTERED`. Importer chỉ nhận fixture FINISHED, membership đúng CLB tại ngày trận, đồng thời từ chối nếu người đó đã có thống kê hoặc vai trò trong danh sách trận. Xác nhận chỉ có hiệu lực cho cặp fixture/player, không tạo `DID_NOT_PLAY`, không dùng cho GW khác. Khi truyền cùng CSV cuối, sidecar là danh sách xác nhận hiện hành cho các fixture trong CSV; chạy lại không tạo trùng.
+Nếu người chơi đã chốt một cầu thủ vắng mặt ngoài danh sách trận cuối đầy đủ, dùng thêm `confirmed-not-registered.csv` với header `fixture_id,player_id,club_id,reason`; dùng `NOT_REGISTERED` bất kể lý do vắng, vẫn hỗ trợ `INJURY_NOT_REGISTERED` cho căn cứ chấn thương cũ. Tự ghi căn cứ, không hỏi lại lý do vắng mặt. Importer chỉ nhận fixture FINISHED, membership đúng CLB tại ngày trận, đồng thời từ chối nếu người đó đã có thống kê hoặc vai trò trong danh sách trận. Xác nhận chỉ có hiệu lực cho cặp fixture/player, không tạo `DID_NOT_PLAY`, không dùng cho GW khác. Khi truyền cùng CSV cuối, sidecar là danh sách xác nhận hiện hành cho các fixture trong CSV; chạy lại không tạo trùng.
 
 File xác nhận phải tên `confirmed-unrated.csv`; hỗ trợ ba header thực sự đã có trong repo:
 

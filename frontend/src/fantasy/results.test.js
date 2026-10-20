@@ -43,19 +43,21 @@ test('a zero requires a confirmed reason; a player-fixture cannot occur twice', 
   data.result.players[0].matches.push({ ...data.result.players[0].matches[0] })
   assert.equal(validResult(data, 102, 6), false)
 })
-test('confirmed injury absences keep published totals and all eleven pitch scores readable', () => {
-  const data = published()
-  data.result.players[0].matches[0].reason = 'INJURY_NOT_REGISTERED_CONFIRMED'
-  assert.equal(validResult(data, 102, 6), true)
-  assert.equal(formatPoints(data.result.totalPoints), '66,77')
-  assert.equal(publishedPlayerPoints(data, 102, 6).size, 11)
-  assert.equal(publishedPlayerPoints(data, 102, 6).get(1), 0)
-  data.result.players[0].matches[0].rating = 0
-  assert.equal(validResult(data, 102, 6), false)
-  data.result.players[0].matches[0].rating = null
-  data.result.players[0].matches[0].points = 1
-  assert.equal(validResult(data, 102, 6), false)
-})
+for (const reason of ['INJURY_NOT_REGISTERED_CONFIRMED', 'NOT_REGISTERED_CONFIRMED']) {
+  test(`confirmed absence ${reason} keeps totals and all eleven pitch scores readable`, () => {
+    const data = published()
+    data.result.players[0].matches[0].reason = reason
+    assert.equal(validResult(data, 102, 6), true)
+    assert.equal(formatPoints(data.result.totalPoints), '66,77')
+    assert.equal(publishedPlayerPoints(data, 102, 6).size, 11)
+    assert.equal(publishedPlayerPoints(data, 102, 6).get(1), 0)
+    data.result.players[0].matches[0].rating = 0
+    assert.equal(validResult(data, 102, 6), false)
+    data.result.players[0].matches[0].rating = null
+    data.result.players[0].matches[0].points = 1
+    assert.equal(validResult(data, 102, 6), false)
+  })
+}
 test('private result requests use owner session on same origin and reject another account', async t => {
   const original = global.fetch; t.after(() => { global.fetch = original })
   let data = waiting
