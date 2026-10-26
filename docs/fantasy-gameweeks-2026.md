@@ -1,5 +1,9 @@
 # Bước 2 — Gameweek và deadline Fantasy 2026/27
 
+## Vận hành production — 26/10/2026
+
+Theo yêu cầu riêng của người dùng đã mở **GW9**, bỏ qua cuộc thi GW8 chưa mở. API công khai xác nhận recommendedGameweek=9, OPEN/canEdit=true, deadline **30/10/2026 00:00 Việt Nam**, rosterAsOf **26/10/2026**, revision 1; GW8 configured=false. Trận đầu Chelsea–Manchester United 31/10/2026 19:30 Việt Nam. Đã backup, dùng service hiện có, giữ đội/deadline/kết quả các vòng cũ; không công bố điểm hoặc deploy. Chi tiết [checkpoint GW9](../backend/data/gw9-2026/sources.md). Các checkpoint triển khai trước đây bên dưới là lịch sử.
+
 ## Cập nhật 09/10/2026 — admin chủ động bắt đầu vòng mới
 
 Đã triển khai local theo yêu cầu người dùng:
