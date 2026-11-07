@@ -1,22 +1,23 @@
-# GW9 Premier League 2026/27 — đã nhập 9/10 trận; checkpoint 02/11/2026
+# GW9 Premier League 2026/27 — đã nhập và kiểm chứng đủ 10/10 trận; checkpoint 07/11/2026
 
 Người dùng gửi 18 ảnh và yêu cầu “GW10”, để Everton–Newcastle sau. API PremierHub và football-data.org xác nhận cả 9 cặp đấu trong ảnh thuộc **GW9**; trận còn lại là **Newcastle–Everton**. Người dùng đã xác nhận xử lý GW9 theo ảnh và cho phép bổ sung hồ sơ tối thiểu Subuloye. Không thay lịch hoặc chuyển các ảnh sang fixture GW10.
 
-## Trạng thái hiện tại — production đã xong 9 trận FINISHED
+## Trạng thái hiện tại — production đã xong 10/10 trận FINISHED
 
-- Đã nhập 360 người thực tế từ 18 ảnh: 198 STARTER, 82 SUB_USED, 80 SUB_UNUSED; đủ danh sách hai đội của 9 trận. 280 PLAYED, 274 có rating và 6 confirmed-unrated theo bảng cuối người dùng cung cấp. Không thêm người hoặc dòng giả.
-- Đã tải batch mùa đầy đủ 20 CLB/380 fixture/20 dòng BXH và đối chiếu endpoint riêng GW9. Dùng FootballDataSync hiện có cập nhật đúng 10 fixture GW9 và BXH 20 CLB; provider xác nhận 9 FINISHED, Newcastle–Everton TIMED được chuẩn hóa SCHEDULED theo parser hiện có. Không tạo fixture hoặc sửa lịch các GW khác. BXH có tổng played=178, tương ứng 89 trận kết thúc.
-- Sau quyền người dùng, đã bổ sung đúng 1 player/1 dòng mùa DEFENDER/1 khoảng membership mở cho Olutayo Subuloye, ID 2000030262, Chelsea từ 31/10/2026. Ảnh 3–4 và StatMuse 112847/player 65309 khớp tên/số 37/dự bị không vào sân. Không có OVR, hồ sơ mùa mở rộng, primaryPosition hoặc eligiblePositions được tạo. Không thêm khoảng một ngày, sửa khoảng cũ hoặc tạo ID Emegha mới.
-- Đã nhập thống kê, 18 đội hình/198 STARTER, sơ đồ/vị trí/phút vào-ra theo ảnh, 9 xác nhận CSV cuối/đủ danh sách hai đội và 6 xác nhận unrated. Chạy lặp membership không đổi; thống kê inserted=0; lineup clubChanges=0/fixtureChanges=0/playerChanges=0; evidence fixtureChanges=0/unratedChanges=0/absenceChanges=0.
-- Đã đối chiếu MySQL và API công khai cho từng giá trị của cả 360 dòng; mọi ID/status/chỉ số/rating/fantasyPoints và formation/role/row/slot/phút thay người khớp CSV. PLAYED unrated giữ rating/fantasyPoints NULL, DID_NOT_PLAY có fantasyPoints=0. Lịch sử 6 unrated và Subuloye, hồ sơ hiện tại và roster Chelsea đã kiểm tra. API lịch đủ 10 fixture, 9 FINISHED/hasManualStats; Newcastle–Everton chưa có thống kê/đội hình/bằng chứng.
-- Readiness bằng service ADMIN thật đọc Aiven: ready=false, fixtures=10, participants=0, currentVersion=0/history rỗng. Cả 6 cảnh báo chỉ thuộc fixture 1000560622: FIXTURE_PENDING; LINEUP_UNCONFIRMED/STARTERS_UNCONFIRMED cho hai CLB; FIXTURE_UNCONFIRMED. Không còn blocker của 9 trận đã nhập. GW9 chưa có lượt chọn đã chốt nên confirmed-not-registered.csv chỉ header; không tạo bằng chứng vắng mặt khi không có lượt chọn cần xử lý.
-- Tổng mùa vẫn **qua GW8**, 80 fixture/3.200 dòng, 596 dòng mùa sau hồ sơ mới. Importer và hai lần rebuildLatestComplete cho updatedRows=0, missingMinutes=1/missingGoals=2/missingAssists=4 lịch sử giữ NULL. Đã đọc lại toàn bộ dòng mùa: các tổng cũ giữ nguyên, Subuloye tổng 0. Service hiện yêu cầu vòng hoàn chỉnh, nên chưa cộng 9 trận GW9; không chạy SQL tổng mùa thủ công hoặc báo tổng mùa đã qua GW9.
-- Chrome production 1440px/390px: 9 trận × 2 = 18 sân, mỗi sân 22 STARTER đúng ID, bốn nhóm dự bị/vai trò và hai formation đúng; không chồng thẻ/tràn ngang/lỗi JavaScript hoặc request ghi. Tab đội tiêu biểu mặc định GW9 theo Vòng thi, 38 lựa chọn, 11 ID/vị trí/rating/tổng khớp và vẫn xem được GW7. Đây là kiểm chứng giao diện thật sau nhập.
-- Dữ liệu mùa 2024/25, thống kê/đội hình các GW cũ, snapshot/đội nháp/đội chốt, deadline/rosterAsOf và kết quả đã công bố giữ nguyên. Không mở GW mới, công bố/tái công bố, commit, push hoặc deploy.
+- Đã nhập đủ 400 cầu thủ thực tế từ 20 ảnh: 220 STARTER, 90 SUB_USED, 90 SUB_UNUSED; 310 PLAYED, 304 có rating và 6 confirmed-unrated. Mỗi fixture có danh sách đầy đủ hai đội; không thêm người hoặc dòng giả.
+- Football-data.org xác nhận Newcastle United–Everton FINISHED 0–1, fixture nội bộ 1000560622/provider 560622, kickoff 02/11/2026 20:00 UTC. Batch mùa có 20 CLB/380 fixture/20 BXH; cả 10 fixture GW9 FINISHED và BXH có played=182 (91 trận).
+- Trận cuối có 30 PLAYED, 10 SUB_UNUSED, 22 đá chính và 8 vào sân; Thierno Barry ghi bàn. Cả hai đội dùng sơ đồ 4-2-3-1 theo ảnh. Rating 30 người ra sân đọc được từ ảnh.
+- Đã nhập dữ liệu trận/đội hình/vai trò/sơ đồ/bằng chứng cho đủ 10 fixture. Importer chạy lặp không tạo thay đổi: thống kê 400 dòng, đội hình 20 CLB/80 quan sát sơ đồ/400 vai trò và bằng chứng 10 fixture. Membership đã đối chiếu, không thêm khoảng mới cho trận này.
+- Đã đọc lại production MySQL và API công khai cho 40 dòng trận cuối: ID/status/chỉ số/rating/fantasyPoints, đội hình, vai trò/phút thay người, sơ đồ/slot khớp CSV. PLAYED unrated các trận trước giữ rating/fantasyPoints NULL; DID_NOT_PLAY nhận 0 điểm Fantasy.
+- Tổng mùa đã rebuild tới GW9 qua importer: 90 fixture/3.600 dòng trận; 596 dòng mùa. Lượt rebuild lặp updatedRows=0; 1 minutes, 2 goals, 4 assists chưa xác minh vẫn NULL. Fixture cũ và mùa 2024/25 không đổi.
+- Readiness Aiven: ready=true, fixtures=10, participants=0, issues rỗng. Không có lượt chọn GW9 đã chốt hoặc kết quả GW9 được công bố. Không tạo xác nhận vắng mặt hay công bố Fantasy.
+- API Đội hình tiêu biểu GW9 COMPLETE, 95,10; completedFixtures=10/recordedFixtures=10, playedCount=310/ratedCount=304/candidateCount=283, excludedMissingPositions=22/excludedNullRatings=6. Đã kiểm tra 11 cầu thủ, vị trí hợp lệ và tổng rating.
+- Chrome production 1440px và 390px: 10 trận ở mỗi độ rộng, 22 đá chính đúng mỗi sân, bench/vai trò/sơ đồ khớp API; không chồng thẻ, tràn ngang, lỗi JavaScript hoặc request ghi. Đội hình tiêu biểu mặc định GW9, 11 lựa chọn khớp API; GW7 vẫn xem được.
+- Đã giữ nguyên đội nháp/đội chốt, deadline/rosterAsOf và kết quả Fantasy đã công bố. GW9 sẵn sàng để ADMIN tự công bố; Codex không công bố/tái công bố. Không commit, push hoặc deploy.
 
 ## Nguồn
 
-Ảnh gốc được tham chiếu theo thứ tự trong tin nhắn người dùng ngày 02/11/2026: `USER_SCREENSHOT: GW9; supplied 2026-11-02; images 1-18`. Mỗi cặp là sân/đá chính và bảng dự bị hai đội. Thư mục lưu bản chép CSV; chưa có file ảnh gốc độc lập. Rating chỉ từ các ảnh này, không dùng rating StatMuse/OVR.
+Ảnh gốc được tham chiếu theo thứ tự trong tin nhắn người dùng ngày 02/11/2026 (images 1-18) và 07/11/2026 (Newcastle–Everton images 3-4 trong checkpoint thu thập). Mỗi cặp là sân/đá chính và bảng dự bị hai đội. Thư mục lưu bản chép CSV; chưa có file ảnh gốc độc lập. Rating chỉ từ ảnh người dùng cung cấp, không dùng rating StatMuse/OVR.
 
 Lịch: [PremierHub GW9](https://premierhub.vercel.app/api/matches?season=2026&matchweek=9), [PremierHub GW10](https://premierhub.vercel.app/api/matches?season=2026&matchweek=10), football-data.org `v4/competitions/PL/matches?season=2026&matchday=9`; ID nội bộ ánh xạ qua `football_data_fixtures.fixture_id`, không dùng provider ID làm khóa CSV.
 
@@ -31,8 +32,9 @@ Lịch: [PremierHub GW9](https://premierhub.vercel.app/api/matches?season=2026&m
 | 13–14 | 1000560623 / 560623 | Manchester City–Brighton | 0–1 | [StatMuse 112845](https://www.statmuse.com/fc/match/-112845) |
 | 15–16 | 1000560627 / 560627 | Tottenham–Crystal Palace | 2–0 | [StatMuse 112848](https://www.statmuse.com/fc/match/-112848) |
 | 17–18 | 1000560628 / 560628 | Aston Villa–Fulham | 1–1 | [StatMuse 112843](https://www.statmuse.com/fc/match/-112843) |
+| 19–20 | 1000560622 / 560622 | Newcastle United–Everton | 0–1 | [StatMuse 112846](https://www.statmuse.com/fc/match/-112846) |
 
-Newcastle–Everton: fixture **1000560622**, provider **560622**, [StatMuse 112846](https://www.statmuse.com/fc/match/-112846), kickoff **02/11/2026 20:00 UTC = 03/11/2026 03:00 Việt Nam**. Giữ pending, không nhập thống kê/đội hình hoặc bằng chứng cho trận chưa kết thúc.
+Newcastle–Everton: fixture 1000560622, provider 560622, [StatMuse 112846](https://www.statmuse.com/fc/match/-112846), kickoff 02/11/2026 20:00 UTC = 03/11/2026 03:00 Việt Nam, kết thúc 0–1. StatMuse xác nhận danh sách trận, sự kiện, thống kê cầu thủ/đội; ảnh người dùng là nguồn rating, đội hình, sơ đồ và vai trò.
 
 ## Quy ước và ngoại lệ
 
@@ -45,17 +47,17 @@ Newcastle–Everton: fixture **1000560622**, provider **560622**, [StatMuse 1128
 
 ## Backup và kiểm chứng
 
-- Đích đã đối chiếu với cấu hình Render: Aiven `defaultdb`, UUID `715946cc-c33a-11f1-8fd9-8e0831c19405`; TLS VERIFY_IDENTITY.
-- Backup mới trước ghi: `backend/local-backups/gw9-collection-20261102-115118/aiven-before-gw9.sql`, 1,107,200 byte, SHA-256 `6d0b9a0dc6d1ea48f8a8a7cd8edbd108a98aa599f8cb9b40ef27be911aa6e235`, UTC `2026-11-02T11:51:50.496632+00:00`. Đã kiểm đủ DDL/số dòng 20 bảng, marker hoàn tất và Git ignore; chưa thử restore. Backup nằm ngoài tập file Git theo dõi.
-- Reader chung đọc đủ 360 dòng. H2 cô lập và production dùng đúng ManualRosterImporter/ManualMatchStatsImporter/LineupBatchImporter/FantasyEvidenceImporter, cùng transaction SERIALIZABLE; nhập lặp không đổi. Không khởi động Spring/schema init trên production.
-- Helpers và báo cáo tại `backend/target/gw9-collection/` được Git ignore: `local.private.log`, `apply.private.log`, `verification-report.json`, `browser-report.json`, ảnh sân/đội tiêu biểu và `backup-report.json`. Đã đọc kết quả thực tế, không coi câu log PASS là bằng chứng duy nhất. Không chạy Maven full suite/build cho thay đổi dữ liệu.
+- Backup mới trước ghi: `backend/local-backups/gw9-collection-20261107-123725/aiven-before-gw9.sql`, 1,202,253 byte, SHA-256 `f0fb8047b1fbf0da39f93cd8ba92fdf43f80f175877491f4f2b15676eadc0b5b`, UTC `2026-11-07T12:37:55.913104+00:00`. Đã kiểm đủ DDL/số dòng 20 bảng, marker hoàn tất, server UUID và Git ignore; chưa thử restore. Backup nằm ngoài tập file Git theo dõi.
 
-## Đội hình tiêu biểu tạm tính GW9
+- Reader chung đọc đủ 400 dòng. H2 cô lập và production dùng `FootballDataSync`/`ManualRosterImporter`/`ManualMatchStatsImporter`/`LineupBatchImporter`/`FantasyEvidenceImporter`; production chạy transaction SERIALIZABLE và lượt nhập lặp không đổi. Đã đọc lại MySQL/API; Fantasy protected rows khớp snapshot.
 
-API `/api/fantasy/2026/team-of-week?gameweek=9`: COMPLETE, **95,10**, completedFixtures=9/recordedFixtures=9, playedCount=280/ratedCount=274/candidateCount=257, excludedMissingPositions=18/excludedNullRatings=6. COMPLETE chỉ nghĩa là xếp được 11 người hợp lệ; toàn vòng vẫn chưa đủ trận. Các nhóm thiếu rating/vị trí có thể giao nhau. Đã kiểm rating nguồn, quyền vị trí, 11 ID khác nhau và tổng; phép phân công Python độc lập xác nhận tổng tối ưu và tie-break ID. Không nhập bảng đội tiêu biểu riêng hoặc tự gán vị trí/rating.
+## Đội hình tiêu biểu GW9
+
+[API Đội hình tiêu biểu GW9](https://premierhub.vercel.app/api/fantasy/2026/team-of-week?gameweek=9): COMPLETE, **95,10**, completedFixtures=10/recordedFixtures=10, playedCount=310/ratedCount=304/candidateCount=283, excludedMissingPositions=22/excludedNullRatings=6. Đã kiểm rating nguồn, quyền vị trí, 11 ID khác nhau và tổng tối ưu. Không nhập bảng đội tiêu biểu riêng hoặc tự gán vị trí/rating.
+
 
 | Slot | Player ID | Name | Rating |
-| --- | --- | --- | ---: |
+| --- | ---: | --- | ---: |
 | GK | 2000030055 | Bart Verbruggen | 9.60 |
 | LB | 2000030027 | Andy Robertson | 8.60 |
 | LCB | 2000001013 | Ezri Konsa | 8.70 |
@@ -68,11 +70,11 @@ API `/api/fantasy/2026/team-of-week?gameweek=9`: COMPLETE, **95,10**, completedF
 | ST | 283058 | Nicolas Jackson | 8.50 |
 | RW | 2000030093 | Oscar Bobb | 8.30 |
 
-## Bước tiếp theo
+## Trạng thái kết thúc thu thập GW9
 
-Chỉ còn **Newcastle–Everton 1000560622** theo yêu cầu để sau. Khi trận được provider xác nhận FINISHED và có ảnh danh sách/rating cuối, tiếp tục đúng thư mục này: bổ sung CSV chung và đội hình/bằng chứng, kiểm tra backup mới trước nhập, đối chiếu mọi lượt chọn hiện có, tổng mùa/Đội hình tiêu biểu/readiness. Không thu thập lại 9 trận đã xong. ADMIN tự công bố khi đủ điều kiện; chưa công bố Fantasy GW9.
+Đủ 10 fixture FINISHED, dữ liệu trận/đội hình/bằng chứng đã nhập và kiểm chứng; tổng mùa, API đội hình tiêu biểu và readiness đã cập nhật. GW9 chưa được công bố Fantasy. Chỉ ADMIN công bố khi sẵn sàng. Không cần thu thập thêm ảnh cho GW9; tiếp tục vòng khác theo yêu cầu.
 
-`missing.csv` chỉ còn fixture chưa FINISHED. Các file cần commit thuộc `backend/data/gw9-2026/`: CSV thống kê chung, membership, screenshot evidence/fixtures, ba CSV lineups, sidecar unrated/not-registered, missing và sources. Commit message gợi ý: `data: collect nine finished GW9 matches for 2026/27`. Chưa commit/push/deploy.
+CSV thuần chưa cần test riêng/full suite; chưa commit hoặc push.
 
 ## Lịch sử mở Fantasy GW9 — giữ checkpoint ngày 26/10/2026
 
