@@ -13,7 +13,7 @@ const dateLabel = (date) => new Intl.DateTimeFormat('vi-VN', {
   weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
 }).format(new Date(`${date}T00:00:00Z`))
 
-function MatchPage({ season, onSeasonChange, matchRoute }) {
+function MatchPage({ season, theme = 'dark', matchRoute }) {
   const [week, setWeek] = useState(matchRoute?.week ?? null)
   const [filter, setFilter] = useState(matchRoute?.filter ?? 'all')
   const [club, setClub] = useState(matchRoute?.club ?? '')
@@ -54,18 +54,8 @@ function MatchPage({ season, onSeasonChange, matchRoute }) {
     window.location.hash = matchRoute?.backHash ?? matchListHash({ season, week: currentWeek, filter, club })
   }
 
-  function changeSeason(next) {
-    if (next === season) return
-    onSeasonChange(next)
-    window.location.hash = matchListHash({ season: next })
-  }
-
-  return <section className="mx-page" id="directory" aria-label="Lịch đấu và kết quả">
+  return <section data-theme={theme} className="mx-page" id="directory" aria-label="Lịch đấu và kết quả">
     <div className="mx-wrap">
-      <div className="mx-season-switch" role="group" aria-label="Mùa giải">
-        {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button"
-          aria-pressed={season === Number(year)} onClick={() => changeSeason(Number(year))}>{label}</button>)}
-      </div>
 
       {selectedMatchId !== null ? <MatchDetail key={selectedMatchId} matchId={selectedMatchId}
         summary={selectedMatch} season={season} onClose={closeMatch}

@@ -1,7 +1,7 @@
 :root { color-scheme: dark; background: #0a171d; color: #eaf5f2; }
 .fantasy-page[data-theme='light'], .player-detail-page[data-theme='light'] { color-scheme: light; }
 .app-shell { --site-bg: #0a171d; --site-card: #14272f; --site-subtle: #193038; --site-line: #ffffff1a; --site-text: #eaf5f2; --site-muted: #a1bac0; --site-accent: #46e2b5; background: var(--site-bg); color: var(--site-text); }
-.app-shell .site-header { background: #0d222b; border-bottom-color: var(--site-line); }
+.app-shell[data-home-theme='light'] { --site-bg: #e9f2ef; --site-card: #fff; --site-subtle: #f3f8f6; --site-line: #102c3617; --site-text: #0f2a33; --site-muted: #5d7a83; --site-accent: #0a8f68; color-scheme: light; }
 .app-shell .brand-accent, .app-shell .hero h1 em, .app-shell .hero-link span { color: var(--site-accent); }
 .app-shell .eyebrow { color: var(--site-accent); }
 .app-shell .eyebrow-line, .app-shell .pitch-ring { background: var(--site-accent); }
@@ -61,21 +61,3 @@
 .app-shell .state-panel button:hover { background: #83f0d1; }
 .app-shell .filter-note-error { color: #ff9d9d; }
 .app-shell .site-nav a:hover, .app-shell .site-nav a.active { color: var(--site-accent); border-bottom-color: var(--site-accent); }
-
-/* Shared header: keep navigation beside the logo on every page. */
-.app-shell .site-header .header-inner { width: 100%; max-width: 1120px; margin-inline: auto; padding: 10px 16px; min-height: 66px; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 14px; }
-.app-shell .site-header .brand { gap: 10px; flex: none; font-size: 20px; letter-spacing: -.03em; }
-.app-shell .site-header .brand-logo { width: 34px; height: 34px; }
-.app-shell .site-header .brand-accent { color: var(--cx-accent, var(--site-accent)); }
-.app-shell .site-header .site-nav { flex: 1; min-width: 0; width: auto; display: flex; align-items: center; justify-content: flex-start; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-inline: 4px; white-space: nowrap; }
-.app-shell .site-header .site-nav::-webkit-scrollbar { display: none; }
-.app-shell .site-header .nav-link { flex: none; min-height: 38px; padding: 8px 13px; border: 1px solid transparent; border-radius: 12px; color: var(--cx-muted, #8aa6ae); font-size: 14px; font-weight: 600; }
-.app-shell .site-header .nav-link:is(:hover, .active) { color: var(--cx-text, var(--site-text)); background: var(--cx-chip, #ffffff14); border-color: var(--cx-accent, var(--site-accent)); }
-@media (max-width: 1000px) {
-  .app-shell .site-header .header-inner { flex-wrap: wrap; gap: 8px 14px; }
-  .app-shell .site-header .site-nav { order: 3; flex-basis: 100%; margin: 0; }
-  .app-shell .site-header .cx-header-controls { margin-left: auto; }
-}
-@media (max-width: 560px) {
-  .app-shell .site-header .brand > span { display: none; }
-}

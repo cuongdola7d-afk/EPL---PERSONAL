@@ -1,6 +1,8 @@
 import { useCallback, useEffect } from 'react'
 import { fetchTeamOfWeek } from '../api/teamOfWeek.js'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useCompletedGameweeks } from '../hooks/useCompletedGameweeks.js'
+import { teamOfWeekGameweek } from '../fantasy/teamOfWeek.js'
 import { formationSlots } from '../fantasy/lineup.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
 import { clubVisual } from '../utils/matchView.js'
@@ -10,9 +12,17 @@ import './TeamOfWeek.css'
 
 const slots = formationSlots('4-3-3')
 
-export default function TeamOfWeek({ gameweek, onGameweekChange }) {
-  const request = useCallback(signal => fetchTeamOfWeek(gameweek, signal), [gameweek])
-  const { data, status, error, reload } = useApiResource(request)
+export default function TeamOfWeek({ selection, onGameweekChange }) {
+  const { weeks, status: calendarStatus, error: calendarError, reload: reloadCalendar } = useCompletedGameweeks()
+  const gameweek = teamOfWeekGameweek(weeks, selection)
+  useEffect(() => {
+    if (calendarStatus === 'success' && selection !== gameweek) onGameweekChange(gameweek)
+  }, [calendarStatus, selection, gameweek, onGameweekChange])
+  const request = useCallback(signal => gameweek === null ? Promise.resolve(null) : fetchTeamOfWeek(gameweek, signal), [gameweek])
+  const { data: response, status, error, reload: reloadTeam } = useApiResource(request)
+  const reload = useCallback(() => { reloadCalendar(); reloadTeam() }, [reloadCalendar, reloadTeam])
+  // Never render an earlier request's team under a newly selected round.
+  const data = response?.gameweek === gameweek ? response : null
   useEffect(() => {
     const refresh = () => { if (document.visibilityState === 'visible') reload() }
     const timer = setInterval(refresh, 60000)
@@ -27,12 +37,16 @@ export default function TeamOfWeek({ gameweek, onGameweekChange }) {
   const bySlot = new Map(data?.picks.map(pick => [pick.slot, pick.player]) ?? [])
   const filled = data?.picks.filter(pick => pick.player !== null).length ?? 0
   return <div className="team-of-week">
-    <div className="tow-controls"><label htmlFor="tow-gameweek">Gameweek <select id="tow-gameweek" value={gameweek}
-      onChange={event => onGameweekChange(Number(event.target.value))}>{Array.from({ length: 38 }, (_, i) => i + 1).map(week => <option key={week} value={week}>GW{week}</option>)}</select></label>
-      <span>4-3-3 · SofaScore</span><button type="button" className="fantasy-clear" onClick={reload} disabled={status === 'loading'}>Làm mới</button></div>
-    {status === 'loading' && <div className="fantasy-card tow-state" role="status"><span className="spinner" aria-hidden="true" /><strong>Đang tải đội hình GW{gameweek}…</strong></div>}
-    {status === 'error' && <div className="fantasy-card tow-state" role="alert"><strong>Không tải được đội hình</strong><p>{error}</p><button className="fantasy-primary" type="button" onClick={reload}>Thử lại</button></div>}
-    {status === 'success' && data && <>
+    <div className="tow-controls"><label htmlFor="tow-gameweek">Gameweek <select id="tow-gameweek" value={gameweek ?? ''}
+      disabled={weeks.length === 0 || calendarStatus === 'error'} onChange={event => onGameweekChange(Number(event.target.value))}>
+      {weeks.length === 0 && <option value="">Chưa có vòng kết thúc</option>}
+      {weeks.map(week => <option key={week} value={week}>GW{week}</option>)}</select></label>
+      <span>4-3-3 · SofaScore</span><button type="button" className="fantasy-clear" onClick={reload} disabled={status === 'loading' || calendarStatus === 'loading'}>Làm mới</button></div>
+    {calendarStatus === 'loading' && weeks.length === 0 && <div className="fantasy-card tow-state" role="status">Đang kiểm tra lịch Premier League 2026/27…</div>}
+    {calendarStatus === 'success' && gameweek === null && <div className="fantasy-card tow-state" role="status">Chưa có Gameweek nào kết thúc toàn bộ 10 trận.</div>}
+    {gameweek !== null && calendarStatus !== 'error' && (status === 'loading' || status === 'success' && !data) && <div className="fantasy-card tow-state" role="status"><span className="spinner" aria-hidden="true" /><strong>Đang tải đội hình GW{gameweek}…</strong></div>}
+    {(calendarStatus === 'error' || gameweek !== null && status === 'error') && <div className="fantasy-card tow-state" role="alert"><strong>{calendarStatus === 'error' ? 'Không tải được lịch vòng đấu' : 'Không tải được đội hình'}</strong><p>{calendarError || error}</p><button className="fantasy-primary" type="button" onClick={reload}>Thử lại</button></div>}
+    {calendarStatus !== 'error' && status === 'success' && data && <>
       <div className="fantasy-card tow-summary"><div><h2>Đội hình tiêu biểu · GW{data.gameweek}</h2><p>{filled}/11 cầu thủ · {data.candidateCount} ứng viên · {data.recordedFixtures}/{data.completedFixtures} trận có thống kê</p></div>
         <div className="tow-total"><span>Tổng rating</span><strong>{data.totalRating === null ? '—' : data.totalRating.toFixed(2)}</strong></div></div>
       {data.status === 'INSUFFICIENT_DATA' && <div className="fantasy-message tow-missing" role="status"><strong>Chưa đủ dữ liệu để xếp 11 người đúng vị trí.</strong>

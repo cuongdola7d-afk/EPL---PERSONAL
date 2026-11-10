@@ -84,7 +84,7 @@ export default function ClubPage({ season, homeState, onHomeStateChange }) {
             {season === 2026 && <span className="cx-fixture-kickoff"><MatchKickoff match={match} season={season} /></span>}
           </div>)}
         </div>
-        <div className="cx-panel"><header className="cx-panel-heading"><h2>Bảng xếp hạng</h2>
+        <div className="cx-panel cx-standings-panel"><header className="cx-panel-heading"><h2>Bảng xếp hạng</h2>
           <a className="cx-more" href="#standings">Xem đầy đủ<ArrowIcon /></a></header>
           <HomeDataState {...standings} empty={!table.length} title="bảng xếp hạng" />
           {standings.status === 'success' && table.length > 0 && <div className="cx-table-wrap"><table className="cx-table">

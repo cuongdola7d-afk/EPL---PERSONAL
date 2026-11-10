@@ -1,17 +1,68 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { isValidTeamOfWeek, TEAM_OF_WEEK_SLOTS, teamOfWeekGameweek } from './teamOfWeek.js'
+import { completedTeamOfWeekGameweeks, isValidTeamOfWeek, TEAM_OF_WEEK_SLOTS, teamOfWeekGameweek,
+  readTeamOfWeekSelection, saveTeamOfWeekSelection, TEAM_OF_WEEK_STORAGE_KEY } from './teamOfWeek.js'
 
 const permission = slot => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM' })[slot] ?? slot
-test('defaults to the current contest, preserves a manual replay and follows a changed contest', () => {
-  assert.equal(teamOfWeekGameweek(null, null), 6)
-  assert.equal(teamOfWeekGameweek(6, null), 6)
-  const replay = { currentGameweek: 6, gameweek: 1 }
-  assert.equal(teamOfWeekGameweek(6, replay), 1)
-  assert.equal(teamOfWeekGameweek(7, replay), 7)
-  assert.equal(teamOfWeekGameweek(38, null), 38)
-  assert.equal(teamOfWeekGameweek(6, { currentGameweek: 6, gameweek: 39 }), 6)
+function fixtures(week, status = 'FINISHED') {
+  return Array.from({ length: 10 }, (_, index) => ({ id: week * 100 + index, matchweek: week,
+    homeClubId: index * 2 + 1, awayClubId: index * 2 + 2, status }))
+}
+
+test('uses complete finished schedules, including skipped contests with no statistics', () => {
+  const matches = [...fixtures(8), ...fixtures(10), ...fixtures(11, 'SCHEDULED'), ...fixtures(38, 'SCHEDULED')]
+  const weeks = completedTeamOfWeekGameweeks(matches)
+  assert.deepEqual(weeks, [8, 10])
+  assert.equal(teamOfWeekGameweek(weeks, null), 10)
+  assert.equal(teamOfWeekGameweek(weeks, 8), 8)
 })
+
+test('rejects missing fixtures, unfinished matches, duplicate fixtures and repeated clubs', () => {
+  assert.deepEqual(completedTeamOfWeekGameweeks(fixtures(1).slice(1)), [])
+  for (const status of ['SCHEDULED', 'IN_PLAY', 'POSTPONED', 'CANCELLED']) {
+    const round = fixtures(1); round[9].status = status
+    assert.deepEqual(completedTeamOfWeekGameweeks(round), [])
+  }
+  const duplicate = fixtures(1); duplicate[9] = duplicate[0]
+  assert.deepEqual(completedTeamOfWeekGameweeks(duplicate), [])
+  const repeatedClub = fixtures(1); repeatedClub[9].awayClubId = repeatedClub[0].homeClubId
+  assert.deepEqual(completedTeamOfWeekGameweeks(repeatedClub), [])
+  assert.deepEqual(completedTeamOfWeekGameweeks([...fixtures(1), ...fixtures(1)]), [])
+})
+
+test('empty calendars have no default and no eligible old selection', () => {
+  assert.deepEqual(completedTeamOfWeekGameweeks([]), [])
+  assert.equal(teamOfWeekGameweek([], null), null)
+  assert.equal(teamOfWeekGameweek([], 10), null)
+})
+
+test('invalid saved rounds fall back to latest finished round and valid choices survive polling', () => {
+  for (const selection of [11, 38, 0, '8', { currentGameweek: 11, gameweek: 38 }]) {
+    assert.equal(teamOfWeekGameweek([8, 9, 10], selection), 10)
+  }
+  assert.equal(teamOfWeekGameweek([8, 9, 10], { currentGameweek: 11, gameweek: 8 }), 8)
+  assert.equal(teamOfWeekGameweek([8, 9, 10, 11], 8), 8)
+  assert.equal(teamOfWeekGameweek([9, 10], 8), 10)
+  assert.deepEqual(completedTeamOfWeekGameweeks([...fixtures(0), ...fixtures(39), ...fixtures(10), ...fixtures(8)]), [8, 10])
+})
+test('reload restores a viewing preference, revalidates it and leaves Fantasy team storage alone', () => {
+  const values = new Map([['fantasy-lineup', 'unchanged']])
+  const storage = { getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) }
+  assert.equal(readTeamOfWeekSelection(storage), null)
+  saveTeamOfWeekSelection(8, storage)
+  assert.equal(teamOfWeekGameweek([8, 9, 10], readTeamOfWeekSelection(storage)), 8)
+  saveTeamOfWeekSelection(38, storage)
+  assert.equal(teamOfWeekGameweek([8, 9, 10], readTeamOfWeekSelection(storage)), 10)
+  values.set(TEAM_OF_WEEK_STORAGE_KEY, 'invalid JSON')
+  assert.equal(readTeamOfWeekSelection(storage), null)
+  saveTeamOfWeekSelection(null, storage)
+  assert.deepEqual([...values], [['fantasy-lineup', 'unchanged']])
+  const blocked = { getItem() { throw new Error('disabled') }, setItem() { throw new Error('disabled') } }
+  assert.equal(readTeamOfWeekSelection(blocked), null)
+  assert.doesNotThrow(() => saveTeamOfWeekSelection(8, blocked))
+})
+
 function team() {
   return { season: 2026, gameweek: 1, formation: '4-3-3', status: 'COMPLETE', totalRating: 88,
     playedCount: 12, ratedCount: 11, candidateCount: 11, excludedMissingPositions: 0, excludedNullRatings: 1,

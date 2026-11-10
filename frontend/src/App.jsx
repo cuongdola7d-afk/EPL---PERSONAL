@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ClubPage from './components/ClubPage.jsx'
 import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
@@ -6,13 +6,12 @@ import StandingsPage from './components/StandingsPage.jsx'
 import FantasyPage from './components/FantasyPage.jsx'
 import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import ClubDetailPage from './components/ClubDetailPage.jsx'
-import AccountMenu from './components/AccountMenu.jsx'
+import SiteHeader from './components/SiteHeader.jsx'
 import MinigamePage from './components/MinigamePage.jsx'
 import { parseMinigameRoute } from './minigame/playerGuess.js'
 import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
-import { parsePlayerDetailHash, parsePlayerListHash } from './utils/playerRoute.js'
-import { parseMatchRoute } from './utils/matchRoute.js'
-import { SEASONS } from './utils/seasons.js'
+import { parsePlayerDetailHash, parsePlayerListHash, playerDetailHash, playerListHash } from './utils/playerRoute.js'
+import { parseMatchRoute, matchListHash } from './utils/matchRoute.js'
 import './App.css'
 import './DarkSite.css'
 import './components/StandingsBands.css'
@@ -60,7 +59,6 @@ function pageFromHash(hash) {
 }
 
 function App() {
-  const navigation = useRef(null)
   const [session, setSession] = useState({ account: null, loading: true, error: '' })
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
   const [season, setSeason] = useState(() => parsePlayerDetailHash(window.location.hash)?.season ??
@@ -98,50 +96,20 @@ function App() {
   const CurrentPage = current.component
 
   useEffect(() => {
-    // The new tab is at the end of the horizontally scrolling mobile navigation.
-    if (page === 'minigame' && navigation.current) navigation.current.scrollLeft = navigation.current.scrollWidth
-  }, [page])
-
-  useEffect(() => {
     document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
   }, [current.label, playerDetail, clubRoute, page])
 
   return (
     <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : page === 'standings' ? ' standings-shell' : ''}`} data-home-theme={homeTheme}>
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="#clubs" aria-label="prismaXI, trang chủ">
-            <img className="brand-logo" src="/prismaxi-logo.svg" alt="" width="52" height="47" />
-            <span>prisma<span className="brand-accent">XI</span></span>
-          </a>
-
-          <nav ref={navigation} className="site-nav" aria-label="Điều hướng chính">
-            {Object.entries(PAGES).map(([name, item]) => (
-              <a key={name} className={`nav-link${page === name ? ' active' : ''}`} href={`#${name}`} aria-current={page === name ? 'page' : undefined}>
-                {item.navLabel}
-              </a>
-            ))}
-          </nav>
-          {(page === 'clubs' || page === 'standings') && <div className="cx-header-controls">
-            <label className="cx-season"><span className="sr-only">Mùa giải</span><select aria-label="Mùa giải" value={season}
-              onChange={event => {
-                const next = Number(event.target.value)
-                setSeason(next)
-                if (clubRoute) window.location.hash = clubDetailHash(clubRoute.clubId, { ...parseClubRoute(window.location.hash), season: next })
-                else setHomeState({ query: '', slide: homeState.slide })
-              }}>
-              {[2026, 2024].map(year => <option value={year} key={year}>{SEASONS[year]}</option>)}
-            </select><span aria-hidden="true">⌄</span></label>
-            <button className="cx-theme-toggle" type="button" aria-label={`Chuyển sang chế độ ${homeTheme === 'dark' ? 'sáng' : 'tối'}`}
-              onClick={() => setHomeTheme(homeTheme === 'dark' ? 'light' : 'dark')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" />
-              </svg>
-            </button>
-          </div>}
-          <AccountMenu onSessionChange={setSession} />
-        </div>
-      </header>
+      <SiteHeader pages={PAGES} page={page} season={season} theme={homeTheme}
+        onThemeChange={setHomeTheme} onSessionChange={setSession} onSeasonChange={next => {
+          setSeason(next)
+          if (clubRoute) window.location.hash = clubDetailHash(clubRoute.clubId, { ...clubRoute, season: next })
+          else if (playerDetail) window.location.hash = playerDetailHash(playerDetail.playerId, next, playerDetail.backHash)
+          else if (page === 'players') window.location.hash = playerListHash({ ...parsePlayerListHash(window.location.hash), season: next })
+          else if (page === 'matches') window.location.hash = matchListHash({ season: next })
+          else if (page === 'clubs') setHomeState({ query: '', slide: homeState.slide })
+        }} />
 
       <main>
         {!playerDetail && !current.fullPage && <section className="hero" aria-labelledby="hero-title">
@@ -168,12 +136,12 @@ function App() {
         </section>}
 
         {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
-          playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
+          theme={homeTheme} playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
-          <CurrentPage key={['fantasy', 'minigame'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
+          <CurrentPage theme={homeTheme} key={['fantasy', 'minigame'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
             {...(['fantasy', 'minigame'].includes(page) ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
             {...(page === 'minigame' ? { route: minigameRoute } : {})}
-            {...(current.hasSeasons ? { season, onSeasonChange: setSeason } : {})}
+            {...(current.hasSeasons ? { season } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
             {...(page === 'standings' ? { tab: standingsTab, onTabChange: setStandingsTab } : {})}
             {...(page === 'matches' ? { matchRoute } : {})} />}

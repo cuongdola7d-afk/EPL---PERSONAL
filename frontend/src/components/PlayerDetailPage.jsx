@@ -109,9 +109,8 @@ function InfoTab({ player, season }) {
   </>
 }
 
-function PlayerDetailPage({ playerId, season, backHash }) {
+function PlayerDetailPage({ playerId, season, backHash, theme = 'dark' }) {
   const [tab, setTab] = useState('matches')
-  const [theme, setTheme] = useState('dark')
   const [reloadKey, setReloadKey] = useState(0)
   const [data, setData] = useState({ status: 'loading', player: null, rows: [], error: '' })
 
@@ -133,7 +132,7 @@ function PlayerDetailPage({ playerId, season, backHash }) {
     backHash === '#fantasy' ? 'Trở lại Fantasy' : 'Danh sách cầu thủ'
 
   return <section className="player-detail-page" data-theme={theme}><div className="pd-wrap">
-    <div className="pd-topbar"><a className="pd-back" href={backHash ?? '#players'}>← {backLabel}</a><button className="pd-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button></div>
+    <div className="pd-topbar"><a className="pd-back" href={backHash ?? '#players'}>← {backLabel}</a></div>
     {status === 'loading' && <div className="pd-card pd-loading" role="status">Đang tải chi tiết cầu thủ...</div>}
     {status === 'error' && <div className="pd-card pd-empty" role="alert"><strong>Không thể tải cầu thủ</strong><p>{error}</p><button type="button" onClick={() => { setData({ status: 'loading', player: null, rows: [], error: '' }); setReloadKey((value) => value + 1) }}>Thử lại</button></div>}
     {status === 'success' && <>

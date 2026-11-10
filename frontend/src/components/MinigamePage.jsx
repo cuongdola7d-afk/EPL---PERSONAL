@@ -253,9 +253,9 @@ function GamePage({ account, authLoading, authError, mode, source, onRules }) {
     {fx && <div className={`mg-fx ${fx.type === 'CORRECT' ? 'mg-win' : ''}`} aria-hidden="true" key={fx.actionId}><div>{fx.type === 'CORRECT' ? '✓ Chính xác!' : 'Chưa đúng rồi'}<small>{fx.type === 'CORRECT' ? `+${state.game?.finalScore ?? 0} điểm` : `${fx.scoreChange} điểm`}</small></div></div>}
   </>
 }
-export default function MinigamePage({ account, authLoading, authError, route }) {
+export default function MinigamePage({ account, authLoading, authError, route, theme = 'dark' }) {
   const [info, setInfo] = useState(null), [error, setError] = useState(''), [reload, setReload] = useState(0)
-  const [sheet, setSheet] = useState(null), [theme, setTheme] = useState('dark')
+  const [sheet, setSheet] = useState(null)
   useEffect(() => {
     const controller = new AbortController()
     fetchGuessInfo(controller.signal).then(data => { if (!controller.signal.aborted) { setInfo(data); setError('') } })
@@ -264,7 +264,7 @@ export default function MinigamePage({ account, authLoading, authError, route })
   }, [reload])
   const mode = route?.mode
   return <div className="minigame-page" data-mg-theme={theme}><div className="mg-wrap">
-    <div className="mg-toolbar"><span>PREMIER LEAGUE · 2026/27</span><button className="mg-icon-button" onClick={() => setTheme(value => value === 'dark' ? 'light' : 'dark')} aria-label={`Chuyển sang chế độ ${theme === 'dark' ? 'sáng' : 'tối'}`}>◐</button></div>
+    <div className="mg-toolbar"><span>PREMIER LEAGUE · 2026/27</span></div>
     <ErrorBox message={error} onRetry={() => setReload(value => value + 1)} />
     {mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> : <Hub account={account} source={info} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
     {sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}

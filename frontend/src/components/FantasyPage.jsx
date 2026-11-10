@@ -16,7 +16,7 @@ import { useFantasyEntry } from '../hooks/useFantasyEntry.js'
 import { emptyLineup, entryLineup } from '../fantasy/entry.js'
 import { useFantasyResult } from '../hooks/useFantasyResult.js'
 import { formatPoints, publishedPlayerPoints } from '../fantasy/results.js'
-import { teamOfWeekGameweek } from '../fantasy/teamOfWeek.js'
+import { readTeamOfWeekSelection, saveTeamOfWeekSelection } from '../fantasy/teamOfWeek.js'
 import './FantasyPage.css'
 import './FantasyEntry.css'
 
@@ -28,9 +28,13 @@ function readSavedLineup() {
   catch { return {} }
 }
 
-function FantasyPage({ account = null, authLoading = false, authError = '' }) {
+function FantasyPage({ account = null, authLoading = false, authError = '', theme = 'dark' }) {
   const [contestGameweek, setContestGameweek] = useState(null)
-  const [teamWeekSelection, setTeamWeekSelection] = useState(null)
+  const [teamWeekSelection, setTeamWeekSelection] = useState(() => readTeamOfWeekSelection())
+  const selectTeamWeek = useCallback(week => {
+    setTeamWeekSelection(week)
+    saveTeamOfWeekSelection(week)
+  }, [])
   const [contestOpen, setContestOpen] = useState(false)
   const [contestStatus, setContestStatus] = useState(null)
   const [contestDeadline, setContestDeadline] = useState(null)
@@ -43,7 +47,6 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
   const contestSelection = useCallback((gw, open, asOf, status, deadline) => {
-    setTeamWeekSelection(current => current?.currentGameweek === gw ? current : null)
     setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status); setContestDeadline(deadline)
   }, [])
   const lockedSubmission = account && entry.ready && !contestOpen && entry.data?.submitted
@@ -58,9 +61,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
   const [search, setSearch] = useState('')
   const [clubFilter, setClubFilter] = useState('')
   const [message, setMessage] = useState('')
-  const [theme, setTheme] = useState('dark')
   const [view, setView] = useState('user')
-  const gameweek = teamOfWeekGameweek(contestGameweek, teamWeekSelection)
   const searchRef = useRef(null)
   const resultState = useFantasyResult(account, contestGameweek, contestStatus, entry.data?.submitted?.version ?? null, view === 'user')
   const playerPoints = publishedPlayerPoints(resultState.data, account?.id, contestGameweek)
@@ -154,8 +155,6 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
             })
           }}>Tạo đội hình<ArrowIcon diagonal /></button>
         </div>
-        <button className="fantasy-theme" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          aria-label={theme === 'light' ? 'Đổi sang giao diện tối' : 'Đổi sang giao diện sáng'}>◐</button>
       </header>
       <FantasyGameweek account={account} onSelectionChange={contestSelection} />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
@@ -169,7 +168,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '' }) {
           }}>{label}</button>)}
       </div>
       {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
-        <TeamOfWeek gameweek={gameweek} onGameweekChange={week => setTeamWeekSelection({ currentGameweek: contestGameweek ?? 6, gameweek: week })} /></div>}
+        <TeamOfWeek selection={teamWeekSelection} onGameweekChange={selectTeamWeek} /></div>}
       {view === 'leaderboard' && <div id="fantasy-panel-leaderboard" role="tabpanel" aria-labelledby="fantasy-tab-leaderboard">
         <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>

@@ -17,7 +17,7 @@ const POSITIONS = [
   { value: 'FORWARD', label: 'Tiền đạo' },
 ]
 
-function PlayerPage({ season, onSeasonChange }) {
+function PlayerPage({ season, theme = 'dark' }) {
   const initial = useRef(parsePlayerListHash(window.location.hash))
   const [query, setQuery] = useState(initial.current?.query ?? '')
   const [club, setClub] = useState(initial.current?.club ?? '')
@@ -63,11 +63,8 @@ function PlayerPage({ season, onSeasonChange }) {
     setVisibleCount(PAGE_SIZE)
   }
 
-  return <section className="player-directory" id="directory" aria-labelledby="players-heading">
+  return <section data-theme={theme} className="player-directory" id="directory" aria-labelledby="players-heading">
     <div className="pp-wrap">
-      <div className="pp-top"><div className="pp-seasons" role="group" aria-label="Mùa giải">
-        {Object.entries(SEASONS).map(([year, label]) => <button key={year} type="button" aria-pressed={season === Number(year)} onClick={() => onSeasonChange(Number(year))}>{label}</button>)}
-      </div></div>
 
       <header className="pp-hero"><div><p>prismaXI / CẦU THỦ</p><h1 id="players-heading">Cầu thủ</h1><span>Premier League {SEASONS[season]}</span></div><div className="pp-hero-art" aria-hidden="true"><i /><i /></div></header>
 
