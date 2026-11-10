@@ -14,7 +14,7 @@ Chưa ghi MySQL production. Fixture ID, ngày, CLB, tỷ số và trạng thái 
 
 - `lineups.csv` giữ vai trò `STARTER`, `SUB_USED`, `SUB_UNUSED`, tên và ID StatMuse bên cạnh ID PremierHub. ID cũ đối chiếu với ba batch GW2 đã được kiểm tra; ID mới của riêng StatMuse được đối chiếu tên và CLB trong roster PremierHub. Iliman Ndiaye dùng ID PremierHub của Man City `2000004005` ở trận này; ID Everton của trận GW2 vẫn giữ nguyên, không hợp nhất lịch sử.
 - `DID_NOT_PLAY` chỉ áp dụng cho người ở ghế dự bị của trang trận nhưng không nằm trong bảng chỉ số người ra sân hoặc sự kiện thay người. Khi đó 0 phút và 0 sự kiện có căn cứ; importer lưu `fantasy_points=0`. Người `PLAYED` có rating/điểm `NULL` cho đến khi nhận ảnh rating.
-- `manual-players-2026-GW3-first-five-DRAFT.csv` chỉ gồm 161 membership **thiếu tại ngày trận**, mỗi khoảng `[ngày trận, ngày kế tiếp)`. Có một cầu thủ mới: Chema Andrés, Brighton, ID dự kiến `2000030259`, MID. [Brighton xác nhận chuyển nhượng 01/09](https://www.brightonandhovealbion.com/media-article/mft-lowdown-chema-andres-interview-september-2026); snapshot FPL 30/09 trong repo ghi `element_type=3` (MID). StatMuse ghi anh ở ghế dự bị Brighton–Leeds và không vào sân.
+- `manual-players-2026-GW3-first-five-DRAFT.csv` (tên lịch sử; hiện được thay bằng [bản chính](manual-players-2026-GW3-first-five.csv) có nội dung giống hệt) chỉ gồm 161 membership **thiếu tại ngày trận**, mỗi khoảng `[ngày trận, ngày kế tiếp)`. Có một cầu thủ mới: Chema Andrés, Brighton, ID dự kiến `2000030259`, MID. [Brighton xác nhận chuyển nhượng 01/09](https://www.brightonandhovealbion.com/media-article/mft-lowdown-chema-andres-interview-september-2026); snapshot FPL 30/09 trong repo ghi `element_type=3` (MID). StatMuse ghi anh ở ghế dự bị Brighton–Leeds và không vào sân.
 - Năm cặp tổng bàn thắng cầu thủ là `0–2`, `0–0`, `1–0`, `1–1`, `1–1`, đúng tỷ số; không có bàn phản lưới cần điều chỉnh trong năm trận này. Không còn chỉ số trận nào ngoài rating chưa được nguồn xác nhận.
 
 ## File và kiểm tra
@@ -25,3 +25,14 @@ Chưa ghi MySQL production. Fixture ID, ngày, CLB, tỷ số và trạng thái 
 - Trên H2 cô lập: roster thêm 1 cầu thủ, 1 quan hệ cầu thủ–CLB, 161 khoảng; stats thêm 200 dòng. Nhập lại roster thêm `0/0/0`, stats thêm `0`. API H2 `/api/matches/{id}/details?season=2026` trả 20 người mỗi đội cho cả năm trận, đúng trạng thái và từng chỉ số CSV; rating/điểm của cả 150 người ra sân vẫn `NULL`.
 
 Ảnh người dùng đã cung cấp 148 rating. Ousmane Diomande (`2000020074`, Forest) và Pascal Struijk (`2000030119`, Brighton) không hiện rating; người dùng xác nhận họ vào sân quá ít phút nên không được chấm. File `manual-match-stats-2026-GW3-first-five.csv` là bản đã chốt, giữ `rating=NULL` và `fantasy_points=NULL` cho hai người này. Chi tiết kiểm tra chung ở `../gw3-ratings/summary.md`. Không nhập MySQL production, commit, push hoặc deploy.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW3-first-five-DRAFT.csv` | [manual-players-2026-GW3-first-five.csv](manual-players-2026-GW3-first-five.csv) | `ff2fd26cb2681451651c02bebb5b45cd50e80f05f1cd924c0887fdb929b9e5b6` |
+| `manual-match-stats-2026-GW3-first-five-RATINGS.csv` | [manual-match-stats-2026-GW3-first-five.csv](manual-match-stats-2026-GW3-first-five.csv) | `9ee619ac2e631f1023025d26ac1179f9189c88ebddd7f0abaf4b03ce0b265eaf` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

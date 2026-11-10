@@ -1,5 +1,7 @@
 # Tiến độ PremierHub
 
+> Các mốc bên dưới là ghi chép lịch sử. Cập nhật luồng CSV ngày 10/11/2026: web hiện đọc SQL; console `App` đọc ba CSV demo trong `backend/data/` từ filesystem. Các bản sao demo classpath đã được bỏ; CSV fallback đội hình vẫn được đóng gói riêng. Xem [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) cho hiện trạng và [README](../README.md#chạy-console-demo-javacsv) cho lệnh chạy demo.
+
 ## Sprint 1 — Java và CSV: hoàn thành
 
 - Hoàn thành model `Club`, `Player`, `Match`, `Standing` và validation.

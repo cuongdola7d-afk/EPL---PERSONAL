@@ -45,3 +45,13 @@ Claudio Echeverri nằm trong danh sách dự bị Man City ngày 28/08 của St
 - Chạy API backend hiện tại trên `127.0.0.1:18080` với MySQL production rồi tắt sau kiểm tra. Cả 80 endpoint `/api/players/{id}/matches?season=2026` trả đúng fixture, CLB, phút, bàn, kiến tạo, thẻ và rating như CSV. URL triển khai công khai không trả phản hồi trong môi trường kiểm tra này, nên chưa xác nhận được kết quả qua bản đang triển khai. Endpoint `/api/matches/{id}/details` của code hiện tại vẫn trả mảng `homePlayers` và `awayPlayers` trống cho dữ liệu manual; yêu cầu lần này chỉ kiểm tra API lịch sử cầu thủ.
 
 Không commit hoặc push tự động.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW2-first-two-DRAFT.csv` | [manual-players-2026-GW2-first-two.csv](manual-players-2026-GW2-first-two.csv) | `1173c8056d3f614b6238b9192cd38ad09a4fca6d1bf533c889ca857e90b85147` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

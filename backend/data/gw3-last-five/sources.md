@@ -13,7 +13,7 @@ Chưa ghi MySQL production. Fixture ID, ngày, CLB, tỷ số và trạng thái 
 ## Đối chiếu
 
 - StatMuse liệt kê 11 đá chính và 9 dự bị mỗi đội ở cả năm trận. Danh sách `PLAYED` từ bảng chỉ số khớp chính xác dấu thay vào ở danh sách dự bị; 43 người `SUB_UNUSED` không có dấu thay vào. Vì vậy `DID_NOT_PLAY`, 0 phút và 0 sự kiện của họ có căn cứ. `lineups.csv` lưu vai trò, ID nguồn, ID PremierHub và CLB cho cả 200 người.
-- `manual-players-2026-GW3-last-five-DRAFT.csv` chỉ gồm 160 membership còn thiếu tại ngày trận, dạng `[ngày trận, ngày kế tiếp)`. Toàn bộ ID cầu thủ đã tồn tại; không thêm hoặc hợp nhất ID.
+- `manual-players-2026-GW3-last-five-DRAFT.csv` (tên lịch sử; hiện được thay bằng [bản chính](manual-players-2026-GW3-last-five.csv) có nội dung giống hệt) chỉ gồm 160 membership còn thiếu tại ngày trận, dạng `[ngày trận, ngày kế tiếp)`. Toàn bộ ID cầu thủ đã tồn tại; không thêm hoặc hợp nhất ID.
 - Tổng bàn cầu thủ trùng tỷ số ở bốn trận. Tại Newcastle–Bournemouth, Newcastle có hai bàn cầu thủ; Bournemouth có một bàn của Marcus Tavernier và [một bàn phản lưới của Malick Thiaw](https://www.statmuse.com/fc/match/9-5-2026-new-vs-bou-112785). CSV giữ `goals=0` của Thiaw, không gán bàn phản lưới như bàn thắng cầu thủ.
 - Không có ô `minutes`, `goals`, `assists`, `yellow_cards` hoặc `red_cards` nào chưa xác minh cho người ra sân. `ratings-needed.csv` liệt kê 157 người `PLAYED` theo fixture, tên, ID, CLB và trạng thái. `missing-fields.csv` chỉ có 157 ô `rating`.
 
@@ -21,4 +21,15 @@ Chưa ghi MySQL production. Fixture ID, ngày, CLB, tỷ số và trạng thái 
 
 `manual-match-stats-2026-GW3-last-five-DRAFT.csv` có đúng 10 cột, 200 dòng, 40 người/trận; 157 `PLAYED` và 43 `DID_NOT_PLAY`. Khóa `(fixture_id, player_id)` và khóa membership không trùng. Importer chấp nhận đủ membership tại ngày trận: roster thêm 160 khoảng, stats thêm 200 dòng. Nhập lại roster thêm 0 khoảng và stats thêm 0 dòng. API H2 `/api/matches/{id}/details?season=2026` trả 20 người/đội cho cả năm trận, đúng trạng thái và chỉ số; rating/điểm Fantasy của 157 người ra sân là `NULL`.
 
-Các file DRAFT của hai batch được giữ nguyên. Ảnh người dùng đã cung cấp 153 rating; Valentino Livramento (`158694`), Ryan Christie (`1125`), Noussair Mazraoui (`2000006003`) và Noni Madueke (`2000001015`) không hiện rating. Người dùng xác nhận họ vào sân quá ít phút nên không được chấm. File `manual-match-stats-2026-GW3-last-five.csv` là bản đã chốt, giữ `rating=NULL` và `fantasy_points=NULL` cho bốn người này. Chi tiết kiểm tra chung ở `../gw3-ratings/summary.md`. Chưa nhập MySQL production, commit, push hoặc deploy.
+Tại mốc ghi nhận ban đầu, các file DRAFT của hai batch được giữ nguyên. Ảnh người dùng đã cung cấp 153 rating; Valentino Livramento (`158694`), Ryan Christie (`1125`), Noussair Mazraoui (`2000006003`) và Noni Madueke (`2000001015`) không hiện rating. Người dùng xác nhận họ vào sân quá ít phút nên không được chấm. File `manual-match-stats-2026-GW3-last-five.csv` là bản đã chốt, giữ `rating=NULL` và `fantasy_points=NULL` cho bốn người này. Chi tiết kiểm tra chung ở `../gw3-ratings/summary.md`. Chưa nhập MySQL production, commit, push hoặc deploy.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW3-last-five-DRAFT.csv` | [manual-players-2026-GW3-last-five.csv](manual-players-2026-GW3-last-five.csv) | `9310eeb886d36f23c173359eefb49c3460f0b1962839024f0f2f7c2b1b519efa` |
+| `manual-match-stats-2026-GW3-last-five-RATINGS.csv` | [manual-match-stats-2026-GW3-last-five.csv](manual-match-stats-2026-GW3-last-five.csv) | `3d2c77634d7a4488455a71edc5d0944b1884049e8238736ec56280639105be63` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

@@ -36,3 +36,13 @@ Chỉ bổ sung các khoảng ngày được trận đấu chứng minh; không 
 ## Batch kế tiếp
 
 Sau khi chốt ba trận này, xử lý **cùng một batch cả năm trận GW2 còn lại**: `1000560561` Coventry–Hull (29/08), `1000560554` Sunderland–Fulham (30/08), `1000560556` Chelsea–Brighton (30/08), `1000560559` Leeds–Brentford (30/08), `1000560557` Aston Villa–Arsenal (31/08).
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW2-next-three-DRAFT.csv` | [manual-players-2026-GW2-next-three.csv](manual-players-2026-GW2-next-three.csv) | `e22c5fae20a24636257f1309d4f513fe648ccf944da3b6b976fc0a1e4fb01a4f` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

@@ -1,6 +1,8 @@
 # Giai đoạn 2: chuẩn bị chạy và deploy backend
 
-**Executable JAR** là file chứa ứng dụng Java đã biên dịch, thư viện cần thiết và CSV trong `src/main/resources/data`. Sau khi build, có thể chạy `java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar` mà không cần trỏ đến CSV bên ngoài. Đây vẫn là dữ liệu chỉ đọc.
+> Ghi chép này mô tả lần chuẩn bị deploy ở giai đoạn CSV ban đầu. Cập nhật ngày 10/11/2026: web hiện đọc SQL; console đọc ba CSV demo trong `backend/data/` từ filesystem, không cần database. Ba bản sao demo resource đã được bỏ; JAR vẫn giữ snapshot JSON 2024 và hai CSV fallback đội hình được Maven đóng gói riêng. Xem [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) trước thao tác vận hành hiện tại.
+
+**Executable JAR** là file chứa ứng dụng Java đã biên dịch, thư viện cần thiết và các resource được đóng gói. Ở mốc API CSV ban đầu, resource gồm các CSV demo trong `src/main/resources/data`, nên khi đó có thể chạy `java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar` mà không cần trỏ đến CSV bên ngoài. Đây là luồng dữ liệu chỉ đọc của mốc lịch sử đó, không phải luồng đọc SQL hiện tại.
 
 **Maven Wrapper** gồm `mvnw`, `mvnw.cmd` và `.mvn/wrapper/maven-wrapper.properties`. Nó ghim Maven 3.9.14 cho project và tự tải Maven vào cache của người dùng nếu máy chưa có. Repo không lưu cache hoặc JAR đã tải. Java 21 vẫn là yêu cầu của project.
 

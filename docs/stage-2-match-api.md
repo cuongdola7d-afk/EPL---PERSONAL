@@ -1,5 +1,7 @@
 # Giai đoạn 2: Match REST API
 
+> Đây là ghi chép API ở mốc CSV/in-memory ban đầu; mô tả classpath bên dưới thuộc mốc đó. Ngày 10/11/2026 đã bỏ ba bản sao CSV demo resource; web hiện đọc SQL, còn console `App` đọc `backend/data/{clubs,players,matches}.csv` từ filesystem. Reader và test Java học tập vẫn được giữ nguyên. Xem [README](../README.md#chạy-console-demo-javacsv) cho lệnh chạy demo hiện tại.
+
 `MatchController` nhận URL, query parameter và ID, chọn mã HTTP và đổi trận đấu thành `MatchResponse`. `MatchService` tìm theo ID, lọc theo CLB, vòng đấu và trạng thái. `MatchRepository` cung cấp dữ liệu; `InMemoryMatchRepository` giữ danh sách bất biến sau khi CSV được đọc một lần lúc khởi động. `MatchResponse` giới hạn dữ liệu JSON công khai, gồm ID và tên hai CLB, vòng đấu, ngày, trạng thái và tỉ số.
 
 CSV giai đoạn 1 chưa có vòng đấu. API cần `matchweek` rõ ràng nên model và CSV được thêm cột này. Không suy vòng đấu từ ngày: lịch thực tế có thể dời trận. `MatchCsvReader` vẫn đọc được `Path` cho các phần Java cũ và nay đọc thêm `InputStream` từ classpath cho Spring.

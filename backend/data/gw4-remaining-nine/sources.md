@@ -1,6 +1,6 @@
 # GW4 2026/27 — chín trận bổ sung
 
-Derby Manchester (`1000560580`) đã có 40 dòng trên production trước batch này và được giữ nguyên. Hai file cuối để lưu cùng mã nguồn là `manual-players-2026-GW4-remaining-nine.csv` (320 khoảng membership) và `manual-match-stats-2026-GW4-remaining-nine.csv` (360 dòng). Các file mang hậu tố `DRAFT` hoặc `RATINGS` là bản làm việc, không dùng để nhập production.
+Derby Manchester (`1000560580`) đã có 40 dòng trên production trước batch này và được giữ nguyên. Hai file cuối để lưu cùng mã nguồn là `manual-players-2026-GW4-remaining-nine.csv` (320 khoảng membership) và `manual-match-stats-2026-GW4-remaining-nine.csv` (360 dòng). Tại mốc chuẩn bị batch, các file mang hậu tố `DRAFT` hoặc `RATINGS` là bản làm việc, không dùng để nhập production; các bản trùng đã được dọn như ghi nhận bên dưới.
 
 | Fixture | Trận | Nguồn thống nhất cho đội hình và chỉ số |
 | --- | --- | --- |
@@ -21,3 +21,14 @@ Mỗi fixture có 20 cầu thủ mỗi đội (11 đá chính, chín dự bị).
 Hai CSV cuối đã thử trên H2 cô lập sao chép từ production: thêm 320 membership và 360 dòng thống kê; chạy lại cả hai thêm 0. API H2 khớp từng trường CSV, chín trận 40 dòng mỗi trận, và derby vẫn 40 dòng. Trước ghi production, preflight xác nhận đúng host Railway/schema `railway`, chín trận chưa có khóa thống kê nào, derby có 40 dòng/26 rating. Bản sao lưu SQL mới được lưu ngoài Git tại `backend/local-backups/gw4-2026/premierhub-before-gw4-20261001-230233.sql` (668950 byte; SHA-256 `6ABB64A1952263EEAB28C0EB765E71ECF1BEFEB754B110A6A1EE60424345C01D`).
 
 Production import ngày 01/10/2026 thêm 320 khoảng membership, 360 dòng cầu thủ–trận; nhập lại thêm 0. So sánh đọc lại MySQL khớp từng trường CSV ở chín trận. Toàn GW4 có **10 fixture, 400 dòng**: 304 `PLAYED` có rating và điểm bằng rating; ba `PLAYED` không được chấm có cả hai trường `NULL`; 93 `DID_NOT_PLAY` có rating `NULL` và điểm 0. API production báo `hasManualStats=true` cho cả 10 trận; endpoint chi tiết khớp cả chín CSV mới và derby, endpoint lịch sử cầu thủ trả đúng trường hợp có và không có rating. Không sửa mã, commit, push hoặc deploy trong lượt nhập production này.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW4-remaining-nine-DRAFT.csv` | [manual-players-2026-GW4-remaining-nine.csv](manual-players-2026-GW4-remaining-nine.csv) | `8a281acd821f547b080589575fb14d216d7a1385bebe22ba4104d9f5cf9e1a9c` |
+| `manual-match-stats-2026-GW4-remaining-nine-RATINGS.csv` | [manual-match-stats-2026-GW4-remaining-nine.csv](manual-match-stats-2026-GW4-remaining-nine.csv) | `212c0b7dcac014fd522272f736da4cf39d4798353b32bd24331edf88f678f1e2` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

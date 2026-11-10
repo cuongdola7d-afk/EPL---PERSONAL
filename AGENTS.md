@@ -1,57 +1,59 @@
-# PremierHub — Hướng dẫn cộng tác
+# PremierHub / PrismaXI — hướng dẫn cộng tác
 
-## Mục tiêu và bối cảnh
+## Mục tiêu và bối cảnh hiện tại
 
-PremierHub là dự án học Full-stack qua thực hành, với các chức năng đích:
-- Tra cứu lịch đấu và bảng xếp hạng Premier League.
-- Thống kê đội bóng và cầu thủ.
-- Tài khoản người dùng và đội bóng yêu thích.
-- Bình luận và cộng đồng.
+PremierHub là dự án học Full-stack qua dữ liệu Premier League; PrismaXI là tên trên giao diện. Đã có web React, REST API/JDBC, tài khoản/session/Google, Fantasy nhiều người chơi, Đội hình tiêu biểu và minigame Đoán cầu thủ. Console Java/CSV vẫn được giữ cho học tập. Đội yêu thích, bình luận/cộng đồng và các mục tiêu khác trong lộ trình chưa được coi là đã triển khai.
 
-Người học đã biết Python, Java, OOP và SQL/MySQL cơ bản; chưa học lập trình web và Spring Boot. Giải thích bằng tiếng Việt, gắn lý thuyết trực tiếp với code và ví dụ nhỏ.
+Người học bắt đầu với Python, Java, OOP và SQL/MySQL cơ bản, học web/Spring Boot qua dự án. Giải thích bằng tiếng Việt, gắn lý thuyết trực tiếp với code và ví dụ nhỏ; không suy rằng lịch sử học tập là tiến độ sản phẩm hiện tại.
 
-## Công nghệ
+Đọc [README.md](README.md) để chạy local, [docs/README.md](docs/README.md) để chọn hướng dẫn, [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) để nhận bàn giao luật/checkpoint. Ngữ cảnh kỹ thuật dưới đây đối chiếu code/config local ngày **10/11/2026**; production/Git cần đọc theo ngày và nguồn xác minh riêng.
 
-- Hiện tại: Java 21, Maven, JUnit Jupiter và Spring Boot 4.1.1.
-- Maven coordinates: `com.premierhub:premierhub-backend`, phiên bản hiện tại `0.1.0-SNAPSHOT`.
-- Backend về sau: Spring Boot; database: MySQL.
-- Frontend: bắt đầu với HTML/CSS/JavaScript, sau đó React.
-- Dữ liệu ban đầu: import CSV.
+## Công nghệ và đường chạy
+
+- Java release 21, Maven 3.9.14 qua Maven Wrapper, Spring Boot 4.1.1 và JUnit Jupiter. Phân biệt JDK chạy Maven với release mục tiêu.
+- Maven coordinates: `com.premierhub:premierhub-backend`, phiên bản `0.1.0-SNAPSHOT`.
+- Web backend: Spring JDBC/JdbcTemplate, Security, Session JDBC và Google OIDC; H2 local, MySQL trên production. Không dùng JPA/Hibernate hiện tại.
+- Frontend: React 19, Vite 8, JavaScript; test bằng Node test runner. Phiên bản chốt ở lockfile; không dùng React Router.
+- Main web/JAR: `PremierHubApplication`. Console `App` đọc `backend/data/{clubs,players,matches}.csv` từ filesystem, không khởi động Spring/database.
+- Ba bản sao CSV demo resource đã được bỏ ở đợt dọn 2. Hai CSV fallback đội hình từ `backend/data/match-lineups-2026-10-04/` vẫn được Maven/Docker đóng gói riêng.
 - Chưa tự ý thêm framework, database hoặc dependency khi chưa giải thích nhu cầu và kế hoạch.
 
-## Cấu trúc hiện tại
+## Cấu trúc và tiến độ hiện hành
 
 ```text
 /
-├── AGENTS.md
-├── README.md
-├── .gitignore
-├── docs/phase-1.md
-├── .vscode/
-│   └── settings.json
-└── backend/
-    ├── pom.xml
-    ├── data/
-    │   ├── clubs.csv
-    │   ├── players.csv
-    │   └── matches.csv
-    └── src/
-        ├── main/java/com/premierhub/
-        │   ├── App.java
-        │   ├── PremierHubApplication.java
-        │   ├── config/ClubDataConfiguration.java
-        │   ├── csv/
-        │   ├── model/
-        │   ├── service/
-        │   └── web/
-        ├── main/resources/data/clubs.csv
-        └── test/java/com/premierhub/
-            ├── AppTest.java
-            ├── csv/ClubCsvReaderTest.java
-            └── model/ClubTest.java
+├── README.md, AGENTS.md, PROJECT_CONTEXT.md
+├── docs/README.md                     # mục lục; các tài liệu giữ nguyên vị trí
+├── backend/
+│   ├── pom.xml, mvnw, mvnw.cmd, .mvn/
+│   ├── data/                         # CSV, nguồn, bằng chứng và checkpoint
+│   ├── sql/, scripts/                # migration và công cụ vận hành
+│   └── src/
+│       ├── main/java/com/premierhub/
+│       │   ├── App.java, PremierHubApplication.java
+│       │   ├── config/, model/, csv/, repository/, service/, web/
+│       │   ├── accounts/, fantasy/, minigame/, diagnostics/
+│       │   └── clubs/, roster/, profiles/, positions/, manualstats/, lineups/, sync/, seed/
+│       ├── main/resources/           # profiles, schema local/H2, snapshot JSON
+│       └── test/                     # Java test và fixture CSV
+├── frontend/
+│   ├── package.json, package-lock.json, vite.config.js
+│   └── src/                          # api, components, hooks, fantasy, minigame, utils
+├── render.yaml
+└── requests.http
 ```
 
-Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Standing. Giai đoạn 2 có API chỉ đọc cho Club, Player và Match; các CSV tương ứng được tải từ classpath một lần khi khởi động. Player và Match API dùng các lớp riêng trong `config/`, `repository/`, `service/`, `web/` và `web/dto/`. Tài liệu ở `docs/stage-2-player-api.md` và `docs/stage-2-match-api.md`, request mẫu ở `requests.http`. Chưa có API cho Standing, frontend hoặc database. `backend/target/` là đầu ra build, không phải mã nguồn để commit.
+Web đọc SQL qua query/repository/service/controller; không tải ba CSV demo một lần lúc khởi động như API giai đoạn đầu. `model`/CSV reader/in-memory service và `App` còn phục vụ demo/test, không tự xóa hoặc refactor chúng. `backend/target/` là output ignored nhưng có thể chứa H2/backup/helper cần giữ; kiểm trước `clean`, không commit output hoặc secret.
+
+Các bài cũ trong [LEARNING_TASKS.md](docs/LEARNING_TASKS.md) đã hoàn thành. Không tự dành lại bài đã xong cho người học; vẫn giữ nguyên phần tự làm được giao rõ trong nhiệm vụ mới.
+
+## Phạm vi quyền vận hành và cách đọc tài liệu
+
+Yêu cầu “thu thập”/“Tổng hợp GW” bao gồm nhập production **phần đã xác minh**, sau kiểm đúng backend/database và tạo/kiểm backup mới theo workflow. Tiếp tục đến tổng mùa, Đội hình tiêu biểu và readiness trong phạm vi được giao; không hỏi lại quyền riêng cho bước nhập đã được giao. Nếu người dùng giới hạn chỉ chuẩn bị/chưa nhập thì giữ giới hạn đó.
+
+Mở GW, đổi deadline/roster/đội người chơi, công bố/tái công bố Fantasy và deploy là các phạm vi riêng; không suy quyền từ yêu cầu thu thập hoặc từ biên bản thao tác cũ. Không tự khởi chạy một vòng mới chỉ vì có mục việc tiếp theo. Quy tắc chi tiết đã chốt ở các khối bên dưới được giữ nguyên.
+
+Tài liệu Hỗn hợp có cả checkpoint cũ và hướng dẫn còn dùng; đọc đúng mục/ngày và đối chiếu code, không phân loại theo tên/ngày đơn thuần. Code local không chứng minh đã deploy. Nếu gặp quy tắc mâu thuẫn chưa được giải quyết, báo rõ phần mâu thuẫn, không tự mở rộng quyền; tiếp tục các phần độc lập đã có căn cứ.
 
 ## Quy tắc code
 
@@ -98,18 +100,41 @@ Giai đoạn 1 đã hoàn thành lõi Java/CSV cho Club, Player, Match và Stand
 
 - Fantasy nhiều người chơi đã có tài khoản, đội đã chốt, readiness và luồng ADMIN công bố. Đọc [docs/fantasy-multiplayer-2026-plan.md](docs/fantasy-multiplayer-2026-plan.md) và [docs/fantasy-results-2026.md](docs/fantasy-results-2026.md) để giữ luật đã chốt. Quyền nhập dữ liệu GW đã xác minh theo quy trình trên không bao gồm mở GW mới, đổi đội/deadline/rosterAsOf hoặc công bố/tái công bố Fantasy.
 
-## Lệnh kiểm tra
+## Lệnh chạy và kiểm tra
 
-Chạy từ thư mục `backend/`:
+Từ `backend/`, dùng Maven Wrapper:
 
 ```powershell
-mvn clean test
-mvn spring-boot:run
+.\mvnw.cmd spring-boot:run
+.\mvnw.cmd test
+.\mvnw.cmd package
 ```
 
-Lệnh đầu biên dịch và chạy test; lệnh sau chạy `com.premierhub.App` qua exec-maven-plugin.
+`spring-boot:run` chạy web; `package` cũng chạy test. Nếu đã chạy test phù hợp riêng, `.\mvnw.cmd -DskipTests package` chỉ đóng gói và không được báo là một lượt test mới. Tránh `clean` khi chưa kiểm H2/backup/helper trong target. Kiểm môi trường để không dùng datasource/profile production khi chạy local/test.
 
-## Hướng Sprint 0 được đề xuất
+Console Java/CSV từ `backend/`:
+
+```powershell
+.\mvnw.cmd compile
+java -cp target/classes com.premierhub.App
+```
+
+Frontend từ `frontend/`:
+
+```powershell
+npm.cmd ci
+npm.cmd run dev
+npm.cmd test
+npm.cmd run build
+```
+
+Chọn lệnh theo nhiệm vụ, không cần chạy mọi lệnh cho mỗi thay đổi. Các profile `auth-local`, `minigame-local`, yêu cầu JDK/Node và luồng proxy được hướng dẫn ở [README](README.md#chạy-local); hướng dẫn chuyên sâu trong [mục lục local](docs/README.md#phát-triển-local). Thay đổi chỉ Markdown kiểm liên kết/đường dẫn/tính nhất quán và `git diff --check`, không cần chạy lại full test/build.
+
+## Cách hiểu lộ trình học cũ
+
+Phần dưới ghi hướng đi ban đầu, không phải danh sách tính năng còn thiếu hoặc quyền chuyển stack. Các bước CSV/API/React/database/tài khoản đã có nhiều phần triển khai; hiện dùng JDBC, không tự chuyển sang JPA/Hibernate theo một dòng lộ trình cũ. Ví dụ tìm tên từng giao cho người học đã hoàn thành; khi cần bài mới phải đọc nhiệm vụ mới.
+
+## Đề xuất Sprint 0 ban đầu (lịch sử)
 
 - Hoàn thiện README với mục tiêu, yêu cầu môi trường và lệnh chạy/test.
 - Bổ sung ignore đầu ra Maven `target/`, xem xét file cấu hình IDE trước khi đưa vào Git và thống nhất môi trường Java.
@@ -117,7 +142,7 @@ Lệnh đầu biên dịch và chạy test; lệnh sau chạy `com.premierhub.Ap
 - Giải thích, chạy test và xem diff trước mỗi commit được cho phép.
 - Sau nền tảng này mới tiến tới CSV, rồi database/web theo từng bước học. Đây là định hướng đề xuất, không phải các chức năng đã hoàn thành.
 
-## Lộ trình người dùng đã chọn
+## Lộ trình người dùng đã chọn (lịch sử học tập)
 
 1. Java và CSV: `Club`, `Player`, `Match`, `Standing`, đọc CSV, tìm kiếm/lọc, bảng xếp hạng, thống kê cầu thủ và unit test.
 2. Spring Boot: REST API, controller/service/repository/DTO, JSON và Postman.

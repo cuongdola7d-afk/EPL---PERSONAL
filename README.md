@@ -1,135 +1,149 @@
-# PremierHub
+# PremierHub / PrismaXI
 
-PremierHub là dự án học Full-stack qua dữ liệu bóng đá. Giai đoạn 1 xây dựng lõi Java thuần; Giai đoạn 2 cung cấp API chỉ đọc bằng Spring Boot. Frontend React hiện có bốn trang tra cứu dùng API thật: câu lạc bộ, cầu thủ, lịch đấu/kết quả và bảng xếp hạng.
+PremierHub là tên kỹ thuật của dự án, PrismaXI là tên trên giao diện. Đây là ứng dụng học Full-stack qua dữ liệu Premier League, đã có web tra cứu, tài khoản, Fantasy nhiều người chơi và minigame Đoán cầu thủ.
 
-## Công nghệ hiện tại
+> Nội dung hiện hành được đối chiếu với code/config local ngày **10/11/2026**. Trạng thái production phải đọc theo mốc và nguồn trong [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md); lượt chuẩn hóa tài liệu này không kiểm tra lại dịch vụ live hoặc phát hành mã.
 
-- Java 21
-- Maven Wrapper (không bắt buộc cài Maven)
-- JUnit Jupiter
-- Spring Boot 4.1.1, Spring Web MVC và Bean Validation
-- API tra cứu đọc database: H2 file khi chạy local, MySQL khi chạy trên Railway; CSV chỉ còn cho console demo và bài học cũ
-- React, JavaScript và Vite cho frontend
+- Bắt đầu hoặc chọn tài liệu theo công việc: [mục lục docs](docs/README.md).
+- Làm việc với repo: [quy tắc cộng tác và quyền vận hành](AGENTS.md).
+- Nhận bàn giao toàn dự án, luật và checkpoint: [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
 
-## Chức năng đã hoàn thành
+## Chức năng đã triển khai
 
-- Model và validation cho `Club`, `Player`, `Match`, `Standing`.
-- Tìm tên câu lạc bộ/cầu thủ không phân biệt hoa thường.
-- Import câu lạc bộ, cầu thủ và trận đấu từ file UTF-8 CSV.
-- Phân biệt trận `SCHEDULED` và `FINISHED`; tính hòa, thắng, thua và điểm.
-- Lọc cầu thủ theo câu lạc bộ, tìm cầu thủ, lấy danh sách vua phá lưới.
-- Tính bảng xếp hạng từ các trận đã kết thúc trong console demo; web API đọc BXH nhà cung cấp đã lưu trong database.
-- Chương trình console demo và unit test cho model, CSV reader, service.
-- API `GET` cho Club, Player, Match và Standing; JSON lỗi chung cho request không hợp lệ.
-- Unit test, controller web slice test và Spring context integration test.
-- Trang CLB tìm theo tên, lọc thành phố, sắp xếp A–Z/Z–A và làm mới dữ liệu.
-- Trang cầu thủ lọc theo CLB/vị trí, sắp xếp bàn thắng và tính tổng bàn thắng/kiến tạo của kết quả lọc.
-- Trang lịch đấu/kết quả lọc theo CLB, vòng đấu, trạng thái; trang BXH hiển thị thứ hạng và các chỉ số từ API.
-- Cả bốn trang có trạng thái tải, dữ liệu rỗng và lỗi API.
+| Nhóm | Khả năng hiện có |
+| --- | --- |
+| Tra cứu bóng đá | CLB, cầu thủ, lịch/kết quả, BXH; lọc theo mùa, tìm kiếm và trang chi tiết |
+| Thống kê trận | Chỉ số cầu thủ, lịch sử theo membership ngày trận, sân 11v11 và ghế dự bị khi có dữ liệu đã xác minh |
+| Tài khoản | Đăng ký/đăng nhập email, session/CSRF, Google OIDC và liên kết tài khoản có xác nhận |
+| PrismaXI Fantasy 2026/27 | Builder khách; đội dự thi theo tài khoản/GW, lưu snapshot, deadline, readiness, ADMIN công bố kết quả và BXH |
+| Đội hình tiêu biểu | Tính từ rating/vị trí hợp lệ đã nhập; xem từng GW và báo độ phủ dữ liệu |
+| Đoán cầu thủ | Daily/luyện tập có đăng nhập, gợi ý, tiến trình, lịch sử và BXH daily |
+| Console học Java | Đọc CSV mẫu, tìm CLB, vua phá lưới và tính BXH trong bộ nhớ |
 
-## Cấu trúc chính
+Đội yêu thích, bình luận/cộng đồng, khôi phục mật khẩu và các minigame khác vẫn là hướng phát triển; không coi là đã có chỉ vì xuất hiện trong lộ trình/mockup.
 
-```text
-backend/
-├── mvnw, mvnw.cmd, .mvn/wrapper/
-├── pom.xml
-├── data/                         # CSV cho console demo
-└── src/
-    ├── main/java/com/premierhub/
-    │   ├── config/, csv/, model/, repository/, service/, web/
-    │   └── PremierHubApplication.java
-    ├── main/resources/
-    │   ├── application.properties, application-prod.properties
-    │   └── data/                  # CSV đóng gói trong JAR
-    └── test/java/com/premierhub/
-docs/                               # tài liệu học theo từng bước
-requests.http                        # request mẫu
-frontend/                           # React + Vite; src/api/ gọi bốn API tra cứu
+## Kiến trúc và công nghệ
+
+```mermaid
+flowchart LR
+    U[Trình duyệt React / Vite] --> V[Vercel /api]
+    V --> B[Spring Boot trên Render]
+    B --> D[(MySQL trên Aiven)]
 ```
 
-## Định dạng CSV
+Đây là kiến trúc triển khai đã được ghi nhận tại [checkpoint cutover 08/10/2026](docs/render-aiven-final-cutover-2026-10-08.md), không phải bằng chứng vừa kiểm tra runtime. Railway là hạ tầng cũ; `render.yaml` là cấu hình Blueprint, không tự chứng minh đã sync/deploy.
 
-`clubs.csv`:
+- Backend: Java **release 21**, Spring Boot **4.1.1**, Maven **3.9.14** qua Maven Wrapper, Spring JDBC/JdbcTemplate, Security, Session JDBC và OAuth2/OIDC. Không dùng JPA/Hibernate trong code hiện tại.
+- Frontend: React **19**, Vite **8**, JavaScript và Node test runner; xem phiên bản khai báo trong [package.json](frontend/package.json) và phiên bản chốt trong [lockfile](frontend/package-lock.json). Không dùng React Router.
+- Local: H2; production đã chuyển sang MySQL/Aiven. Web đọc SQL qua repository/query/service, không đọc ba CSV demo để trả API.
+- Console `App` đọc filesystem; hai CSV fallback đội hình được Maven/Docker đóng gói riêng. Xem [hướng dẫn lineup](docs/match-lineups-2026.md).
 
-```csv
-id,name,city
-1,Arsenal,London
-```
+## Cấu trúc repo
 
-`players.csv`:
+| Đường dẫn | Vai trò |
+| --- | --- |
+| [backend/pom.xml](backend/pom.xml), `backend/mvnw*`, `backend/.mvn/` | Build backend, main web là `PremierHubApplication` |
+| [backend/src/main/java/com/premierhub](backend/src/main/java/com/premierhub) | Web/API, JDBC, auth, Fantasy, minigame, importer và console `App` |
+| [backend/src/main/resources](backend/src/main/resources) | Profile, schema local/H2 và snapshot JSON 2024 |
+| [backend/src/test](backend/src/test) | Test hiện có; một số test dùng CSV đã review trong `backend/data/` |
+| [backend/data](backend/data) | CSV demo, batch nhập, nguồn, bằng chứng và checkpoint theo GW |
+| [backend/sql](backend/sql) | Migration/preflight MySQL đã lưu; không tự chạy khi đọc tài liệu |
+| [frontend/src](frontend/src) | React, API client, builder Fantasy và minigame |
+| [docs/README.md](docs/README.md) | Mục lục tài liệu theo công việc và mức độ hiện hành |
 
-```csv
-id,name,clubId,position,goals,assists
-1,Sample Player,1,FORWARD,5,3
-```
+`target/`, H2, backup, secrets, `node_modules/` và `dist/` không phải nguồn để commit. Trước `clean` hoặc dọn output, xem [lưu ý backup](PROJECT_CONTEXT.md#backup-và-phạm-vi-dọn-repo): `target` có thể chứa H2/helper/bằng chứng cần giữ.
 
-`position` nhận một trong: `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, `FORWARD`.
+## Chạy local
 
-`matches.csv`:
+Cần JDK 21 hoặc JDK mới hơn biên dịch được release 21; Node **^20.19.0 hoặc >=22.12.0** theo Vite hiện tại, cùng npm. Các ví dụ dùng PowerShell từ root repo; Linux/macOS dùng `./mvnw` và `npm` thay cho `mvnw.cmd`/`npm.cmd`.
 
-```csv
-id,homeClubId,awayClubId,matchweek,date,status,homeGoals,awayGoals
-1,1,2,1,2025-08-16,FINISHED,2,1
-2,2,3,2,2025-08-20,SCHEDULED,,
-```
+Kiểm tra biến môi trường trước khi chạy; không dùng profile/credential production cho local. Spring không tự nạp `backend/.env.local`; một số script nguồn có bộ đọc riêng. Không bật các runner sync/import chỉ để mở web.
 
-Ngày dùng định dạng `yyyy-MM-dd`. Trận `FINISHED` cần đủ hai tỉ số không âm; trận `SCHEDULED` phải để trống cả hai tỉ số.
-
-Reader hiện dùng `split(",", -1)` để phục vụ bài học. Vì vậy mỗi trường không được chứa dấu phẩy, dấu ngoặc kép hoặc xuống dòng. Đây chưa phải bộ phân tích CSV tổng quát. Dữ liệu mẫu là dữ liệu minh họa cho việc học, không đại diện cho một mùa giải thật.
-
-## Chạy và build backend
-
-Cần **JDK 21** (hoặc JDK mới hơn có thể biên dịch cho Java 21). Không cần cài Maven vì repo có Maven Wrapper. Từ PowerShell trên Windows:
-
-```powershell
-cd backend
-.\mvnw.cmd clean test
-.\mvnw.cmd spring-boot:run
-```
-
-Để build và chạy executable JAR:
-
-```powershell
-cd backend
-.\mvnw.cmd clean package
-java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar
-```
-
-Trên Linux/macOS, dùng `./mvnw` thay cho `.\mvnw.cmd`. Ứng dụng chạy ở cổng 8080 khi không đặt biến môi trường `PORT`; ví dụ trên PowerShell, `$env:PORT=9090` đổi cổng sang 9090. Khi deploy, đặt `SPRING_PROFILES_ACTIVE=prod` để dùng cấu hình production. Không cần bật profile này khi chạy local.
-
-Health check: `http://localhost:8080/actuator/health` (thay cổng nếu đã đặt `PORT`). Request mẫu ở [requests.http](requests.http). Web API đọc dữ liệu đã đồng bộ trong `backend/premierhub-local.mv.db` khi chạy local. Thư mục `backend/data` và CSV trong resources chỉ phục vụ console demo, CSV reader và test cũ; không nạp vào web API.
-
-Luồng tra cứu: `API-Football → lệnh FootballSync → database → FootballQueries → controller → JSON → frontend`. Không có endpoint đồng bộ công khai.
-
-## Chạy frontend cùng backend tại máy local
-
-Cần Node.js tương thích với Vite (20.19+ hoặc 22.12+) và npm. Mở **hai terminal** từ thư mục gốc repo:
-
-Terminal 1 — chạy backend trên cổng 8080:
+Terminal backend:
 
 ```powershell
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-Terminal 2 — cài dependency và chạy frontend:
+Terminal frontend:
 
 ```powershell
 cd frontend
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
-Mở `http://localhost:5173/` (hoặc URL Vite in ra nếu cổng 5173 bận). Điều hướng bốn trang cũng mở trực tiếp bằng `#clubs`, `#players`, `#matches`, `#standings`. Trên Linux/macOS dùng `./mvnw` và `npm` thay cho `mvnw.cmd` và `npm.cmd`. `npm.cmd` giúp chạy npm trong PowerShell khi chính sách máy chặn script `npm.ps1`. Vite chuyển request `/api/...` từ frontend sang `http://localhost:8080`:
+Mở `http://localhost:5173`; Vite proxy `/api` về `http://localhost:8080`. Backend mặc định cổng 8080, có thể bị `PORT` ghi đè. Không cần đặt `VITE_API_BASE_URL` cho dev. Local chưa có dữ liệu không tự nhận bản sao production.
 
-- CLB: `GET /api/clubs`, hoặc `/api/clubs/search?keyword=...` khi tìm tên; lọc thành phố và sắp xếp trên dữ liệu nhận được.
-- Cầu thủ: `GET /api/players` với `club`, `position` khi chọn; sắp xếp và tính tổng trên kết quả nhận được.
-- Chi tiết cầu thủ: bấm thẻ ở trang Cầu thủ để mở `/#players/{player_id}?season=2024` (hoặc `2026`). `GET /api/players/{id}/matches?season=...` trả fixture Premier League thuộc CLB của cầu thủ vào ngày trận đấu, `clubId`, `stats` (có thể `null`) và `evidenceStatus`; không suy diễn cầu thủ ra sân chỉ từ lịch thi đấu của CLB. Tab Matches hiển thị thống kê trận đã lưu, tab Season tổng hợp các trận có thống kê và biểu đồ `rating` provider khi có. Mùa 2024/25 mới có GW1; mùa 2026/27 chưa có thống kê cầu thủ–trận. Giá trị thiếu không được coi là 0 và điểm đánh giá không phải điểm Fantasy.
-- Lịch đấu: `GET /api/matches` với `club`, `matchweek`, `status` khi áp dụng bộ lọc.
-- Chi tiết trận: `GET /api/matches/{id}/details?season=2024` trả `match`, `homePlayers`, `awayPlayers` từ database. Mỗi cầu thủ có thêm `score` gồm `status` (`COMPLETE`/`PROVISIONAL`), `confirmedPoints` và `parts` giải thích từng khoản điểm. Bấm **Xem chi tiết cầu thủ** ở trang Lịch đấu để mở thống kê và điểm; trận chưa có thống kê trả hai danh sách rỗng, ID không tồn tại trả 404. Giá trị `null` nghĩa là chưa có dữ liệu, không phải số 0.
-- BXH: `GET /api/standings`; chỉ số lấy từ BXH nhà cung cấp và được đọc lại từ database theo mỗi request.
+| Cách chạy backend, từ `backend/` | Datasource / mục đích |
+| --- | --- |
+| `.\mvnw.cmd spring-boot:run` | H2 file `premierhub-local` mặc định; các biến `PREMIERHUB_JDBC_URL/DB_USER/DB_PASSWORD` có thể ghi đè |
+| `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=auth-local"` | H2 riêng `target/auth-local`, override datasource kế thừa; xem [auth local](docs/auth-local-2026.md) |
+| `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=minigame-local"` | H2 riêng `target/minigame-local`, tự nạp snapshot local đã review; xem [bootstrap minigame](docs/player-guess-minigame-local-data.md) |
 
-Các endpoint nhận `season` tùy chọn, mặc định `2024` (mùa 2024/25). CLB, trận đấu và BXH có dữ liệu cơ bản cho cả mùa 2024/25 và 2026/27; API cầu thủ đọc danh sách 2026/27 sau khi nhập CSV thủ công. Bộ lọc Gameweek của trang Lịch đấu dùng `matchweek`. API cầu thủ mùa 2026/27 mặc định trả CLB hiện tại; dùng `asOf` để xem CLB tại một ngày cũ khi cầu thủ chuyển đội.
+Không kết hợp hai profile local trên với `prod`. Bootstrap minigame là snapshot học tập, không phải đồng bộ roster production hiện tại. Google cần cấu hình riêng; đăng nhập email không đòi Google.
+
+Kiểm tra backend qua `/actuator/health`. Nếu frontend lỗi, xem request `/api` trong Network và cổng backend trước. Danh mục contract và request mẫu: [PROJECT_CONTEXT — API](PROJECT_CONTEXT.md#9-api-chính--tra-đúng-controller-trước-khi-sửa-contract), [requests.http](requests.http); luôn kiểm `season` và ID thực tế.
+
+## Chạy console demo Java/CSV
+
+Từ `backend/`:
+
+```powershell
+.\mvnw.cmd compile
+java -cp target/classes com.premierhub.App
+```
+
+`App` mặc định đọc `data/clubs.csv`, `data/players.csv`, `data/matches.csv` tính từ thư mục làm việc; có thể truyền thư mục khác qua đối số đầu tiên. Demo chỉ đọc CSV vào bộ nhớ và in console, không khởi động Spring/database. Ba bản sao demo resource đã được bỏ ở đợt dọn 2; các CSV filesystem vẫn giữ nguyên.
+
+CSV demo dùng định dạng đơn giản, không hỗ trợ dấu phẩy/ngoặc kép/xuống dòng trong trường; đây là dữ liệu minh họa, không phải dữ liệu mùa thật. Lý thuyết và reader: [bài học Java/CSV](docs/phase-1.md). `spring-boot:run` hoặc `java -jar` chạy web, không chạy console demo.
+
+## Test và build
+
+Backend, từ `backend/`:
+
+```powershell
+.\mvnw.cmd test
+.\mvnw.cmd package
+```
+
+`package` cũng chạy test. Khi test phù hợp đã được chạy riêng, có thể dùng `.\mvnw.cmd -DskipTests package` chỉ để đóng gói; không báo đó là lượt chạy test mới. Web JAR được tạo tại `target/premierhub-backend-0.1.0-SNAPSHOT.jar`.
+
+Nếu vừa xóa/đổi resource, dùng output build mới để tránh file cũ sót trong JAR; chỉ thêm `clean` sau khi đã bảo vệ H2/backup/helper trong `target/`.
+
+Frontend, từ `frontend/`:
+
+```powershell
+npm.cmd test
+npm.cmd run build
+```
+
+`npm.cmd test` chạy `node --test`; bản web tĩnh ở `frontend/dist/`. Chọn kiểm tra theo phạm vi thay đổi. Test MySQL minigame là opt-in, dùng database test riêng; không bật bằng credential production. Kết quả test cũ phải giữ nhãn mốc/phạm vi, không suy toàn suite hiện tại đã đạt.
+
+## Dữ liệu và vận hành
+
+- Hai mùa tách biệt: `season=2024` là 2024/25, `season=2026` là 2026/27. Nhiều API tra cứu mặc định 2024 trong khi UI mặc định 2026; nên truyền season rõ ràng.
+- Nguồn 2026: football-data.org cho lịch/tỉ số/BXH, nguồn thống kê và danh sách trận đã xác minh cho chỉ số; rating SofaScore do người dùng cung cấp. NULL không đồng nghĩa 0.
+- Điểm v1 mùa 2024, điểm Fantasy 2026 theo rating và điểm minigame là ba cơ chế khác nhau. OVR không phải rating trận.
+- Yêu cầu “thu thập GW” bao gồm nhập production phần đã xác minh, sau kiểm đích và backup theo [AGENTS](AGENTS.md) và [workflow GW](docs/gameweek-data-workflow.md). Mở GW, đổi deadline/roster, công bố/tái công bố kết quả và deploy cần phạm vi riêng.
+
+| Công việc | Tài liệu chính |
+| --- | --- |
+| Thu thập → backup → nhập → tổng mùa/TOW/readiness | [Gameweek workflow](docs/gameweek-data-workflow.md), [bằng chứng và kết quả Fantasy](docs/fantasy-results-2026.md) |
+| Hồ sơ, OVR, vị trí, lineup và tổng mùa | [Nhóm dữ liệu trong mục lục](docs/README.md#dữ-liệu) |
+| Auth/Google, luật Fantasy và minigame | [Nhóm tính năng](docs/README.md#tính-năng), [phát triển local](docs/README.md#phát-triển-local) |
+| Migration, release, backup/cutover và latency | [Nhóm vận hành](docs/README.md#vận-hành) |
+| Trạng thái GW và số liệu đã nhập | [Checkpoint có ngày/nguồn](PROJECT_CONTEXT.md#11-checkpoint-hiện-tại--dữ-liệu-và-vòng-thi) |
+
+Không coi code local hoặc một file Blueprint là bằng chứng đã deploy. Các lệnh nhập/release nằm trong hướng dẫn chuyên sâu để dùng khi được giao, không chạy theo một checkpoint cũ.
+
+## Phụ lục lịch sử README
+
+<details>
+<summary>Ghi chép dữ liệu, API-Football, Railway và nhập tay được giữ từ README trước đợt dọn 3</summary>
+
+Phần dưới được giữ nguyên để truy vết các mốc cũ, không phải hướng dẫn khởi động hiện hành. Ví dụ Railway và số liệu tại từng ngày không mô tả runtime hiện tại. Cơ chế bằng chứng v1/2024 và một số CLI nhập vẫn có thể được tham chiếu khi xử lý đúng mùa/phạm vi, sau đối chiếu code/config; quy trình 2026 hiện hành ở [mục lục dữ liệu](docs/README.md#dữ-liệu). Giới hạn 40/400 trong ghi chép cũ không phải chuẩn danh sách cầu thủ thực tế. Không chạy lại lệnh production, đổi nguồn hoặc ghi đè dữ liệu chỉ vì lệnh có trong phụ lục.
 
 Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
 
@@ -344,3 +358,5 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --premierhub.manual-match
 ```
 
 Lệnh chạy một lần rồi thoát; log `MANUAL_MATCH_STATS ... inserted=N`. Chạy lại **cùng file** phải báo `inserted=0`. Dòng đã lưu nhưng khác nội dung bị báo xung đột, không ghi đè. Chỉ build/test một lần khi đổi mã, không lặp theo từng CSV. Không đặt lệnh nhập làm Pre-deploy Command hoặc cron.
+
+</details>

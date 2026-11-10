@@ -1,84 +1,158 @@
+# PremierHub / PrismaXI — bộ request GET local chính
+# Chạy từng request; file này không tự gửi request hoặc tự lấy ID.
+# Các endpoint dưới đây là GET công khai, không cần body, đăng nhập hoặc CSRF.
+# Cần backend và dataset local phù hợp; auth-local không tự nạp dữ liệu EPL.
+# Không dùng file này để thử ghi dữ liệu hoặc kiểm tra production.
+
 @baseUrl = http://localhost:8080
 
-GET {{baseUrl}}/api/players
+# ID chưa được xác minh: thay REPLACE_* bằng số nguyên dương lấy từ response
+# danh sách cùng season: /api/clubs, /api/players hoặc /api/matches.
+# Nếu chưa thay placeholder, request theo ID có thể trả 400; không coi đó là lỗi API.
+# Có ID hợp lệ về định dạng chưa bảo đảm có dữ liệu hoặc chắc chắn trả 200.
+@clubId2026 = REPLACE_CLUB_ID_2026
+@playerId2026 = REPLACE_PLAYER_ID_2026
+@fixtureId2026 = REPLACE_FIXTURE_ID_2026
 
-###
-GET {{baseUrl}}/api/players/2
+# Chỉ dùng nhóm 404 sau khi thay bằng ID dương đã xác nhận không tồn tại
+# trong dataset/season đang kiểm tra. Các placeholder bên dưới không phải ID thật.
+@missingClubId2026 = REPLACE_MISSING_CLUB_ID_2026
+@missingPlayerId2026 = REPLACE_MISSING_PLAYER_ID_2026
+@missingFixtureId2026 = REPLACE_MISSING_FIXTURE_ID_2026
 
-###
-GET {{baseUrl}}/api/players/999
+# ===== 1. Mùa 2026/27 — tra cứu; không khẳng định trước kết quả dataset =====
 
-###
-GET {{baseUrl}}/api/players?club=Arsenal
+### 2026 — Danh sách CLB; lấy clubId từ response
+GET {{baseUrl}}/api/clubs?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/players?position=Forward
+### 2026 — CLB theo ID cần thay ở đầu file
+GET {{baseUrl}}/api/clubs/{{clubId2026}}?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/players?club=Arsenal&position=Forward
+### 2026 — Tìm CLB theo tên
+GET {{baseUrl}}/api/clubs/search?season=2026&keyword=united
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches
+### 2026 — Danh sách cầu thủ; lấy playerId từ response
+GET {{baseUrl}}/api/players?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches/1
+### 2026 — Cầu thủ theo ID cần thay ở đầu file
+GET {{baseUrl}}/api/players/{{playerId2026}}?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches/999
+### 2026 — Cầu thủ theo CLB
+GET {{baseUrl}}/api/players?season=2026&club=Arsenal
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches?club=Arsenal
+### 2026 — Vị trí không phân biệt hoa/thường: Forward
+GET {{baseUrl}}/api/players?season=2026&position=Forward
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches?matchweek=1
+### 2026 — Kết hợp CLB và vị trí
+GET {{baseUrl}}/api/players?season=2026&club=Arsenal&position=Forward
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches?club=Arsenal&matchweek=1
+### 2026 — Danh sách trận; lấy fixtureId từ response
+GET {{baseUrl}}/api/matches?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches?status=FINISHED
+### 2026 — Trận theo ID cần thay ở đầu file
+GET {{baseUrl}}/api/matches/{{fixtureId2026}}?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/matches?matchweek=0
+### 2026 — Trận của một CLB
+GET {{baseUrl}}/api/matches?season=2026&club=Arsenal
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/standings
+### 2026 — Trận theo vòng
+GET {{baseUrl}}/api/matches?season=2026&matchweek=1
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/standings?limit=5
+### 2026 — Kết hợp CLB và vòng
+GET {{baseUrl}}/api/matches?season=2026&club=Arsenal&matchweek=1
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/standings/1
+### 2026 — Trận đã kết thúc
+GET {{baseUrl}}/api/matches?season=2026&status=FINISHED
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/standings?limit=0
+### 2026 — Bảng xếp hạng
+GET {{baseUrl}}/api/standings?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/clubs/999
+### 2026 — Tối đa năm dòng đầu BXH
+GET {{baseUrl}}/api/standings?season=2026&limit=5
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/clubs/-1
+### 2026 — BXH theo clubId cần thay ở đầu file
+GET {{baseUrl}}/api/standings/{{clubId2026}}?season=2026
+Accept: application/json
 
-###
-GET {{baseUrl}}/api/clubs/search?keyword=
+# ===== 2. Mùa 2024/25 — ví dụ giai đoạn trước, season tường minh =====
+# Giữ ví dụ Arsenal/FORWARD/2024; không dùng ID mùa 2026 để suy dữ liệu mùa 2024.
 
-###
-GET {{baseUrl}}/api/players?position=STRIKER
-
-###
-GET {{baseUrl}}/api/players?club=
-
-###
-GET {{baseUrl}}/api/matches?matchweek=abc
-
-###
-GET {{baseUrl}}/api/matches?status=UNKNOWN
-
-###
-GET {{baseUrl}}/api/standings?limit=abc
-
-### Health check
-GET {{baseUrl}}/actuator/health
-
-###
+### 2024 — Cầu thủ Arsenal, FORWARD; có thể rỗng theo dataset
 GET {{baseUrl}}/api/players?season=2024&club=Arsenal&position=FORWARD
+Accept: application/json
+
+# ===== 3. Lỗi validation/type dự kiến 400 theo controller/handler =====
+# Đây là các đầu vào cố ý sai, không phải endpoint đã bị bỏ.
+
+### 400 dự kiến — Vòng dưới 1
+GET {{baseUrl}}/api/matches?season=2026&matchweek=0
+Accept: application/json
+
+### 400 dự kiến — Limit dưới 1
+GET {{baseUrl}}/api/standings?season=2026&limit=0
+Accept: application/json
+
+### 400 dự kiến — ID CLB âm
+GET {{baseUrl}}/api/clubs/-1?season=2026
+Accept: application/json
+
+### 400 dự kiến — Từ khóa rỗng
+GET {{baseUrl}}/api/clubs/search?season=2026&keyword=
+Accept: application/json
+
+### 400 dự kiến — Enum vị trí không hỗ trợ
+GET {{baseUrl}}/api/players?season=2026&position=STRIKER
+Accept: application/json
+
+### 400 dự kiến — Tên CLB rỗng
+GET {{baseUrl}}/api/players?season=2026&club=
+Accept: application/json
+
+### 400 dự kiến — Vòng sai kiểu số
+GET {{baseUrl}}/api/matches?season=2026&matchweek=abc
+Accept: application/json
+
+### 400 dự kiến — Enum trạng thái không hỗ trợ
+GET {{baseUrl}}/api/matches?season=2026&status=UNKNOWN
+Accept: application/json
+
+### 400 dự kiến — Limit sai kiểu số
+GET {{baseUrl}}/api/standings?season=2026&limit=abc
+Accept: application/json
+
+# ===== 4. Dự kiến 404 — chỉ sau khi xác minh ID không tồn tại =====
+# Chưa thay REPLACE_* thì có thể nhận 400 thay vì 404. Không giả định ID 999 luôn vắng.
+
+### 404 có điều kiện — Cầu thủ không có trong dataset mùa 2026
+GET {{baseUrl}}/api/players/{{missingPlayerId2026}}?season=2026
+Accept: application/json
+
+### 404 có điều kiện — Trận không có trong dataset mùa 2026
+GET {{baseUrl}}/api/matches/{{missingFixtureId2026}}?season=2026
+Accept: application/json
+
+### 404 có điều kiện — CLB không có trong dataset mùa 2026
+GET {{baseUrl}}/api/clubs/{{missingClubId2026}}?season=2026
+Accept: application/json
+
+# ===== 5. Health — không thuộc season; trạng thái thực tế chưa được kiểm tra =====
+
+### Health check — không khẳng định trước HTTP status
+GET {{baseUrl}}/actuator/health
+Accept: application/json

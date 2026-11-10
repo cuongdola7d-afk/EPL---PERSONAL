@@ -1,5 +1,7 @@
 # Giai đoạn 1 — Java và CSV
 
+> Ghi chú ngày 10/11/2026: các sprint và lệnh cũ bên dưới là lịch sử học tập. Console `App` hiện đọc `backend/data/{clubs,players,matches}.csv` từ filesystem; ba bản sao demo trong resources đã được bỏ. Lệnh chạy hiện tại ở [README](../README.md#chạy-console-demo-javacsv); không cần Spring hoặc database để chạy demo.
+
 ## Lộ trình từng bước
 
 1. `Club`: đối tượng câu lạc bộ, kiểm tra đầu vào, unit test và bài tập tìm tên.

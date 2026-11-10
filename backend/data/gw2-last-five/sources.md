@@ -30,3 +30,13 @@ Tổng bàn của bốn trận khớp tỷ số; riêng Chelsea–Brighton có s
 - Chưa nhập MySQL production, chưa commit/push/deploy. Chỉ điền bốn ô còn trống nếu người dùng cung cấp bằng chứng mới.
 
 Commit message đề xuất sau khi chốt dữ liệu: `data: complete remaining five GW2 2026 manual match fixtures`.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW2-last-five-DRAFT.csv` | [manual-players-2026-GW2-last-five.csv](manual-players-2026-GW2-last-five.csv) | `5d6a6f88535d4b416d2df8c8061f91d737f0aecd5c9452d6c5b15aa23fd59e14` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.

@@ -1,14 +1,22 @@
 {
+    "version": "0.2.0",
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-App<backend>",
+            "name": "Web - Spring Boot (auth-local H2)",
             "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "com.premierhub.App",
-            "projectName": "backend",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "cwd": "${workspaceFolder}/backend",
+            "mainClass": "com.premierhub.PremierHubApplication",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "auth-local"
+            }
+        },
+        {
+            "type": "java",
+            "name": "Console - CSV demo",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/backend",
+            "mainClass": "com.premierhub.App"
         }
     ]
 }

@@ -1,6 +1,6 @@
 # GW5 2026/27 — batch sau, năm trận theo ngày thi đấu
 
-Batch được thu thập ban đầu để chờ ảnh rating. `lineups.csv` có đủ 200 cầu thủ của năm trận. `manual-match-stats-2026-GW5-last-five-DRAFT.csv` chỉ có 140 khóa còn thiếu trên MySQL production: 104 `PLAYED` ban đầu để rating trống và 36 `DID_NOT_PLAY`. `manual-players-2026-GW5-last-five-DRAFT.csv` bổ sung 140 khoảng membership đúng ngày trận. `ratings-needed.csv` là danh sách chờ ảnh ở giai đoạn DRAFT. Không tự gán rating 0 cho người không hiển thị điểm.
+Batch được thu thập ban đầu để chờ ảnh rating. `lineups.csv` có đủ 200 cầu thủ của năm trận. `manual-match-stats-2026-GW5-last-five-DRAFT.csv` chỉ có 140 khóa còn thiếu trên MySQL production: 104 `PLAYED` ban đầu để rating trống và 36 `DID_NOT_PLAY`. `manual-players-2026-GW5-last-five-DRAFT.csv` (tên lịch sử; hiện được thay bằng [bản chính](manual-players-2026-GW5-last-five.csv) có nội dung giống hệt) bổ sung 140 khoảng membership đúng ngày trận. `ratings-needed.csv` là danh sách chờ ảnh ở giai đoạn DRAFT. Không tự gán rating 0 cho người không hiển thị điểm.
 
 | Fixture | Trận | Dòng production trước batch | CSV bổ sung | PLAYED cần đối chiếu ảnh | Nguồn thống nhất đội hình/chỉ số |
 | --- | --- | ---: | ---: | ---: | --- |
@@ -16,7 +16,7 @@ Importer H2 cô lập sao chép production và dữ liệu GW4 đã nhận roste
 
 ## Ảnh rating nhận sau bản DRAFT
 
-Ảnh người dùng đã cho rating của 100 trong 104 người `PLAYED` mới. Bốn người có vào sân nhưng ảnh không hiển thị rating là Ben Gannon-Doak (3 phút), Alex Tóth (3 phút), Jean-Mattéo Bahoya (1 phút) và Joel Latibeaudiere (1 phút); họ giữ `rating=NULL`, `fantasy_points=NULL`, không điền 0. Bản áp rating nằm ở `manual-match-stats-2026-GW5-last-five-RATINGS.csv`; CSV cuối chỉ gồm 140 khóa mới là `manual-match-stats-2026-GW5-last-five.csv`.
+Ảnh người dùng đã cho rating của 100 trong 104 người `PLAYED` mới. Bốn người có vào sân nhưng ảnh không hiển thị rating là Ben Gannon-Doak (3 phút), Alex Tóth (3 phút), Jean-Mattéo Bahoya (1 phút) và Joel Latibeaudiere (1 phút); họ giữ `rating=NULL`, `fantasy_points=NULL`, không điền 0. Bản áp rating ban đầu mang tên `manual-match-stats-2026-GW5-last-five-RATINGS.csv`; nay nội dung được giữ nguyên trong [bản chính](manual-match-stats-2026-GW5-last-five.csv); CSV cuối chỉ gồm 140 khóa mới là `manual-match-stats-2026-GW5-last-five.csv`.
 
 Đối chiếu 20 dòng Manchester City đã lưu phát hiện ba xung đột tại fixture `1000560590`:
 
@@ -31,3 +31,14 @@ Theo quyết định của người dùng, giữ ba rating production và không
 `user-provided-ratings.csv` lưu 142 rating hiển thị trong ảnh (gồm 42 khóa production đã có); `confirmed-unrated.csv` ghi bốn người không được chấm; `production-rating-conflicts.csv` ghi ba chênh lệch và quyết định `KEEP_PRODUCTION`. Hai bản `RATINGS` đã nhập thử trên H2 cô lập, thêm 320 khóa mới và giữ nguyên 80 khóa cũ. H2 mô phỏng toàn GW5 có 400 dòng: 298 `PLAYED` có rating, bốn `PLAYED` không được chấm giữ cả rating và điểm `NULL`, 98 `DID_NOT_PLAY` có điểm 0.
 
 Hai CSV cuối của batch là `manual-players-2026-GW5-last-five.csv` và `manual-match-stats-2026-GW5-last-five.csv`. Trước ghi production, preflight xác nhận Railway MySQL `railway`, 80 khóa cũ khớp CSV, 320 khóa mới chưa tồn tại và GW4 vẫn 400 dòng. Bản sao lưu SQL mới lưu ngoài Git tại `backend/local-backups/gw5-2026/premierhub-before-gw5-20261001-235815.sql` (714011 byte; SHA-256 `E9E8F9327D1C665EDA41690E5409621CB3B20C28822F0158B4FD11FFF2434D84`). Production import ngày 02/10/2026 thêm 140 khoảng membership và 140 dòng thống kê; nhập lại cả hai thêm 0. MySQL đọc lại khớp từng trường của cả 80 dòng cũ lẫn 320 dòng mới. API production trả đủ 10 trận GW5, mỗi trận 20 cầu thủ mỗi đội, và lịch sử cầu thủ cho thấy rating cũ được giữ nguyên. Toàn GW5 có **400 dòng: 298 có rating, bốn `PLAYED` không được chấm, 98 `DID_NOT_PLAY` có điểm 0**. Không sửa mùa 2024/25, mã ứng dụng hoặc cấu hình deploy.
+
+## Dọn bản CSV trùng — 10/11/2026
+
+Theo phạm vi được người dùng giao, đã đối chiếu nội dung byte và SHA-256 đầy đủ trước khi xóa các bản sao dưới đây. Bản chính cùng thư mục được giữ nguyên nội dung. Tên cũ trong ghi chép phía trên mô tả diễn biến lịch sử; khi cần đối chiếu hoặc dùng đầu vào, dùng bản chính được liên kết trong bảng.
+
+| Tên cũ đã bỏ | Bản chính giữ nguyên | SHA-256 chung của hai bản trước khi xóa |
+| --- | --- | --- |
+| `manual-players-2026-GW5-last-five-DRAFT.csv` | [manual-players-2026-GW5-last-five.csv](manual-players-2026-GW5-last-five.csv) | `af0a8c6264d6f3d20146db7f6378fea1535ba537aa143ee4cfeb21338de54059` |
+| `manual-match-stats-2026-GW5-last-five-RATINGS.csv` | [manual-match-stats-2026-GW5-last-five.csv](manual-match-stats-2026-GW5-last-five.csv) | `8625ba7889cbea4a5b619089a25661bdf88523dcab5b9c96edd47945f7cf6af7` |
+
+Các CSV khác, gồm bản DRAFT thống kê có nội dung khác và mọi bằng chứng/nguồn của batch, vẫn được giữ nguyên. Đợt dọn này không chạy importer, không thay database hoặc Fantasy source_ref/hash; không commit/push/deploy.
