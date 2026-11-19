@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PrismaXI · Minigame (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e9f2ef;--bg2:#d6e8e2;--card:#ffffff;--card2:#f3f8f6;--line:rgba(16,44,54,.09);
+  --text:#0f2a33;--mute:#5d7a83;--acc:#14b988;--acc2:#0a8f68;--onacc:#ffffff;
+  --shadow:0 12px 32px rgba(16,44,54,.09);--chip-bg:rgba(16,44,54,.06);--hover:rgba(16,44,54,.05);--bar:rgba(233,242,239,.86);
+  --accword:#0a8f68;--ink:#0f2a33;--sheet:#ffffff;--warn:#d9822b;--bad:#e05252;--good:#1fb37f;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a171d;--bg2:#10303a;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.035);--line:rgba(255,255,255,.09);
+    --text:#eaf5f2;--mute:#8aa6ae;--acc:#46e2b5;--acc2:#23bb90;--onacc:#05241c;
+    --shadow:0 16px 36px rgba(0,0,0,.38);--chip-bg:rgba(255,255,255,.08);--hover:rgba(255,255,255,.07);--bar:rgba(10,23,29,.86);
+    --accword:#46e2b5;--ink:#0c1f27;--sheet:#12272f;--warn:#f4b63f;--bad:#ff7d7d;--good:#46e2b5;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a171d;--bg2:#10303a;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.035);--line:rgba(255,255,255,.09);
+  --text:#eaf5f2;--mute:#8aa6ae;--acc:#46e2b5;--acc2:#23bb90;--onacc:#05241c;
+  --shadow:0 16px 36px rgba(0,0,0,.38);--chip-bg:rgba(255,255,255,.08);--hover:rgba(255,255,255,.07);--bar:rgba(10,23,29,.86);
+  --accword:#46e2b5;--ink:#0c1f27;--sheet:#12272f;--warn:#f4b63f;--bad:#ff7d7d;--good:#46e2b5;
+}
+html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px))}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);
+  background:radial-gradient(900px 420px at 15% -8%,var(--bg2),transparent 70%),var(--bg);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+button:disabled{cursor:not-allowed}
+a{color:inherit;text-decoration:none}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 56px}
+.nav{position:sticky;top:0;z-index:20;background:var(--bar);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nin{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.03em;flex:none}
+.brand b{color:var(--accword);font-weight:800}
+.links{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0 4px}
+.links::-webkit-scrollbar{display:none}
+.links a{flex:none;padding:8px 14px;border-radius:12px;font-weight:600;font-size:14px;color:var(--mute);border:1px solid transparent}
+.links a:hover{color:var(--text);background:var(--hover)}
+.links a[aria-current="page"]{color:var(--text);border-color:var(--acc);background:var(--chip-bg)}
+.nr{display:flex;gap:8px;align-items:center;flex:none}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.me{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:14px}
+.me .a{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc),var(--acc2));color:var(--onacc);font-weight:800;font-size:12px}
+.login{padding:8px 16px;border-radius:99px;background:var(--acc);color:var(--onacc);font-weight:700;font-size:14px}
+.dev{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border:1px dashed var(--line);border-radius:18px;font-size:13px;color:var(--mute)}
+.dev select{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow)}
+.back{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-weight:500;color:var(--mute)}
+.back:hover{color:var(--text)}
+
+/* hub */
+.hero{position:relative;overflow:hidden;padding:26px 24px;border-radius:28px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:14px}
+.hero svg.deco{position:absolute;right:-30px;top:-40px;width:240px;height:240px;color:var(--acc);opacity:.16;pointer-events:none}
+.hero h1{margin:0;font-size:34px;line-height:1.12;font-weight:800;letter-spacing:-.035em}
+.hero p{margin:6px 0 0;color:var(--mute);max-width:520px}
+.daily{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;border-radius:22px;background:linear-gradient(135deg,rgba(70,226,181,.16),rgba(111,173,246,.12));border:1px solid var(--line);margin-bottom:18px}
+.daily .ic{width:46px;height:46px;border-radius:16px;background:var(--acc);color:var(--onacc);display:grid;place-items:center;flex:none}
+.daily .tx{flex:1 1 220px;min-width:0}
+.daily .tx b{display:block;font-size:16px}
+.daily .tx span{color:var(--mute);font-size:14px}
+.clock{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;letter-spacing:-.01em;padding:6px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.sec-t{margin:6px 2px 12px;font-size:20px;font-weight:700}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.gc{display:flex;flex-direction:column;border-radius:28px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;transition:transform .2s,border-color .2s}
+.gc.on:hover{transform:translateY(-4px);border-color:var(--acc)}
+.art{position:relative;aspect-ratio:16/10;background:#0f2a33;overflow:hidden}
+.art svg{width:100%;height:100%;display:block}
+.badge{position:absolute;top:12px;left:12px;padding:4px 12px;border-radius:99px;font-weight:700;font-size:12px;background:var(--acc);color:var(--onacc)}
+.badge.soon{background:rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(6px)}
+.gb{display:flex;flex-direction:column;gap:8px;padding:18px 20px 20px;flex:1}
+.gb h3{margin:0;font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.2}
+.gb p{margin:0;color:var(--mute);font-size:15px;line-height:1.6;flex:1}
+.play{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;border-radius:99px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:var(--onacc);font-weight:700;font-size:16px;box-shadow:0 10px 24px rgba(20,185,136,.26)}
+.play:disabled{background:var(--chip-bg);color:var(--mute);box-shadow:none}
+.gc:not(.on){opacity:.82}
+
+/* sheet */
+.ov{position:fixed;inset:0;z-index:30;display:none;align-items:flex-end;justify-content:center;background:rgba(5,15,20,.58);backdrop-filter:blur(6px)}
+.ov.open{display:flex}
+.sheet{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--sheet);border:1px solid var(--line);border-radius:28px 28px 0 0;padding:20px;box-shadow:0 -20px 50px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@media(min-width:640px){.ov{align-items:center}.sheet{border-radius:28px}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.sh-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.sh-h h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.sh-h span{color:var(--mute);font-size:14px}
+.md{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;padding:16px;border-radius:22px;background:var(--card2);border:1px solid var(--line);margin-bottom:10px;transition:border-color .2s,transform .2s}
+.md:hover{border-color:var(--acc);transform:translateY(-2px)}
+.md .top{display:flex;align-items:center;gap:14px}
+.md .mi{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;flex:none}
+.md .mi.d{background:var(--acc);color:var(--onacc)}.md .mi.p{background:#6fadf6;color:#08234d}
+.md b{font-size:18px;display:block;line-height:1.2}
+.md .ds{color:var(--mute);font-size:14px;line-height:1.55}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tg{font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--chip-bg);color:var(--mute)}
+.tg.t{background:rgba(70,226,181,.16);color:var(--accword)}
+.tg.w{background:rgba(244,182,63,.18);color:var(--warn)}
+.md .go{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--accword);font-size:15px}
+
+/* game */
+.gh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.gh .ti{flex:1;min-width:0}
+.gh h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.mchip{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:99px;font-weight:600;font-size:13px;background:var(--chip-bg)}
+.mchip.d{background:rgba(70,226,181,.16);color:var(--accword)}
+.mchip .clock{font-size:13px;padding:0;border:0;background:none;font-weight:700}
+.seg{display:flex;gap:4px;padding:4px;border-radius:99px;background:var(--card);border:1px solid var(--line);margin-bottom:14px;max-width:340px}
+.seg button{flex:1;padding:8px 16px;border-radius:99px;font-weight:600;font-size:14px;color:var(--mute);transition:background .2s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--onacc)}
+.gl{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;align-items:start}
+.pn{padding:18px;border-radius:26px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.stat{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;padding:16px 18px;border-radius:22px;background:var(--card2);border:1px solid var(--line);margin-bottom:14px}
+.sc .v{font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.sc .l{font-size:13px;color:var(--mute);margin-top:4px}
+.sc.low .v{color:var(--warn)}.sc.zero .v{color:var(--bad)}
+.pips{display:flex;gap:8px;justify-content:center}
+.pip{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:800}
+.pip.live{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.pip.used{background:rgba(224,82,82,.18);border-color:var(--bad);color:var(--bad)}
+.mid{text-align:center}
+.mid .l{font-size:13px;color:var(--mute);margin-top:6px}
+.hc{text-align:right}
+.hc .v{font-size:24px;font-weight:800;line-height:1}
+.hc .l{font-size:13px;color:var(--mute);margin-top:4px}
+.hg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ht{position:relative;display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;background:var(--card2);border:1px solid var(--line);min-height:76px;transition:border-color .3s,background .3s}
+.ht .hi{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:var(--chip-bg);color:var(--mute);flex:none}
+.ht .k{font-size:12px;font-weight:600;color:var(--mute)}
+.ht .v{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.ht.open{background:var(--card)}
+.ht.open .hi{background:rgba(70,226,181,.16);color:var(--accword)}
+.ht.lock .v{color:var(--mute);letter-spacing:.2em;font-weight:700}
+.ht.nx{border-color:var(--acc);border-style:dashed}
+.ht.new{animation:pulse 1.4s ease-out 1;border-color:var(--acc)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(70,226,181,.6)}100%{box-shadow:0 0 0 14px rgba(70,226,181,0)}}
+.ob{display:inline-grid;place-items:center;min-width:44px;height:30px;padding:0 10px;border-radius:11px;font-weight:800;font-size:17px;letter-spacing:0}
+.t-1{background:linear-gradient(135deg,#ffe49a,#f4b63f);color:#4a3000}
+.t-2{background:linear-gradient(135deg,#9af2cf,#3fd8a4);color:#04402e}
+.t-3{background:linear-gradient(135deg,#b4d9ff,#6fadf6);color:#0b2c56}
+.t-4{background:linear-gradient(135deg,#e3e9ec,#c3ced3);color:#33454b}
+.hb{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin-top:12px;padding:12px 18px;border-radius:99px;border:1.5px solid var(--acc);color:var(--accword);font-weight:700;font-size:16px;transition:background .2s,color .2s}
+.hb small{font-weight:500;font-size:12.5px;color:var(--mute)}
+.hb:hover:not(:disabled){background:var(--acc);color:var(--onacc)}
+.hb:hover:not(:disabled) small{color:var(--onacc)}
+.hb:disabled{border-color:var(--line);color:var(--mute);background:var(--chip-bg)}
+.pn h2{margin:0 0 12px;font-size:18px;font-weight:700}
+.sb{position:relative}
+.sb svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--mute);pointer-events:none}
+.sb input{width:100%;padding:14px 16px 14px 46px;border-radius:99px;border:1px solid var(--line);background:var(--card2);font-size:16px}
+.sb input::placeholder{color:var(--mute)}
+.sug{margin-top:8px;border-radius:20px;background:var(--card2);border:1px solid var(--line);overflow:hidden}
+.sug button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 16px;font-weight:600;border-bottom:1px solid var(--line)}
+.sug button:last-child{border-bottom:0}
+.sug button:hover,.sug button.hi{background:var(--hover)}
+.sug .tg{flex:none}
+.sug .none{padding:16px;color:var(--mute);font-size:14px;text-align:center}
+.selc{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 14px;border-radius:18px;background:rgba(70,226,181,.12);border:1px solid var(--acc)}
+.selc b{font-size:16px}
+.err{margin-top:10px;padding:10px 14px;border-radius:16px;background:rgba(224,82,82,.14);color:var(--bad);font-weight:600;font-size:14px}
+.confirm{width:100%;margin-top:12px;padding:13px 20px;border-radius:99px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:var(--onacc);font-weight:700;font-size:16px;box-shadow:0 10px 24px rgba(20,185,136,.26)}
+.confirm:disabled{background:var(--chip-bg);color:var(--mute);box-shadow:none}
+.hist{margin-top:16px}
+.hist .t{font-size:13px;font-weight:600;color:var(--mute);margin-bottom:8px}
+.gr{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:16px;background:var(--card2);border:1px solid var(--line);margin-bottom:8px}
+.gr .x{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(224,82,82,.16);color:var(--bad)}
+.gr.ok .x{background:rgba(70,226,181,.18);color:var(--good)}
+.gr .n{font-weight:600}
+.gr .s{font-size:12.5px;color:var(--mute)}
+.gr .pt{font-weight:800;color:var(--bad)}
+.gr.ok .pt{color:var(--good)}
+.empt{padding:14px;border-radius:16px;border:1px dashed var(--line);color:var(--mute);font-size:14px;text-align:center}
+.res{text-align:center;padding:8px 4px 4px}
+.res .big{font-size:56px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.res.win .big{color:var(--good)}.res.lose .big{color:var(--bad)}
+.res h2{margin:6px 0 4px;font-size:24px}
+.ans{display:flex;align-items:center;gap:14px;text-align:left;padding:14px;border-radius:20px;background:var(--card2);border:1px solid var(--line);margin:14px 0}
+.av{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:19px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);box-shadow:0 8px 16px rgba(0,0,0,.25)}
+.ans b{font-size:20px;letter-spacing:-.02em;display:block;line-height:1.2}
+.ans span{color:var(--mute);font-size:14px}
+.ra{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.btn{padding:12px 22px;border-radius:99px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:var(--onacc);font-weight:700;box-shadow:0 10px 24px rgba(20,185,136,.26)}
+.btn2{padding:12px 22px;border-radius:99px;border:1px solid var(--line);background:var(--card2);font-weight:600;color:var(--text)}
+.nxt{margin-top:14px;color:var(--mute);font-size:14px}
+.nxt .clock{font-size:15px;padding:2px 10px;margin-left:4px}
+.rk{display:grid;grid-template-columns:44px 42px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:18px}
+.rk.me{background:rgba(70,226,181,.14);box-shadow:inset 0 0 0 1px var(--acc)}
+.rk .n{font-weight:800;color:var(--mute);text-align:center;font-size:16px}
+.rk:nth-child(1) .n{color:#f4b63f}.rk:nth-child(2) .n{color:#b9c4c9}.rk:nth-child(3) .n{color:#d08a52}
+.rk .av{width:42px;height:42px;font-size:14px;box-shadow:none}
+.rk .nm{font-weight:600}
+.rk .pt{font-weight:800;font-size:19px;text-align:right}
+.eq{font-size:11px;font-weight:600;color:var(--mute);margin-left:6px}
+.note{font-size:12.5px;color:var(--mute);margin-top:12px}
+.rk.hd{padding-top:0;padding-bottom:6px;font-size:12px;font-weight:600;color:var(--mute)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#fx{position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden}
+.fxflash{position:absolute;inset:0;opacity:0}
+.fxflash.win{background:radial-gradient(circle at 50% 45%,rgba(70,226,181,.4),transparent 62%);animation:flash 1.2s ease-out forwards}
+.fxflash.bad{background:radial-gradient(circle at 50% 50%,transparent 36%,rgba(224,82,82,.55) 100%);animation:flash 1s ease-out forwards}
+@keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.fxcard{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.6);opacity:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 38px;border-radius:30px;background:var(--sheet);border:2px solid var(--acc);box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center;max-width:88vw;animation:pop 2s cubic-bezier(.2,.9,.3,1.2) forwards}
+.fxcard.bad{border-color:var(--bad)}
+.fxcard .ic{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:var(--onacc);margin-bottom:4px}
+.fxcard.bad .ic{background:var(--bad);color:#fff}
+.fxcard b{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.fxcard .s{font-size:15px;color:var(--mute)}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.07)}20%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-58%) scale(.96)}}
+.cf{position:absolute;top:-24px;width:10px;height:16px;border-radius:3px;opacity:0;animation:fall var(--d) cubic-bezier(.25,.6,.4,1) var(--dl) forwards}
+@keyframes fall{0%{opacity:1;transform:translate3d(0,0,0) rotate(0)}100%{opacity:1;transform:translate3d(var(--x),112vh,0) rotate(var(--r))}}
+.shake{animation:shake .55s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
+.sk{border-radius:20px;height:78px;margin-bottom:10px;background:linear-gradient(90deg,var(--chip-bg),var(--hover),var(--chip-bg));background-size:200% 100%;animation:sh 1.1s infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.emp{padding:48px 16px;text-align:center;color:var(--mute)}
+.emp b{display:block;font-size:19px;color:var(--text);margin-bottom:6px}
+.emp button{margin-top:16px}
+.rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.rules li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;font-size:15px;line-height:1.55}
+.rules .n{width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--onacc);font-weight:800;font-size:13px;display:grid;place-items:center}
+.ex{margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--card2);border:1px solid var(--line);font-size:14px;color:var(--mute)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;padding:10px 20px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:600;font-size:14px;transition:all .25s;z-index:60;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.foot{margin-top:24px;text-align:center;font-size:13px;color:var(--mute)}
+/* ===== Cao hay thấp ===== */
+.hl-stat{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-radius:22px;background:var(--card2);border:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.hl-stat .v{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.hl-stat .l{font-size:13px;color:var(--mute);margin-top:4px}
+.hl-stat .v2{font-size:26px;font-weight:800;line-height:1}
+.hl-dots{display:flex;gap:6px;flex:1;justify-content:center;min-width:180px}
+.hdot{width:100%;max-width:26px;height:9px;border-radius:99px;background:var(--line);transition:background .3s}
+.hdot.ok{background:var(--good)}.hdot.bad{background:var(--bad)}.hdot.cur{background:var(--warn)}
+.hl-q{text-align:center;font-size:18px;color:var(--mute);margin:2px 0 18px;line-height:1.5}
+.hl-q b{color:var(--text)}
+.hl-row{display:grid;grid-template-columns:1fr auto 1fr;gap:22px;align-items:center;justify-items:center}
+.hl-c{width:100%;display:flex;justify-content:center}
+.hl-mid{display:flex;flex-direction:column;align-items:center;gap:12px}
+.hl-vs{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--mute)}
+.hl-arw{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;border:2px solid transparent;transition:transform .15s,opacity .2s,background .2s,box-shadow .2s}
+.hl-arw.up{background:rgba(70,226,181,.16);color:var(--accword);border-color:var(--acc)}
+.hl-arw.down{background:rgba(224,82,82,.14);color:var(--bad);border-color:var(--bad)}
+.hl-arw.up:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 10px 22px rgba(70,226,181,.32)}
+.hl-arw.down:hover:not(:disabled){transform:translateY(3px);box-shadow:0 10px 22px rgba(224,82,82,.3)}
+.hl-arw:disabled{opacity:.3}
+.hl-arw.sel{opacity:1;color:#fff}
+.hl-arw.sel.ok{background:#25b97f;border-color:#25b97f}
+.hl-arw.sel.bad{background:#e05252;border-color:#e05252}
+.hl-ask{text-align:center;font-size:21px;font-weight:600;line-height:1.4;margin:4px auto 22px;max-width:640px;color:var(--mute)}
+.hl-ask b{color:var(--text);font-weight:800}
+.hl-ask em{font-style:normal;font-weight:800;color:var(--warn)}
+@media(max-width:700px){.hl-ask{font-size:17px;margin-bottom:16px}}
+.hl-tag{display:flex;justify-content:center;margin:2px 0 20px}
+.hl-tag span{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:99px;font-size:17px;font-weight:800;background:rgba(244,182,63,.16);color:var(--warn)}
+.hl-pop{text-align:center;padding:6px 4px 2px}
+.hl-pop .ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 10px;background:rgba(224,82,82,.16);color:var(--bad)}
+.hl-pop .ic.best{background:rgba(244,182,63,.2);color:var(--warn)}
+.hl-pop h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.hl-pop .lbl{margin-top:16px;font-size:13px;font-weight:700;color:var(--mute);text-transform:none}
+.hl-pop .big{font-size:72px;font-weight:800;letter-spacing:-.05em;line-height:1;margin-top:2px}
+.hl-pop .bst{display:inline-flex;gap:6px;margin-top:10px;padding:5px 14px;border-radius:99px;background:var(--chip-bg);color:var(--mute);font-size:14px;font-weight:600}
+.hl-pop .bst b{color:var(--text)}
+.hl-pop .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.hl-pop .acts .btn,.hl-pop .acts .btn2{display:flex;justify-content:center;align-items:center;padding:13px 16px;font-size:16px}
+.ov.pop .sheet{max-width:400px}
+.hl-end .big{font-size:56px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--text)}
+.hl-end .nb{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:700;background:rgba(244,182,63,.18);color:var(--warn)}
+.hl-tip{text-align:center;font-size:12.5px;color:var(--mute);margin-top:16px}
+.fc-stat{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(0,0,0,.14)}
+.fc.mystery .fc-stat{background:rgba(70,226,181,.14)}
+.fc-stat .k{font-size:12px;font-weight:700;opacity:.8}
+.fc-stat .v{font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.fc-stat .v.q{color:#46e2b5;animation:qp 1.4s ease-in-out infinite}
+.fc{position:relative;width:100%;max-width:272px;border-radius:28px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:10px;overflow:hidden;color:var(--ink2,#1b2f37);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.fc::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.3) 45%,transparent 60%);transform:translateX(-70%);pointer-events:none}
+.fc.rv::before{animation:sheen 1.5s ease-out .3s 1}
+@keyframes sheen{to{transform:translateX(70%)}}
+.fc.gold{background:linear-gradient(160deg,#f8e49a,#dcab3b 55%,#b98424);--ink2:#3a2704}
+.fc.rare{background:linear-gradient(160deg,#fff0b0,#f2bb3c 50%,#c98a1d);--ink2:#3a2704;box-shadow:0 18px 40px rgba(244,182,63,.32)}
+.fc.silver{background:linear-gradient(160deg,#eef3f5,#aebbc2 60%,#8a9aa3);--ink2:#1b2f37}
+.fc.bronze{background:linear-gradient(160deg,#efc09b,#b97a47 60%,#8d5a30);--ink2:#3b1f0b}
+.fc.prism{background:linear-gradient(140deg,#6ff0c8,#6fadf6 50%,#f4b63f);--ink2:#06222a;box-shadow:0 18px 44px rgba(70,226,181,.38)}
+.fc.mystery{background:linear-gradient(160deg,#17404d,#0b2029);--ink2:#eaf5f2;outline:2px dashed rgba(70,226,181,.6);outline-offset:-6px}
+.fc-hd{display:flex;justify-content:space-between;align-items:flex-start}
+.fc-lbl{font-size:11px;font-weight:700;opacity:.7;display:block}
+.fc-ovr{font-size:60px;font-weight:800;line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.fc-ovr.q{color:#46e2b5;animation:qp 1.4s ease-in-out infinite}
+@keyframes qp{50%{transform:scale(1.1);opacity:.7}}
+.fc-pos{font-size:17px;font-weight:800;margin-top:4px}
+.fc-av{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:34px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.3);box-shadow:0 0 0 4px rgba(255,255,255,.55),0 12px 24px rgba(0,0,0,.3);flex:none}
+.fc-name{text-align:center;font-weight:800;font-size:21px;letter-spacing:-.02em;line-height:1.15;padding-bottom:9px;border-bottom:2px solid rgba(0,0,0,.18)}
+.fc.mystery .fc-name{border-color:rgba(255,255,255,.2)}
+.fc-info{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.fc-info .k{font-size:11px;font-weight:600;opacity:.72}
+.fc-info .v{font-size:15px;font-weight:800;line-height:1.2;word-break:break-word}
+.fc.rv{animation:flip .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes flip{0%{transform:perspective(900px) rotateY(88deg)}100%{transform:perspective(900px) rotateY(0)}}
+.hl-c.enter .fc{animation:enterR .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes enterR{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+.hl-c.shift .fc{animation:shiftL .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes shiftL{from{transform:translateX(130px)}to{transform:none}}
+.hl-msg{text-align:center;margin-top:18px;font-weight:700;font-size:17px}
+.hl-msg.ok{color:var(--good)}.hl-msg.bad{color:var(--bad)}
+.hl-end{margin-top:18px;padding:18px;border-radius:24px;background:var(--card2);border:1px solid var(--line);text-align:center}
+.hl-end h2{margin:0;font-size:24px}
+.hl-end p{margin:4px 0 12px;color:var(--mute)}
+.hchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px}
+.hchip{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:99px}
+.hchip.ok{background:rgba(37,185,127,.18);color:var(--good)}.hchip.bad{background:rgba(224,82,82,.16);color:var(--bad)}
+.daily .sts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fxcard.mini{padding:14px 28px;animation-duration:1.5s}
+.fxcard.mini .ic{width:44px;height:44px}
+.fxcard.mini b{font-size:22px}
+@media(max-width:700px){
+  .hl-row{grid-template-columns:1fr;gap:10px}
+  .hl-mid{gap:10px}
+  .hl-vs{width:40px;height:40px;font-size:12px}
+  .hl-arw{width:54px;height:54px}
+  .hl-tip{display:none}
+  .fc{max-width:none;display:grid;grid-template-columns:104px 1fr;gap:4px 14px;padding:14px;border-radius:24px;align-items:center}
+  .fc-hd{flex-direction:column;align-items:center;gap:8px}
+  .fc-s{display:flex;flex-direction:column;align-items:center}
+  .fc-ovr{font-size:44px}.fc-av{width:68px;height:68px;font-size:23px}
+  .fc-name{font-size:18px;text-align:left;padding-bottom:6px;margin-bottom:6px}
+  .fc-info{gap:6px 10px}.fc-info .v{font-size:14px}
+  .hl-q{font-size:16px}
+}
+@media(max-width:860px){.gl{grid-template-columns:1fr}}
+@media(max-width:560px){
+  .brand span.w{display:none}.hero{padding:20px 18px}.hero h1{font-size:27px}.hero svg.deco{width:170px;height:170px}
+  .gg{grid-template-columns:1fr}.gb h3{font-size:22px}
+  .pn{padding:14px;border-radius:22px}.stat{grid-template-columns:auto 1fr;gap:12px}.stat .hc{display:none}
+  .sc .v{font-size:40px}.hg{gap:8px}.ht{padding:12px;gap:10px;min-height:70px}.ht .v{font-size:17px}
+  .gh h1{font-size:22px}.mopt{display:none}.me span.nm{display:none}.me{padding:4px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.fxcard{opacity:1;transform:translate(-50%,-50%) scale(1)}.cf,.fxflash{display:none}}
+</style>
+</head>
+<body>
+<header class="nav"><div class="nin">
+  <a class="brand" href="#minigame" aria-label="PrismaXI"><span id="logo"></span><span class="w">Prisma<b>XI</b></span></a>
+  <nav class="links" aria-label="Điều hướng chính"><a href="#" data-go="Câu lạc bộ">Câu lạc bộ</a><a href="#" data-go="Cầu thủ">Cầu thủ</a><a href="#" data-go="Lịch đấu">Lịch đấu</a><a href="#" data-go="Bảng xếp hạng">Bảng xếp hạng</a><a href="#" data-go="Fantasy">Fantasy</a><a href="#minigame" aria-current="page">Minigame</a></nav>
+  <div class="nr"><span id="acct"></span><button class="icon-btn" id="theme" aria-label="Đổi giao diện sáng hoặc tối"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button></div>
+</div></header>
+<main class="wrap">
+  <div class="dev"><span>Chỉ để xem thử mockup:</span>
+    <label>Tài khoản <select id="auth"><option value="in">Đã đăng nhập</option><option value="out">Khách</option></select></label>
+    <label>Đoán cầu thủ hôm nay <select id="dly"><option value="new">Chưa chơi</option><option value="progress">Đang chơi dở</option><option value="done">Đã chơi xong</option></select></label>
+    <label>Tải ván <select id="stt"><option value="data">Bình thường</option><option value="loading">Đang tải</option><option value="error">Lỗi</option></select></label>
+    <span>Dữ liệu mẫu</span></div>
+  <div id="view"></div>
+</main>
+<div class="ov" id="ov" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
+<div id="fx" aria-hidden="true"></div>
+<div class="sr" id="live" aria-live="polite"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const MINT='#46e2b5',BLUE='#6fadf6',GOLD='#f4b63f',INK='#0f2a33';
+const KIT={'Arsenal':'#e0413a','Aston Villa':'#7b1d4a','Chelsea':'#1f4fa3','Liverpool':'#c8102e','Man City':'#5ba3d9','Man United':'#da291c','Newcastle':'#4a545b','West Ham':'#7a263a'};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const norm=s=>Array.from(s).map(c=>(c.normalize('NFD').replace(/[\u0300-\u036f]/g,'')[0]||c).toLowerCase().replace('ø','o')).join('');
+const ini=n=>{const p=n.replace(/\./g,'').split(' ').filter(Boolean);return p.length===1?n.slice(0,2).toUpperCase():(p[0][0]+p[p.length-1][0]).toUpperCase()};
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+const BIGCHECK='<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const BIGX='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function fxShow(html,ms){const f=$('fx');f.innerHTML=html;clearTimeout(fxShow.t);fxShow.t=setTimeout(()=>{f.innerHTML=''},ms)}
+function fxWin(pt,title){
+  const cols=[MINT,BLUE,GOLD,'#ff8b8b','#ffffff'];let c='';
+  for(let i=0;i<72;i++){c+='<i class="cf" style="left:'+(Math.random()*100).toFixed(1)+'%;background:'+cols[i%cols.length]+';--x:'+Math.round(Math.random()*240-120)+'px;--r:'+Math.round(360+Math.random()*540)+'deg;--d:'+(1.7+Math.random()*1.1).toFixed(2)+'s;--dl:'+(Math.random()*.45).toFixed(2)+'s"></i>'}
+  fxShow('<div class="fxflash win"></div>'+c+'<div class="fxcard"><span class="ic">'+BIGCHECK+'</span><b>'+(title||'Chính xác!')+'</b><span class="s">Bạn nhận '+pt+' điểm</span></div>',3400);
+  const l=$('live');if(l)l.textContent='Chính xác! Bạn nhận '+pt+' điểm.';
+}
+function fxMini(text){fxShow('<div class="fxflash win" style="animation-duration:.9s"></div><div class="fxcard mini"><span class="ic">'+BIGCHECK+'</span><b>'+text+'</b></div>',1600)}
+function fxWrong(sub,lost){
+  fxShow('<div class="fxflash bad"></div><div class="fxcard bad"><span class="ic">'+BIGX+'</span><b>'+(lost?'Hết lượt rồi':'Sai rồi!')+'</b><span class="s">'+sub+'</span></div>',2100);
+  const gl=document.querySelector('.gl')||document.querySelector('.hl-row');if(gl){gl.classList.remove('shake');void gl.offsetWidth;gl.classList.add('shake')}
+  const l=$('live');if(l)l.textContent=(lost?'Hết lượt. ':'Sai rồi. ')+sub;
+}
+function logo(s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 120 120" role="img" aria-label="Logo PrismaXI"><polygon points="60,6 106.8,33 106.8,87 60,114 13.2,87 13.2,33" fill="'+INK+'" stroke="'+MINT+'" stroke-width="5" stroke-linejoin="round"/><g transform="translate(4 0)"><g fill="none" stroke-linecap="round"><path d="M26 54L54 84" stroke="'+MINT+'" stroke-width="8"/><path d="M54 54L26 84" stroke="'+BLUE+'" stroke-width="8"/><path d="M65 38C58 26 40 24 27 33" stroke="'+GOLD+'" stroke-width="4"/><path d="M65 46C58 38 46 38 36 45" stroke="#ffffff" stroke-opacity=".6" stroke-width="3"/></g><path d="M76 62V84" stroke="'+GOLD+'" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="76" cy="42" r="11" fill="#ffffff"/><polygon points="76,37.4 80.4,40.6 78.7,45.8 73.3,45.8 71.6,40.6" fill="'+INK+'"/><g stroke="'+INK+'" stroke-width="1.7" stroke-linecap="round"><path d="M76 37.4V32M80.4 40.6L85.5 38.9M78.7 45.8L81.9 50.1M73.3 45.8L70.1 50.1M71.6 40.6L66.5 38.9"/></g></g></svg>'}
+$('logo').innerHTML=logo(34);
+
+/* ---- icons ---- */
+const I=(p,s)=>'<svg width="'+(s||20)+'" height="'+(s||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
+const IC={
+ height:I('<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),foot:I('<path d="M7 4h5v5l5 2c1.5.6 2.5 1.8 2.5 3.5V18H7z"/>'),
+ age:I('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/>'),ovr:I('<path d="M12 3l2.7 5.6 6.1.8-4.4 4.2 1.1 6.1L12 17l-5.5 2.7 1.1-6.1L3.2 9.4l6.1-.8z"/>'),
+ nat:I('<path d="M5 21V4M5 5h12l-2 4 2 4H5"/>'),pos:I('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>'),
+ club:I('<path d="M12 3l8 3v6c0 4.5-3.4 7.6-8 9-4.6-1.4-8-4.5-8-9V6z"/>'),num:I('<path d="M8 4l-5 3 2 4 2-1v10h10V10l2 1 2-4-5-3a4 4 0 0 1-8 0z"/>'),
+ lock:I('<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+ x:I('<path d="M6 6l12 12M18 6L6 18"/>',16),check:I('<path d="M5 12l5 5 9-10"/>',16),
+ search:I('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',18),
+ cal:I('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/>',22),
+ target:I('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',22),
+ back:I('<path d="M15 6l-6 6 6 6"/>',16),arrow:I('<path d="M9 6l6 6-6 6"/>',18),help:I('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>',18),
+ play:I('<path d="M8 5l11 7-11 7z"/>',18),clock:I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',16)
+};
+
+/* ---- sample data ---- */
+const POOL=[
+ ['Alexis Mac Allister','Liverpool','MID',84,'Argentina',176,'1998-12-24','Phải',10],
+ ['Mohamed Salah','Liverpool','FWD',90,'Ai Cập',175,'1992-06-15','Trái',11],
+ ['Erling Haaland','Man City','FWD',91,'Na Uy',194,'2000-07-21','Trái',9],
+ ['Bukayo Saka','Arsenal','FWD',88,'Anh',178,'2001-09-05','Trái',7],
+ ['Martin Ødegaard','Arsenal','MID',87,'Na Uy',178,'1998-12-17','Trái',8],
+ ['Rodri','Man City','MID',90,'Tây Ban Nha',191,'1996-06-22','Phải',16],
+ ['Virgil van Dijk','Liverpool','DEF',87,'Hà Lan',195,'1991-07-08','Phải',4],
+ ['William Saliba','Arsenal','DEF',86,'Pháp',192,'2001-03-24','Phải',2],
+ ['Cole Palmer','Chelsea','MID',86,'Anh',185,'2002-05-06','Trái',20],
+ ['Bruno Fernandes','Man United','MID',85,'Bồ Đào Nha',179,'1994-09-08','Phải',8],
+ ['Alexander Isak','Newcastle','FWD',86,'Thụy Điển',192,'1999-09-21','Phải',14],
+ ['Ollie Watkins','Aston Villa','FWD',83,'Anh',180,'1996-05-30','Phải',11],
+ ['Phil Foden','Man City','MID',86,'Anh',171,'2000-05-28','Trái',47],
+ ['Declan Rice','Arsenal','MID',86,'Anh',185,'1999-01-14','Phải',41],
+ ['Dominik Szoboszlai','Liverpool','MID',83,'Hungary',186,'2000-10-25','Phải',8],
+ ['Alisson','Liverpool','GK',86,'Brazil',193,'1992-10-02','Phải',1],
+ ['David Raya','Arsenal','GK',83,'Tây Ban Nha',183,'1995-09-15','Phải',22],
+ ['Ederson','Man City','GK',84,'Brazil',188,'1993-08-17','Trái',31],
+ ['Marc Cucurella','Chelsea','DEF',79,'Tây Ban Nha',172,'1998-03-22','Trái',3],
+ ['Joško Gvardiol','Man City','DEF',83,'Croatia',185,'2002-01-23','Trái',24],
+ ['Andrew Robertson','Liverpool','DEF',79,'Scotland',178,'1994-03-11','Trái',26],
+ ['Gabriel Magalhães','Arsenal','DEF',84,'Brazil',190,'1997-12-19','Trái',6],
+ ['Cody Gakpo','Liverpool','FWD',82,'Hà Lan',189,'1999-05-18','Phải',18],
+ ['Sandro Tonali','Newcastle','MID',82,'Ý',181,'2000-05-08','Phải',8],
+ ['Bruno Guimarães','Newcastle','MID',83,'Brazil',182,'1997-11-16','Phải',39],
+ ['Nicolas Jackson','Chelsea','FWD',79,'Senegal',186,'2001-06-21','Phải',15],
+ ['Jarrod Bowen','West Ham','FWD',80,'Anh',175,'1996-12-20','Phải',20],
+ ['Emiliano Martínez','Aston Villa','GK',82,'Argentina',195,'1992-09-02','Phải',23],
+ ['John McGinn','Aston Villa','MID',80,'Scotland',178,'1994-10-07','Phải',7]
+].map((a,i)=>({id:i,n:a[0],c:a[1],p:a[2],o:a[3],nat:a[4],h:a[5],dob:a[6],foot:a[7],num:a[8]}));
+const GA=[[2,3],[9,4],[13,1],[5,6],[2,7],[1,2],[1,0],[0,1],[6,4],[3,5],[7,2],[6,3],[4,3],[2,2],[2,4],[0,0],[0,0],[0,1],[0,2],[1,1],[0,4],[1,0],[4,2],[1,2],[1,3],[5,1],[4,3],[0,0],[2,2]];
+POOL.forEach((p,i)=>{p.g=GA[i][0];p.a=GA[i][1]});
+const POSN={GK:'Thủ môn',DEF:'Hậu vệ',MID:'Tiền vệ',FWD:'Tiền đạo'};
+const age=dob=>{const [y,m,d]=dob.split('-').map(Number);let a=2026-y;if(m>10||(m===10&&d>4))a--;return a};
+const tier=o=>o>=85?'1':o>=78?'2':o>=70?'3':'4';
+const HINTS=[
+ {l:'Chiều cao',ic:IC.height,f:p=>p.h+' cm'},{l:'Chân thuận',ic:IC.foot,f:p=>p.foot},
+ {l:'Tuổi',ic:IC.age,f:p=>age(p.dob)+' tuổi'},{l:'OVR',ic:IC.ovr,f:p=>'<span class="ob t-'+tier(p.o)+'">'+p.o+'</span>'},
+ {l:'Quốc tịch',ic:IC.nat,f:p=>p.nat},{l:'Vị trí chính',ic:IC.pos,f:p=>POSN[p.p]},
+ {l:'CLB',ic:IC.club,f:p=>p.c},{l:'Số áo',ic:IC.num,f:p=>'#'+p.num}
+];
+const DAILY_ANS=0,SALAH=1;
+const LB={
+ higher:[['Minh Khoa',960],['Thu Hà',910],['Bảo An',880],['Hải Yến',780],['Đức Thịnh',780],['Quốc Huy',700],['Lan Anh',640],['Gia Bảo',590]],
+ all:[['Thu Hà',1240],['Minh Khoa',1180],['Bảo An',1130],['Quốc Huy',1020],['Hải Yến',960],['Đức Thịnh',960],['Lan Anh',880],['Gia Bảo',790]]
+};
+
+/* ---- time ---- */
+function leftMs(){const vn=Date.now()+7*3600e3,d=new Date(vn);return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1)-vn}
+function clockStr(){const s=Math.floor(leftMs()/1000);const h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor(s%3600/60)).padStart(2,'0'),x=String(s%60).padStart(2,'0');return h+':'+m+':'+x}
+const CK=()=>'<span class="clock" data-cd>'+clockStr()+'</span>';
+setInterval(()=>{document.querySelectorAll('[data-cd]').forEach(e=>e.textContent=clockStr())},1000);
+
+/* ---- game engine (mô phỏng; bản thật chạy ở server) ---- */
+let S={auth:true,dly:'new',dlyH:'new',st:'data',gtab:'play',mode:null,game:null};
+let G={daily:null,practice:null,hl:{daily:null,practice:null}};
+let GS={q:'',sel:null,hi:0,err:'',sug:false};
+function mk(mode,preset,ans){
+  const g={mode,ans,opened:0,guesses:[],score:100,status:'play',last:-1,final:null};
+  if(preset==='progress'){g.opened=2;g.score=70;g.guesses=[{id:SALAH,ok:false}];g.last=3}
+  if(preset==='done'){g.opened=2;g.score=70;g.guesses=[{id:SALAH,ok:false},{id:ans,ok:true}];g.status='won';g.final=70}
+  return g;
+}
+function dailyGame(){if(!G.daily||G.dlyKey!==S.dly){G.daily=mk('daily',S.dly,DAILY_ANS);G.dlyKey=S.dly}return G.daily}
+function practiceGame(fresh){if(!G.practice||fresh){let id;do{id=Math.floor(Math.random()*POOL.length)}while(G.practice&&id===G.practice.ans);G.practice=mk('practice','new',id)}return G.practice}
+function openHint(g){if(g.status!=='play'||g.opened>=6)return false;g.score=Math.max(0,g.score-10);g.opened++;g.last=g.opened+1;return true}
+function doGuess(g,id){
+  if(g.status!=='play')return {err:'Ván chơi đã kết thúc.'};
+  if(id==null||!POOL[id])return {err:'Hãy chọn một cầu thủ trong danh sách gợi ý.'};
+  if(g.guesses.some(x=>x.id===id))return {err:'Bạn đã đoán cầu thủ này rồi, hãy chọn người khác. Lượt đoán và điểm không bị trừ.'};
+  if(id===g.ans){g.guesses.push({id,ok:true});g.status='won';g.final=g.score;return {ok:true}}
+  g.guesses.push({id,ok:false});g.score=Math.max(0,g.score-20);
+  let auto=null;if(g.opened<6){g.opened++;g.last=g.opened+1;auto=HINTS[g.opened+1].l}
+  if(g.guesses.filter(x=>!x.ok).length>=3){g.status='lost';g.final=0}
+  return {wrong:true,auto};
+}
+const wrongs=g=>g.guesses.filter(x=>!x.ok).length;
+const shown=(g,i)=>i<2||i-2<g.opened;
+
+/* ---- illustrations ---- */
+const artGuess='<svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17404d"/><stop offset="1" stop-color="#0b2029"/></linearGradient></defs><rect width="400" height="250" fill="url(#ag)"/><polygon points="150,95 400,10 400,60" fill="#f4b63f" opacity=".18"/><polygon points="150,95 400,95 400,150" fill="#46e2b5" opacity=".16"/><polygon points="150,95 400,185 400,240" fill="#6fadf6" opacity=".16"/><circle cx="150" cy="104" r="64" fill="none" stroke="#46e2b5" stroke-opacity=".35" stroke-dasharray="3 7"/><path d="M62 250C62 190 104 160 150 160S238 190 238 250Z" fill="#1d4a59"/><circle cx="150" cy="98" r="38" fill="#245768"/><text x="150" y="116" text-anchor="middle" font-size="52" font-weight="800" fill="#46e2b5">?</text><g font-weight="700" font-size="15"><rect x="262" y="34" width="112" height="34" rx="17" fill="#ffffff" fill-opacity=".14" stroke="#fff" stroke-opacity=".25"/><text x="318" y="56" text-anchor="middle" fill="#fff">186 cm</text><rect x="278" y="106" width="104" height="34" rx="17" fill="#ffffff" fill-opacity=".14" stroke="#fff" stroke-opacity=".25"/><text x="330" y="128" text-anchor="middle" fill="#fff">Chân trái</text><rect x="262" y="176" width="112" height="34" rx="17" fill="none" stroke="#fff" stroke-opacity=".4" stroke-dasharray="4 4"/><text x="318" y="198" text-anchor="middle" fill="#8aa6ae">OVR ??</text></g></svg>';
+const artHL='<svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="ah" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b3a63"/><stop offset="1" stop-color="#0b1f33"/></linearGradient></defs><rect width="400" height="250" fill="url(#ah)"/><g transform="rotate(-6 110 125)"><rect x="40" y="48" width="128" height="156" rx="22" fill="#ffffff" fill-opacity=".12" stroke="#fff" stroke-opacity=".25"/><circle cx="104" cy="104" r="26" fill="#2f6fb5"/><text x="104" y="178" text-anchor="middle" font-size="40" font-weight="800" fill="#fff">86</text></g><g transform="rotate(5 290 125)"><rect x="232" y="48" width="128" height="156" rx="22" fill="#ffffff" fill-opacity=".12" stroke="#fff" stroke-opacity=".25"/><circle cx="296" cy="104" r="26" fill="#3b4a5a"/><text x="296" y="178" text-anchor="middle" font-size="40" font-weight="800" fill="#46e2b5">?</text></g><circle cx="200" cy="125" r="26" fill="#0b1f33" stroke="#46e2b5" stroke-width="2.5"/><path d="M200 112v26M192 120l8-8 8 8" stroke="#46e2b5" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -3)"/><path d="M192 134l8 8 8-8" stroke="#ff7d7d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 2)"/></svg>';
+const artXI='<svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="250" fill="#14452c"/><polygon points="120,18 280,18 360,240 40,240" fill="#1e6a3f"/><g fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"><polygon points="120,18 280,18 360,240 40,240"/><path d="M165 18a35 22 0 0 0 70 0"/></g><g fill="#fff" fill-opacity=".16" stroke="#fff" stroke-opacity=".7" stroke-dasharray="4 4" stroke-width="2"><circle cx="200" cy="212" r="15"/><circle cx="105" cy="170" r="15"/><circle cx="165" cy="170" r="15"/><circle cx="235" cy="170" r="15"/><circle cx="295" cy="170" r="15"/><circle cx="130" cy="112" r="15"/><circle cx="270" cy="112" r="15"/></g><circle cx="200" cy="112" r="15" fill="#c8102e" stroke="#fff" stroke-width="2.5"/><circle cx="160" cy="62" r="15" fill="#5ba3d9" stroke="#fff" stroke-width="2.5"/><circle cx="240" cy="62" r="15" fill="#1f4fa3" stroke="#fff" stroke-width="2.5"/><g font-size="15" font-weight="800" fill="#46e2b5" text-anchor="middle"><text x="200" y="118">?</text><text x="200" y="217">?</text><text x="130" y="117">?</text><text x="270" y="117">?</text></g></svg>';
+
+/* ---- views ---- */
+function acct(){$('acct').innerHTML=S.auth?'<span class="me"><span class="a">KH</span><span class="nm">Khoa</span></span>':'<button class="login" data-act="login">Đăng nhập</button>'}
+function hubStatus(game){
+  if(!S.auth)return {t:'Cần đăng nhập',c:'w'};
+  const st=S.dly,pts=70;
+  return st==='done'?{t:'Đã chơi · '+pts+' điểm',c:'t'}:st==='progress'?{t:'Đang chơi dở',c:'w'}:{t:'Chưa chơi',c:''};
+}
+function viewHub(){
+  const a=hubStatus('guess');
+  return '<section class="hero"><svg class="deco" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="100" cy="100" r="80"/><circle cx="100" cy="100" r="46"/><circle cx="100" cy="100" r="6" fill="currentColor"/><path d="M100 20v160"/></svg><h1>Minigame</h1><p>Chơi vui, thử trí nhớ bóng đá của bạn và leo bảng xếp hạng riêng của từng trò.</p></section>'+
+   '<div class="daily"><span class="ic">'+IC.cal+'</span><div class="tx"><b>Thử thách hằng ngày</b><span>Đoán cầu thủ: một ván mỗi ngày, tối đa 100 điểm.</span><div class="sts"><span class="tg '+a.c+'">Đoán cầu thủ · '+a.t+'</span></div></div><div style="text-align:center"><div style="font-size:12px;color:var(--mute);margin-bottom:4px">Câu hỏi mới sau</div>'+CK()+'</div></div>'+
+   '<h2 class="sec-t">Chọn trò chơi</h2><div class="gg">'+
+   '<article class="gc on"><div class="art">'+artGuess+'<span class="badge">Có thử thách hằng ngày</span></div><div class="gb"><h3>Đoán cầu thủ qua gợi ý</h3><p>Bắt đầu với 100 điểm và hai gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.</p><button class="play" data-act="pick" data-game="guess">Chơi ngay '+IC.play+'</button></div></article>'+
+   '<article class="gc on"><div class="art">'+artHL+'<span class="badge">Chơi tự do</span></div><div class="gb"><h3>Cao hay thấp</h3><p>Hai thẻ cầu thủ đặt cạnh nhau. Mỗi lượt là OVR, bàn thắng hoặc kiến tạo: đoán người bên phải cao hơn hay thấp hơn. Đoán đúng liên tiếp để lập kỷ lục.</p><button class="play" data-act="higher">Chơi ngay '+IC.play+'</button></div></article>'+
+   '<article class="gc"><div class="art">'+artXI+'<span class="badge soon">Sắp ra mắt</span></div><div class="gb"><h3>Đội hình bí ẩn</h3><p>Ghép đúng 11 cái tên vào sơ đồ của một trận đấu qua những manh mối nhỏ.</p><button class="play" disabled>Sắp ra mắt</button></div></article>'+
+   '</div><p class="foot">Điểm minigame là hệ thống riêng, không ảnh hưởng điểm Fantasy.</p>';
+}
+function openSheet(html){$('sheet').innerHTML=html;$('ov').classList.add('open')}
+function closeSheet(){$('ov').classList.remove('open')}
+const GCFG={
+ guess:{name:'Đoán cầu thủ qua gợi ý',dly:'Mọi người nhận cùng một cầu thủ. Mỗi tài khoản một ván mỗi ngày, tối đa 100 điểm, có bảng xếp hạng riêng.',prac:'Chơi bao nhiêu ván tùy thích với cầu thủ ngẫu nhiên để làm quen với luật chơi.'},
+};
+function modeSheet(game){
+  game=game||'guess';const c=GCFG[game],st=hubStatus(game);
+  const stt=S.dly;
+  const dGo=!S.auth?'Đăng nhập để chơi':stt==='done'?'Xem kết quả':stt==='progress'?'Tiếp tục ván':'Bắt đầu thử thách';
+  openSheet('<div class="sh-h"><div><h2>'+c.name+'</h2><span>Chọn chế độ chơi</span></div><button class="icon-btn" data-act="close" aria-label="Đóng" style="box-shadow:none">'+IC.x+'</button></div>'+
+   '<button class="md" data-act="mode" data-m="daily" data-game="'+game+'"><div class="top"><span class="mi d">'+IC.cal+'</span><div><b>Thử thách hằng ngày</b><div class="tags" style="margin-top:6px"><span class="tg '+st.c+'">'+st.t+'</span><span class="tg">Còn '+clockStr().slice(0,5).replace(':','g ')+'p</span></div></div></div><div class="ds">'+c.dly+'</div><div class="go"><span>'+dGo+'</span>'+IC.arrow+'</div></button>'+
+   '<button class="md" data-act="mode" data-m="practice" data-game="'+game+'"><div class="top"><span class="mi p">'+IC.target+'</span><div><b>Luyện tập</b><div class="tags" style="margin-top:6px"><span class="tg">Không giới hạn số ván</span><span class="tg">Không tính bảng xếp hạng</span></div></div></div><div class="ds">'+c.prac+'</div><div class="go"><span>Bắt đầu luyện tập</span>'+IC.arrow+'</div></button>');
+}
+function rulesGuess(){
+  openSheet('<div class="sh-h"><div><h2>Luật chơi</h2><span>Đoán cầu thủ qua gợi ý</span></div><button class="icon-btn" data-act="close" aria-label="Đóng" style="box-shadow:none">'+IC.x+'</button></div>'+
+   '<ul class="rules"><li><span class="n">1</span><div>Mỗi ván bắt đầu với <b>100 điểm</b> và hiện sẵn 2 gợi ý: chiều cao và chân thuận.</div></li>'+
+   '<li><span class="n">2</span><div>Bạn có <b>3 lượt đoán</b>. Gõ tên rồi chọn cầu thủ trong danh sách gợi ý, không cần đúng dấu.</div></li>'+
+   '<li><span class="n">3</span><div>Mở gợi ý tiếp theo: <b>−10 điểm</b>, không mất lượt đoán. Gợi ý mở theo thứ tự cố định.</div></li>'+
+   '<li><span class="n">4</span><div>Đoán sai: mất 1 lượt, <b>−20 điểm</b> và tự mở gợi ý tiếp theo (đã gồm trong −20, không trừ thêm).</div></li>'+
+   '<li><span class="n">5</span><div>Đoán đúng: nhận số điểm còn lại. Sai cả 3 lần: thua, 0 điểm và hiện đáp án.</div></li>'+
+   '<li><span class="n">6</span><div><b>Thử thách hằng ngày:</b> một ván mỗi ngày cho mỗi tài khoản, đổi câu hỏi lúc 00:00 giờ Việt Nam. <b>Luyện tập:</b> chơi tùy ý, không tính bảng xếp hạng.</div></li></ul>'+
+   '<div class="ex">Ví dụ: 100 → mở gợi ý → 90 → đoán sai → 70 (tự mở thêm gợi ý) → đoán đúng → nhận 70 điểm.</div>');
+}
+function scoreCard(g){
+  const sc=g.status==='lost'?0:(g.status==='won'?g.final:g.score);
+  const lost=wrongs(g);
+  const pips=[0,1,2].map(i=>'<span class="pip '+(i<lost?'used':(g.status==='play'?'live':''))+'">'+(i<lost?'×':'')+'</span>').join('');
+  return '<div class="stat"><div class="sc '+(sc===0?'zero':sc<=40?'low':'')+'"><div class="v">'+sc+'</div><div class="l">điểm còn lại</div></div><div class="mid"><div class="pips" aria-label="'+(3-lost)+' lượt đoán còn lại">'+pips+'</div><div class="l">Còn '+(g.status==='lost'?0:3-lost)+' lượt đoán</div></div><div class="hc"><div class="v">'+(2+g.opened)+'/8</div><div class="l">gợi ý đã mở</div></div></div>';
+}
+function hintGrid(g){
+  const p=POOL[g.ans];
+  return '<div class="hg">'+HINTS.map((h,i)=>{
+    const op=g.status!=='play'||shown(g,i);
+    const nx=g.status==='play'&&i===g.opened+2&&g.opened<6;
+    const cls='ht '+(op?'open':'lock')+(nx?' nx':'')+(g.last===i&&g.status==='play'?' new':'');
+    return '<div class="'+cls+'"><span class="hi">'+(op?h.ic:IC.lock)+'</span><div><div class="k">'+h.l+'</div><div class="v">'+(op?h.f(p):'• • •')+'</div></div></div>';
+  }).join('')+'</div>';
+}
+function hintBtn(g){
+  const can=g.status==='play'&&g.opened<6;
+  return '<button class="hb" data-act="hint" '+(can?'':'disabled')+'>'+(can?'Mở gợi ý tiếp theo · −10 điểm':(g.status==='play'?'Đã mở hết gợi ý':'Ván đã kết thúc'))+'</button>';
+}
+function sugHtml(g){
+  const q=norm(GS.q.trim());
+  if(!GS.sug||!q)return '';
+  const a=POOL.filter(p=>norm(p.n).includes(q)).slice(0,6);
+  if(!a.length)return '<div class="sug"><div class="none">Không tìm thấy cầu thủ nào, thử gõ ít chữ hơn.</div></div>';
+  return '<div class="sug" role="listbox">'+a.map((p,i)=>'<button role="option" class="'+(i===GS.hi?'hi':'')+'" data-act="sel" data-id="'+p.id+'"><span>'+esc(p.n)+'</span>'+(g.guesses.some(x=>x.id===p.id)?'<span class="tg">Đã đoán</span>':'')+'</button>').join('')+'</div>';
+}
+function guessBox(g){
+  const sel=GS.sel!=null?POOL[GS.sel]:null;
+  return '<h2>Đoán cầu thủ</h2><div class="sb">'+IC.search+'<input id="q" type="search" placeholder="Gõ tên cầu thủ rồi chọn trong danh sách" autocomplete="off" aria-label="Tìm cầu thủ để đoán" value="'+esc(GS.q)+'"></div><div id="sugbox">'+sugHtml(g)+'</div>'+
+   '<div id="selbox">'+(sel?'<div class="selc"><b>'+esc(sel.n)+'</b><button class="tg" data-act="clearsel" style="cursor:pointer">Bỏ chọn</button></div>':'')+'</div>'+
+   '<div id="errbox">'+(GS.err?'<div class="err" role="alert">'+GS.err+'</div>':'')+'</div>'+
+   '<button class="confirm" data-act="guess" '+(sel?'':'disabled')+'>Xác nhận đoán</button>';
+}
+function history(g){
+  if(!g.guesses.length)return '<div class="hist"><div class="t">Các lượt đoán</div><div class="empt">Bạn chưa đoán lần nào. Còn 3 lượt.</div></div>';
+  return '<div class="hist"><div class="t">Các lượt đoán</div>'+g.guesses.map((x,i)=>'<div class="gr '+(x.ok?'ok':'')+'"><span class="x">'+(x.ok?IC.check:IC.x)+'</span><div><div class="n">'+esc(POOL[x.id].n)+'</div><div class="s">'+(x.ok?'Chính xác':'Sai · mất 1 lượt')+'</div></div><span class="pt">'+(x.ok?'+'+g.final:'−20')+'</span></div>').join('')+'</div>';
+}
+function resultCard(g){
+  const p=POOL[g.ans],win=g.status==='won';
+  const nextAct=g.mode==='daily'?'<button class="btn" data-act="rank">Xem bảng xếp hạng</button><button class="btn2" data-act="practice">Luyện tập thêm</button>':'<button class="btn" data-act="again">Chơi ván mới</button><button class="btn2" data-act="rank">Bảng xếp hạng</button>';
+  return '<div class="res '+(win?'win':'lose')+'"><div class="big">'+(win?'+'+g.final:'0')+'</div><h2>'+(win?'Chính xác!':'Rất tiếc, bạn đã hết lượt')+'</h2><div style="color:var(--mute)">'+(win?(g.final===0?'Bạn đoán đúng nhưng đã hết điểm, vẫn tính là thắng.':'Bạn nhận '+g.final+' điểm cho ván này.'):'Đáp án đúng là:')+'</div>'+
+   '<div class="ans"><span class="av" style="background:'+(KIT[p.c]||'#4a545b')+'">'+ini(p.n)+'</span><div><b>'+esc(p.n)+'</b><span>'+p.c+' · '+POSN[p.p]+' · #'+p.num+'</span></div></div><div class="ra">'+nextAct+'</div>'+
+   (g.mode==='daily'?'<div class="nxt">Câu hỏi mới sau '+CK()+'</div>':'')+'</div>';
+}
+function lbView(game){
+  const list=(game==='higher'?LB.higher:LB.all).map(x=>({n:x[0],pt:x[1]}));
+  let rank=0,prev=null;
+  const rows=list.map((x,i)=>{if(x.pt!==prev){rank=i+1;prev=x.pt}return {n:x.n,pt:x.pt,rank:rank,tie:list.filter(y=>y.pt===x.pt).length>1}});
+  const cols=['#c8102e','#1f4fa3','#7b1d4a','#e0413a','#5ba3d9','#4a545b','#7a263a','#da291c'];
+  return '<div class="pn"><h2>Bảng xếp hạng</h2><div class="rk hd"><span style="text-align:center">Hạng</span><span></span><span>Người chơi</span><span style="text-align:right">Tổng điểm</span></div><div class="rkl">'+rows.map(r=>{const me=S.auth&&r.n==='Đức Thịnh';
+    return '<div class="rk '+(me?'me':'')+'"><span class="n">'+r.rank+'</span><span class="av" style="background:'+cols[(r.n.length+r.pt)%8]+'">'+ini(me?'Khoa Hải':r.n)+'</span><span class="nm">'+(me?'Bạn (Khoa)':esc(r.n))+(r.tie?'<span class="eq">đồng hạng</span>':'')+'</span><span class="pt">'+r.pt+'</span></div>'}).join('')+'</div></div>';
+}
+function gameBody(g,mode){
+  if(S.st==='loading')return '<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
+  if(S.st==='error')return '<div class="emp"><b>Không tải được ván chơi</b>Kiểm tra kết nối rồi thử lại. Tiến trình của bạn vẫn được giữ.<br><button class="btn" data-act="retry">Thử lại</button></div>';
+  const done=g.status!=='play';
+  return '<div class="gl"><div><div class="pn">'+scoreCard(g)+hintGrid(g)+hintBtn(g)+'</div></div><div><div class="pn">'+(done?resultCard(g):guessBox(g))+(done?'':history(g))+'</div>'+(done?'<div class="pn" style="margin-top:14px">'+history(g)+'</div>':'')+'</div></div>';
+}
+function viewGame(mode){
+  const head='<div style="margin-bottom:14px"><a class="back" href="#minigame">'+IC.back+'Minigame</a></div>';
+  if(mode==='daily'&&!S.auth){
+    return head+'<div class="pn"><div class="emp"><b>Đăng nhập để chơi thử thách hằng ngày</b>Kết quả được lưu theo tài khoản, đổi thiết bị hay tải lại trang đều không mất lượt.<br><button class="btn" data-act="login">Đăng nhập</button><div style="margin-top:12px"><a class="back" href="#minigame/guess/practice" style="font-size:14px">Hoặc luyện tập không cần đăng nhập</a></div></div></div>';
+  }
+  const g=mode==='daily'?dailyGame():practiceGame(false);
+  const top='<div class="gh"><div class="ti"><h1>Đoán cầu thủ</h1></div><span class="mchip '+(mode==='daily'?'d':'')+'">'+(mode==='daily'?IC.clock+'Hằng ngày · còn '+CK():'Luyện tập')+'</span><button class="icon-btn" data-act="rules" aria-label="Xem luật chơi">'+IC.help+'</button></div>'+
+   '<div class="seg" id="gseg"><button data-act="gtab" data-t="play" aria-pressed="'+(S.gtab==='play')+'">Chơi</button><button data-act="gtab" data-t="rank" aria-pressed="'+(S.gtab==='rank')+'">Bảng xếp hạng</button></div>';
+  return head+top+(S.gtab==='rank'?lbView('guess'):gameBody(g,mode));
+}
+/* ===== Cao hay thấp: chạy hoàn toàn trên trình duyệt, không bảng xếp hạng ===== */
+const HLS={
+ ovr:{k:'OVR',tag:'OVR',f:p=>p.o,u:''},
+ g:{k:'Bàn thắng',tag:'Bàn thắng mùa này',f:p=>p.g,u:' bàn'},
+ a:{k:'Kiến tạo',tag:'Kiến tạo mùa này',f:p=>p.a,u:' kiến tạo'}
+};
+const HLK=['ovr','g','a'];
+const HL_KEY='prismaxi-higher-best';
+let HL_MEM=6; // kỷ lục mẫu khi trình duyệt chặn localStorage
+function hlBest(){try{const v=localStorage.getItem(HL_KEY);return v==null?HL_MEM:+v}catch(e){return HL_MEM}}
+function hlSaveBest(n){if(n<=hlBest())return false;HL_MEM=n;try{localStorage.setItem(HL_KEY,String(n))}catch(e){}return true}
+let HLT=null,HLT2=null,HLC=null;
+function hlClear(){clearTimeout(HLT);clearTimeout(HLT2);clearInterval(HLC);HLT=null;HLT2=null;HLC=null}
+function hlRestore(){const g=G.hl.practice;if(g&&g.status==='reveal')hlAdvance(g)}
+/* Chọn chỉ số ngẫu nhiên và người bên phải: giá trị phải khác người bên trái và không thiếu dữ liệu. */
+function pickRound(leftId){
+  const L=POOL[leftId];
+  for(let t=0;t<300;t++){
+    const st=HLK[Math.floor(Math.random()*HLK.length)],id=Math.floor(Math.random()*POOL.length);
+    if(id===leftId)continue;
+    const lv=HLS[st].f(L),rv=HLS[st].f(POOL[id]);
+    if(lv==null||rv==null||lv===rv)continue;
+    return {st:st,r:id};
+  }
+  return null;
+}
+function mkHL(){
+  const a=Math.floor(Math.random()*POOL.length),rd=pickRound(a);
+  return {seq:[a,rd.r],stats:[rd.st],i:0,score:0,status:'play',hist:[],pick:null,res:null,anim:false,newBest:false,startBest:hlBest()};
+}
+function hlGame(fresh){if(!G.hl.practice||fresh)G.hl.practice=mkHL();return G.hl.practice}
+function hlSides(g){return {l:POOL[g.seq[g.i]],r:POOL[g.seq[g.i+1]],st:g.stats[g.i]}}
+function hlApply(g,dir){
+  if(g.status!=='play')return null;
+  const sd=hlSides(g),s=HLS[sd.st],L=s.f(sd.l),R=s.f(sd.r);
+  const ok=dir==='up'?R>L:R<L;
+  g.hist.push({l:sd.l.id,r:sd.r.id,st:sd.st,L:L,R:R,ok:ok});g.pick=dir;g.res={ok:ok,L:L,R:R,st:sd.st};
+  if(ok){g.score++;if(hlSaveBest(g.score))g.newBest=true;g.status='reveal'}else g.status='over';
+  return g.res;
+}
+function hlAdvance(g){
+  if(g.status!=='reveal')return;
+  g.i++;const rd=pickRound(g.seq[g.i]);g.seq.push(rd.r);g.stats.push(rd.st);
+  g.pick=null;g.res=null;g.status='play';g.anim=true;
+}
+const tierCls=o=>o>=90?'prism':o>=85?'rare':o>=78?'gold':o>=70?'silver':'bronze';
+function fcard(p,mode,st){
+  const hid=mode==='hidden',hideOvr=hid&&st==='ovr';
+  const info=[['Quốc tịch',p.nat],['CLB',p.c],['Tuổi',age(p.dob)+' tuổi'],['Chiều cao',p.h+' cm'],['Chân thuận',p.foot],['Số áo',p.num]];
+  const s=HLS[st];
+  const chip=st==='ovr'?'':'<div class="fc-stat"><span class="k">'+s.k+'</span><span class="v'+(hid?' q':'')+'">'+(hid?'?':s.f(p))+'</span></div>';
+  const lab='Thẻ '+esc(p.n)+(hid?', '+s.k+' đang ẩn':', '+s.k+' '+s.f(p));
+  return '<div class="fc '+(hid?'mystery':tierCls(p.o))+(mode==='reveal'?' rv':'')+'" aria-label="'+lab+'"><div class="fc-hd"><div class="fc-s"><span class="fc-lbl">OVR</span><div class="fc-ovr'+(hideOvr?' q':'')+'">'+(hideOvr?'?':p.o)+'</div><div class="fc-pos">'+p.p+'</div></div><div class="fc-av" style="background:'+(KIT[p.c]||'#4a545b')+'">'+ini(p.n)+'</div></div>'+
+   '<div class="fc-bd"><div class="fc-name">'+esc(p.n)+'</div><div class="fc-info">'+info.map(x=>'<div><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>').join('')+'</div>'+(chip?'<div style="margin-top:10px">'+chip+'</div>':'')+'</div></div>';
+}
+function hlStat(g){
+  const best=Math.max(hlBest(),g.score);
+  return '<div class="hl-stat"><div><div class="v">'+g.score+'</div><div class="l">Điểm Số</div></div><div style="text-align:right"><div class="v2">'+best+'</div><div class="l">Kỷ Lục</div></div></div>';
+}
+function hlQuestion(sd){
+  const s=HLS[sd.st],L=s.f(sd.l);
+  if(sd.st==='ovr')return 'OVR của <b>'+esc(sd.r.n)+'</b> cao hơn hay thấp hơn <b>'+L+'</b>?';
+  if(sd.st==='g')return 'Mùa này <b>'+esc(sd.r.n)+'</b> ghi nhiều hay ít bàn hơn <b>'+esc(sd.l.n)+'</b> (<b>'+L+' bàn</b>)?';
+  return 'Mùa này <b>'+esc(sd.r.n)+'</b> kiến tạo nhiều hay ít hơn <b>'+esc(sd.l.n)+'</b> (<b>'+L+'</b>)?';
+}
+function hlPopup(g){
+  const best=hlBest();
+  const ic=g.newBest?'<span class="ic best">'+I('<path d="M12 3l2.7 5.6 6.1.8-4.4 4.2 1.1 6.1L12 17l-5.5 2.7 1.1-6.1L3.2 9.4l6.1-.8z"/>',26)+'</span>':'<span class="ic">'+I('<path d="M6 6l12 12M18 6L6 18"/>',26)+'</span>';
+  $('ov').classList.add('pop');$('ov').dataset.lock='1';
+  openSheet('<div class="hl-pop" role="alertdialog" aria-labelledby="hlpt">'+ic+'<h2 id="hlpt">'+(g.newBest?'Kỷ Lục Mới!':'Kết Thúc')+'</h2>'+
+   '<div class="lbl">Điểm Số</div><div class="big">'+g.score+'</div>'+
+   '<div class="bst">Kỷ Lục <b>'+best+'</b></div>'+
+   '<div class="acts"><button class="btn" data-act="hlagain">Chơi Lại</button><button class="btn2" data-act="hlhome">Về Minigame</button></div></div>');
+}
+function hlClosePop(){const o=$('ov');delete o.dataset.lock;o.classList.remove('pop');closeSheet()}
+const ARW_UP='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+const ARW_DN='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
+function hlBoard(g){
+  const sd=hlSides(g),l=sd.l,r=sd.r,revealed=g.status!=='play',fin=g.status==='over';
+  const ask={ovr:'có OVR <em>cao hơn</em>',g:'có ghi <em>nhiều bàn hơn</em>',a:'có <em>kiến tạo nhiều hơn</em>'}[sd.st];
+  const tag='<div class="hl-ask"><b>'+esc(r.n)+'</b> '+ask+' <b>'+esc(l.n)+'</b> không?</div>';
+  const sel=d=>(g.pick===d&&g.res?' sel '+(g.res.ok?'ok':'bad'):'');
+  const mid='<div class="hl-mid">'+
+    '<button class="hl-arw up'+sel('up')+'" data-act="hlpick" data-d="up" '+(revealed?'disabled':'')+' aria-label="Cao hơn" title="Cao hơn (phím ↑)">'+ARW_UP+'</button>'+
+    '<div class="hl-vs">VS</div>'+
+    '<button class="hl-arw down'+sel('down')+'" data-act="hlpick" data-d="down" '+(revealed?'disabled':'')+' aria-label="Thấp hơn" title="Thấp hơn (phím ↓)">'+ARW_DN+'</button></div>';
+  const row='<div class="hl-row"><div class="hl-c'+(g.anim?' shift':'')+'">'+fcard(l,'known',sd.st)+'</div>'+mid+'<div class="hl-c'+(g.anim?' enter':'')+'">'+fcard(r,revealed?'reveal':'hidden',sd.st)+'</div></div>';
+  g.anim=false;
+  return tag+row;
+}
+function hlBody(g){
+  if(S.st==='loading')return '<div class="sk" style="height:96px"></div><div class="sk" style="height:300px"></div>';
+  if(S.st==='error')return '<div class="emp"><b>Không tải được danh sách cầu thủ</b>Kiểm tra kết nối rồi thử lại.<br><button class="btn" data-act="retry">Thử lại</button></div>';
+  return hlStat(g)+hlBoard(g);
+}
+function viewHigher(){
+  const head='<div style="margin-bottom:14px"><a class="back" href="#minigame">'+IC.back+'Minigame</a></div>';
+  const g=hlGame(false);
+  const top='<div class="gh"><div class="ti"><h1>Cao hay thấp</h1></div><button class="icon-btn" data-act="rules" aria-label="Xem luật chơi">'+IC.help+'</button></div>';
+  return head+top+'<div class="pn">'+hlBody(g)+'</div>';
+}
+function countUp(to,sel,from){
+  clearInterval(HLC);
+  const el=document.querySelector(sel);if(!el)return;
+  let n=from;el.textContent=n;
+  if(n>=to){el.textContent=to;return}
+  HLC=setInterval(()=>{n++;el.textContent=n;if(n>=to)clearInterval(HLC)},to-from>12?38:90);
+}
+function hlPick(dir){
+  if(S.game!=='higher'||S.st!=='data')return;
+  const g=hlGame(false);
+  if(g.status!=='play')return;
+  const res=hlApply(g,dir);
+  hlClear();render();
+  if(res.st==='ovr')countUp(res.R,'.fc.rv .fc-ovr',Math.max(40,res.R-16));else countUp(res.R,'.fc.rv .fc-stat .v',0);
+  const live=$('live');
+  if(g.status==='reveal'){
+    HLT=setTimeout(()=>fxMini(g.newBest&&g.score===hlBest()?'Đúng! Kỷ lục mới':'Đúng!'),650);
+    HLT2=setTimeout(()=>{hlAdvance(g);render()},2100);
+    if(live)live.textContent='Đúng!';
+  }else{
+    HLT=setTimeout(()=>fxWrong(g.res.R+' / '+g.res.L,false),800);
+    HLT2=setTimeout(()=>hlPopup(g),2500);
+    if(live)live.textContent='Sai rồi.';
+  }
+}
+function rulesHigher(){
+  openSheet('<div class="sh-h"><div><h2>Luật chơi</h2><span>Cao hay thấp</span></div><button class="icon-btn" data-act="close" aria-label="Đóng" style="box-shadow:none">'+IC.x+'</button></div>'+
+   '<ul class="rules"><li><span class="n">1</span><div>Mỗi lượt có <b>hai thẻ cầu thủ</b>. Thẻ bên trái hiện chỉ số, thẻ bên phải ẩn chỉ số đó (các thông tin khác đều hiện).</div></li>'+
+   '<li><span class="n">2</span><div>Chỉ số đổi ngẫu nhiên mỗi lượt: <b>OVR</b>, <b>bàn thắng</b> hoặc <b>kiến tạo</b> mùa này. Hai người luôn có chỉ số khác nhau.</div></li>'+
+   '<li><span class="n">3</span><div>Bấm <b>mũi tên lên</b> nếu người bên phải cao hơn, <b>mũi tên xuống</b> nếu thấp hơn.</div></li>'+
+   '<li><span class="n">4</span><div>Đúng: chuỗi +1, thẻ bên phải sang trái và có người mới. Sai: chuỗi kết thúc.</div></li>'+
+   '<li><span class="n">5</span><div>Không cần đăng nhập, không có bảng xếp hạng. <b>Kỷ lục</b> của bạn lưu trên trình duyệt đang dùng.</div></li></ul>'+
+   '<div class="ex">Bàn thắng và kiến tạo là tổng mùa 2026/27 tính đến vòng đã cập nhật gần nhất.</div>');
+}
+function rulesSheet(game){if(game==='higher')rulesHigher();else rulesGuess()}
+function render(){
+  acct();
+  const h=location.hash.slice(1)||'minigame';
+  const m=h.match(/^minigame\/guess\/(daily|practice)/);
+  if(/^minigame\/higher/.test(h)){S.game='higher';S.mode=null;$('view').innerHTML=viewHigher()}
+  else if(m){S.game='guess';S.mode=m[1];$('view').innerHTML=viewGame(m[1])}else{S.game=null;S.mode=null;$('view').innerHTML=viewHub()}
+}
+function rerenderSug(){const g=S.mode==='daily'?dailyGame():practiceGame(false);$('sugbox').innerHTML=sugHtml(g);const sel=GS.sel!=null?POOL[GS.sel]:null;$('selbox').innerHTML=sel?'<div class="selc"><b>'+esc(sel.n)+'</b><button class="tg" data-act="clearsel" style="cursor:pointer">Bỏ chọn</button></div>':'';const b=document.querySelector('.confirm');if(b){b.disabled=!sel}}
+function resetGS(){GS={q:'',sel:null,hi:0,err:'',sug:false}}
+function curGame(){return S.mode==='daily'?dailyGame():practiceGame(false)}
+
+window.addEventListener('hashchange',()=>{hlClear();hlClosePop();hlRestore();$('fx').innerHTML='';resetGS();S.gtab='play';render();window.scrollTo(0,0)});
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-act]');
+  if(e.target===$('ov')){if(!$('ov').dataset.lock)closeSheet();return}
+  if(a){
+    const act=a.dataset.act;
+    if(act==='pick'){modeSheet(a.dataset.game);return}
+    if(act==='close'){closeSheet();return}
+    if(act==='rules'){rulesSheet(S.game);return}
+    if(act==='login'){toast('Mở màn hình đăng nhập (email hoặc Google)');return}
+    if(act==='mode'){closeSheet();const m=a.dataset.m,gm=a.dataset.game||'guess';if(m==='daily'&&!S.auth){location.hash='minigame/'+gm+'/daily';return}if(m==='practice')practiceGame(true);location.hash='minigame/'+gm+'/'+m;return}
+    if(act==='hlpick'){hlPick(a.dataset.d);return}
+    if(act==='higher'){hlGame(true);location.hash='minigame/higher';return}
+    if(act==='hlagain'){hlClosePop();hlClear();hlGame(true);render();return}
+    if(act==='hlhome'){hlClosePop();location.hash='minigame';return}
+    if(act==='gtab'){S.gtab=a.dataset.t;render();return}
+    if(act==='rank'){S.gtab='rank';render();window.scrollTo(0,0);return}
+    if(act==='practice'){practiceGame(true);location.hash='minigame/guess/practice';return}
+    if(act==='again'){practiceGame(true);resetGS();render();return}
+    if(act==='retry'){S.st='loading';$('stt').value='loading';render();setTimeout(()=>{S.st='data';$('stt').value='data';render()},700);return}
+    const g=S.game==='guess'?curGame():null;
+    if(act==='hint'&&g){if(openHint(g)){GS.err='';render();toast('Đã mở gợi ý: '+HINTS[g.opened+1].l+' (−10 điểm)')}return}
+    if(act==='sel'){GS.sel=+a.dataset.id;GS.q=POOL[GS.sel].n;GS.sug=false;GS.err='';render();return}
+    if(act==='clearsel'){GS.sel=null;GS.q='';GS.err='';render();return}
+    if(act==='guess'&&g){
+      const r=doGuess(g,GS.sel);
+      if(r.err){GS.err=r.err;render();return}
+      resetGS();render();
+      if(r.wrong)fxWrong(g.status==='lost'?'Bạn đã dùng hết 3 lượt đoán. Đáp án đã được hiện.':'−20 điểm'+(r.auto?' · đã mở gợi ý: '+r.auto:''),g.status==='lost');
+      else fxWin(g.final);
+      return;
+    }
+  }
+  const go=e.target.closest('[data-go]');if(go){e.preventDefault();toast('Chuyển tới: '+go.dataset.go);return}
+  const l=e.target.closest('a[href="#"]');if(l)e.preventDefault();
+});
+document.addEventListener('input',e=>{if(e.target.id==='q'){GS.q=e.target.value;GS.sug=true;GS.hi=0;GS.err='';if(GS.sel!=null&&POOL[GS.sel].n!==GS.q)GS.sel=null;rerenderSug();const eb=$('errbox');if(eb)eb.innerHTML=''}});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('ov').dataset.lock)closeSheet();return}
+  if(S.game==='higher'&&(e.key==='ArrowUp'||e.key==='ArrowDown')&&!$('ov').classList.contains('open')){e.preventDefault();hlPick(e.key==='ArrowUp'?'up':'down');return}
+  if(e.target.id==='q'){
+    const q=norm(GS.q.trim());const a=q?POOL.filter(p=>norm(p.n).includes(q)).slice(0,6):[];
+    if(e.key==='ArrowDown'&&a.length){e.preventDefault();GS.hi=(GS.hi+1)%a.length;rerenderSug()}
+    if(e.key==='ArrowUp'&&a.length){e.preventDefault();GS.hi=(GS.hi-1+a.length)%a.length;rerenderSug()}
+    if(e.key==='Enter'&&a.length&&GS.sel==null){e.preventDefault();GS.sel=a[GS.hi].id;GS.q=a[GS.hi].n;GS.sug=false;render();const i=$('q');if(i)i.focus()}
+  }
+});
+$('auth').onchange=e=>{S.auth=e.target.value==='in';render()};
+$('dly').onchange=e=>{S.dly=e.target.value;G.daily=null;resetGS();render()};
+$('stt').onchange=e=>{S.st=e.target.value;render()};
+$('theme').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark'};
+render();
+</script>
+</body>
+</html>

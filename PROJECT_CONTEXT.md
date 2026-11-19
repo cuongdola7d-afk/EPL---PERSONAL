@@ -298,7 +298,7 @@ Nguồn DDL: [schema.sql](backend/src/main/resources/schema.sql), [auth-schema.s
 
 ## 8. Minigame Đoán cầu thủ — chức năng thật, không phải mockup
 
-Đã bật production ngày 08/10; người dùng từng xác nhận chơi bằng tài khoản thật và reload giữ tiến trình. Hai trò khác trong mockup vẫn “Sắp ra mắt”. Giữ layout mockup đã giao, không lấy dữ liệu/engine giả của mockup nhập vào DB.
+Đã bật production ngày 08/10; người dùng từng xác nhận chơi bằng tài khoản thật và reload giữ tiến trình. Trò thứ hai **Cao hay thấp** đã bật ở chế độ chơi tự do phía frontend (không cần đăng nhập, không bảng xếp hạng, không thêm backend/SQL; xem [minigame-higher-lower-2026.md](docs/minigame-higher-lower-2026.md)); trò thứ ba **Đội hình bí ẩn** vẫn “Sắp ra mắt”. Giữ layout mockup đã giao, không lấy dữ liệu/engine giả của mockup nhập vào DB.
 
 ### Luật chơi
 

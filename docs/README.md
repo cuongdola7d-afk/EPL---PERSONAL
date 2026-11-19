@@ -49,6 +49,7 @@ Lệnh nhanh ở [README — Chạy local](../README.md#chạy-local) và [Test 
 | [player-guess-minigame-plan.md](player-guess-minigame-plan.md) | Hỗn hợp: đặc tả đã chốt và lịch sử triển khai; tên plan không có nghĩa trò chơi chưa tồn tại |
 | [player-guess-minigame-api.md](player-guess-minigame-api.md) | Hỗn hợp: contract/version/actionId/expiry và trạng thái kiểm thử theo mốc; không suy full suite hiện tại từ báo cáo cũ |
 | [player-guess-minigame-frontend.md](player-guess-minigame-frontend.md) | Hỗn hợp: UI, API hooks, khôi phục tiến trình và kiểm tra đã thực hiện |
+| [minigame-higher-lower-2026.md](minigame-higher-lower-2026.md) | Hiện hành: luật chơi, nguồn dữ liệu `GET /api/players?season=2026`, giới hạn và cách kiểm tra trò Cao hay thấp (frontend-only) |
 
 Luật hiện tại: Fantasy 2026 lấy rating người dùng cung cấp, OVR dùng cho chọn đội; điểm v1/2024 và điểm minigame là hai hệ khác. Các quyền nhập dữ liệu, mở vòng và công bố phải đọc cùng AGENTS.
 

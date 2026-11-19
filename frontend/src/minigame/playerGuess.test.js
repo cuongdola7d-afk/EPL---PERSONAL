@@ -22,10 +22,12 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 
 test('routes recognize hub and both playable modes without swallowing other pages', () => {
   assert.deepEqual(parseMinigameRoute('#minigame'), { mode: null })
+  assert.deepEqual(parseMinigameRoute('#minigame/higher'), { game: 'HIGHER', mode: null })
   assert.deepEqual(parseMinigameRoute('#minigame/guess/practice'), { mode: 'PRACTICE' })
   assert.deepEqual(parseMinigameRoute('#minigame/guess/daily'), { mode: 'DAILY' })
   assert.equal(parseMinigameRoute('#fantasy'), null)
   assert.equal(parseMinigameRoute('#minigame/guess/unknown'), null)
+  assert.equal(parseMinigameRoute('#minigame/higher/daily'), null)
 })
 test('daily countdown advances from server time and stops at Vietnamese midnight', () => {
   assert.equal(formatCountdown(remainingSeconds(serverTime, nextDailyAt)), '12:00:00')

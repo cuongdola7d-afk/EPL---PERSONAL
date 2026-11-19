@@ -4,6 +4,7 @@ import usePlayerGuessGame from '../hooks/usePlayerGuessGame.js'
 import { formatCountdown, gameHash, isFinished, remainingSeconds } from '../minigame/playerGuess.js'
 import { matchesPlayerSearch } from '../utils/playerSort.js'
 import { getInitials } from '../utils/initials.js'
+import HigherLowerGame from './HigherLowerGame.jsx'
 import './MinigamePage.css'
 
 const openAccount = () => window.dispatchEvent(new Event('prismaxi-open-account'))
@@ -108,14 +109,18 @@ function Hub({ account, source, onRefresh, onPick }) {
       <div className="mg-daily-clock"><span>Câu hỏi mới sau</span><Countdown source={daily.current ?? source} onExpire={() => { daily.refresh(); onRefresh() }} /></div></div>
     <ErrorBox message={daily.error} onRetry={daily.refresh} disabled={daily.loading} retryLabel="Kiểm tra tiến trình" />
     <h2 className="mg-section-title">Chọn trò chơi</h2><div className="mg-game-grid">
-      {[
-        ['guess', 'Đoán cầu thủ qua gợi ý', 'Bắt đầu với 100 điểm và ba gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.'],
-        ['higher', 'Cao hay thấp', 'Hai cầu thủ xuất hiện, bạn đoán ai có chỉ số cao hơn. Đoán đúng liên tiếp để lập kỷ lục.'],
-        ['lineup', 'Đội hình bí ẩn', 'Nhận diện các cầu thủ trong đội hình. Thử trí nhớ của bạn qua những gương mặt quen thuộc.'],
-      ].map(([id, title, description], index) => <article className={`mg-game-card ${index ? 'mg-soon' : ''}`} key={id}>
-        <div className="mg-art"><img src={`/minigame/${id}.svg`} alt="" /><span className="mg-badge">{index ? 'Sắp ra mắt' : 'Có thử thách hằng ngày'}</span></div>
-        <div className="mg-card-body"><h3>{title}</h3><p>{description}</p><button className="mg-primary" disabled={!!index} onClick={onPick}>{index ? 'Sắp ra mắt' : <>Chơi ngay <Icon name="arrow" /></>}</button></div>
-      </article>)}
+      <article className="mg-game-card">
+        <div className="mg-art"><img src="/minigame/guess.svg" alt="" /><span className="mg-badge">Có thử thách hằng ngày</span></div>
+        <div className="mg-card-body"><h3>Đoán cầu thủ qua gợi ý</h3><p>Bắt đầu với 100 điểm và ba gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.</p><button className="mg-primary" onClick={onPick}>Chơi ngay <Icon name="arrow" /></button></div>
+      </article>
+      <article className="mg-game-card">
+        <div className="mg-art"><img src="/minigame/higher.svg" alt="" /><span className="mg-badge">Chơi tự do</span></div>
+        <div className="mg-card-body"><h3>Cao hay thấp</h3><p>Hai thẻ cầu thủ đặt cạnh nhau. Mỗi lượt là OVR, bàn thắng hoặc kiến tạo: đoán người bên phải cao hơn hay thấp hơn. Đoán đúng liên tiếp để lập kỷ lục.</p><a className="mg-primary" href="#minigame/higher">Chơi ngay <Icon name="arrow" /></a></div>
+      </article>
+      <article className="mg-game-card mg-soon">
+        <div className="mg-art"><img src="/minigame/lineup.svg" alt="" /><span className="mg-badge">Sắp ra mắt</span></div>
+        <div className="mg-card-body"><h3>Đội hình bí ẩn</h3><p>Nhận diện các cầu thủ trong đội hình. Thử trí nhớ của bạn qua những gương mặt quen thuộc.</p><button className="mg-primary" disabled>Sắp ra mắt</button></div>
+      </article>
     </div><p className="mg-footnote">Mỗi trò có bảng xếp hạng riêng. Điểm Minigame độc lập với Fantasy.</p>
   </>
 }
@@ -256,18 +261,22 @@ function GamePage({ account, authLoading, authError, mode, source, onRules }) {
 export default function MinigamePage({ account, authLoading, authError, route, theme = 'dark' }) {
   const [info, setInfo] = useState(null), [error, setError] = useState(''), [reload, setReload] = useState(0)
   const [sheet, setSheet] = useState(null)
+  const isHigher = route?.game === 'HIGHER'
   useEffect(() => {
+    if (isHigher) return undefined
     const controller = new AbortController()
     fetchGuessInfo(controller.signal).then(data => { if (!controller.signal.aborted) { setInfo(data); setError('') } })
       .catch(failure => { if (!controller.signal.aborted) setError(failure.message) })
     return () => controller.abort()
-  }, [reload])
+  }, [reload, isHigher])
   const mode = route?.mode
   return <div className="minigame-page" data-mg-theme={theme}><div className="mg-wrap">
     <div className="mg-toolbar"><span>PREMIER LEAGUE · 2026/27</span></div>
-    <ErrorBox message={error} onRetry={() => setReload(value => value + 1)} />
-    {mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> : <Hub account={account} source={info} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
-    {sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}
-    {sheet === 'rules' && <Rules onClose={() => setSheet(null)} />}
+    {!isHigher && <ErrorBox message={error} onRetry={() => setReload(value => value + 1)} />}
+    {isHigher ? <HigherLowerGame /> :
+      mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> :
+        <Hub account={account} source={info} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
+    {!isHigher && sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}
+    {!isHigher && sheet === 'rules' && <Rules onClose={() => setSheet(null)} />}
   </div></div>
 }

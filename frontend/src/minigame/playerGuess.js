@@ -2,6 +2,7 @@ export const HINT_KEYS = ['height', 'foot', 'age', 'ovr', 'nationality', 'positi
 export const isFinished = game => !!game && game.status !== 'IN_PROGRESS'
 export function parseMinigameRoute(hash) {
   if (hash === '#minigame') return { mode: null }
+  if (hash === '#minigame/higher') return { game: 'HIGHER', mode: null }
   const match = /^#minigame\/guess\/(daily|practice)$/.exec(hash)
   return match ? { mode: match[1].toUpperCase() } : null
 }
