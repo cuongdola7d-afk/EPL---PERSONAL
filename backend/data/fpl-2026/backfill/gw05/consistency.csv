@@ -1,0 +1,3 @@
+fixture_id,player_id,fpl_element_id,player_name,reason,fpl_minutes,db_status,db_minutes
+1000560586,2000030259,,Chema Andrés,DB_PLAYED_UNMAPPED_PLAYER,,PLAYED,84
+1000560586,2000030174,639,José María Andrés Baixauli,FPL_PLAYED_DB_NOT_PLAYED,84,MISSING,

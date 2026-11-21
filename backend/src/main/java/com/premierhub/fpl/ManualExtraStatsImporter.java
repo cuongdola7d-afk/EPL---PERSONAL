@@ -15,14 +15,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Transactional, idempotent importer for manual_fixture_player_extra_stats (GW11+ 2026/27).
- * Never backfills GW1-GW10 and never overwrites non-NULL saved values.
+ * Transactional, idempotent importer for manual_fixture_player_extra_stats (season 2026/27, GW1-GW38).
+ * Never touches manual_fixture_player_stats and never overwrites non-NULL saved values.
  */
 @Service
 public class ManualExtraStatsImporter {
     private static final int LEAGUE_ID = 39;
     private static final int SEASON_YEAR = 2026;
-    private static final int MIN_FPL_GAMEWEEK = 11;
+    private static final int MIN_FPL_GAMEWEEK = 1;
+    private static final int MAX_FPL_GAMEWEEK = 38;
 
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
@@ -58,9 +59,9 @@ public class ManualExtraStatsImporter {
                 throw invalid(row, "fixture_id is not a Premier League 2026/27 fixture");
             }
             Fixture fixture = fixtures.getFirst();
-            if (fixture.gameweek() < MIN_FPL_GAMEWEEK) {
-                throw invalid(row, "GW1-GW10 are frozen (StatMuse); extra stats start from GW11 (got GW"
-                        + fixture.gameweek() + ")");
+            if (fixture.gameweek() < MIN_FPL_GAMEWEEK || fixture.gameweek() > MAX_FPL_GAMEWEEK) {
+                throw invalid(row, "fixture gameweek must be between " + MIN_FPL_GAMEWEEK + " and "
+                        + MAX_FPL_GAMEWEEK + " (got GW" + fixture.gameweek() + ")");
             }
             if (!fixture.status().equals("FINISHED")) {
                 throw invalid(row, "fixture_id is not FINISHED");

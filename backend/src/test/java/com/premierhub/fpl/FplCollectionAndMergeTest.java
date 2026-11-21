@@ -334,4 +334,95 @@ class FplCollectionAndMergeTest {
         assertTrue(redAnom.contains("1000560650,2000002001,BENCH_CARD,"));
         assertTrue(redAnom.contains("red_cards=1"));
     }
+
+    @Test
+    void matchesFixtureAcrossWholeSeasonEvenWhenDbGameweekDiffersFromFplEvent() throws Exception {
+        seedBase();
+        // Simulate a fixture placed in GW10 in DB but moved to FPL event 11 (same clubs & match date)
+        jdbc.update("UPDATE fixtures SET gameweek = 10 WHERE id = 1000560650");
+        Path mapDir = writeMappings(true);
+        Path outDir = temp.resolve("out-cross-event");
+
+        FplCollectorService.Result result = collector.collect(
+                2026, 11, mapDir, outDir, FplSource.fromDirectory(FIXTURES_DIR));
+        assertTrue(result.finalCsvWritten());
+        assertEquals(1, result.fixturesMatched());
+        assertTrue(Files.readString(outDir.resolve("fixture-map.csv"), StandardCharsets.UTF_8)
+                .contains("101,1000560650,2026-11-21T15:00:00Z,1000000057,1000000061"));
+    }
+
+    @Test
+    void blocksRatingMergeForGameweekBelow11ToProtectStatMuseStats() throws Exception {
+        seedBase();
+        Path dummyRatings = temp.resolve("dummy-ratings.csv");
+        Files.writeString(dummyRatings, "fixture_id,player_id,rating\n", StandardCharsets.UTF_8);
+
+        IllegalArgumentException err = assertThrows(IllegalArgumentException.class,
+                () -> merger.merge(2026, 10, temp, dummyRatings, null, temp.resolve("merge-gw10")));
+        assertTrue(err.getMessage().contains("GW11"));
+        assertFalse(Files.exists(temp.resolve("merge-gw10/manual-match-stats-2026-GW10.csv")));
+    }
+
+    @Test
+    void backfillConsistencyExcludesMismatchesAndUnmappedIntoConsistencyCsv() throws Exception {
+        seedBase();
+        // Seed DB manual_fixture_player_stats for fixture 1000560650:
+        // - 2000001001 (Alex Alpha, FPL 101, 90m): PLAYED -> eligible!
+        // - 2000001002 (Ben Beta, FPL 102, 2m): NOT in player-map -> UNMAPPED_PLAYER!
+        // - 2000002001 (Greg Gamma, FPL 103, 0m): PLAYED in DB -> DB_PLAYED_FPL_ZERO!
+        // - 2000002002 (Dan Delta, FPL 104, added with 15m in live): DID_NOT_PLAY in DB -> FPL_PLAYED_DB_NOT_PLAYED!
+        jdbc.update("""
+                INSERT INTO manual_fixture_player_stats
+                (fixture_id, player_id, league_id, season_year, club_id, participation_status,
+                 rating, fantasy_points, minutes, goals, assists, yellow_cards, red_cards)
+                VALUES (1000560650, 2000001001, 39, 2026, 1000000057, 'PLAYED', 8.00, 8.00, 90, 1, 1, 1, 0),
+                       (1000560650, 2000002001, 39, 2026, 1000000061, 'PLAYED', 6.50, 6.50, 10, 0, 0, 0, 0),
+                       (1000560650, 2000002002, 39, 2026, 1000000061, 'DID_NOT_PLAY', NULL, 0.00, 0, 0, 0, 0, 0)
+                """);
+
+        Path mapDir = writeMappings(false); // Ben Beta (102) unmapped; 101, 103, 104 mapped
+        Path srcDir = temp.resolve("backfill-consistency-src");
+        Files.createDirectories(srcDir);
+        Files.copy(FIXTURES_DIR.resolve("bootstrap-static.json"), srcDir.resolve("bootstrap-static.json"));
+        Files.copy(FIXTURES_DIR.resolve("fixtures-gw11.json"), srcDir.resolve("fixtures-gw11.json"));
+        String baseLive = Files.readString(FIXTURES_DIR.resolve("event-gw11-live.json"), StandardCharsets.UTF_8);
+        String extraEl104 = """
+                ,
+                    {
+                      "id": 104,
+                      "stats": {
+                        "minutes": 15, "goals_scored": 0, "assists": 0, "clean_sheets": 0, "goals_conceded": 0,
+                        "own_goals": 0, "penalties_saved": 0, "penalties_missed": 0, "yellow_cards": 0, "red_cards": 0,
+                        "saves": 1, "bonus": 0, "bps": 5, "influence": "2.0", "creativity": "0.0", "threat": "0.0",
+                        "ict_index": "0.2", "clearances_blocks_interceptions": 0, "recoveries": 1, "tackles": 0,
+                        "defensive_contribution": 0, "starts": 0, "expected_goals": "0.00", "expected_assists": "0.00",
+                        "expected_goal_involvements": "0.00", "expected_goals_conceded": "0.10"
+                      },
+                      "explain": [{"fixture": 101, "stats": [{"identifier": "minutes", "points": 1, "value": 15}]}]
+                    }
+                  ]
+                }
+                """;
+        int lastBracket = baseLive.lastIndexOf(']');
+        String modifiedLive = baseLive.substring(0, lastBracket) + extraEl104;
+        Files.writeString(srcDir.resolve("event-gw11-live.json"), modifiedLive, StandardCharsets.UTF_8);
+
+        Path outDir = temp.resolve("out-backfill-consistency");
+        FplCollectorService.Result result = collector.collectBackfill(
+                2026, 11, mapDir, outDir, FplSource.fromDirectory(srcDir));
+        assertTrue(result.finalCsvWritten());
+        assertEquals(1, result.playedRows()); // Only 2000001001 eligible for extra-stats import!
+        assertEquals(1, result.unmappedCount());
+
+        String extraCsv = Files.readString(outDir.resolve("fpl-extra-stats-2026-GW11.csv"), StandardCharsets.UTF_8);
+        assertTrue(extraCsv.contains("2026,1000560650,2000001001,"));
+        assertFalse(extraCsv.contains("2000001002"));
+        assertFalse(extraCsv.contains("2000002001"));
+        assertFalse(extraCsv.contains("2000002002"));
+
+        String consistencyCsv = Files.readString(outDir.resolve("consistency.csv"), StandardCharsets.UTF_8);
+        assertTrue(consistencyCsv.contains(",102,Ben Beta,UNMAPPED_PLAYER,2,,"));
+        assertTrue(consistencyCsv.contains("1000560650,2000002002,104,Dan Delta,FPL_PLAYED_DB_NOT_PLAYED,15,DID_NOT_PLAY,0"));
+        assertTrue(consistencyCsv.contains("1000560650,2000002001,103,Greg Gamma,DB_PLAYED_FPL_ZERO,0,PLAYED,10"));
+    }
 }

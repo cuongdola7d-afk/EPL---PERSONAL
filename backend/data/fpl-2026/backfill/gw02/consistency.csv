@@ -1,0 +1,5 @@
+fixture_id,player_id,fpl_element_id,player_name,reason,fpl_minutes,db_status,db_minutes
+1000560560,2000015003,,Iliman Ndiaye,DB_PLAYED_UNMAPPED_PLAYER,,PLAYED,90
+1000560560,2000020092,,Beto,DB_PLAYED_UNMAPPED_PLAYER,,PLAYED,21
+1000560560,2000004005,237,Iliman Ndiaye,FPL_PLAYED_DB_NOT_PLAYED,90,MISSING,
+1000560560,,248,Norberto Bercique Gomes Betuncal,UNMAPPED_PLAYER,20,,

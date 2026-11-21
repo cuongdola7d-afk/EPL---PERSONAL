@@ -1,15 +1,15 @@
-# Thu thập số liệu trận từ FPL (từ GW11 mùa 2026/27)
+# Thu thập số liệu trận từ FPL (mùa 2026/27)
 
-> Áp dụng từ **GW11 mùa 2026/27**. Không nhập lại, không sửa dữ liệu **GW1–GW10** (giữ nguyên nguồn StatMuse) và không backfill bảng chỉ số mở rộng cho GW1–GW10.
+> Chỉ số mở rộng có từ GW1 (bổ sung ngày 21/11/2026); số liệu cơ bản GW1–GW10 vẫn theo StatMuse; từ GW11 số liệu cơ bản theo FPL. Tuyệt đối không sửa hoặc nhập đè `manual_fixture_player_stats` của GW1–GW10.
 
-## 1. Phân chia nguồn dữ liệu từ GW11
+## 1. Phân chia nguồn dữ liệu mùa 2026/27
 
-| Dữ liệu | Nguồn từ GW11 | Ghi chú |
-| --- | --- | --- |
-| Rating trận | **Ảnh SofaScore** (người dùng gửi) | Giữ nguyên luật `confirmed-unrated.csv`: có ra sân nhưng không được chấm thì `rating = NULL`, điểm Fantasy = 0 |
-| Số phút, bàn thắng, kiến tạo, thẻ vàng, thẻ đỏ | **FPL API** (thay StatMuse) | Kiến tạo theo định nghĩa FPL |
-| Chỉ số mở rộng (bảng `manual_fixture_player_extra_stats`) | **FPL API** | Chỉ nhập từ GW11 trở đi (`gameweek >= 11`) |
-| Lịch, tỉ số, trạng thái trận, BXH | **football-data.org** (không đổi) | Đồng bộ trước khi chạy thu thập FPL |
+| Dữ liệu | GW1–GW10 | Từ GW11 | Ghi chú |
+| --- | --- | --- | --- |
+| Rating trận | **Ảnh SofaScore** | **Ảnh SofaScore** | Giữ nguyên luật `confirmed-unrated.csv`: có ra sân nhưng không được chấm thì `rating = NULL`, điểm Fantasy = 0 |
+| Số phút, bàn thắng, kiến tạo, thẻ vàng, thẻ đỏ (`manual_fixture_player_stats`) | **StatMuse** (giữ nguyên 100%, không nhập lại) | **FPL API** | Lệnh ghép rating (`--merge`) chặn mọi vòng `< 11`; kiến tạo từ GW11 theo định nghĩa FPL |
+| Chỉ số mở rộng (`manual_fixture_player_extra_stats`) | **FPL API** (bổ sung riêng ngày 21/11/2026) | **FPL API** | Importer cho phép GW1–GW38 mùa 2026, không bao giờ ghi vào `manual_fixture_player_stats` |
+| Lịch, tỉ số, trạng thái trận, BXH | **football-data.org** | **football-data.org** | Đồng bộ trước khi chạy thu thập FPL |
 
 ## 2. FPL API và yêu cầu kỹ thuật
 
@@ -32,7 +32,7 @@ Ràng buộc kỹ thuật trong `FplClient` / `FplJsonParser` / `FplCollectorSer
 - **Cầu thủ:** `backend/data/fpl-2026/player-map.csv` (`fpl_element_id,player_id,fpl_name,player_name,source,verified_on`).
   - Khởi tạo từ các cặp `fpl_id` trong `backend/data/roster-2026-09-30/*.json` sau khi đối chiếu CLB theo membership hiện hành, bổ sung các trường hợp khớp **duy nhất** theo `(club_id, họ tên chuẩn hóa bỏ dấu)`.
   - Các trường hợp chưa chắc chắn hoặc thiếu membership được ghi tại `backend/data/fpl-2026/player-map-pending.csv` để chủ dự án xác nhận; **không đoán**.
-- **Trận:** tính tự động lúc chạy theo bộ `(home_club_id, away_club_id, kickoff_date_utc)` khớp 1-1 với bảng `fixtures` mùa 2026 trong DB. Nếu không khớp đủ 1-1 cho cả vòng thì dừng ngay. Kết quả ghi ra `fixture-map.csv` trong thư mục vòng.
+- **Trận:** tính tự động lúc chạy theo bộ `(home_club_id, away_club_id)` trên **toàn bộ mùa 2026** trong bảng `fixtures`, đối chiếu thêm ngày đá UTC (`match_date`). Cách này xử lý cả trường hợp FPL dời trận sang `event` khác. Phải khớp đúng 1-1 cho cả vòng, nếu không thì dừng ngay. Kết quả ghi ra `fixture-map.csv` trong thư mục vòng.
 
 ## 4. Bảng chỉ số mở rộng (`manual_fixture_player_extra_stats`)
 
@@ -122,7 +122,7 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 
 Thực hiện theo `docs/gameweek-data-workflow.md` (xác minh đúng đích, tạo backup mới ngoài Git, thử trên H2 trước):
 1. Nhập thống kê chính bằng importer hiện có: `--premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gwNN-2026/manual-match-stats-2026-GWNN.csv`.
-2. Nhập chỉ số mở rộng bằng importer mới (idempotent, transactional, từ chối ghi đè giá trị khác `NULL`, chặn `gameweek < 11`):
+2. Nhập chỉ số mở rộng bằng importer mới (idempotent, transactional, từ chối ghi đè giá trị khác `NULL`, hỗ trợ GW1–GW38 mùa 2026 và không bao giờ ghi vào `manual_fixture_player_stats`):
 
 ```powershell
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
@@ -130,12 +130,12 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
   --premierhub.manual-extra-stats.file=data/gw11-2026/fpl/fpl-extra-stats-2026-GW11.csv
 ```
 
-Chạy lặp lần 2 để xác nhận `inserted=0, unchanged=N`.
+Chạy lặp lần 2 để xác nhận `inserted=0`. Với đợt bổ sung riêng GW1–GW10 (chỉ bảng mở rộng, không chạy `--merge`), dùng `--backfill-consistency=true` khi thu thập để xuất `consistency.csv` và lọc chỉ giữ các dòng có `manual_fixture_player_stats.participation_status = 'PLAYED'` cùng FPL `minutes > 0` (xem `backend/data/fpl-2026/backfill/README.md`).
 3. Tiếp tục nhập lineups, Fantasy evidence (`confirmed-unrated.csv`, `confirmed-not-registered.csv`), tái tính tổng mùa, đối chiếu Đội hình tiêu biểu và readiness theo `docs/gameweek-data-workflow.md`.
 
 ## 6. Giới hạn cần lưu ý
 
 - **Định nghĩa kiến tạo (Assists) của FPL rộng hơn thống kê chính thức (Opta/StatMuse):** FPL tính kiến tạo cả cho tình huống kiếm phạt đền, kiếm đá phạt dẫn đến bàn thắng, hoặc cú sút bật cột/xà/thủ môn/hậu vệ để đồng đội ghi bàn. Do đó từ GW11 trở đi, số `assists` tuân theo định nghĩa FPL và không so sánh 1-1 tuyệt đối với GW1–GW10 (StatMuse).
 - **FPL API không có tài liệu chính thức (unofficial):** cấu trúc JSON hoặc tên trường có thể thay đổi bất ngờ giữa mùa. `FplJsonParser` kiểm tra chặt mọi trường bắt buộc và kiểu dữ liệu, dừng ngay kèm thông báo lỗi cụ thể thay vì tự điền `0`.
-- **Không hồi tố GW1–GW10:** `ManualExtraStatsImporter` chặn nhập mọi fixture có `gameweek < 11`. Dữ liệu GW1–GW10 giữ nguyên nguồn StatMuse.
+- **Bảo vệ số liệu cơ bản GW1–GW10:** `FplRatingMergeService` chặn mọi vòng `< 11` để không vô tình tạo CSV nhập đè `manual_fixture_player_stats`. `ManualExtraStatsImporter` chỉ ghi vào `manual_fixture_player_extra_stats`.
 - **Chưa có API/UI cho bảng mở rộng:** `manual_fixture_player_extra_stats` hiện chỉ lưu trữ dữ liệu cho các bước sử dụng sau này, chưa mở endpoint hoặc hiển thị trên frontend.

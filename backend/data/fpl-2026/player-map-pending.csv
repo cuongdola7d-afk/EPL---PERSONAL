@@ -1,4 +1,5 @@
 fpl_element_id,fpl_name,fpl_web_name,fpl_team_id,club_id,club_name,suggested_player_id,suggested_player_name,reason
-135,Zadok Yohanna,Yohanna,5,1000000397,Brighton & Hove Albion FC,2000030053,Zadok Yohanna,no_active_membership_in_current_roster
-547,Romaine Mundle,Mundle,20,1000000071,Sunderland AFC,2000020051,Romaine Mundle,no_active_membership_in_current_roster
+140,Robert Lynch Sánchez,Sánchez,6,1000000061,Chelsea FC,2000030144,Robert Sánchez,legal_fullname_differs_from_db_name
+248,Norberto Bercique Gomes Betuncal,Beto,9,1000000062,Everton FC,2000020092,Beto,legal_fullname_differs_from_db_name
+527,Richarlison de Andrade,Richarlison,19,1000000073,Tottenham Hotspur FC,2000030019,Richarlison,legal_fullname_differs_from_db_name
 606,Triston Rowe,Rowe,2,1000000058,Aston Villa FC,2000030125,Triston Rowe,no_active_membership_in_current_roster

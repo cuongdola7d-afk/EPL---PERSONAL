@@ -35,10 +35,19 @@ public class FplCollectCommand implements ApplicationRunner {
         boolean merge = Boolean.parseBoolean(optionalOption(args, "false", "merge", "premierhub.fpl-collect.merge"));
         boolean mergeOnly = Boolean.parseBoolean(optionalOption(args, "false",
                 "merge-only", "premierhub.fpl-collect.merge-only"));
+        boolean backfillConsistency = Boolean.parseBoolean(optionalOption(args, "false",
+                "backfill-consistency", "premierhub.fpl-collect.backfill-consistency"));
+
+        if (backfillConsistency && (merge || mergeOnly)) {
+            throw new IllegalArgumentException(
+                    "--backfill-consistency=true cannot be combined with --merge or --merge-only");
+        }
 
         if (!mergeOnly) {
             FplSource source = inputDirOpt != null ? FplSource.fromDirectory(Path.of(inputDirOpt)) : client;
-            FplCollectorService.Result result = collector.collect(season, gameweek, mappingDir, outputDir, source);
+            FplCollectorService.Result result = backfillConsistency
+                    ? collector.collectBackfill(season, gameweek, mappingDir, outputDir, source)
+                    : collector.collect(season, gameweek, mappingDir, outputDir, source);
             System.out.printf("FPL_COLLECT season=%d gw=%d fixtures=%d played=%d unmapped=%d summaries=%d finalCsv=%s%n",
                     season, result.gameweek(), result.fixturesMatched(), result.playedRows(),
                     result.unmappedCount(), result.elementSummaryCalls(), result.finalCsvWritten());

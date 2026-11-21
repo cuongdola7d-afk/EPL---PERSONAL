@@ -33,6 +33,8 @@ public class FplCollectorService {
             "fpl_element_id,fpl_name,fpl_web_name,fpl_team_id,club_id,fixture_id,minutes";
     public static final String BENCH_CARDS_HEADER =
             "fixture_id,player_id,yellow_cards,red_cards";
+    public static final String CONSISTENCY_HEADER =
+            "fixture_id,player_id,fpl_element_id,player_name,reason,fpl_minutes,db_status,db_minutes";
 
     private final JdbcTemplate jdbc;
     private final FplJsonParser parser;
@@ -51,6 +53,17 @@ public class FplCollectorService {
     }
 
     public Result collect(int season, int gameweek, Path mappingDir, Path outputDir, FplSource source)
+            throws IOException, InterruptedException {
+        return collectInternal(season, gameweek, mappingDir, outputDir, source, false);
+    }
+
+    public Result collectBackfill(int season, int gameweek, Path mappingDir, Path outputDir, FplSource source)
+            throws IOException, InterruptedException {
+        return collectInternal(season, gameweek, mappingDir, outputDir, source, true);
+    }
+
+    private Result collectInternal(int season, int gameweek, Path mappingDir, Path outputDir,
+                                   FplSource source, boolean backfillConsistency)
             throws IOException, InterruptedException {
         if (season != SEASON_YEAR) {
             throw new IllegalArgumentException("Only season 2026 is supported, got " + season);
@@ -103,7 +116,7 @@ public class FplCollectorService {
             elementsById.put(el.id(), el);
         }
 
-        List<DbFixture> dbFixtures = loadDbFixtures(gameweek);
+        List<DbFixture> dbFixtures = loadSeasonFixtures();
         Map<Integer, MatchedFixture> matchedFixtures = matchFixturesOneToOne(gameweek, fplFixtures, dbFixtures, teamMap);
 
         writeFixtureMap(outputDir.resolve("fixture-map.csv"), matchedFixtures);
@@ -169,6 +182,80 @@ public class FplCollectorService {
 
         Path matchStatsFile = outputDir.resolve("fpl-match-stats-2026-" + gwUpper + ".csv");
         Path extraStatsFile = outputDir.resolve("fpl-extra-stats-2026-" + gwUpper + ".csv");
+
+        if (backfillConsistency) {
+            List<ConsistencyRow> consistencyRows = new ArrayList<>();
+            Map<Integer, Integer> playerIdToFplId = new HashMap<>();
+            for (var mapping : playerMap.values()) {
+                playerIdToFplId.put(mapping.playerId(), mapping.fplElementId());
+            }
+            for (UnmappedRow u : unmappedRows) {
+                consistencyRows.add(new ConsistencyRow(
+                        u.fixtureId(), null, u.fplElementId(), u.fplName(),
+                        "UNMAPPED_PLAYER", u.minutes(), "", null));
+            }
+
+            Map<FixturePlayerKey, DbManualStat> dbStats = loadDbManualStats(matchedFixtures);
+            Map<FixturePlayerKey, MatchStatRow> mappedFplByKey = new HashMap<>();
+            for (MatchStatRow mr : matchRows) {
+                mappedFplByKey.put(new FixturePlayerKey(mr.fixtureId(), mr.playerId()), mr);
+            }
+
+            List<ExtraStatRow> eligibleExtraRows = new ArrayList<>();
+            for (ExtraStatRow er : extraRows) {
+                FixturePlayerKey key = new FixturePlayerKey(er.fixtureId(), er.playerId());
+                DbManualStat db = dbStats.get(key);
+                if (db != null && "PLAYED".equals(db.status())) {
+                    eligibleExtraRows.add(er);
+                } else {
+                    String dbStatus = db == null ? "MISSING" : db.status();
+                    Integer dbMinutes = db == null ? null : db.minutes();
+                    String name = db != null ? db.playerName() : lookupPlayerName(er.playerId());
+                    Integer fplId = playerIdToFplId.get(er.playerId());
+                    consistencyRows.add(new ConsistencyRow(
+                            er.fixtureId(), er.playerId(), fplId, name,
+                            "FPL_PLAYED_DB_NOT_PLAYED", er.stats().minutes(), dbStatus, dbMinutes));
+                }
+            }
+
+            for (var entry : dbStats.entrySet()) {
+                DbManualStat db = entry.getValue();
+                if (!"PLAYED".equals(db.status())) {
+                    continue;
+                }
+                if (mappedFplByKey.containsKey(entry.getKey())) {
+                    continue;
+                }
+                Integer fplId = playerIdToFplId.get(db.playerId());
+                if (fplId != null) {
+                    consistencyRows.add(new ConsistencyRow(
+                            db.fixtureId(), db.playerId(), fplId, db.playerName(),
+                            "DB_PLAYED_FPL_ZERO", 0, db.status(), db.minutes()));
+                } else {
+                    consistencyRows.add(new ConsistencyRow(
+                            db.fixtureId(), db.playerId(), null, db.playerName(),
+                            "DB_PLAYED_UNMAPPED_PLAYER", null, db.status(), db.minutes()));
+                }
+            }
+
+            consistencyRows.sort(Comparator.comparingInt(ConsistencyRow::fixtureId)
+                    .thenComparing(ConsistencyRow::reason)
+                    .thenComparingInt(r -> r.playerId() == null ? 0 : r.playerId())
+                    .thenComparingInt(r -> r.fplElementId() == null ? 0 : r.fplElementId()));
+            writeConsistency(outputDir.resolve("consistency.csv"), consistencyRows);
+
+            matchRows.sort(Comparator.comparingInt(MatchStatRow::fixtureId)
+                    .thenComparingInt(MatchStatRow::playerId));
+            eligibleExtraRows.sort(Comparator.comparingInt(ExtraStatRow::fixtureId)
+                    .thenComparingInt(ExtraStatRow::playerId));
+
+            writeMatchStats(matchStatsFile, matchRows);
+            writeExtraStats(extraStatsFile, eligibleExtraRows);
+
+            return new Result(gameweek, matchedFixtures.size(), eligibleExtraRows.size(),
+                    unmappedRows.size(), elementSummaryCalls, true);
+        }
+
         if (!unmappedRows.isEmpty()) {
             Files.deleteIfExists(matchStatsFile);
             Files.deleteIfExists(extraStatsFile);
@@ -286,21 +373,22 @@ public class FplCollectorService {
         return found;
     }
 
-    private List<DbFixture> loadDbFixtures(int gameweek) {
+    private List<DbFixture> loadSeasonFixtures() {
         return jdbc.query("""
-                SELECT id, home_club_id, away_club_id, match_date, home_goals, away_goals, status
+                SELECT id, gameweek, home_club_id, away_club_id, match_date, home_goals, away_goals, status
                 FROM fixtures
-                WHERE league_id = ? AND season_year = ? AND gameweek = ?
+                WHERE league_id = ? AND season_year = ?
                 ORDER BY id
                 """, (rs, index) -> new DbFixture(
                 rs.getInt("id"),
+                rs.getInt("gameweek"),
                 rs.getInt("home_club_id"),
                 rs.getInt("away_club_id"),
                 rs.getDate("match_date").toLocalDate(),
                 rs.getObject("home_goals", Integer.class),
                 rs.getObject("away_goals", Integer.class),
                 rs.getString("status")
-        ), LEAGUE_ID, SEASON_YEAR, gameweek);
+        ), LEAGUE_ID, SEASON_YEAR);
     }
 
     private Map<Integer, MatchedFixture> matchFixturesOneToOne(
@@ -309,15 +397,14 @@ public class FplCollectorService {
             List<DbFixture> dbFixtures,
             Map<Integer, FplMappingReader.TeamMapping> teamMap
     ) {
-        if (dbFixtures.size() != fplFixtures.size()) {
-            throw new IllegalStateException("Fixture count mismatch for GW" + gameweek
-                    + ": FPL has " + fplFixtures.size() + ", DB has " + dbFixtures.size());
+        if (dbFixtures.isEmpty()) {
+            throw new IllegalStateException("No DB fixtures found for season " + SEASON_YEAR + " when matching GW" + gameweek);
         }
 
-        Map<FixtureKey, List<DbFixture>> dbByKey = new HashMap<>();
+        Map<TeamPairKey, List<DbFixture>> dbByPair = new HashMap<>();
         for (DbFixture db : dbFixtures) {
-            FixtureKey key = new FixtureKey(db.homeClubId(), db.awayClubId(), db.matchDate());
-            dbByKey.computeIfAbsent(key, ignored -> new ArrayList<>()).add(db);
+            TeamPairKey key = new TeamPairKey(db.homeClubId(), db.awayClubId());
+            dbByPair.computeIfAbsent(key, ignored -> new ArrayList<>()).add(db);
         }
 
         Map<Integer, MatchedFixture> matched = new LinkedHashMap<>();
@@ -334,14 +421,20 @@ public class FplCollectorService {
                 throw new IllegalStateException("Missing team-map.csv entry for FPL fixture " + fpl.id()
                         + " (team_h=" + fpl.teamH() + ", team_a=" + fpl.teamA() + ")");
             }
-            FixtureKey key = new FixtureKey(home.clubId(), away.clubId(), fpl.kickoffDateUtc());
-            List<DbFixture> candidates = dbByKey.getOrDefault(key, List.of());
+            TeamPairKey pair = new TeamPairKey(home.clubId(), away.clubId());
+            List<DbFixture> candidates = dbByPair.getOrDefault(pair, List.of());
             if (candidates.size() != 1) {
-                throw new IllegalStateException("Expected unique 1-to-1 DB fixture for FPL fixture " + fpl.id()
+                throw new IllegalStateException("Expected unique 1-to-1 season DB fixture for FPL fixture " + fpl.id()
                         + " (" + home.clubName() + " vs " + away.clubName() + " on " + fpl.kickoffDateUtc()
                         + "), found " + candidates.size());
             }
             DbFixture db = candidates.getFirst();
+            if (!db.matchDate().equals(fpl.kickoffDateUtc())) {
+                throw new IllegalStateException("Expected 1-to-1 date match for FPL fixture " + fpl.id()
+                        + " (" + home.clubName() + " vs " + away.clubName() + "): FPL UTC date="
+                        + fpl.kickoffDateUtc() + " differs from DB match_date=" + db.matchDate()
+                        + " (db_fixture=" + db.id() + ", db_gw=" + db.gameweek() + ", fpl_event=" + gameweek + ")");
+            }
             Integer prevFpl = usedDbFixtures.putIfAbsent(db.id(), fpl.id());
             if (prevFpl != null) {
                 throw new IllegalStateException("DB fixture " + db.id() + " matched multiple FPL fixtures: "
@@ -393,6 +486,49 @@ public class FplCollectorService {
                     .append(r.redCards()).append('\n');
         }
         Files.writeString(file, out.toString(), StandardCharsets.UTF_8);
+    }
+
+    private static void writeConsistency(Path file, List<ConsistencyRow> rows) throws IOException {
+        StringBuilder out = new StringBuilder(CONSISTENCY_HEADER).append('\n');
+        for (ConsistencyRow r : rows) {
+            out.append(r.fixtureId()).append(',')
+                    .append(nullable(r.playerId())).append(',')
+                    .append(nullable(r.fplElementId())).append(',')
+                    .append(sanitize(r.playerName())).append(',')
+                    .append(r.reason()).append(',')
+                    .append(nullable(r.fplMinutes())).append(',')
+                    .append(sanitize(r.dbStatus())).append(',')
+                    .append(nullable(r.dbMinutes())).append('\n');
+        }
+        Files.writeString(file, out.toString(), StandardCharsets.UTF_8);
+    }
+
+    private Map<FixturePlayerKey, DbManualStat> loadDbManualStats(Map<Integer, MatchedFixture> matchedFixtures) {
+        Map<FixturePlayerKey, DbManualStat> result = new LinkedHashMap<>();
+        for (MatchedFixture mf : matchedFixtures.values()) {
+            List<DbManualStat> rows = jdbc.query("""
+                    SELECT s.fixture_id, s.player_id, p.name AS player_name,
+                           s.participation_status, s.minutes
+                    FROM manual_fixture_player_stats s
+                    JOIN players p ON p.id = s.player_id
+                    WHERE s.fixture_id = ? AND s.league_id = ? AND s.season_year = ?
+                    """, (rs, idx) -> new DbManualStat(
+                    rs.getInt("fixture_id"),
+                    rs.getInt("player_id"),
+                    rs.getString("player_name"),
+                    rs.getString("participation_status"),
+                    rs.getObject("minutes", Integer.class)
+            ), mf.internalFixtureId(), LEAGUE_ID, SEASON_YEAR);
+            for (DbManualStat row : rows) {
+                result.put(new FixturePlayerKey(row.fixtureId(), row.playerId()), row);
+            }
+        }
+        return result;
+    }
+
+    private String lookupPlayerName(int playerId) {
+        List<String> names = jdbc.queryForList("SELECT name FROM players WHERE id = ?", String.class, playerId);
+        return names.isEmpty() ? ("Player " + playerId) : names.getFirst();
     }
 
     private static void writeMatchStats(Path file, List<MatchStatRow> rows) throws IOException {
@@ -456,11 +592,11 @@ public class FplCollectorService {
         return value.replace(',', ' ').replace('"', ' ').replace('\t', ' ').strip();
     }
 
-    private record DbFixture(int id, int homeClubId, int awayClubId, LocalDate matchDate,
+    private record DbFixture(int id, int gameweek, int homeClubId, int awayClubId, LocalDate matchDate,
                              Integer homeGoals, Integer awayGoals, String status) {
     }
 
-    private record FixtureKey(int homeClubId, int awayClubId, LocalDate matchDate) {
+    private record TeamPairKey(int homeClubId, int awayClubId) {
     }
 
     private record MatchedFixture(int fplFixtureId, int internalFixtureId, Instant kickoffUtc,
@@ -475,6 +611,16 @@ public class FplCollectorService {
     }
 
     private record BenchCardRow(int fixtureId, int playerId, int yellowCards, int redCards) {
+    }
+
+    private record FixturePlayerKey(int fixtureId, int playerId) {
+    }
+
+    private record DbManualStat(int fixtureId, int playerId, String playerName, String status, Integer minutes) {
+    }
+
+    private record ConsistencyRow(int fixtureId, Integer playerId, Integer fplElementId, String playerName,
+                                  String reason, Integer fplMinutes, String dbStatus, Integer dbMinutes) {
     }
 
     private record MatchStatRow(int fixtureId, int playerId, int minutes, int goals, int assists,

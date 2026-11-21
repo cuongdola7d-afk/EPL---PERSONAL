@@ -39,17 +39,20 @@ class ManualExtraStatsImportTest {
         jdbc.update("""
                 INSERT INTO fixtures (id, league_id, season_year, home_club_id, away_club_id,
                   gameweek, match_date, status, provider_status, home_goals, away_goals, payload_hash, synced_at)
-                VALUES (1000560639, 39, 2026, 1000000057, 1000000061, 10, DATE '2026-11-08',
+                VALUES (1000560540, 39, 2026, 1000000057, 1000000061, 1, DATE '2026-08-15',
+                        'FINISHED', 'FINISHED', 1, 0, 'gw1', CURRENT_TIMESTAMP),
+                       (1000560639, 39, 2026, 1000000057, 1000000061, 10, DATE '2026-11-08',
                         'FINISHED', 'FINISHED', 1, 0, 'gw10', CURRENT_TIMESTAMP),
                        (1000560650, 39, 2026, 1000000057, 1000000061, 11, DATE '2026-11-21',
                         'FINISHED', 'FINISHED', 2, 1, 'gw11', CURRENT_TIMESTAMP)
                 """);
-        // Seed existing GW10 StatMuse row to confirm GW1-GW10 are untouched
+        // Seed existing GW1 and GW10 StatMuse rows to confirm importer never writes to manual_fixture_player_stats
         jdbc.update("""
                 INSERT INTO manual_fixture_player_stats
                 (fixture_id, player_id, league_id, season_year, club_id, participation_status,
                  rating, fantasy_points, minutes, goals, assists, yellow_cards, red_cards)
-                VALUES (1000560639, 2000001001, 39, 2026, 1000000057, 'PLAYED', 7.50, 7.50, 90, 1, 0, 0, 0)
+                VALUES (1000560540, 2000001001, 39, 2026, 1000000057, 'PLAYED', 8.10, 8.10, 88, 1, 1, 0, 0),
+                       (1000560639, 2000001001, 39, 2026, 1000000057, 'PLAYED', 7.50, 7.50, 90, 1, 0, 0, 0)
                 """);
     }
 
@@ -61,8 +64,15 @@ class ManualExtraStatsImportTest {
     }
 
     @Test
-    void importsIdempotentlyRejectsConflictsAndProtectsGw1ThroughGw10() throws Exception {
+    void importsGw1ThroughGw11IdempotentlyRejectsConflictsAndNeverWritesManualMatchStats() throws Exception {
         seed();
+        var beforeManualStats = jdbc.queryForList("""
+                SELECT fixture_id, player_id, participation_status, rating, fantasy_points,
+                       minutes, goals, assists, yellow_cards, red_cards
+                FROM manual_fixture_player_stats
+                ORDER BY fixture_id, player_id
+                """);
+
         Path valid = writeCsv(
                 "2026,1000560650,2000001001,1,0,1,0,0,0,0,3,42,2,5,3,5,0.74,0.36,1.10,0.92,48.6,31.2,55.0,13.5,FPL,2026-11-21T20:00:00Z");
 
@@ -86,15 +96,22 @@ class ManualExtraStatsImportTest {
         assertEquals(3, jdbc.queryForObject(
                 "SELECT bonus FROM manual_fixture_player_extra_stats WHERE fixture_id = 1000560650", Integer.class));
 
-        // GW1-GW10 backfill must be rejected and existing GW10 data untouched
-        Path gw10Backfill = writeCsv(
+        // GW1 and GW10 extra stats backfill is allowed idempotently
+        Path backfill = writeCsv(
+                "2026,1000560540,2000001001,1,1,0,0,0,0,0,2,35,1,4,2,3,0.62,0.41,1.03,0.30,31.0,22.5,40.0,9.4,FPL,2026-11-21T20:00:00Z",
                 "2026,1000560639,2000001001,1,1,0,0,0,0,0,1,28,1,3,1,2,0.50,0.00,0.50,0.40,20.0,10.0,25.0,5.5,FPL,2026-11-21T20:00:00Z");
-        IllegalArgumentException gw10Err = assertThrows(IllegalArgumentException.class,
-                () -> importer.importFile(gw10Backfill));
-        assertTrue(gw10Err.getMessage().contains("GW1-GW10"));
-        assertEquals(0, jdbc.queryForObject(
-                "SELECT COUNT(*) FROM manual_fixture_player_extra_stats WHERE fixture_id = 1000560639", Integer.class));
-        assertEquals(90, jdbc.queryForObject(
-                "SELECT minutes FROM manual_fixture_player_stats WHERE fixture_id = 1000560639", Integer.class));
+        assertEquals(2, importer.importFile(backfill).inserted());
+        assertEquals(0, importer.importFile(backfill).inserted());
+        assertEquals(3, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manual_fixture_player_extra_stats", Integer.class));
+
+        // Verify manual_fixture_player_stats was NEVER modified or inserted into
+        var afterManualStats = jdbc.queryForList("""
+                SELECT fixture_id, player_id, participation_status, rating, fantasy_points,
+                       minutes, goals, assists, yellow_cards, red_cards
+                FROM manual_fixture_player_stats
+                ORDER BY fixture_id, player_id
+                """);
+        assertEquals(beforeManualStats, afterManualStats);
     }
 }

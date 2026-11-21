@@ -50,8 +50,10 @@ public class FplRatingMergeService {
         if (season != SEASON_YEAR) {
             throw new IllegalArgumentException("Only season 2026 is supported, got " + season);
         }
-        if (gameweek < 1 || gameweek > 38) {
-            throw new IllegalArgumentException("gameweek must be between 1 and 38, got " + gameweek);
+        if (gameweek < 11 || gameweek > 38) {
+            throw new IllegalArgumentException(
+                    "Rating merge is only allowed from GW11 to GW38 (GW1-GW10 manual_fixture_player_stats are frozen); got GW"
+                            + gameweek);
         }
 
         String gwUpper = String.format("GW%02d", gameweek);

@@ -174,7 +174,7 @@ flowchart LR
 | 2024/25 | API-Football, snapshot GW1 có 10 fixture `1208021`–`1208030`, raw `fixture_player_stats`, bằng chứng sự kiện và công thức điểm v1 |
 | 2026/27 cơ bản | football-data.org competition PL/2021; ánh xạ sang league nội bộ 39, CLB/fixture qua các bảng mapping |
 | 2026/27 cầu thủ | Roster/membership, hồ sơ, OVR và vị trí xác minh nhập thủ công; không có lý do để đổi player_id khi tên/CLB thay đổi |
-| 2026/27 trận | GW1–GW10: phút/bàn/kiến tạo/thẻ từ StatMuse. Từ GW11 mùa 2026/27: rating từ SofaScore; số phút/bàn/kiến tạo/thẻ và chỉ số mở rộng từ FPL. GW1–GW10 giữ nguyên nguồn StatMuse, không nhập lại. Lineup/formation/vị trí trận từ bằng chứng cuối (chi tiết ở [fpl-collection-2026.md](docs/fpl-collection-2026.md)) |
+| 2026/27 trận | Chỉ số mở rộng có từ GW1 (bổ sung ngày 21/11/2026); số liệu cơ bản GW1–GW10 vẫn theo StatMuse; từ GW11 số liệu cơ bản theo FPL. Rating từ ảnh/bảng SofaScore do người dùng gửi; lineup/formation/vị trí trận từ bằng chứng cuối (chi tiết ở [fpl-collection-2026.md](docs/fpl-collection-2026.md)) |
 
 - Với nguồn football-data hiện có, ID nội bộ CLB/fixture được tạo trong namespace `1_000_000_000 + provider_id`; tra bảng mapping để xác nhận, không dựa phép cộng để đoán ID cầu thủ.
 - Player mới thủ công dùng dải `2_000_000_000..2_099_999_999`; player đã có ID khác dải vẫn giữ nguyên. Tra danh tính trước khi đề xuất ID mới.
