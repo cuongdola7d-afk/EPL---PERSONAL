@@ -1,0 +1,565 @@
+fpl_element_id,player_id,fpl_name,player_name,source,verified_on
+1,2000001001,David Raya Martín,David Raya,roster-2026-09-30,2026-11-21
+2,2000001011,Kepa Arrizabalaga Revuelta,Kepa Arrizabalaga,roster-2026-09-30,2026-11-21
+3,2000001019,Illan Meslier,Illan Meslier,roster-2026-09-30,2026-11-21
+4,2000001006,Gabriel dos Santos Magalhães,Gabriel Magalhaes,roster-2026-09-30,2026-11-21
+5,2000001010,Jurriën Timber,Jurrien Timber,roster-2026-09-30,2026-11-21
+6,2000001002,William Saliba,William Saliba,roster-2026-09-30,2026-11-21
+7,2000001024,Myles Lewis-Skelly,Myles Lewis-Skelly,roster-2026-09-30,2026-11-21
+8,2000001020,Riccardo Calafiori,Riccardo Calafiori,roster-2026-09-30,2026-11-21
+9,2000001005,Piero Hincapié,Piero Hincapie,roster-2026-09-30,2026-11-21
+10,2000001004,Benjamin White,Ben White,roster-2026-09-30,2026-11-21
+11,2000001003,Cristhian Mosquera,Cristhian Mosquera,roster-2026-09-30,2026-11-21
+12,2000001007,Bukayo Saka,Bukayo Saka,roster-2026-09-30,2026-11-21
+13,2000001023,Declan Rice,Declan Rice,roster-2026-09-30,2026-11-21
+14,2000001009,Eberechi Eze,Eberechi Eze,roster-2026-09-30,2026-11-21
+15,2000001008,Martin Ødegaard,Martin Odegaard,roster-2026-09-30,2026-11-21
+16,2000001015,Noni Madueke,Noni Madueke,roster-2026-09-30,2026-11-21
+17,2000001017,Mikel Merino Zazón,Mikel Merino,roster-2026-09-30,2026-11-21
+19,2000001021,Martín Zubimendi Ibáñez,Martin Zubimendi,roster-2026-09-30,2026-11-21
+20,2000001025,Max Dowman,Max Dowman,roster-2026-09-30,2026-11-21
+21,30407,Christian Nørgaard,Christian Nørgaard,roster-2026-09-30,2026-11-21
+25,2000001012,Viktor Gyökeres,Viktor Gyokeres,roster-2026-09-30,2026-11-21
+26,2000001018,Kai Havertz,Kai Havertz,roster-2026-09-30,2026-11-21
+28,2000005001,Emiliano Martínez Romero,Emiliano Martinez,roster-2026-09-30,2026-11-21
+29,2000030069,Marco Bizot,Marco Bizot,roster-2026-09-30,2026-11-21
+31,2000001013,Ezri Konsa Ngoyo,Ezri Konsa,roster-2026-09-30,2026-11-21
+32,2000030058,Matty Cash,Matty Cash,roster-2026-09-30,2026-11-21
+33,2000030065,Tyrone Mings,Tyrone Mings,roster-2026-09-30,2026-11-21
+34,2000030066,Pau Torres,Pau Torres,roster-2026-09-30,2026-11-21
+35,2000030067,Lamare Bogarde,Lamare Bogarde,roster-2026-09-30,2026-11-21
+36,2000030064,Ian Maatsen,Ian Maatsen,roster-2026-09-30,2026-11-21
+37,2000030056,Victor Lindelöf,Victor Lindelöf,roster-2026-09-30,2026-11-21
+38,2000030145,Andrés García,Andrés García,roster-2026-09-30,2026-11-21
+40,2000005012,Morgan Rogers,Morgan Rogers,roster-2026-09-30,2026-11-21
+41,2000030061,Emiliano Buendía Stati,Emiliano Buendía,roster-2026-09-30,2026-11-21
+42,2000020107,Evann Guessand,Evann Guessand,roster-2026-09-30-pending-confirmation,2026-11-21
+43,2000006017,Youri Tielemans,Youri Tielemans,roster-2026-09-30,2026-11-21
+45,2000030059,John McGinn,John McGinn,roster-2026-09-30,2026-11-21
+46,2000030068,Ross Barkley,Ross Barkley,roster-2026-09-30,2026-11-21
+47,2000030122,Boubacar Kamara,Boubacar Kamara,roster-2026-09-30,2026-11-21
+48,162714,Amadou Onana,Amadou Onana,roster-2026-09-30,2026-11-21
+50,2000030126,Bradley Burrowes,Bradley Burrowes,roster-2026-09-30,2026-11-21
+51,2000030123,George Hemmings,George Hemmings,roster-2026-09-30,2026-11-21
+52,2000030062,Alysson Edward Franco da Rocha dos Santos,Alysson,roster-2026-09-30-pending-confirmation,2026-11-21
+53,2000030146,Johan Manzambi,Johan Manzambi,roster-2026-09-30,2026-11-21
+54,2000030057,Joao Gomes,João Gomes,roster-2026-09-30,2026-11-21
+56,2000030147,Tammy Abraham,Tammy Abraham,roster-2026-09-30,2026-11-21
+57,2000030030,Đorđe Petrović,Đorđe Petrović,roster-2026-09-30,2026-11-21
+58,2000030152,Fraser Forster,Fraser Forster,roster-2026-09-30,2026-11-21
+60,2000030109,James Hill,James Hill,roster-2026-09-30,2026-11-21
+61,2000030111,Adrien Truffert,Adrien Truffert,roster-2026-09-30,2026-11-21
+62,2000030113,Bafodé Diakité,Bafodé Diakité,roster-2026-09-30,2026-11-21
+63,2000030153,Veljko Milosavljevic,Veljko Milosavljevic,roster-2026-09-30,2026-11-21
+64,2000030108,Adam Smith,Adam Smith,roster-2026-09-30,2026-11-21
+65,51051,Julián Araujo Zúñiga,Julian Araujo,roster-2026-09-30,2026-11-21
+66,2000030154,Julio Soler Barreto,Julio Soler Barreto,roster-2026-09-30,2026-11-21
+67,2000030033,Rayan Vitor Simplício Rocha,Rayan,roster-2026-09-30,2026-11-21
+68,2000030031,Marcus Tavernier,Marcus Tavernier,roster-2026-09-30,2026-11-21
+69,2000030110,Alex Scott,Alex Scott,roster-2026-09-30,2026-11-21
+70,2000030039,Justin Kluivert,Justin Kluivert,roster-2026-09-30,2026-11-21
+71,2000030037,Lewis Cook,Lewis Cook,roster-2026-09-30,2026-11-21
+72,2000030034,Ben Gannon-Doak,Ben Gannon-Doak,roster-2026-09-30,2026-11-21
+73,2000030036,Tyler Adams,Tyler Adams,roster-2026-09-30,2026-11-21
+74,2000030115,David Brooks,David Brooks,roster-2026-09-30,2026-11-21
+75,1125,Ryan Christie,Ryan Christie,roster-2026-09-30,2026-11-21
+76,2000030038,Alex Tóth,Alex Tóth,roster-2026-09-30,2026-11-21
+77,2000030155,Amine Adli,Amine Adli,roster-2026-09-30,2026-11-21
+78,2000030156,Junior Kroupi,Junior Kroupi,roster-2026-09-30,2026-11-21
+79,2000030032,Francisco Evanilson de Lima Barbosa,Evanilson,roster-2026-09-30,2026-11-21
+81,2000030116,Álvaro Rodríguez,Álvaro Rodriguez,roster-2026-09-30,2026-11-21
+82,2000030001,Caoimhín Kelleher,Caoimhin Kelleher,roster-2026-09-30,2026-11-21
+83,2000030096,Hákon Rafn Valdimarsson,Hákon Rafn Valdimarsson,roster-2026-09-30,2026-11-21
+84,2000030014,Nathan Collins,Nathan Collins,roster-2026-09-30,2026-11-21
+85,2000030158,Sepp van den Berg,Sepp van den Berg,roster-2026-09-30,2026-11-21
+86,2000030002,Keane Lewis-Potter,Keane Lewis-Potter,roster-2026-09-30-pending-confirmation,2026-11-21
+87,2000030095,Kristoffer Ajer,Kristoffer Ajer,roster-2026-09-30,2026-11-21
+88,2000030004,Michael Kayode,Michael Kayode,roster-2026-09-30,2026-11-21
+89,2000030097,Rico Henry,Rico Henry,roster-2026-09-30,2026-11-21
+90,2000030008,Aaron Hickey,Aaron Hickey,roster-2026-09-30,2026-11-21
+91,2000002001,Ethan Pinnock,Ethan Pinnock,roster-2026-09-30,2026-11-21
+92,2000030159,Kim Ji-soo,Kim Ji-soo,roster-2026-09-30,2026-11-21
+93,2000030099,Jannik Schuster,Jannik Schuster,roster-2026-09-30,2026-11-21
+94,2000030094,Kevin Schade,Kevin Schade,roster-2026-09-30,2026-11-21
+95,2000030012,Dango Ouattara,Dango Ouattara,roster-2026-09-30,2026-11-21
+96,2000030009,Mikkel Damsgaard,Mikkel Damsgaard,roster-2026-09-30,2026-11-21
+97,2000030013,Mathias Jensen,Mathias Jensen,roster-2026-09-30,2026-11-21
+98,2000030003,Vitaly Janelt,Vitaly Janelt,roster-2026-09-30,2026-11-21
+99,2000030160,Antoni Milambo,Antoni Milambo,roster-2026-09-30,2026-11-21
+100,153066,Fábio Freitas Gouveia Carvalho,Fabio Carvalho,roster-2026-09-30,2026-11-21
+101,2000005011,Jordan Henderson,Jordan Henderson,roster-2026-09-30,2026-11-21
+102,2000030011,Yehor Yarmoliuk,Yehor Yarmoliuk,roster-2026-09-30,2026-11-21
+103,2000030161,Josh Dasilva,Josh Dasilva,roster-2026-09-30,2026-11-21
+104,2000002014,Frank Onyeka,Frank Onyeka,roster-2026-09-30,2026-11-21
+105,2000030010,Jaidon Anthony,Jaidon Anthony,roster-2026-09-30,2026-11-21
+106,2000030006,Igor Thiago Nascimento Rodrigues,Igor Thiago,roster-2026-09-30,2026-11-21
+107,2000030162,Kaye Furo,Kaye Furo,roster-2026-09-30,2026-11-21
+108,2000030007,Callum Wilson,Callum Wilson,roster-2026-09-30,2026-11-21
+109,2000030055,Bart Verbruggen,Bart Verbruggen,roster-2026-09-30,2026-11-21
+110,2000002016,Carl Rushworth,Carl Rushworth,roster-2026-09-30,2026-11-21
+111,2000030118,Jason Steele,Jason Steele,roster-2026-09-30,2026-11-21
+112,2000030028,Jan Paul van Hecke,Jan Paul van Hecke,roster-2026-09-30,2026-11-21
+113,2000030167,Ferdi Kadıoğlu,Ferdi Kadıoğlu,roster-2026-09-30,2026-11-21
+114,2000030117,Olivier Boscagli,Olivier Boscagli,roster-2026-09-30,2026-11-21
+115,2000030042,Maxim De Cuyper,Maxim De Cuyper,roster-2026-09-30,2026-11-21
+116,2000030045,Lewis Dunk,Lewis Dunk,roster-2026-09-30,2026-11-21
+117,2000030168,Diego Coppola,Diego Coppola,roster-2026-09-30,2026-11-21
+119,2000030050,João Pedro Loureiro da Costa,Costinha,roster-2026-09-30,2026-11-21
+120,2000030120,Michael Svoboda,Michael Svoboda,roster-2026-09-30,2026-11-21
+121,106835,Mitoma Kaoru,Kaoru Mitoma,roster-2026-09-30,2026-11-21
+122,383685,Yankuba Minteh,Yankuba Minteh,roster-2026-09-30,2026-11-21
+123,2000030041,Jack Hinshelwood,Jack Hinshelwood,roster-2026-09-30,2026-11-21
+124,2000030049,Pascal Groß,Pascal Groß,roster-2026-09-30,2026-11-21
+125,2000030044,Georginio Rutter,Georginio Rutter,roster-2026-09-30-pending-confirmation,2026-11-21
+126,2000030169,Matt O'Riley,Matt O'Riley,roster-2026-09-30,2026-11-21
+127,2000030043,Diego Gómez Amarilla,Diego Gómez,roster-2026-09-30,2026-11-21
+129,2000030048,Yasin Ayari,Yasin Ayari,roster-2026-09-30,2026-11-21
+130,2000030047,Mats Wieffer,Mats Wieffer,roster-2026-09-30,2026-11-21
+131,2000006019,Carlos Baleba,Carlos Baleba,roster-2026-09-30,2026-11-21
+134,2000030170,Nehemiah Oriola,Nehemiah Oriola,roster-2026-09-30,2026-11-21
+136,2000005013,Danny Welbeck,Danny Welbeck,roster-2026-09-30,2026-11-21
+137,2000030171,Stefanos Tzimas,Stefanos Tzimas,roster-2026-09-30,2026-11-21
+138,2000030051,Charalampos Kostoulas,Charalampos Kostoulas,roster-2026-09-30,2026-11-21
+139,2000030172,Evan Ferguson,Evan Ferguson,roster-2026-09-30,2026-11-21
+142,2000005017,Reece James,Reece James,roster-2026-09-30,2026-11-21
+144,2000005019,Malo Gusto,Malo Gusto,roster-2026-09-30,2026-11-21
+145,2000005003,Wesley Fofana,Wesley Fofana,roster-2026-09-30,2026-11-21
+147,19145,Tosin Adarabioyo,Tosin Adarabioyo,roster-2026-09-30,2026-11-21
+148,2000005014,Jorrel Hato,Jorrel Hato,roster-2026-09-30,2026-11-21
+149,2000005006,Levi Samuels Colwill,Levi Colwill,roster-2026-09-30,2026-11-21
+151,2000005022,Josh Acheampong,Josh Acheampong,roster-2026-09-30,2026-11-21
+152,2000005002,Marco Palestra,Marco Palestra,roster-2026-09-30,2026-11-21
+153,2000030182,Axel Disasi,Axel Disasi,roster-2026-09-30,2026-11-21
+154,2000005009,Cole Palmer,Cole Palmer,roster-2026-09-30,2026-11-21
+155,2000004011,Enzo Fernández,Enzo Fernandez,roster-2026-09-30,2026-11-21
+156,2000005007,Pedro Lomba Neto,Pedro Neto,roster-2026-09-30,2026-11-21
+157,2000005024,Estêvão Almeida de Oliveira Gonçalves,Estevao,roster-2026-09-30,2026-11-21
+158,2000005010,Jamie Bynoe-Gittens,Jamie Bynoe-Gittens,roster-2026-09-30,2026-11-21
+159,2000005018,Moisés Caicedo Corozo,Moises Caicedo,roster-2026-09-30,2026-11-21
+160,2000030060,Alejandro Garnacho Ferreyra,Alejandro Garnacho,roster-2026-09-30-pending-confirmation,2026-11-21
+161,2000005025,Roméo Lavia,Romeo Lavia,roster-2026-09-30,2026-11-21
+162,2000006016,Andrey Nascimento dos Santos,Andrey Santos,roster-2026-09-30,2026-11-21
+164,2000005016,Geovany Quenda,Geovany Quenda,roster-2026-09-30,2026-11-21
+165,2000005008,João Pedro Junqueira de Jesus,Joao Pedro,roster-2026-09-30,2026-11-21
+166,283058,Nicolas Jackson,Nicolas Jackson,roster-2026-09-30,2026-11-21
+167,161948,Liam Delap,Liam Delap,roster-2026-09-30,2026-11-21
+169,2000030177,Shumaira Mheuka,Shumaira Mheuka,roster-2026-09-30,2026-11-21
+170,2000005015,Emmanuel Emegha,Emmanuel Emegha,roster-2026-09-30,2026-11-21
+172,2000002012,Ben Wilson,Ben Wilson,roster-2026-09-30,2026-11-21
+173,2000002003,Bobby Thomas,Bobby Thomas,roster-2026-09-30,2026-11-21
+175,2000002024,Milan van Ewijk,Milan van Ewijk,roster-2026-09-30,2026-11-21
+176,2000002002,Jay Dasilva,Jay Dasilva,roster-2026-09-30,2026-11-21
+177,2000030179,Kaine Kesler-Hayden,Kaine Kesler-Hayden,roster-2026-09-30,2026-11-21
+178,2000002018,Jake Bidwell,Jake Bidwell,roster-2026-09-30,2026-11-21
+179,2000002019,Joel Latibeaudiere,Joel Latibeaudiere,roster-2026-09-30,2026-11-21
+180,17714,Luke Woolfenden,Luke Woolfenden,roster-2026-09-30,2026-11-21
+182,2000002021,Aurèle Amenda,Aurele Amenda,roster-2026-09-30,2026-11-21
+183,2000002004,Jack Rudoni,Jack Rudoni,roster-2026-09-30,2026-11-21
+184,2000002005,Matt Grimes,Matt Grimes,roster-2026-09-30,2026-11-21
+185,2000002006,Tatsuhiro Sakamoto,Tatsuhiro Sakamoto,roster-2026-09-30,2026-11-21
+186,2000002009,Ephron Mason-Clark,Ephron Mason-Clark,roster-2026-09-30,2026-11-21
+187,2000020003,Josh Eccles,Josh Eccles,roster-2026-09-30,2026-11-21
+188,2000002026,Victor Torp,Victor Torp,roster-2026-09-30,2026-11-21
+189,2000030180,George Shepherd,George Shepherd,roster-2026-09-30,2026-11-21
+190,2000002015,Loum Tchaouna,Loum Tchaouna,roster-2026-09-30,2026-11-21
+193,2000030181,Haji Wright,Haji Wright,roster-2026-09-30,2026-11-21
+194,2000002020,Brandon Thomas-Asante,Brandon Thomas-Asante,roster-2026-09-30,2026-11-21
+195,2000002008,Ellis Simms,Ellis Simms,roster-2026-09-30,2026-11-21
+198,2000020100,Dean Henderson,Dean Henderson,roster-2026-09-30,2026-11-21
+199,2000020114,Walter Benítez,Walter Benítez,roster-2026-09-30,2026-11-21
+200,2000005005,Maxence Lacroix,Maxence Lacroix,roster-2026-09-30,2026-11-21
+201,2000020095,Daniel Muñoz Mejía,Daniel Muñoz,roster-2026-09-30,2026-11-21
+202,2000020099,Chris Richards,Chris Richards,roster-2026-09-30,2026-11-21
+203,2000020096,Jaydee Canvot,Jaydee Canvot,roster-2026-09-30,2026-11-21
+204,2000020103,Tyrick Mitchell,Tyrick Mitchell,roster-2026-09-30-pending-confirmation,2026-11-21
+206,2000020104,Chadi Riad Dnanou,Chadi Riad,roster-2026-09-30,2026-11-21
+207,2000020116,Oscar Mingueza,Óscar Mingueza,roster-2026-09-30-pending-confirmation,2026-11-21
+208,2218,Ismaïla Sarr,Ismaïla Sarr,roster-2026-09-30,2026-11-21
+209,2000020093,Brennan Johnson,Brennan Johnson,roster-2026-09-30-pending-confirmation,2026-11-21
+210,2000020098,Adam Wharton,Adam Wharton,roster-2026-09-30,2026-11-21
+211,2000020105,Yéremy Pino Santos,Yéremy Pino,roster-2026-09-30-pending-confirmation,2026-11-21
+212,2000020117,Will Hughes,Will Hughes,roster-2026-09-30,2026-11-21
+213,2490,Jefferson Lerma Solís,Jefferson Lerma,roster-2026-09-30,2026-11-21
+214,2000016001,Daichi Kamada,Daichi Kamada,roster-2026-09-30,2026-11-21
+218,3339,Cheick Doucouré,Cheick Doucouré,roster-2026-09-30,2026-11-21
+221,2000030183,Joél Drakes-Thomas,Joél Drakes-Thomas,roster-2026-09-30,2026-11-21
+222,2000020106,Jørgen Strand Larsen,Jørgen Strand Larsen,roster-2026-09-30,2026-11-21
+223,2000020102,Jean-Philippe Mateta,Jean-Philippe Mateta,roster-2026-09-30,2026-11-21
+224,2000020101,Eddie Nketiah,Eddie Nketiah,roster-2026-09-30,2026-11-21
+226,2000020085,Jordan Pickford,Jordan Pickford,roster-2026-09-30,2026-11-21
+227,2000020109,Mark Travers,Mark Travers,roster-2026-09-30,2026-11-21
+228,2000030190,Tom King,Tom King,roster-2026-09-30,2026-11-21
+229,2000020089,James Tarkowski,James Tarkowski,roster-2026-09-30,2026-11-21
+230,2000015005,Jarrad Branthwaite,Jarrad Branthwaite,roster-2026-09-30,2026-11-21
+231,2000020111,Michael Keane,Michael Keane,roster-2026-09-30,2026-11-21
+232,2000020112,Jake O'Brien,Jake O'Brien,roster-2026-09-30,2026-11-21
+233,2000020086,Vitalii Mykolenko,Vitaliy Mykolenko,roster-2026-09-30,2026-11-21
+236,2000015001,Kiernan Dewsbury-Hall,Kiernan Dewsbury-Hall,roster-2026-09-30,2026-11-21
+237,2000004005,Iliman Ndiaye,Iliman Ndiaye,roster-2026-09-30,2026-11-21
+238,2000030029,Jack Grealish,Jack Grealish,roster-2026-09-30,2026-11-21
+239,2000020091,James Garner,James Garner,roster-2026-09-30,2026-11-21
+240,284500,Tim Iroegbunam,Tim Iroegbunam,roster-2026-09-30,2026-11-21
+241,2000020097,Dwight McNeil,Dwight McNeil,roster-2026-09-30,2026-11-21
+242,2000020087,Tyrique George,Tyrique George,roster-2026-09-30-pending-confirmation,2026-11-21
+243,2000020094,Carlos Alcaraz Durán,Carlos Alcaraz,roster-2026-09-30,2026-11-21
+244,2000015004,Harrison Armstrong,Harrison Armstrong,roster-2026-09-30,2026-11-21
+245,2000020113,Tyler Dibling,Tyler Dibling,roster-2026-09-30,2026-11-21
+246,2000020090,Merlin Röhl,Merlin Röhl,roster-2026-09-30,2026-11-21
+247,2000020088,Hayden Hackney,Hayden Hackney,roster-2026-09-30,2026-11-21
+249,2000015002,Thierno Barry,Thierno Barry,roster-2026-09-30,2026-11-21
+250,2000030138,Bernd Leno,Bernd Leno,roster-2026-09-30,2026-11-21
+251,2000030139,Benjamin Lecomte,Benjamin Lecomte,roster-2026-09-30,2026-11-21
+253,2729,Joachim Andersen,Joachim Andersen,roster-2026-09-30,2026-11-21
+254,2000030086,Antonee Robinson,Antonee Robinson,roster-2026-09-30,2026-11-21
+255,2000030137,Jorge Cuenca Barreno,Jorge Cuenca,roster-2026-09-30,2026-11-21
+256,2000030140,Kenny Tete,Kenny Tete,roster-2026-09-30,2026-11-21
+257,2000030087,Calvin Bassey,Calvin Bassey,roster-2026-09-30,2026-11-21
+258,2000030084,Timothy Castagne,Timothy Castagne,roster-2026-09-30,2026-11-21
+259,2000020022,Issa Diop,Issa Diop,roster-2026-09-30,2026-11-21
+260,2000020066,Harry Wilson,Harry Wilson,roster-2026-09-30,2026-11-21
+261,2000030136,Alex Iwobi,Alex Iwobi,roster-2026-09-30,2026-11-21
+262,2000030142,Emile Smith Rowe,Emile Smith Rowe,roster-2026-09-30,2026-11-21
+263,2000030090,Kevin Santos Lopes de Macedo,Kevin,roster-2026-09-30,2026-11-21
+264,2000030093,Oscar Bobb,Oscar Bobb,roster-2026-09-30,2026-11-21
+265,2000030089,Sander Berge,Sander Berge,roster-2026-09-30,2026-11-21
+266,19025,Tom Cairney,Tom Cairney,roster-2026-09-30,2026-11-21
+267,2000011004,Saša Lukić,Saša Lukić,roster-2026-09-30,2026-11-21
+268,2000030083,Josh King,Joshua King,roster-2026-09-30,2026-11-21
+269,2000030088,Ryan Sessegnon,Ryan Sessegnon,roster-2026-09-30,2026-11-21
+270,2000030143,Harrison Reed,Harrison Reed,roster-2026-09-30,2026-11-21
+271,2000030085,Rodrigo Muniz Carvalho,Rodrigo Muniz,roster-2026-09-30,2026-11-21
+272,2000030193,Jonah Kusi-Asare,Jonah Kusi-Asare,roster-2026-09-30,2026-11-21
+273,2000020015,Dillon Phillips,Dillon Phillips,roster-2026-09-30,2026-11-21
+274,2000030198,Jack Butland,Jack Butland,roster-2026-09-30,2026-11-21
+277,2000010005,John Egan,John Egan,roster-2026-09-30,2026-11-21
+278,2000030199,Charlie Hughes,Charlie Hughes,roster-2026-09-30,2026-11-21
+279,2000010002,Semi Ajayi,Semi Ajayi,roster-2026-09-30,2026-11-21
+280,2000020004,Lewie Coyle,Lewie Coyle,roster-2026-09-30,2026-11-21
+282,2000020005,Ryan Giles,Ryan Giles,roster-2026-09-30,2026-11-21
+284,2000030200,Cathal McCarthy,Cathal McCarthy,roster-2026-09-30,2026-11-21
+285,2000020011,Paddy McNair,Paddy McNair,roster-2026-09-30,2026-11-21
+286,2000020009,Mohamed Belloumi,Mohamed Belloumi,roster-2026-09-30,2026-11-21
+288,2000020017,Kieran Dowell,Kieran Dowell,roster-2026-09-30,2026-11-21
+289,2000020007,Matt Crooks,Matt Crooks,roster-2026-09-30,2026-11-21
+290,2000010004,Regan Slater,Regan Slater,roster-2026-09-30,2026-11-21
+291,2000030201,Eliot Matazo,Eliot Matazo,roster-2026-09-30,2026-11-21
+292,2000030202,Abdülkadir Ömür,Abdülkadir Ömür,roster-2026-09-30,2026-11-21
+294,2000030203,Óscar Zambrano,Óscar Zambrano,roster-2026-09-30,2026-11-21
+295,2000020008,Oli McBurnie,Oli McBurnie,roster-2026-09-30,2026-11-21
+297,2000030204,Darko Gyabi,Darko Gyabi,roster-2026-09-30,2026-11-21
+300,2000020044,Christian Walton,Christian Walton,roster-2026-09-30,2026-11-21
+301,2000030213,Alex Palmer,Alex Palmer,roster-2026-09-30,2026-11-21
+302,2000030214,David Button,David Button,roster-2026-09-30,2026-11-21
+303,2000020046,Cédric Kipré,Cédric Kipré,roster-2026-09-30,2026-11-21
+304,2000020023,Dara O'Shea,Dara O'Shea,roster-2026-09-30,2026-11-21
+305,2000020020,Leif Davis,Leif Davis,roster-2026-09-30,2026-11-21
+306,2000020021,Jacob Greaves,Jacob Greaves,roster-2026-09-30,2026-11-21
+308,2000020045,Darnell Furlong,Darnell Furlong,roster-2026-09-30,2026-11-21
+309,2000011005,Marcelino Núñez,Marcelino Núñez,roster-2026-09-30,2026-11-21
+310,2000030215,Azor Matusiwa,Azor Matusiwa,roster-2026-09-30,2026-11-21
+312,18397,Jack Taylor,Jack Taylor,roster-2026-09-30,2026-11-21
+313,2000011003,Jack Clarke,Jack Clarke,roster-2026-09-30,2026-11-21
+315,2000020025,Abdul Fatawu,Abdul Fatawu Issahaku,roster-2026-09-30,2026-11-21
+316,2000011001,Emersonn Correia da Silva,Emersonn,roster-2026-09-30,2026-11-21
+318,138931,Jaden Philogene,Jaden Philogene-Bidace,roster-2026-09-30,2026-11-21
+320,2000020027,Chuba Akpom,Chuba Akpom,roster-2026-09-30,2026-11-21
+321,2000020029,Sindre Walle Egeli,Sindre Walle Egeli,roster-2026-09-30,2026-11-21
+323,2000020026,Kasey McAteer,Kasey McAteer,roster-2026-09-30,2026-11-21
+324,2000030216,Anis Mehmeti,Anis Mehmeti,roster-2026-09-30,2026-11-21
+325,2000006012,Karl Darlow,Karl Darlow,roster-2026-09-30,2026-11-21
+327,2000014003,Jaka Bijol,Jaka Bijol,roster-2026-09-30,2026-11-21
+328,2000030119,Pascal Struijk,Pascal Struijk,roster-2026-09-30,2026-11-21
+329,2000014005,Joe Rodon,Joe Rodon,roster-2026-09-30,2026-11-21
+330,2000020065,Jayden Bogle,Jayden Bogle,roster-2026-09-30-pending-confirmation,2026-11-21
+331,2000030220,Gabriel Gudmundsson,Gabriel Gudmundsson,roster-2026-09-30,2026-11-21
+332,2000014004,James Justin,James Justin,roster-2026-09-30,2026-11-21
+334,2000020070,Tarik Muharemović,Tarik Muharemović,roster-2026-09-30,2026-11-21
+335,2000014001,Anton Stach,Anton Stach,roster-2026-09-30,2026-11-21
+336,2000020071,Noah Okafor,Noah Okafor,roster-2026-09-30-pending-confirmation,2026-11-21
+337,2000020069,Brenden Aaronson,Brenden Aaronson,roster-2026-09-30-pending-confirmation,2026-11-21
+338,2000020068,Ethan Ampadu,Ethan Ampadu,roster-2026-09-30-pending-confirmation,2026-11-21
+339,2000020072,Sean Longstaff,Sean Longstaff,roster-2026-09-30,2026-11-21
+340,2000030205,Joe Gelhardt,Joe Gelhardt,roster-2026-09-30,2026-11-21
+343,2000020083,Daniel James,Daniel James,roster-2026-09-30,2026-11-21
+344,2000030221,Ilia Gruev,Ilia Gruev,roster-2026-09-30,2026-11-21
+345,2000020082,Tanaka Ao,Ao Tanaka,roster-2026-09-30,2026-11-21
+346,2000020067,Dominic Calvert-Lewin,Dominic Calvert-Lewin,roster-2026-09-30,2026-11-21
+347,2000020084,Lukas Nmecha,Lukas Nmecha,roster-2026-09-30,2026-11-21
+349,2000030222,Mateo Joseph Fernández-Regatillo,Mateo Joseph Fernández-Regatillo,roster-2026-09-30,2026-11-21
+350,2000003001,Alisson Becker,Alisson Becker,roster-2026-09-30,2026-11-21
+351,2000003015,Giorgi Mamardashvili,Giorgi Mamardashvili,roster-2026-09-30,2026-11-21
+352,2000003016,Freddie Woodman,Freddie Woodman,roster-2026-09-30,2026-11-21
+354,2000030227,Vitezslav Jaros,Vitezslav Jaros,roster-2026-09-30,2026-11-21
+355,2000030228,Harvey Davies,Harvey Davies,roster-2026-09-30,2026-11-21
+356,2000003004,Virgil van Dijk,Virgil van Dijk,roster-2026-09-30,2026-11-21
+357,2000003018,Jeremie Frimpong,Jeremie Frimpong,roster-2026-09-30,2026-11-21
+358,2000003006,Milos Kerkez,Milos Kerkez,roster-2026-09-30,2026-11-21
+359,2000003002,Joe Gomez,Joe Gomez,roster-2026-09-30,2026-11-21
+360,180317,Conor Bradley,Conor Bradley,roster-2026-09-30,2026-11-21
+361,2000030229,Wellity Lucky,Wellity Lucky,roster-2026-09-30,2026-11-21
+362,2000003005,Jeremy Jacquet,Jeremy Jacquet,roster-2026-09-30,2026-11-21
+363,2000030230,Giovanni Leoni,Giovanni Leoni,roster-2026-09-30,2026-11-21
+364,2000003012,Kostas Tsimikas,Kostas Tsimikas,roster-2026-09-30,2026-11-21
+366,2000003007,Florian Wirtz,Florian Wirtz,roster-2026-09-30,2026-11-21
+367,2000003011,Cody Gakpo,Cody Gakpo,roster-2026-09-30,2026-11-21
+368,2000003008,Dominik Szoboszlai,Dominik Szoboszlai,roster-2026-09-30,2026-11-21
+369,2000003024,Rio Ngumoha,Rio Ngumoha,roster-2026-09-30,2026-11-21
+370,2000030231,Federico Chiesa,Federico Chiesa,roster-2026-09-30,2026-11-21
+371,2000003020,Ryan Gravenberch,Ryan Gravenberch,roster-2026-09-30,2026-11-21
+372,2000003010,Alexis Mac Allister,Alexis Mac Allister,roster-2026-09-30,2026-11-21
+374,2000003003,Endo Wataru,Wataru Endo,roster-2026-09-30,2026-11-21
+375,2000003021,Trey Nyoni,Trey Nyoni,roster-2026-09-30,2026-11-21
+377,2000003014,Victor Munoz,Victor Munoz,roster-2026-09-30,2026-11-21
+378,2000003022,James McConnell,James McConnell,roster-2026-09-30,2026-11-21
+379,2000003009,Alexander Isak,Alexander Isak,roster-2026-09-30,2026-11-21
+380,2000003013,Hugo Ekitiké,Hugo Ekitike,roster-2026-09-30,2026-11-21
+381,2000003023,Lewis Koumas,Lewis Koumas,roster-2026-09-30,2026-11-21
+382,2000003025,Jayden Danns,Jayden Danns,roster-2026-09-30,2026-11-21
+384,2000004001,Gianluigi Donnarumma,Gianluigi Donnarumma,roster-2026-09-30,2026-11-21
+385,2000014002,James Trafford,James Trafford,roster-2026-09-30,2026-11-21
+386,2000004010,Marcus Bettinelli,Marcus Bettinelli,roster-2026-09-30,2026-11-21
+387,2000004018,Nico O'Reilly,Nico O'Reilly,roster-2026-09-30,2026-11-21
+388,2000004004,Marc Guéhi,Marc Guehi,roster-2026-09-30,2026-11-21
+389,2000004015,Matheus Nunes,Matheus Nunes,roster-2026-09-30,2026-11-21
+390,2000004002,Rúben dos Santos Gato Alves Dias,Ruben Dias,roster-2026-09-30,2026-11-21
+391,2000004014,Joško Gvardiol,Josko Gvardiol,roster-2026-09-30,2026-11-21
+392,2000004012,Rayan Aït-Nouri,Rayan Ait-Nouri,roster-2026-09-30,2026-11-21
+393,2000004021,Abdukodir Khusanov,Abdukodir Khusanov,roster-2026-09-30,2026-11-21
+395,2000004025,Rico Lewis,Rico Lewis,roster-2026-09-30,2026-11-21
+396,2000004013,Vitor de Oliveira Nunes dos Reis,Vitor Reis,roster-2026-09-30,2026-11-21
+397,2000004020,Antoine Semenyo,Antoine Semenyo,roster-2026-09-30,2026-11-21
+398,2000004022,Phil Foden,Phil Foden,roster-2026-09-30,2026-11-21
+399,2000004008,Rayan Cherki,Rayan Cherki,roster-2026-09-30,2026-11-21
+400,2000004009,Jérémy Doku,Jeremy Doku,roster-2026-09-30,2026-11-21
+401,2000030107,Omar Marmoush,Omar Marmoush,roster-2026-09-30,2026-11-21
+403,2000030246,Sávio Moreira de Oliveira,Sávio Moreira de Oliveira,roster-2026-09-30,2026-11-21
+405,2000030106,Nico González Iglesias,Nico González,roster-2026-09-30,2026-11-21
+406,2000004006,Mateo Kovačić,Mateo Kovacic,roster-2026-09-30,2026-11-21
+411,2000004007,Erling Haaland,Erling Haaland,roster-2026-09-30,2026-11-21
+412,2000006001,Senne Lammens,Senne Lammens,roster-2026-09-30,2026-11-21
+414,2000006020,Tom Heaton,Tom Heaton,roster-2026-09-30,2026-11-21
+415,2000006013,Patrick Dorgu,Patrick Dorgu,roster-2026-09-30,2026-11-21
+416,2000006004,Matthijs de Ligt,Matthijs de Ligt,roster-2026-09-30,2026-11-21
+417,2000006002,Diogo Dalot Teixeira,Diogo Dalot,roster-2026-09-30,2026-11-21
+418,2000006005,Harry Maguire,Harry Maguire,roster-2026-09-30,2026-11-21
+419,2000006006,Lisandro Martínez,Lisandro Martinez,roster-2026-09-30,2026-11-21
+420,2000006014,Leny Yoro,Leny Yoro,roster-2026-09-30,2026-11-21
+421,2000006023,Ayden Heaven,Ayden Heaven,roster-2026-09-30,2026-11-21
+422,2000006003,Noussair Mazraoui,Noussair Mazraoui,roster-2026-09-30,2026-11-21
+423,2000006021,Luke Shaw,Luke Shaw,roster-2026-09-30,2026-11-21
+424,2000030233,Harry Amass,Harry Amass,roster-2026-09-30,2026-11-21
+426,2000006008,Bruno Borges Fernandes,Bruno Fernandes,roster-2026-09-30,2026-11-21
+427,2000006018,Bryan Mbeumo,Bryan Mbeumo,roster-2026-09-30,2026-11-21
+428,2000006010,Matheus Santos Carneiro da Cunha,Matheus Cunha,roster-2026-09-30,2026-11-21
+429,2000006009,Marcus Rashford,Marcus Rashford,roster-2026-09-30,2026-11-21
+430,2000006007,Mason Mount,Mason Mount,roster-2026-09-30,2026-11-21
+431,2000006015,Amad Diallo,Amad Diallo,roster-2026-09-30,2026-11-21
+432,2000006025,Kobbie Mainoo,Kobbie Mainoo,roster-2026-09-30,2026-11-21
+433,2000006022,Manuel Ugarte Ribeiro,Manuel Ugarte,roster-2026-09-30,2026-11-21
+434,2000030234,Jack Fletcher,Jack Fletcher,roster-2026-09-30,2026-11-21
+435,2000006026,Shea Lacey,Shea Lacey,roster-2026-09-30,2026-11-21
+437,2000030235,Bendito Mantato,Bendito Mantato,roster-2026-09-30,2026-11-21
+438,2000030236,Tyler Fletcher,Tyler Fletcher,roster-2026-09-30,2026-11-21
+439,2000006024,Benjamin Sesko,Benjamin Sesko,roster-2026-09-30,2026-11-21
+440,2000006011,Joshua Zirkzee,Joshua Zirkzee,roster-2026-09-30,2026-11-21
+442,18911,Nick Pope,Nick Pope,roster-2026-09-30,2026-11-21
+443,2000030237,Mark Gillespie,Mark Gillespie,roster-2026-09-30,2026-11-21
+444,2000030132,Ewen Jaouen,Ewen Jaouen,roster-2026-09-30,2026-11-21
+445,2000030131,Malick Thiaw,Malick Thiaw,roster-2026-09-30,2026-11-21
+446,2000030075,Fabian Schär,Fabian Schär,roster-2026-09-30,2026-11-21
+447,2000030130,Sven Botman,Sven Botman,roster-2026-09-30,2026-11-21
+448,18961,Dan Burn,Dan Burn,roster-2026-09-30,2026-11-21
+449,2000030128,Lewis Hall,Lewis Hall,roster-2026-09-30,2026-11-21
+450,158694,Tino Livramento,Valentino Livramento,roster-2026-09-30,2026-11-21
+452,2000001022,Bruno Guimarães Rodriguez Moura,Bruno Guimaraes,roster-2026-09-30,2026-11-21
+453,2000030129,Harvey Barnes,Harvey Barnes,roster-2026-09-30,2026-11-21
+454,2000030070,Anthony Elanga,Anthony Elanga,roster-2026-09-30-pending-confirmation,2026-11-21
+455,2000030100,Sandro Tonali,Sandro Tonali,roster-2026-09-30,2026-11-21
+456,2000030079,Jacob Ramsey,Jacob Ramsey,roster-2026-09-30,2026-11-21
+457,2000030076,Jacob Murphy,Jacob Murphy,roster-2026-09-30-pending-confirmation,2026-11-21
+458,723,Joelinton Cássio Apolinário de Lira,Joelinton,roster-2026-09-30,2026-11-21
+459,2000030078,Lewis Miley,Lewis Miley,roster-2026-09-30,2026-11-21
+460,2000030071,Joe Willock,Joe Willock,roster-2026-09-30,2026-11-21
+461,2000030134,Bazoumana Touré,Bazoumana Touré,roster-2026-09-30,2026-11-21
+462,2000030080,Sean Steur,Sean Steur,roster-2026-09-30,2026-11-21
+464,2000030072,Yoane Wissa,Yoane Wissa,roster-2026-09-30,2026-11-21
+465,2000030073,William Osula,William Osula,roster-2026-09-30,2026-11-21
+467,2000020052,Matz Sels,Matz Sels,roster-2026-09-30,2026-11-21
+468,2000020073,John Victor Maciel Furtado,John Victor,roster-2026-09-30,2026-11-21
+469,2000020053,Neco Williams,Neco Williams,roster-2026-09-30,2026-11-21
+471,2000020057,Nikola Milenković,Nikola Milenković,roster-2026-09-30,2026-11-21
+472,2000013002,Murillo Costa dos Santos,Murillo,roster-2026-09-30,2026-11-21
+473,2000020060,Ola Aina,Ola Aina,roster-2026-09-30-pending-confirmation,2026-11-21
+474,2000020059,Jair Paula da Cunha Filho,Jair,roster-2026-09-30,2026-11-21
+475,2000030244,Nicolò Savona,Nicolò Savona,roster-2026-09-30,2026-11-21
+476,2000030245,Omar Richards,Omar Richards,roster-2026-09-30,2026-11-21
+478,2000020062,Luca Netz,Luca Netz,roster-2026-09-30,2026-11-21
+480,2000020055,Morgan Gibbs-White,Morgan Gibbs-White,roster-2026-09-30,2026-11-21
+481,2000004003,Elliot Anderson,Elliot Anderson,roster-2026-09-30,2026-11-21
+482,2000020077,Callum Hudson-Odoi,Callum Hudson-Odoi,roster-2026-09-30,2026-11-21
+483,2000020058,Dan Ndoye,Dan Ndoye,roster-2026-09-30,2026-11-21
+486,2000013001,James McAtee,James McAtee,roster-2026-09-30,2026-11-21
+487,2000020076,Nicolás Domínguez,Nicolás Domínguez,roster-2026-09-30,2026-11-21
+488,2000020054,Ibrahim Sangaré,Ibrahim Sangaré,roster-2026-09-30,2026-11-21
+489,19305,Ryan Yates,Ryan Yates,roster-2026-09-30,2026-11-21
+490,2000020061,Chris Wood,Chris Wood,roster-2026-09-30,2026-11-21
+491,2000020056,Igor Jesus Maciel da Cruz,Igor Jesus,roster-2026-09-30,2026-11-21
+492,2000002013,Taiwo Awoniyi,Taiwo Awoniyi,roster-2026-09-30,2026-11-21
+493,2000020064,Arnaud Kalimuendo,Arnaud Kalimuendo,roster-2026-09-30,2026-11-21
+495,156428,Brandon Austin,Brandon Austin,roster-2026-09-30,2026-11-21
+496,2000030015,Antonín Kinský,Antonín Kinský,roster-2026-09-30,2026-11-21
+497,2000030102,Martin Dubravka,Martin Dúbravka,roster-2026-09-30,2026-11-21
+498,2000030026,Marcos Senesi Barón,Marcos Senesi,roster-2026-09-30,2026-11-21
+499,47519,Pedro Porro Sauceda,Pedro Porro,roster-2026-09-30,2026-11-21
+501,2000030103,Kevin Danso,Kevin Danso,roster-2026-09-30,2026-11-21
+502,2000030027,Andrew Robertson,Andy Robertson,roster-2026-09-30,2026-11-21
+503,152849,Micky van de Ven,Micky van de Ven,roster-2026-09-30,2026-11-21
+504,2000030046,Luka Vušković,Luka Vušković,roster-2026-09-30,2026-11-21
+506,2000030016,Destiny Udogie,Destiny Udogie,roster-2026-09-30,2026-11-21
+508,2000030104,Ben Davies,Ben Davies,roster-2026-09-30,2026-11-21
+509,2000030247,Jun'ai Byfield,Jun'ai Byfield,roster-2026-09-30,2026-11-21
+510,2000030248,James Rowswell,James Rowswell,roster-2026-09-30,2026-11-21
+512,15911,Mohammed Kudus,Mohammed Kudus,roster-2026-09-30,2026-11-21
+513,2000030249,Xavi Simons,Xavi Simons,roster-2026-09-30,2026-11-21
+514,2000030101,Mathys Tel,Mathys Tel,roster-2026-09-30-pending-confirmation,2026-11-21
+515,2000030020,James Maddison,James Maddison,roster-2026-09-30,2026-11-21
+516,2000030023,Rodrigo Bentancur,Rodrigo Bentancur,roster-2026-09-30,2026-11-21
+517,2000030250,Wilson Odobert,Wilson Odobert,roster-2026-09-30,2026-11-21
+519,2000030025,Conor Gallagher,Conor Gallagher,roster-2026-09-30,2026-11-21
+520,2000030022,Lucas Bergvall,Lucas Bergvall,roster-2026-09-30,2026-11-21
+521,30435,Dejan Kulusevski,Dejan Kulusevski,roster-2026-09-30,2026-11-21
+522,2000030017,Archie Gray,Archie Gray,roster-2026-09-30,2026-11-21
+524,2000030251,Callum Olusesi,Callum Olusesi,roster-2026-09-30,2026-11-21
+525,2000030024,Mateus Fernandes,Mateus Fernandes,roster-2026-09-30,2026-11-21
+526,2000030018,Dominic Solanke-Mitchell,Dominic Solanke,roster-2026-09-30,2026-11-21
+529,2000020030,Robin Roefs,Robin Roefs,roster-2026-09-30,2026-11-21
+531,2000020048,Melker Ellborg,Melker Ellborg,roster-2026-09-30,2026-11-21
+532,2000020032,Daniel Ballard,Daniel Ballard,roster-2026-09-30,2026-11-21
+533,2000020049,Nordi Mukiele,Nordi Mukiele,roster-2026-09-30,2026-11-21
+534,2000020035,Trai Hume,Trai Hume,roster-2026-09-30-pending-confirmation,2026-11-21
+535,2000020040,Omar Alderete,Omar Alderete,roster-2026-09-30,2026-11-21
+536,2000020034,Reinildo Mandava,Reinildo Mandava,roster-2026-09-30,2026-11-21
+539,2000020033,Luke O'Nien,Luke O'Nien,roster-2026-09-30-pending-confirmation,2026-11-21
+541,2000020031,Thomas Meunier,Thomas Meunier,roster-2026-09-30,2026-11-21
+542,2000020037,Enzo Le Fée,Enzo Le Fée,roster-2026-09-30,2026-11-21
+543,2000020043,Habib Diarra,Habib Diarra,roster-2026-09-30,2026-11-21
+544,2000012002,Granit Xhaka,Granit Xhaka,roster-2026-09-30,2026-11-21
+545,2000020036,Noah Sadiki,Noah Sadiki,roster-2026-09-30,2026-11-21
+548,2000020042,Chris Rigg,Chris Rigg,roster-2026-09-30,2026-11-21
+549,2000020039,Chemsdine Talbi,Chemsdine Talbi,roster-2026-09-30,2026-11-21
+550,2000020050,Djiamgone Jocelin Ta Bi,Jocelin Ta Bi,roster-2026-09-30,2026-11-21
+551,2000012001,Nilson Angulo,Nilson Angulo,roster-2026-09-30,2026-11-21
+552,2000020038,Brian Brobbey,Brian Brobbey,roster-2026-09-30,2026-11-21
+553,2000020041,Wilson Isidor,Wilson Isidor,roster-2026-09-30,2026-11-21
+555,2000030184,Remi Matthews,Remi Matthews,roster-2026-09-30,2026-11-21
+556,2000020014,Matt Targett,Matt Targett,roster-2026-09-30,2026-11-21
+557,2000001014,Christos Tzolis,Christos Tzolis,roster-2026-09-30,2026-11-21
+558,2000020063,Xaver Schlager,Xaver Schlager,roster-2026-09-30,2026-11-21
+559,2000030077,Aladji Bamba,Aladji Bamba,roster-2026-09-30,2026-11-21
+560,2000005023,Mike Penders,Mike Penders,roster-2026-09-30,2026-11-21
+561,2000030178,Aaron Anselmino,Aaron Anselmino,roster-2026-09-30,2026-11-21
+562,2000020024,Daizen Maeda,Daizen Maeda,roster-2026-09-30-pending-confirmation,2026-11-21
+563,2000030206,Hidemasa Morita,Hidemasa Morita,roster-2026-09-30,2026-11-21
+564,2000020019,Kjell Scherpen,Kjell Scherpen,roster-2026-09-30,2026-11-21
+565,2000030005,Mamadou Sangaré,Mamadou Sangare,roster-2026-09-30,2026-11-21
+566,2000030035,António João Pereira de Albuquerque Tavares da Silva,António Silva,roster-2026-09-30,2026-11-21
+567,2000030074,Lukás Hornícek,Lukáš Horníček,roster-2026-09-30,2026-11-21
+568,2000005004,Valentín Barco,Valentin Barco,roster-2026-09-30,2026-11-21
+569,2000030082,Gonzalo García,Gonzalo García,roster-2026-09-30,2026-11-21
+570,2000030091,César Palacios,César Palacios,roster-2026-09-30,2026-11-21
+571,2000030217,Florentino Ibrain Morris Luís,Florentino Ibrain Morris Luís,roster-2026-09-30,2026-11-21
+572,2000010001,Konstantinos Tzolakis,Konstantinos Tzolakis,roster-2026-09-30,2026-11-21
+573,2000030114,Juanlu Sánchez,Juanlu Sánchez,roster-2026-09-30-pending-confirmation,2026-11-21
+574,2000020018,Jens Hjertø-Dahl,Jens Hjertø-Dahl,roster-2026-09-30,2026-11-21
+575,2000002007,Caleb Yirenkyi,Caleb Yirenkyi,roster-2026-09-30,2026-11-21
+576,2000020006,Elliot Stroud,Elliot Stroud,roster-2026-09-30,2026-11-21
+577,2000020108,Takehiro Tomiyasu,Takehiro Tomiyasu,roster-2026-09-30,2026-11-21
+578,63577,Mykhailo Mudryk,Mykhaylo Mudryk,roster-2026-09-30,2026-11-21
+579,2000003019,Ronald Araujo,Ronald Araujo,roster-2026-09-30,2026-11-21
+580,2000030092,Shea Charles,Shea Charles,roster-2026-09-30,2026-11-21
+581,2000020074,Ousmane Diomande,Ousmane Diomande,roster-2026-09-30,2026-11-21
+582,2000030148,Brian Madjo,Brian Madjo,roster-2026-09-30,2026-11-21
+583,2000005020,Pep Chavarría,Pep Chavarria,roster-2026-09-30,2026-11-21
+584,2000002028,Gustavo Hamer,Gustavo Hamer,roster-2026-09-30,2026-11-21
+585,2000020010,Lucas Herrington,Lucas Herrington,roster-2026-09-30,2026-11-21
+586,2000010003,Nobel Mendy,Nobel Mendy,roster-2026-09-30,2026-11-21
+587,2000004016,Gerónimo Rulli,Geronimo Rulli,roster-2026-09-30,2026-11-21
+588,2000016002,Anan Khalaili,Anan Khalaili,roster-2026-09-30-pending-confirmation,2026-11-21
+589,2000020016,Lucas Gourna-Douath,Lucas Gourna-Douath,roster-2026-09-30,2026-11-21
+590,19312,Steven Benda,Steven Benda,roster-2026-09-30,2026-11-21
+591,2000011002,Julio Enciso,Julio Enciso,roster-2026-09-30,2026-11-21
+592,2000020028,Abdoul Ouattara,Abdoul Ouattara,roster-2026-09-30-pending-confirmation,2026-11-21
+593,2000030081,Amar Dedic,Amar Dedić,roster-2026-09-30,2026-11-21
+594,2000030121,Promise David,Promise David,roster-2026-09-30,2026-11-21
+595,2000030185,Zavier Gozo,Zavier Gozo,roster-2026-09-30,2026-11-21
+596,2000030063,Matteo Ruggeri,Matteo Ruggeri,roster-2026-09-30,2026-11-21
+597,2000030124,Zion Suzuki,Zion Suzuki,roster-2026-09-30,2026-11-21
+598,2000020080,Nico Elvedi,Nico Elvedi,roster-2026-09-30,2026-11-21
+599,2000002029,Sidiki Cherif,Sidiki Cherif,roster-2026-09-30,2026-11-21
+600,2000030052,Ibrahim Osman,Ibrahim Osman,roster-2026-09-30,2026-11-21
+601,2000030105,Luca Williams-Barnett,Luca Williams-Barnett,roster-2026-09-30-pending-confirmation,2026-11-21
+603,2000020079,Jayden Lienou,Jayden Lienou,roster-2026-09-30,2026-11-21
+604,2000020081,Alfie Cresswell,Alfie Cresswell,roster-2026-09-30,2026-11-21
+605,2000030054,Malick Yalcouyé,Malick Yalcouyé,roster-2026-09-30,2026-11-21
+608,2000030040,Daniel Jebbison,Daniel Jebbison,roster-2026-09-30,2026-11-21
+611,18846,Aaron Wan-Bissaka,Aaron Wan-Bissaka,roster-2026-09-30,2026-11-21
+612,2000030252,Dayann Méthalie,Dayann Méthalie,roster-2026-09-30,2026-11-21
+613,2000030253,Jules Ahoka,Jules Ahoka,roster-2026-09-30,2026-11-21
+614,2000030173,Jaouen Hadjam,Jaouen Hadjam,roster-2026-09-30,2026-11-21
+615,2000030157,Michele Di Gregorio,Michele Di Gregorio,roster-2026-09-30,2026-11-21
+616,2000004017,Ayyoub Bouaddi,Ayyoub Bouaddi,roster-2026-09-30,2026-11-21
+617,2000030207,Mohamed-Ali Cho,Mohamed-Ali Cho,roster-2026-09-30,2026-11-21
+618,2000030149,Leon Goretzka,Leon Goretzka,roster-2026-09-30,2026-11-21
+619,2000030218,Exequiel Palacios,Exequiel Palacios,roster-2026-09-30,2026-11-21
+620,2000030163,El Hadji Malick Diouf,El Hadji Malick Diouf,roster-2026-09-30,2026-11-21
+621,2000004023,Ryan McAidoo,Ryan McAidoo,roster-2026-09-30,2026-11-21
+622,2000004024,Kaden Braithwaite,Kaden Braithwaite,roster-2026-09-30,2026-11-21
+623,2000002022,Dan Bentley,Dan Bentley,roster-2026-09-30,2026-11-21
+625,2000030223,Alex Cairns,Alex Cairns,roster-2026-09-30,2026-11-21
+626,2000030194,Macaulay Zepa,Macaulay Zepa,roster-2026-09-30,2026-11-21
+627,2000003017,Bradley Barcola,Bradley Barcola,roster-2026-09-30,2026-11-21
+628,2000004019,Allan Andrade Elias,Allan Andrade Elias,roster-2026-09-30,2026-11-21
+629,2000030224,Michael Zetterer,Michael Zetterer,roster-2026-09-30,2026-11-21
+630,144729,Taylor Harwood-Bellis,Taylor Harwood-Bellis,roster-2026-09-30,2026-11-21
+631,2000030150,Ibrahim Mbaye,Ibrahim Mbaye,roster-2026-09-30,2026-11-21
+632,2000030208,Ilyas Ansah,Ilyas Ansah,roster-2026-09-30,2026-11-21
+633,2000030186,Honest Ahanor,Honest Ahanor,roster-2026-09-30,2026-11-21
+634,2000030238,Matias Fernandez-Pardo,Matias Fernandez-Pardo,roster-2026-09-30,2026-11-21
+635,2000030195,Hugo Larsson,Hugo Larsson,roster-2026-09-30,2026-11-21
+636,2000030196,Manuel Ángel Morán Ibáñez,Manuel Ángel Morán Ibáñez,roster-2026-09-30,2026-11-21
+637,2000030209,Robinio Vaz,Robinio Vaz,roster-2026-09-30,2026-11-21
+638,2000030210,Brooke Norton-Cuffy,Brooke Norton-Cuffy,roster-2026-09-30,2026-11-21
+639,2000030174,José María Andrés Baixauli,José María Andrés Baixauli,roster-2026-09-30,2026-11-21
+640,2000030219,Zian Flemming,Zian Flemming,roster-2026-09-30,2026-11-21
+641,2000030225,Melvin Bard,Melvin Bard,roster-2026-09-30,2026-11-21
+642,2000030211,Sorba Thomas,Sorba Thomas,roster-2026-09-30,2026-11-21
+643,2000030187,Ben Chilwell,Ben Chilwell,roster-2026-09-30,2026-11-21
+644,2000030188,Quinten Timber,Quinten Timber,roster-2026-09-30,2026-11-21
+645,2000030212,Christos Mouzakitis,Christos Mouzakitis,roster-2026-09-30,2026-11-21
+646,2000030254,Malick Fofana,Malick Fofana,roster-2026-09-30,2026-11-21
+647,2000030189,Darío Osorio,Darío Osorio,roster-2026-09-30,2026-11-21
+648,2000030226,Jean-Mattéo Bahoya,Jean-Mattéo Bahoya,roster-2026-09-30,2026-11-21
+649,2000030191,Ainsley Maitland-Niles,Ainsley Maitland-Niles,roster-2026-09-30,2026-11-21
+650,2000030197,David Affengruber,David Affengruber,roster-2026-09-30,2026-11-21
+651,2000030255,Juan Angulo,Juan Angulo,roster-2026-09-30,2026-11-21
+652,2000030175,Femi Azeez,Femi Azeez,roster-2026-09-30,2026-11-21
+653,2000030232,Floyd Samba,Floyd Samba,roster-2026-09-30,2026-11-21
+654,2000030192,Braiden Graham,Braiden Graham,roster-2026-09-30,2026-11-21
+655,2000002027,Yann Gboho,Yann Gboho,roster-2026-09-30,2026-11-21
+656,2000002011,Stephen Mfuni,Stephen Mfuni,roster-2026-09-30,2026-11-21
+657,2000030164,Gustavo Nunes Fernandes Gomes,Gustavo Nunes Fernandes Gomes,roster-2026-09-30,2026-11-21
+658,2000030176,Younes Ibrahim,Younes Ibrahim,roster-2026-09-30,2026-11-21
+659,2000030239,Mason Miley,Mason Miley,roster-2026-09-30,2026-11-21
+660,2000030165,Benjamin Fredrick,Benjamin Fredrick,roster-2026-09-30,2026-11-21
+661,2000030166,Ellery Balcombe,Ellery Balcombe,roster-2026-09-30,2026-11-21
+662,2000005021,Mahdi Nicoll-Jazuli,Mahdi Nicoll-Jazuli,roster-2026-09-30,2026-11-21
+663,2000030240,Miodrag Pivas,Miodrag Pivas,roster-2026-09-30,2026-11-21
+664,2000030241,Vakhtang Salia,Vakhtang Salia,roster-2026-09-30,2026-11-21
+665,2000030242,Michael Mills,Michael Mills,roster-2026-09-30,2026-11-21
+666,2000030243,Kyran Thompson,Kyran Thompson,roster-2026-09-30,2026-11-21
+667,2000030151,James Wright,James Wright,roster-2026-09-30,2026-11-21
+668,2000030260,Tymur Tutierov,Timur Tuterov,owner_confirmed,2026-11-21
+669,2000030261,Teddy Sharman-Lowe,Teddy Sharman-Lowe,auto-club-fullname,2026-11-21
+670,2000030262,Olutayo Subuloye,Olutayo Subuloye,auto-club-fullname,2026-11-21
+671,2000030264,Luca Gunter,Luca Gunter,auto-club-fullname,2026-11-21
+672,2000030263,Modou Kéba Cissé,Modou Kéba Cissé,auto-club-fullname,2026-11-21

@@ -78,6 +78,7 @@ Tài liệu Hỗn hợp có cả checkpoint cũ và hướng dẫn còn dùng; �
 
 ## Quy trình thống kê trận mùa 2026/27
 
+- Từ GW11 mùa 2026/27: rating từ SofaScore; số phút/bàn/kiến tạo/thẻ và chỉ số mở rộng từ FPL. GW1–GW10 giữ nguyên nguồn StatMuse, không nhập lại. Chi tiết công cụ và luật ghép ở `docs/fpl-collection-2026.md`.
 - Nhập đúng danh sách cầu thủ thực tế của mỗi fixture FINISHED; quy tắc cũ 40 dòng/trận, 400 dòng/vòng chỉ là giới hạn còn tồn tại trong service tổng mùa, không phải chuẩn dữ liệu để thêm cầu thủ hoặc dòng `DID_NOT_PLAY` giả.
 - Sau nhập, kiểm tra/tái tính `appearances`, `minutes`, `goals`, `assists` của `player_season_stats` bằng cơ chế hiện có theo đúng phạm vi nó hỗ trợ; đọc lại MySQL và chạy lặp xác nhận `updated=0` khi có thể. Nếu giới hạn 40/400 hoặc yêu cầu vòng đủ 10 trận chặn dữ liệu thực tế, báo rõ tổng mùa chưa theo kịp và xử lý giới hạn chung bằng thay đổi mã được kiểm tra đúng phạm vi; không chạy SQL thủ công để lách kiểm tra.
 - Chỉ số chưa xác minh giữ SQL `NULL`; `DID_NOT_PLAY` không cộng vào tổng. Không sửa dữ liệu mùa 2024/25.

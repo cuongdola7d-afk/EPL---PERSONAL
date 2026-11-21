@@ -58,6 +58,7 @@ Luật hiện tại: Fantasy 2026 lấy rating người dùng cung cấp, OVR d�
 | Tài liệu | Trạng thái và cách dùng |
 | --- | --- |
 | [gameweek-data-workflow.md](gameweek-data-workflow.md) | Hiện hành, bắt buộc khi thu thập GW: nguồn/ID/membership, backup/import, lineup/evidence, tổng mùa/TOW/readiness |
+| [fpl-collection-2026.md](fpl-collection-2026.md) | Hiện hành (từ GW11 mùa 2026/27): thu thập số liệu/chỉ số mở rộng từ FPL API, mapping, luật ghép rating SofaScore và importer bảng mở rộng |
 | [player-profiles-2026-import.md](player-profiles-2026-import.md) | Hỗn hợp: header/validation/import hồ sơ và các batch cũ; không nhập snapshot cũ đè bổ sung mới |
 | [2026-player-positions.md](2026-player-positions.md) | Hỗn hợp: primary/eligible, ngoại lệ đã chốt, quy trình và checkpoint nhập vị trí |
 | [player-season-stats-2026.md](player-season-stats-2026.md) | Hiện hành: tổng mùa, NULL, idempotence và giới hạn validator 40/400 đang tồn tại |

@@ -1,0 +1,16 @@
+{
+  "teams": [
+    {"id": 1, "name": "Arsenal", "short_name": "ARS"},
+    {"id": 6, "name": "Chelsea", "short_name": "CHE"},
+    {"id": 14, "name": "Liverpool", "short_name": "LIV"}
+  ],
+  "elements": [
+    {"id": 101, "code": 1001, "web_name": "Alpha", "first_name": "Alex", "second_name": "Alpha", "team": 1},
+    {"id": 102, "code": 1002, "web_name": "Beta", "first_name": "Ben", "second_name": "Beta", "team": 1},
+    {"id": 103, "code": 1003, "web_name": "Gamma", "first_name": "Greg", "second_name": "Gamma", "team": 6},
+    {"id": 104, "code": 1004, "web_name": "Delta", "first_name": "Dan", "second_name": "Delta", "team": 6}
+  ],
+  "events": [
+    {"id": 11, "name": "Gameweek 11", "finished": true}
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "id": 101,
+    "event": 11,
+    "kickoff_time": "2026-11-21T15:00:00Z",
+    "team_h": 1,
+    "team_a": 6,
+    "team_h_score": 2,
+    "team_a_score": 1,
+    "finished": true,
+    "finished_provisional": true
+  }
+]

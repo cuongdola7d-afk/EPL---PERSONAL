@@ -7,16 +7,29 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class PremierHubApplication {
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(PremierHubApplication.class);
-        if (java.util.Arrays.asList(args).contains("--premierhub.football-data.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.manual-roster.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.manual-match-stats.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.manual-season-stats.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.club-information.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.match-lineups.enabled=true")
-                || java.util.Arrays.asList(args).contains("--premierhub.fantasy-evidence.enabled=true")) {
+        if (isNonWebCommand(args)) {
             application.setWebApplicationType(org.springframework.boot.WebApplicationType.NONE);
         }
         var context = application.run(args);
+        if (isExitCommand(args)) {
+            System.exit(SpringApplication.exit(context));
+        }
+    }
+
+    static boolean isNonWebCommand(String[] args) {
+        var list = java.util.Arrays.asList(args);
+        return list.contains("--premierhub.football-data.enabled=true")
+                || list.contains("--premierhub.manual-roster.enabled=true")
+                || list.contains("--premierhub.manual-match-stats.enabled=true")
+                || list.contains("--premierhub.manual-season-stats.enabled=true")
+                || list.contains("--premierhub.club-information.enabled=true")
+                || list.contains("--premierhub.match-lineups.enabled=true")
+                || list.contains("--premierhub.fantasy-evidence.enabled=true")
+                || list.contains("--premierhub.fpl-collect.enabled=true")
+                || list.contains("--premierhub.manual-extra-stats.enabled=true");
+    }
+
+    static boolean isExitCommand(String[] args) {
         for (String arg : args) {
             if (arg.equals("--premierhub.sync.enabled=true")
                     || arg.equals("--premierhub.football-data.enabled=true")
@@ -27,9 +40,12 @@ public class PremierHubApplication {
                     || arg.equals("--premierhub.club-information.enabled=true")
                     || arg.equals("--premierhub.match-lineups.enabled=true")
                     || arg.equals("--premierhub.fantasy-evidence.enabled=true")
+                    || arg.equals("--premierhub.fpl-collect.enabled=true")
+                    || arg.equals("--premierhub.manual-extra-stats.enabled=true")
                     || arg.startsWith("--premierhub.snapshot.mode=")) {
-                System.exit(SpringApplication.exit(context));
+                return true;
             }
         }
+        return false;
     }
 }

@@ -205,6 +205,45 @@ CREATE TABLE IF NOT EXISTS fixture_score_evidence (
     FOREIGN KEY (fixture_id) REFERENCES fixtures(id)
 );
 
+-- Extended per-match metrics sourced from FPL API starting from GW11 2026/27.
+-- Kept separate from manual_fixture_player_stats; GW1-GW10 are not backfilled.
+CREATE TABLE IF NOT EXISTS manual_fixture_player_extra_stats (
+    fixture_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    club_id INTEGER NOT NULL,
+    starts INTEGER,
+    clean_sheets INTEGER,
+    goals_conceded INTEGER,
+    own_goals INTEGER,
+    penalties_saved INTEGER,
+    penalties_missed INTEGER,
+    saves INTEGER,
+    bonus INTEGER,
+    bps INTEGER,
+    clearances_blocks_interceptions INTEGER,
+    recoveries INTEGER,
+    tackles INTEGER,
+    defensive_contribution INTEGER,
+    expected_goals DECIMAL(5,2),
+    expected_assists DECIMAL(5,2),
+    expected_goal_involvements DECIMAL(5,2),
+    expected_goals_conceded DECIMAL(5,2),
+    influence DECIMAL(6,1),
+    creativity DECIMAL(6,1),
+    threat DECIMAL(6,1),
+    ict_index DECIMAL(6,1),
+    source VARCHAR(30) NOT NULL,
+    fetched_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (fixture_id, player_id),
+    FOREIGN KEY (fixture_id) REFERENCES fixtures(id),
+    FOREIGN KEY (player_id) REFERENCES players(id),
+    FOREIGN KEY (club_id) REFERENCES clubs(id),
+    FOREIGN KEY (league_id, season_year) REFERENCES seasons(league_id, season_year),
+    CHECK (source = 'FPL')
+);
+
 -- Verified 2026/27 formations and matchday roles; independent of statistics and Fantasy positions.
 CREATE TABLE IF NOT EXISTS club_season_formations (
     league_id INTEGER NOT NULL,
