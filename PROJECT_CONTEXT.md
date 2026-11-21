@@ -22,7 +22,7 @@ Git remote `origin` local được kiểm tra ngày 10/11 trỏ tới [cuongdola
 ## 1. Đọc nhanh trước khi làm bất kỳ việc gì
 
 1. Dự án có tên kỹ thuật **PremierHub**, tên giao diện **prismaXI / PrismaXI**; repo **EPL---PERSONAL**. Đây là cùng một ứng dụng.
-2. Đã có ứng dụng thật: **React/Vite → Vercel → Spring Boot/Render → MySQL/Aiven**. Không còn ở giai đoạn chỉ có Java/CSV. Railway là hạ tầng cũ.
+2. Đã có ứng dụng thật: **React/Vite → Vercel → Spring Boot/Render → MySQL/Aiven**. Không còn ở giai đoạn chỉ có Java/CSV. Railway là hạ tầng cũ (đã xóa ngày 21/11/2026; production là Render + Aiven).
 3. Stack hiện tại: Java target 21, Spring Boot **4.1.1**, Maven, Spring JDBC/JdbcTemplate, Spring Security, Spring Session JDBC, Google OIDC. Frontend khai báo React/React DOM **^19.2.8**, Vite **^8.3.0**, plugin-react **^6.1.1**; lockfile local ngày 10/11 chốt lần lượt **19.3.0 / 19.3.0 / 8.3.0 / 6.1.1**. Đây là phiên bản trong file, chưa xác minh phiên bản bundle/runtime production. Không dùng JPA/Hibernate hay React Router trong triển khai hiện tại.
 4. Có hai mùa khác nhau: **2024/25 → season=2024** và **2026/27 → season=2026**. Giải nội bộ `league_id=39`. Không sửa mùa 2024/25 khi làm nghiệp vụ 2026/27.
 5. Tại snapshot production **09/11/2026**, thống kê 2026/27 đã nhập đủ **GW1–GW10: 100 trận, 4.000 dòng cầu thủ–trận**. Tổng mùa đã cập nhật tới GW10. Không thu thập lại vòng đã xong.
@@ -88,7 +88,7 @@ flowchart LR
     U[Trình duyệt React/Vite] --> V[Vercel: premierhub.vercel.app]
     V -->|/api qua rewrite cùng origin| B[Spring Boot trên Render]
     B -->|JDBC + TLS VERIFY_IDENTITY| D[(Aiven MySQL defaultdb)]
-    S[football-data.org / StatMuse / ảnh người dùng] --> I[Importer thủ công có kiểm tra và backup]
+    S["football-data.org / FPL API (từ GW11; GW1–10 cơ bản StatMuse) / ảnh người dùng"] --> I[Importer thủ công có kiểm tra và backup]
     I --> D
 ```
 
@@ -118,7 +118,7 @@ flowchart LR
 | `frontend/public/` | Asset giao diện, logo và hình tĩnh |
 | `docs/`, `requests.http` | Tài liệu chuyên đề, bộ GET local chính đã hợp nhất và lịch sử triển khai |
 | `render.yaml`, `backend/Dockerfile`, `backend/docker-entrypoint.sh` | Blueprint/container/TLS Render |
-| `frontend/vercel.json`, `docs/deployment/` | Proxy hiện hành, cấu hình cutover/rollback lưu để review |
+| `frontend/vercel.json`, `docs/deployment/` | Proxy hiện hành, cấu hình cutover Render lưu để review (file rollback Railway đã xóa ngày 21/11/2026) |
 | `backend/target/`, `frontend/dist/`, `frontend/node_modules/` | Build/artifact/helper tạm, bị ignore; không phải nguồn để commit |
 | `backend/local-backups/`, `backend/secrets/`, `.env*.local` | Dữ liệu/secret ngoài Git; không sao chép vào tài liệu hoặc chat |
 
@@ -183,7 +183,7 @@ flowchart LR
 - Roster tra cứu 2026 mặc định dùng ngày UTC hiện tại trong `FootballQueries`; `asOf=YYYY-MM-DD` xem lịch sử. Fantasy multiplayer dùng ngày cố định trong cấu hình GW, không lấy ngày hiện tại này.
 - Dữ liệu 2026 là tập dữ liệu đã được chủ dự án xác minh/chốt, có các CLB/cầu thủ và OVR khác suy đoán thông thường. Không tự thay roster bằng danh sách một mùa EPL khác hoặc dùng kiến thức nhớ để “sửa” ảnh.
 
-### Bản đồ 42 bảng hiện có trong các schema
+### Bản đồ 43 bảng hiện có trong các schema
 
 | Nhóm | Bảng | Ý nghĩa |
 | --- | --- | --- |
@@ -196,7 +196,7 @@ flowchart LR
 | Lịch/BXH | `fixtures`, `standings` | Kết quả/trạng thái, hash/synced_at, BXH provider |
 | Provider | `football_data_teams`, `football_data_fixtures`, `sync_states` | Mapping, kickoff UTC/provider_status và trạng thái đồng bộ |
 | Raw cũ | `fixture_player_stats`, `fixture_score_evidence` | Raw API-Football và bằng chứng phục vụ 2024/v1 |
-| Manual trận | `manual_fixture_player_stats` | Participation, rating/fantasy_points, minutes/goals/assists/cards 2026 |
+| Manual trận | `manual_fixture_player_stats`, `manual_fixture_player_extra_stats` | Participation, rating/fantasy_points, minutes/goals/assists/cards 2026 và chỉ số mở rộng FPL (bổ sung từ GW1 ngày 21/11/2026) |
 | Sơ đồ/đội hình | `club_season_formations`, `fixture_lineups`, `fixture_lineup_players` | Default USER/OBSERVED/MISSING, observation trận, STARTER/SUB_USED/SUB_UNUSED, row/slot/phút thay người |
 | Tài khoản | `accounts`, `account_identities` | Người dùng ứng dụng và Google subject; không phải football player |
 | Phiên | `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES` | Spring Session JDBC |
@@ -404,12 +404,12 @@ Nguồn đầy đủ và bắt buộc: [gameweek-data-workflow.md](docs/gameweek
 ### Trình tự chuẩn
 
 1. Đọc đúng checkpoint GW và Git, chỉ tiếp tục phần còn lại. Lấy đủ 10 fixture từ API, mapping nội bộ/provider, ngày/timestamp UTC. Không dùng provider_id thay fixture_id trong CSV.
-2. Tải/đối chiếu batch football-data.org đầy đủ **20 CLB/380 fixture/20 dòng standings**, thêm endpoint đúng GW khi cần. Không đưa JSON một GW vào parser yêu cầu cả mùa. Trận chưa FINISHED giữ pending, không đổi giả trạng thái.
+2. Tải/đối chiếu batch football-data.org đầy đủ **20 CLB/380 fixture/20 dòng standings**, thêm endpoint đúng GW khi cần. Không đưa JSON một GW vào parser yêu cầu cả mùa. Từ GW11, trận phải đạt `FINISHED` trên football-data.org **và** `finished=true` trên FPL API mới thu thập (xem [fpl-collection-2026.md](docs/fpl-collection-2026.md)). Trận chưa xong giữ pending, không đổi giả trạng thái.
 3. Với mỗi fixture FINISHED, đối chiếu đầy đủ hai đội: tên/ID/CLB, 11 STARTER, SUB_USED và SUB_UNUSED, rating, chỉ số, formation/vị trí và phút thay người. Dùng số người thực tế, không ép 20 người/CLB hoặc 40 dòng/trận.
 4. Kiểm membership tại ngày trận và roster hiện tại. Khi có căn cứ mới dùng importer để bổ sung khoảng mở; không thêm khoảng một ngày, không kéo từ đầu mùa tùy ý hoặc chồng lấn. Hồ sơ/OVR/quyền vị trí mới cần chỉ thị riêng.
 5. Chạy reader chung và đối chiếu khóa/xung đột; importer không có dry-run. Muốn kiểm toàn bộ importer thì dùng H2/database local cô lập có đủ dữ liệu nền, không thử bằng command production.
 6. Xác minh database mà **backend Render thật sự dùng**, đọc identity, kiểm schema cần thiết. Tạo backup SQL mới ngoài Git, kiểm DDL/số dòng/marker/hash/Git ignore, ghi phạm vi/thời gian/đường dẫn trong checkpoint. Chưa backup thì chưa ghi.
-7. Dùng code hiện có: sync fixture/BXH → membership hợp lệ → statistics → lineup/formation → Fantasy final evidence/unrated/not-registered. Không tự chạy migration nếu chỉ được giao nhập dữ liệu.
+7. Dùng code hiện có: sync fixture/BXH → membership hợp lệ → statistics → chỉ số mở rộng FPL (`--premierhub.manual-extra-stats.enabled=true`, lặp `inserted=0`) → lineup/formation → Fantasy final evidence/unrated/not-registered. Không tự chạy migration nếu chỉ được giao nhập dữ liệu.
 8. Chạy lại đúng input để kiểm không tạo trùng/cập nhật. Đối chiếu MySQL và API theo từng trường, lịch sử/profile/roster liên quan, sân 11v11, source metadata và ngoại lệ.
 9. Đối chiếu **mọi lượt chọn đã lưu tham gia** với danh sách cuối và membership, tự xác nhận NOT_REGISTERED khi đủ nguồn. Không có participants thì giữ sidecar header, không tạo lượt chọn hoặc bằng chứng vắng mặt giả.
 10. Kiểm/tái tính tổng mùa bằng service hiện có, đọc lại và chạy lặp updated=0. Kiểm API/TOW/default tab, 11 ID/quyền/rating/tổng và độ phủ. Kiểm readiness theo fixture/nguyên nhân.
@@ -452,7 +452,7 @@ season,fixture_id,player_id,status,rating,minutes,goals,assists,yellow_cards,red
 - `LineupBatchImporter` đọc đúng ba CSV, header lấy từ hằng `CLUBS/FORMATIONS/PLAYERS` trong code. Vai trò phải khớp tập ID/status statistics, đúng 11 STARTER mỗi đội.
 - Formation trận phải có nguồn SofaScore hợp lệ **hoặc** `USER_SCREENSHOT: ...` dẫn đúng ảnh/ngày/fixture/CLB; không bắt người dùng cung cấp URL ảnh vốn không có URL, không bịa URL SofaScore.
 - `row_index=0` là thủ môn, sau đó phòng ngự → tấn công. Khác với hàng builder Fantasy đi từ tấn công về GK. Row/slot đi cùng nhau, chỉ cho STARTER và không trùng.
-- Khi chép ảnh ngang home/away, chuyển slot đội khách về góc nhìn đội trước nhập. Phút thay người lấy bằng chứng thay người, không lấy tổng minutes làm phút vào/ra. Minutes của StatMuse và nhãn thay ở ảnh có thể lệch một phút hợp lệ.
+- Khi chép ảnh ngang home/away, chuyển slot đội khách về góc nhìn đội trước nhập. Phút thay người lấy bằng chứng thay người, không lấy tổng minutes làm phút vào/ra. Minutes của nguồn thống kê (StatMuse GW1–GW10, FPL từ GW11) và nhãn thay ở ảnh có thể lệch một phút hợp lệ.
 - Default USER đã chốt cho 20 CLB được giữ: ban đầu 14 đội 4-2-3-1, 5 đội 3-4-3, Hull 5-4-1. Fixture có sơ đồ thật thì ưu tiên fixture; không tự sửa default theo trận mới.
 - Observation lịch sử phải được kế thừa trong formations; số mẫu/formation_counts/fixture_ids của clubs phải khớp toàn bộ observations được truyền, không dùng một GW ghi đè mẫu lịch sử.
 - OBSERVED tính theo tần suất, hòa dùng trận gần nhất rồi ID ổn định; USER giữ quyết định đã chốt, không biến default thành observation trận.
@@ -565,7 +565,7 @@ npm.cmd run dev
 
 - Backend mặc định 8080 (`PORT` có thể ghi đè), Vite mặc định 5173, `/api` proxy về localhost:8080. Browser truy cập frontend, không đổi callback Google tùy ý.
 - Maven Wrapper có sẵn; không bắt buộc Maven global. Docker target dùng JDK21. Máy từng chạy Maven/JDK26, điều đó không đổi target21 trong POM; kiểm `java -version` và `mvnw -v` khi gặp lỗi toolchain.
-- Không tự đọc `.env.local` bằng Spring trong code hiện có; env phải được nạp đúng cách. Không in file env để debug. Default local có `spring.sql.init.mode=always`, **prod có never**.
+- Không tự đọc `.env.local` bằng Spring trong code hiện có; `backend/.env.local` không bao giờ trỏ tới database thật (local luôn dùng H2). Thông tin kết nối Aiven production nằm ngoài repo tại `D:\File Jva\PrismaXI-secrets\aiven-production.env` và `D:\File Jva\PrismaXI-secrets\ca.pem` (chỉ nạp tạm vào tiến trình chạy lệnh production, không in ra màn hình/log; xem [fpl-collection-2026.md](docs/fpl-collection-2026.md#bước-5--backup-và-nhập-dữ-liệu-vào-db-thử-h2-trước-sau-đó-production)). Default local có `spring.sql.init.mode=always`, **prod có never**.
 - Auth local an toàn: `spring-boot:run '-Dspring-boot.run.profiles=auth-local'`, H2 `target/auth-local`, không kết hợp prod.
 - Minigame local: profile `minigame-local`, H2 `target/minigame-local`, có bootstrap snapshot đã chốt; phải chạy từ backend để tìm đúng data. Không dùng bootstrap này trên MySQL.
 - H2 auth/minigame trong target mất khi Maven clean; restart bình thường giữ file. Không xóa H2 local người dùng để “sửa schema”.
@@ -606,6 +606,8 @@ Chạy từ `backend/`, sau đối chiếu đích/backup/validation; cờ enable
 | Profile | `premierhub.player-profiles.enabled`, `.file`, `.as-of` |
 | Primary/eligible | `premierhub.player-positions.enabled`, `.file` |
 | Statistics | `premierhub.manual-match-stats.enabled`, `.file` |
+| FPL collector & ghép rating | `premierhub.fpl-collect.enabled`, `--gameweek`, `--season`, `--output-dir` (tùy chọn `--merge-only=true`) |
+| Chỉ số mở rộng FPL | `premierhub.manual-extra-stats.enabled`, `.file` |
 | Patch NULL một fixture | Thêm `premierhub.manual-match-stats.fill-missing-fixture=<internal id>` |
 | Tổng mùa | `premierhub.manual-season-stats.enabled`, `.through-gameweek=N` |
 | Thông tin CLB | `premierhub.club-information.enabled`, `.file` |
@@ -625,8 +627,7 @@ Các mốc hạ tầng lấy từ biên bản cutover **08/10/2026**; identity/d
 - Production frontend/domain: **Vercel premierhub.vercel.app**.
 - Backend: **Render service epl-personal, Singapore, Free**, URL epl-personal.onrender.com. `render.yaml` là Blueprint lưu trong repo, không chứng minh một lần sync Blueprint đã xảy ra.
 - Database: **Aiven MySQL 8.4.8, defaultdb**, UUID đã đối chiếu `715946cc-c33a-11f1-8fd9-8e0831c19405`. Trước lần ghi mới vẫn xác minh config backend/identity, không chỉ tin UUID chép trong tài liệu.
-- Cutover Railway → Render/Aiven đã làm **08/10/2026** sau rehearsal, backup/restore, freeze và đối chiếu dữ liệu. Railway backend/autodeploy đã dừng; database Railway cũ là dữ liệu lịch sử, không phải đích nhập mới.
-- Sau cutover Aiven đã có ghi thật. Không tự promote rollback Railway hoặc copy DB cũ đè Aiven; cần freeze/backup/reconcile theo tài liệu cutover.
+- Cutover Railway → Render/Aiven đã làm **08/10/2026** sau rehearsal, backup/restore, freeze và đối chiếu dữ liệu. **Hạ tầng Railway và file rollback `docs/deployment/vercel.railway.rollback.json` đã bị xóa hoàn toàn ngày 21/11/2026**; production hiện là **Render + Aiven** và không còn phương án rollback về Railway.
 - Runtime SHA frontend/backend hiện tại không được kiểm chứng lại trong lượt tổng hợp này. Code có trong Git/working tree không tự chứng minh đã deploy. Với thay đổi code cần kiểm release thực tế; thay CSV/SQL đã nhập đúng production không cần deploy chỉ để data có hiệu lực.
 
 ### Các nhóm biến cấu hình — chỉ tên, không giá trị secret
@@ -767,7 +768,7 @@ Các link dưới trỏ tới file trong repo. Để chọn nhanh theo Bắt đ�
 | [player-guess-minigame-production-2026-10-08.md](docs/player-guess-minigame-production-2026-10-08.md) | Đã bật production, backup/restore/smoke và xác nhận từ người dùng |
 | [render-aiven-migration.md](docs/render-aiven-migration.md) | Kiến trúc/container/TLS/env, chuẩn bị và liên kết cutover |
 | [render-aiven-rehearsal-2026-10-08.md](docs/render-aiven-rehearsal-2026-10-08.md) | Diễn tập migration/restore/đối chiếu trước chuyển traffic |
-| [render-aiven-final-cutover-2026-10-08.md](docs/render-aiven-final-cutover-2026-10-08.md) | Biên bản chuyển authoritative từ Railway sang Aiven, freeze/rollback/reconcile |
+| [render-aiven-final-cutover-2026-10-08.md](docs/render-aiven-final-cutover-2026-10-08.md) | Biên bản chuyển authoritative từ Railway sang Aiven (Railway và file rollback đã xóa ngày 21/11/2026; production là Render + Aiven) |
 | [render-aiven-read-latency.md](docs/render-aiven-read-latency.md) | Workload/timer/probe/N+1, cách đo và phần chưa được phát hành/đo |
 
 ### Dữ liệu và checkpoint không nằm trong docs

@@ -41,7 +41,7 @@ Ràng buộc kỹ thuật trong `FplClient` / `FplJsonParser` / `FplCollectorSer
 - 4 cột `DECIMAL(5,2)` (cho phép `NULL`): `expected_goals`, `expected_assists`, `expected_goal_involvements`, `expected_goals_conceded`.
 - 4 cột `DECIMAL(6,1)` (cho phép `NULL`): `influence`, `creativity`, `threat`, `ict_index`.
 - Schema local/H2: `backend/src/main/resources/schema.sql`.
-- Migration MySQL (chạy sau preflight và backup trên Aiven):
+- Migration MySQL (đã chạy trên Aiven production ngày **21/11/2026** khi bổ sung GW1–GW10 với 3.080 dòng; **không chạy lại migration** cho các vòng tiếp theo):
   - Preflight: `backend/sql/2026-11-21-fpl-extra-stats-preflight.sql`
   - Migration: `backend/sql/2026-11-21-fpl-extra-stats-mysql.sql`
 
@@ -120,12 +120,24 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 
 ### Bước 5 — Backup và nhập dữ liệu vào DB (thử H2 trước, sau đó production)
 
+#### Cách chạy lệnh trên production (Aiven MySQL)
+
+- Thông tin kết nối Aiven nằm **ngoài repo**: `D:\File Jva\PrismaXI-secrets\aiven-production.env` (gồm các biến `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`) và chứng chỉ CA tại `D:\File Jva\PrismaXI-secrets\ca.pem`.
+- `PREMIERHUB_JDBC_URL` có dạng `jdbc:mysql://HOST:PORT/DATABASE`, **không có** phần `?…` phía sau.
+- Chỉ nạp các biến này vào đúng cửa sổ terminal/tiến trình chạy lệnh production, chạy xong thì đóng cửa sổ đó. **Không in** giá trị biến ra màn hình hay log, **không chép** vào bất kỳ file nào trong repo.
+- `backend/.env.local` **không bao giờ** trỏ tới database thật; chạy local luôn dùng H2.
+- Trước mọi lần ghi production, bắt buộc tuân thủ trình tự: **thử trên H2 → backup Aiven → được chủ dự án đồng ý rõ ràng**.
+
+#### Trình tự nhập
+
 Thực hiện theo `docs/gameweek-data-workflow.md` (xác minh đúng đích, tạo backup mới ngoài Git, thử trên H2 trước):
-1. Nhập thống kê chính bằng importer hiện có: `--premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gwNN-2026/manual-match-stats-2026-GWNN.csv`.
+1. Nhập thống kê chính bằng importer hiện có: `--premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gwNN-2026/manual-match-stats-2026-GWNN.csv` (trên production thêm `--spring.profiles.active=prod --spring.sql.init.mode=never`).
 2. Nhập chỉ số mở rộng bằng importer mới (idempotent, transactional, từ chối ghi đè giá trị khác `NULL`, hỗ trợ GW1–GW38 mùa 2026 và không bao giờ ghi vào `manual_fixture_player_stats`):
 
 ```powershell
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
+  --spring.profiles.active=prod `
+  --spring.sql.init.mode=never `
   --premierhub.manual-extra-stats.enabled=true `
   --premierhub.manual-extra-stats.file=data/gw11-2026/fpl/fpl-extra-stats-2026-GW11.csv
 ```
@@ -138,4 +150,8 @@ Chạy lặp lần 2 để xác nhận `inserted=0`. Với đợt bổ sung riê
 - **Định nghĩa kiến tạo (Assists) của FPL rộng hơn thống kê chính thức (Opta/StatMuse):** FPL tính kiến tạo cả cho tình huống kiếm phạt đền, kiếm đá phạt dẫn đến bàn thắng, hoặc cú sút bật cột/xà/thủ môn/hậu vệ để đồng đội ghi bàn. Do đó từ GW11 trở đi, số `assists` tuân theo định nghĩa FPL và không so sánh 1-1 tuyệt đối với GW1–GW10 (StatMuse).
 - **FPL API không có tài liệu chính thức (unofficial):** cấu trúc JSON hoặc tên trường có thể thay đổi bất ngờ giữa mùa. `FplJsonParser` kiểm tra chặt mọi trường bắt buộc và kiểu dữ liệu, dừng ngay kèm thông báo lỗi cụ thể thay vì tự điền `0`.
 - **Bảo vệ số liệu cơ bản GW1–GW10:** `FplRatingMergeService` chặn mọi vòng `< 11` để không vô tình tạo CSV nhập đè `manual_fixture_player_stats`. `ManualExtraStatsImporter` chỉ ghi vào `manual_fixture_player_extra_stats`.
-- **Chưa có API/UI cho bảng mở rộng:** `manual_fixture_player_extra_stats` hiện chỉ lưu trữ dữ liệu cho các bước sử dụng sau này, chưa mở endpoint hoặc hiển thị trên frontend.
+- **Việc còn tồn đọng — 2 cầu thủ bị trùng ID cần kiểm tra trước khi nhập GW11 nếu họ ra sân:**
+  - **Iliman Ndiaye:** `2000015003` (GW1–2) và `2000004005`.
+  - **Chema Andrés:** `2000030259` (GW4–5) và `2000030174`.
+  - 4 dòng chỉ số mở rộng của hai cầu thủ này ở GW1–GW10 đã bị loại khi bổ sung. Chưa gộp ID; chỉ ghi nhận để kiểm tra trước khi nhập nếu họ ra sân ở GW11 trở đi.
+- **Hiển thị API/UI của bảng mở rộng:** `GET /api/matches/{id}/details?season=2026` trả thêm trường `extra` (chỉ mùa 2026, bỏ qua khi cầu thủ không có dòng) phục vụ tab **Thống kê** và thẻ chi tiết cầu thủ trên frontend; giá trị `NULL` hiển thị `"—"`, không chuyển thành `0`.

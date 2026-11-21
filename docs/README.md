@@ -80,15 +80,15 @@ Checkpoint và dữ liệu nằm ngoài `docs/`:
 
 | Tài liệu | Trạng thái và cách dùng |
 | --- | --- |
-| [auth-release-2026.md](auth-release-2026.md) | Hỗn hợp, vẫn dùng: session/CSRF, proxy cùng origin, env/migration/checklist; host Railway và SHA trong checkpoint cũ phải đối chiếu cutover |
+| [auth-release-2026.md](auth-release-2026.md) | Hỗn hợp, vẫn dùng: session/CSRF, proxy cùng origin, env/migration/checklist; host Railway và SHA trong checkpoint cũ là tài liệu lịch sử (Railway đã xóa ngày 21/11/2026; production là Render + Aiven) |
 | [auth-production-2026-10-04.md](auth-production-2026-10-04.md) | Lịch sử kiểm chứng auth/cookie/proxy; hữu ích để truy vết và thiết kế smoke mới, không phải runtime SHA hiện tại |
-| [auth-performance-2026-10-04.md](auth-performance-2026-10-04.md) | Lịch sử đo trên Railway; không áp dụng số đo/serverless setting đó cho Render, xem hướng dẫn latency riêng |
+| [auth-performance-2026-10-04.md](auth-performance-2026-10-04.md) | Lịch sử đo trên Railway (Railway đã xóa ngày 21/11/2026; production là Render + Aiven); không áp dụng số đo/serverless setting đó cho Render, xem hướng dẫn latency riêng |
 | [fantasy-production-2026-10-05.md](fantasy-production-2026-10-05.md) | Lịch sử release/mở GW6; còn dùng truy vết migration và kết quả lúc đó, không chạy lại để mở vòng |
 | [player-guess-minigame-release.md](player-guess-minigame-release.md) | Hỗn hợp, vẫn dùng: checklist schema/flag/backup/release; đầu file cập nhật đã phát hành, các đoạn “chưa” ở cuối thuộc lượt chuẩn bị |
 | [player-guess-minigame-production-2026-10-08.md](player-guess-minigame-production-2026-10-08.md) | Lịch sử production/backup/restore/smoke theo ngày; làm căn cứ feature đã được kiểm tra, không suy đã deploy code mới |
 | [render-aiven-migration.md](render-aiven-migration.md) | Hỗn hợp, vẫn dùng: container/TLS/env/pool và quy trình chuyển; trạng thái “chưa chuyển” của lượt chuẩn bị đã được biên bản cuối cập nhật |
 | [render-aiven-rehearsal-2026-10-08.md](render-aiven-rehearsal-2026-10-08.md) | Lịch sử rehearsal/restore/reconcile; mẫu kiểm tra cho lượt được giao, không chứng minh mọi backup sau đã thử restore |
-| [render-aiven-final-cutover-2026-10-08.md](render-aiven-final-cutover-2026-10-08.md) | Hỗn hợp, vẫn dùng: mốc chuyển authoritative Railway → Aiven và các ràng buộc freeze/rollback/reconcile |
+| [render-aiven-final-cutover-2026-10-08.md](render-aiven-final-cutover-2026-10-08.md) | Hỗn hợp, vẫn dùng: mốc chuyển authoritative Railway → Aiven và các ràng buộc freeze/reconcile (Railway đã xóa ngày 21/11/2026; production là Render + Aiven; file rollback Railway đã xóa) |
 | [render-aiven-read-latency.md](render-aiven-read-latency.md) | Hỗn hợp: workload/timer/probe và phần còn phải đo/rollout; có code diagnostics không có nghĩa đã bật trên production |
 
 [render.yaml](../render.yaml), [Dockerfile](../backend/Dockerfile) và [mẫu rewrite Vercel](deployment/vercel.render.example.json) là cấu hình/tham chiếu để đối chiếu, không tự xác nhận trạng thái dịch vụ. Thao tác release/migration/restore cần đúng phạm vi và backup; không tự tạo cron, keep-warm hoặc Pre-deploy Command. Không mở rộng quyền từ một lệnh mẫu trong tài liệu cũ.
@@ -105,7 +105,7 @@ Checkpoint và dữ liệu nằm ngoài `docs/`:
 | [stage-2-api-errors.md](stage-2-api-errors.md) | Bài học validation/HTTP/error DTO còn hữu ích; kiểm exception/contract hiện tại trước sửa |
 | [stage-2-production-readiness.md](stage-2-production-readiness.md) | Chuẩn bị executable JAR/deploy ban đầu; mô tả đóng gói CSV demo và chưa có DB là lịch sử |
 | [gw3-2026-production-import.md](gw3-2026-production-import.md) | Biên bản nhập GW3; giữ căn cứ, không nhập lại như batch mới |
-| [Phụ lục README cũ](../README.md#phụ-lục-lịch-sử-readme) | Ghi chép v1/2024, API-Football, Railway và CLI cũ được bảo tồn; một số cơ chế vẫn tham chiếu theo đúng mùa/phạm vi |
+| [Phụ lục README cũ](../README.md#phụ-lục-lịch-sử-readme) | Ghi chép v1/2024, API-Football, Railway (Railway đã xóa ngày 21/11/2026; production là Render + Aiven) và CLI cũ được bảo tồn; một số cơ chế vẫn tham chiếu theo đúng mùa/phạm vi |
 
 ## Cập nhật mục lục
 

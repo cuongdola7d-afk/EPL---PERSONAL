@@ -9,7 +9,7 @@ Mục tiêu vận hành từ 21/10/2026: người dùng gửi ảnh rating/danh 
 1. Đọc checkpoint và file đã có của đúng GW; kiểm tra Git và dữ liệu liên quan. Nếu vòng đã hoàn thành, chỉ báo trạng thái hoặc xử lý phần người dùng yêu cầu bổ sung. Không thu thập lại GW đã xong, không kiểm kê toàn database.
 2. Lấy đúng 10 fixture của GW từ API PremierHub và đối chiếu database/provider. Dùng ID nội bộ `fixtures.id`, không nhầm với `football_data_fixtures.provider_id`; ánh xạ bằng `football_data_fixtures.fixture_id`. Giữ thời điểm UTC đầy đủ từ `utcDate`/`kickoff_utc`, không tự thêm giờ vào ngày không có giờ. Nếu API chưa trả đủ 10, báo thiếu/mapping sai trước khi kết luận vòng đủ; không bịa fixture.
 3. Chuẩn bị dữ liệu mùa đầy đủ cho mã đồng bộ football-data.org hiện có; sau khi xác minh đích và backup ở mục 6, chạy sync để cập nhật lịch, trạng thái, tỉ số và BXH, rồi đọc lại database/API và xác nhận mapping `fixture_id` từng trận. Không đưa JSON một GW vào batch yêu cầu 20 CLB/380 fixture/20 dòng BXH. Trận chưa đá hoặc chưa được provider xác nhận xong phải giữ trạng thái tương ứng, không tự đổi thành `FINISHED`.
-4. Xử lý cả hai đội của **mọi fixture FINISHED** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa xác nhận vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã xong.
+4. **Điều kiện bắt đầu thu thập (từ GW11):** trận phải đạt `FINISHED` trên football-data.org **và** `finished=true` trên FPL API (không chấp nhận chỉ `finished_provisional=true`, xem [fpl-collection-2026.md](fpl-collection-2026.md)). Xử lý cả hai đội của **mọi fixture đủ điều kiện** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa xác nhận vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã xong.
 5. Có thể chia nội bộ thành batch 5 trận nhưng phải tiếp tục hết danh sách FINISHED, không dừng ở batch đầu. Lấy đúng danh sách trận và cầu thủ thực tế, không ép 10 trận đã xong hoặc 40 người/trận.
 
 Khi cần đọc database, chỉ truy vấn đúng GW/fixture/player liên quan. Ví dụ SQL chỉ đọc, thay `6` bằng GW được giao:
@@ -31,11 +31,12 @@ Importer membership dùng `fixtures.match_date`, không dùng ngày hiện tại
 | Dữ liệu | Nguồn được dùng |
 | --- | --- |
 | Lịch, thời điểm UTC, trạng thái, tỉ số, BXH | football-data.org; tận dụng dữ liệu/cache đã có |
-| Phút, bàn thắng, kiến tạo, thẻ vàng, thẻ đỏ | StatMuse; giữ thông tin chưa xác minh là trống |
+| Phút, bàn thắng, kiến tạo, thẻ vàng, thẻ đỏ | GW1–GW10: StatMuse (đã chốt, không nhập lại). Từ GW11: FPL API qua collector, xem [fpl-collection-2026.md](fpl-collection-2026.md); giữ thông tin chưa xác minh là trống |
+| Chỉ số mở rộng (xG, xA, tắc bóng, cứu thua, BPS…) | FPL API, bảng `manual_fixture_player_extra_stats` |
 | Rating | SofaScore do người dùng gửi ảnh hoặc bảng; không tự tìm rating, không dùng nguồn khác hoặc OVR |
 | Đá chính, dự bị, người vào thay, sơ đồ thực tế, vị trí trận | Bằng chứng đã có hoặc ảnh Lineups người dùng cung cấp |
 
-Ghi URL **nếu nguồn có URL**, hoặc tham chiếu ảnh/bảng người dùng gửi, ngày kiểm tra và phạm vi nguồn theo fixture/CLB trong `sources.md`. Ảnh Lineups là bằng chứng hợp lệ; không yêu cầu hay bịa URL SofaScore khi nguồn là ảnh. Không suy ra đá chính từ rating, phút, eligiblePositions hay sơ đồ thường dùng. Giữ sơ đồ mặc định do người dùng chốt; không biến nó thành sơ đồ trận đã xác minh. Cần đủ danh sách trận của cả hai đội, 11 người đá chính không trùng ID mỗi đội, dự bị vào sân và dự bị không vào sân, sơ đồ/vị trí cần để dựng sân, cùng phút/bàn/kiến tạo/thẻ và trường CSV hiện hành.
+Ghi URL **nếu nguồn có URL**, hoặc tham chiếu ảnh/bảng người dùng gửi, ngày kiểm tra và phạm vi nguồn theo fixture/CLB trong `sources.md`. Ảnh Lineups là bằng chứng hợp lệ; không yêu cầu hay bịa URL SofaScore khi nguồn là ảnh. Không suy ra đá chính từ rating, phút, eligiblePositions hay sơ đồ thường dùng. Giữ sơ đồ mặc định do người dùng chốt; không biến nó thành sơ đồ trận đã xác minh. Cần đủ danh sách trận của cả hai đội, 11 người đá chính không trùng ID mỗi đội, dự bị vào sân và dự bị không vào sân, sơ đồ/vị trí cần để dựng sân, cùng phút/bàn/kiến tạo/thẻ và chỉ số mở rộng (từ GW11 thu thập bằng FPL collector rồi ghép ảnh rating SofaScore theo [fpl-collection-2026.md](fpl-collection-2026.md); GW1–GW10 giữ nguyên số liệu cơ bản StatMuse, không nhập lại).
 
 Đối chiếu `player_id`, membership tại ngày trận và roster hiện đang hiển thị. Khi có căn cứ CLB/ngày bắt đầu, dùng importer membership hiện có xử lý khoảng cũ và thêm khoảng hiện hành `end_date` trống cho người xác nhận còn thuộc CLB; kiểm tra không chồng lấn, không đổi ID và không tự kéo dài từ đầu mùa hoặc chỉ thêm một ngày của GW. Nếu chưa có căn cứ ngày bắt đầu/CLB, có nhiều ID có thể khớp hoặc thiếu dòng mùa, ghi tên, fixture, CLB và phần cần xác nhận; không âm thầm bỏ người, đặt ID/ngày giả. Lịch sử trận phải dựa trên membership **tại ngày trận**, không phụ thuộc roster hiện tại.
 
@@ -43,16 +44,18 @@ Chỉ bổ sung hồ sơ, OVR và vị trí của người mới khi được y�
 
 ## 3. Một thư mục và một CSV thống kê cuối cho mỗi GW
 
-Quy ước cho vòng mới, ví dụ `backend/data/gw6-2026/`:
+Quy ước cho vòng mới, ví dụ `backend/data/gw11-2026/`:
 
 ```text
-gw6-2026/
-├── manual-match-stats-2026-GW6.csv
+gw11-2026/
+├── manual-match-stats-2026-GW11.csv
 ├── sources.md
 ├── missing.csv
-├── confirmed-unrated.csv    # Khi có người đã được xác nhận SofaScore không chấm; không phải rating đang chờ
-├── confirmed-not-registered.csv # Khi có cầu thủ Fantasy được xác nhận ngoài danh sách trận
-└── lineups/                 # Chỉ tạo khi có dữ liệu cần nhập bằng LineupBatchImporter
+├── confirmed-unrated.csv          # Khi có người đã được xác nhận SofaScore không chấm; không phải rating đang chờ
+├── confirmed-not-registered.csv   # Khi có cầu thủ Fantasy được xác nhận ngoài danh sách trận
+├── anomalies.csv                  # Khi bước ghép FPL + ảnh rating phát hiện bất thường (từ GW11)
+├── fpl/                           # Đầu ra collector FPL (từ GW11): raw/, fixture-map.csv, fpl-match-stats-*, fpl-extra-stats-*
+└── lineups/                       # Chỉ tạo khi có dữ liệu cần nhập bằng LineupBatchImporter
     ├── clubs.csv
     ├── formations.csv
     └── players.csv
@@ -137,6 +140,7 @@ Reader/importer chung hiện có:
 | `ManualMatchStatsCsvReader.read(Path)` | Header, 10 cột, khóa trùng, kiểu/range, status, season; không mở database |
 | `ManualMatchStatsImporter.importFile(Path)` | Fixture FINISHED mùa 2026, membership duy nhất trong CLB trận, dòng player_season_stats đúng CLB, khóa không bị fixture_player_stats của provider sở hữu; transaction và không ghi đè thống kê khác nội dung |
 | `ManualMatchStatsPatchImporter.fillMissing(Path,int)` | Chỉ bổ sung NULL của dòng đã tồn tại trong một fixture, kiểm tra membership/status, từ chối giá trị xung đột; ô trống không đổi dữ liệu |
+| `ManualExtraStatsImporter.importFile(Path)` | Nhập bảng `manual_fixture_player_extra_stats` (GW1–GW38 mùa 2026), idempotent, transaction, không ghi đè giá trị khác NULL và không bao giờ ghi vào `manual_fixture_player_stats` |
 | `LineupBatchImporter.importDirectory(Path)` | Kiểm tra schema CSV đội hình, vai trò, 11 STARTER, ID/status khớp thống kê, tọa độ và phạm vi formation; sau đó mới upsert |
 
 Repo **không có cờ dry-run/validate-only** cho các command nhập này. Không gọi command trên production để thử validation; khởi động Spring cũng có thể chạy SQL init theo cấu hình hiện tại. Kiểm tra membership/khóa/xung đột bằng đọc hẹp trên dữ liệu đã có. Muốn chạy đầy đủ validator của importer, dùng bản database local tách biệt đã có đủ fixture, roster, membership và thống kê liên quan; báo rõ có nhập local hay chưa. Chỉ dùng importer membership sau khi đã đối chiếu nguồn và khoảng cũ; không chạy roster importer hoặc tự gán ngày để che lỗi. Nếu chưa kiểm tra được một điều kiện, ghi rõ trong checkpoint.
@@ -167,18 +171,26 @@ Khi nhận rating mới: ghép đúng `(fixture_id,player_id)` với ảnh/bản
 
 Yêu cầu “Tổng hợp GW N mùa 2026/27” đã cho phép bước nhập dữ liệu **các fixture FINISHED được xác minh** theo quy trình thường trực. Nếu người dùng giới hạn rõ “chỉ chuẩn bị/chưa nhập SQL” thì giữ giới hạn đó. Không nhập phần còn thiếu ảnh, rating, membership hoặc trận chưa FINISHED. Trước khi ghi:
 
-1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server; không dùng Railway cũ hoặc mặc định H2 local là production, không in mật khẩu/URL chứa bí mật. Cấu hình prod hiện dùng `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`; các import command không tự nạp ba biến này từ `.env.local`.
+1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server (Railway đã xóa ngày 21/11/2026; không mặc định H2 local là production, không in mật khẩu/URL chứa bí mật). Thông tin kết nối Aiven nằm ngoài repo tại `D:\File Jva\PrismaXI-secrets\aiven-production.env` (`PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`) và `D:\File Jva\PrismaXI-secrets\ca.pem`; `backend/.env.local` không bao giờ trỏ tới database thật (chi tiết xem [fpl-collection-2026.md](fpl-collection-2026.md#bước-5--backup-và-nhập-dữ-liệu-vào-db-thử-h2-trước-sau-đó-production)).
 2. Tạo SQL backup mới ngoài Git trước lần ghi, lưu đích/thời gian/phạm vi, đường dẫn, dung lượng và SHA-256 trong checkpoint. `backend/local-backups/` đã được ignore. Repo không có command backup MySQL 2026 chuyên dụng; dùng công cụ xuất SQL của môi trường đã xác minh, kiểm tra backup đọc được và có bảng sẽ bị tác động. Không dùng `premierhub.snapshot.mode`: đó là snapshot GW1 mùa 2024/25. Chưa tạo được backup thì chưa ghi.
 3. So sánh đầu vào với dữ liệu đích theo fixture/player_id và từng trường. Lỗi/xung đột báo fixture, player_id, tên, trường, giá trị đã lưu và giá trị dự kiến; không tự đổi hoặc xóa dữ liệu cũ. Kiểm tra schema cần thiết trước khi nhập đội hình; không âm thầm chạy migration.
-4. Sau khi sync fixture/BXH và đối chiếu ID, nhập membership đã xác minh bằng importer hiện có, rồi thống kê → đội hình/sơ đồ → bằng chứng Fantasy (CSV cuối, unrated và vắng mặt nếu có). Đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt. Không bật runner thường trực hoặc thay cấu hình deploy.
+4. Sau khi sync fixture/BXH và đối chiếu ID, nhập membership đã xác minh bằng importer hiện có, rồi thống kê trận → chỉ số mở rộng FPL (`manual_fixture_player_extra_stats`) → đội hình/sơ đồ → bằng chứng Fantasy (CSV cuối, unrated và vắng mặt nếu có). Đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt. Không bật runner thường trực hoặc thay cấu hình deploy.
 
-Nhập CSV thống kê chung của GW, ví dụ GW6:
+Nhập CSV thống kê chung của GW, ví dụ GW11:
 
 ```powershell
-java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gw6-2026/manual-match-stats-2026-GW6.csv
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gw11-2026/manual-match-stats-2026-GW11.csv
 ```
 
 Chạy lại phải báo `MANUAL_MATCH_STATS ... inserted=0`; command thường không có bộ đếm updated vì không cập nhật dòng cũ. Cấu hình `spring.sql.init.mode=never` dùng property Spring đã có, tránh chạy `schema.sql`/SQL init khi chỉ nhập dữ liệu vào schema đã xác minh.
+
+Sau khi nhập thống kê trận, nhập chỉ số mở rộng từ FPL vào `manual_fixture_player_extra_stats` (bảng đã có trên production từ 21/11/2026, không chạy lại migration):
+
+```powershell
+java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod --spring.sql.init.mode=never --premierhub.manual-extra-stats.enabled=true --premierhub.manual-extra-stats.file=data/gw11-2026/fpl/fpl-extra-stats-2026-GW11.csv
+```
+
+Chạy lại lần 2 phải báo `inserted=0` (chi tiết và lưu ý về 2 cầu thủ trùng ID xem [fpl-collection-2026.md](fpl-collection-2026.md)).
 
 Nếu bổ sung rating/chỉ số vào NULL **đã nhập**, command patch chỉ nhận một fixture mỗi lần. Chỉ lúc này mới tạo CSV 10 cột nhỏ cho fixture đó trong cùng thư mục GW; ô trống nghĩa là không đổi. Trỏ file patch đã kiểm tra vào option `premierhub.manual-match-stats.file`, thêm option thật `premierhub.manual-match-stats.fill-missing-fixture`. Ví dụ PowerShell dùng biến đích đã chốt:
 
@@ -213,7 +225,7 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=
 ### Đối chiếu sau nhập
 
 - `GET /api/matches?season=2026&matchweek=6`: đúng danh sách fixture/trạng thái/tỉ số của vòng, không chỉ đếm trận đã nhập.
-- Với **từng** fixture FINISHED đã nhập: `GET /api/matches/{fixture_id}/details?season=2026`, đối chiếu đúng hai CLB, tập playerId, participationStatus, minutes/goals/assists/yellowCards/redCards/rating/fantasyPoints với CSV và membership ngày trận. Không ép 20 người/đội khi nguồn thực tế khác. PLAYED không được chấm phải có cả rating/fantasyPoints NULL; DID_NOT_PLAY có fantasyPoints=0.
+- Với **từng** fixture FINISHED đã nhập: `GET /api/matches/{fixture_id}/details?season=2026`, đối chiếu đúng hai CLB, tập playerId, participationStatus, minutes/goals/assists/yellowCards/redCards/rating/fantasyPoints và trường `extra` (chỉ số mở rộng FPL, bỏ qua nếu cầu thủ không có dòng) với CSV và membership ngày trận. Không ép 20 người/đội khi nguồn thực tế khác. PLAYED không được chấm phải có cả rating/fantasyPoints NULL; DID_NOT_PLAY có fantasyPoints=0.
 - Với mỗi fixture FINISHED: đối chiếu homeLineup/awayLineup đúng 11 STARTER không trùng ID mỗi đội, SUB_USED/SUB_UNUSED đúng bằng chứng, formation/vị trí/source và sân 11v11 trên trình duyệt. Thiếu dữ liệu phải hiện thiếu, không suy từ sơ đồ giao diện.
 - Sau mỗi GW đủ dữ liệu, kiểm tra `GET /api/fantasy/2026/team-of-week?gameweek={gw}`: 11 playerId không trùng, đúng vị trí được phép và rating nguồn, tổng rating khớp; đối chiếu completedFixtures/recordedFixtures với các trận thực tế đã nhập. Đội hình tiêu biểu được tính trực tiếp từ database mỗi lần đọc, không cần importer/bảng mới và không phụ thuộc công bố điểm Fantasy. Tab mặc định theo GW đang hiển thị ở Vòng thi, cho chọn GW1–38 và tự tải lại khi tab đang mở hoặc quay lại trang. Thiếu rating/vị trí/trận phải báo đúng, không điền giả; hướng dẫn ở [team-of-week-2026.md](team-of-week-2026.md).
 - Đọc API lịch sử và roster hiện tại của cầu thủ liên quan; GW cũ giữ nguyên, lịch sử trận dùng membership tại ngày trận. Kiểm tra readiness ADMIN sau khi nhập bằng chứng; phân nhóm cảnh báo theo fixture/nguyên nhân (CSV cuối, unrated, thiếu dòng, đội hình, fixture pending) và đối chiếu từng lượt chọn của đội Fantasy đã chốt.

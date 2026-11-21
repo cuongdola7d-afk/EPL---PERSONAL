@@ -14,7 +14,7 @@ Người dùng cho phép dừng riêng backend Railway, giữ MySQL nguồn ch�
 - Railway backend đang chạy deployment **`0c33c59d-493a-452d-97c4-3333b51fa5f9`**, SHA **`161c19f816de5bfc3b9c884c11c8d358b637b97b`**. Deployment gần nhất SHA 61de đã FAILED, vì vậy **không redeploy latest** để quay lại. Dừng đúng deployment đang chạy, không xóa service/project/MySQL; quay lại bằng `deploymentRedeploy` với ID gốc và `usePreviousImageTag=true`.
 - Render auto deploy off. Không commit/push hoặc chạy importer trong cửa sổ; kiểm tra activeDeployments nguồn và connections/transactions cả hai DB trước dump/restore, đối chiếu lại fingerprint nguồn sau thao tác. Không thay cấu hình nguồn chỉ để kích hoạt một deployment mới. Sau đối chiếu và trước mở traffic, đã dùng toggle API `serviceInstanceAutoDeployUpdate(enabled:false)` cho riêng backend Railway; trạng thái trước enabled=true, sau false, danh sách deployments không đổi, không disconnect repo/áp dụng staged changes hoặc đụng MySQL. Tránh nguồn tự bật khi push sau cutover. [Railway autodeploy toggle](https://docs.railway.com/deployments/github-autodeploys).
 - Schema nguồn được so với dump đã restore thành công sang MySQL 8.4.8. Kiểm tra lại deadline gần nhất trước bảo trì; không đổi deadline. Dự kiến 15–30 phút, bắt đầu trước 23:00 để tránh mốc 00:00.
-- Local sửa `frontend/vercel.json` chỉ upstream thành `https://epl-personal.onrender.com/api/$1`, cập nhật kỳ vọng `frontend/src/api/deployment.test.js`; test này **2/2 đạt**, diff check đạt. Giữ `/api` cùng origin, secret transform, no-store và SPA fallback; không khôi phục VITE_API_BASE_URL. Có cấu hình quay lại ở `docs/deployment/vercel.railway.rollback.json`.
+- Local sửa `frontend/vercel.json` chỉ upstream thành `https://epl-personal.onrender.com/api/$1`, cập nhật kỳ vọng `frontend/src/api/deployment.test.js`; test này **2/2 đạt**, diff check đạt. Giữ `/api` cùng origin, secret transform, no-store và SPA fallback; không khôi phục VITE_API_BASE_URL. Cấu hình quay lại trước đây đặt ở `docs/deployment/vercel.railway.rollback.json` (đã xóa ngày 21/11/2026 cùng hạ tầng Railway).
 - Credentials Vercel/Render/Railway/Aiven nằm riêng trong `backend/secrets/`, Git ignore. Upload Vercel chỉ các source/build input frontend được theo dõi, bỏ test, secret, .env, node_modules và dist. Không cần user push để chuyển domain bằng API.
 
 ## Thứ tự và phương án quay lại
@@ -49,7 +49,7 @@ Các helper/journal và báo cáo vận hành nằm ở backend/target (ignored)
 - Journal, fingerprints toàn bảng, backup/restore report, FK, runtime, staging metadata và HTTP reports đã chép vào thư mục backup cuối ngoài Git. Credentials/log private/dump/build không được Git theo dõi; không commit/push trong lượt này.
 - **Còn xác minh bởi chủ tài khoản thật:** đăng nhập Google trên domain Vercel; kiểm tra Fantasy draft/submitted đã lưu; đọc và tiếp tục tiến trình Minigame rồi tải lại. Các kiểm tra tự động trên chỉ chứng minh configuration/gate/data copy, chưa thay thế OAuth round-trip hoặc thao tác có session thật.
 
-Sau cutover Aiven có thể đã nhận ghi của người dùng: giữ backend Railway và autodeploy off. File rollback Railway chỉ là cấu hình lưu để review; **không tự promote hoặc push cấu hình đó** sau khi đã chuyển traffic. Khi lỗi, đưa lại trang bảo trì và freeze đích, backup Aiven mới rồi xử lý theo nhánh reconcile ở trên.
+Sau cutover Aiven có thể đã nhận ghi của người dùng: giữ backend Railway và autodeploy off. File rollback Railway trước đây chỉ là cấu hình lưu để review; **cập nhật ngày 21/11/2026: hạ tầng Railway và file `docs/deployment/vercel.railway.rollback.json` đã bị xóa hoàn toàn, production chạy trên Render + Aiven và không còn phương án rollback về Railway.** Khi lỗi, đưa lại trang bảo trì và freeze đích, backup Aiven mới rồi xử lý trực tiếp trên Render/Aiven.
 
 Render Free vẫn có trễ lúc thức sau sleep; startup đã có timeout thực tế. Khi gặp trang loading/network timeout, đợi GET API trở lại JSON trước thao tác lưu; với thao tác đã gửi mà kết quả chưa chắc chắn, đọc lại đội/tiến trình trước khi gửi lại theo cơ chế version/action ID hiện có. Không tạo cron/keep-warm hoặc đổi timeout/rules để né lỗi trong lượt này.
 
@@ -58,7 +58,7 @@ Render Free vẫn có trễ lúc thức sau sleep; startup đã có timeout th�
 - `frontend/vercel.json`
 - `frontend/src/api/deployment.test.js`
 - `docs/deployment/vercel.render.cutover.json`
-- `docs/deployment/vercel.railway.rollback.json`
+- ~~`docs/deployment/vercel.railway.rollback.json`~~ *(đã xóa ngày 21/11/2026 do hạ tầng Railway đã xóa)*
 - `docs/render-aiven-migration.md`
 - `docs/render-aiven-rehearsal-2026-10-08.md`
 - `docs/render-aiven-final-cutover-2026-10-08.md`

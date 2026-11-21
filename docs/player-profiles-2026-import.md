@@ -14,7 +14,7 @@ Người có `fc27_overall IS NULL` vẫn có hồ sơ cầu thủ nhưng **chư
 
 1. Chốt roster từ PremierHub theo `season=2026&asOf=<ngày>`, tạo CSV tám cột cùng file ghi chú URL nguồn như hai batch hiện tại.
 2. Thử importer trên H2 cô lập và chạy lại, kiểm tra OVR trống vẫn là `NULL`, ID/membership và giá trị từng trường.
-3. Trước khi ghi production, xác nhận đúng Railway MySQL của backend, đối chiếu các cặp `player_id,club_id` đang hiệu lực, rồi tạo bản sao lưu SQL mới ngoài Git.
+3. Trước khi ghi production, xác nhận đúng Aiven MySQL của backend Render (Railway đã xóa ngày 21/11/2026), đối chiếu các cặp `player_id,club_id` đang hiệu lực, rồi tạo bản sao lưu SQL mới ngoài Git.
 4. Cung cấp các biến `PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD` qua môi trường và chạy từ thư mục `backend/`:
 
 ```powershell

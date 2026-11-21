@@ -31,7 +31,7 @@ flowchart LR
     B --> D[(MySQL trên Aiven)]
 ```
 
-Đây là kiến trúc triển khai đã được ghi nhận tại [checkpoint cutover 08/10/2026](docs/render-aiven-final-cutover-2026-10-08.md), không phải bằng chứng vừa kiểm tra runtime. Railway là hạ tầng cũ; `render.yaml` là cấu hình Blueprint, không tự chứng minh đã sync/deploy.
+Đây là kiến trúc triển khai đã được ghi nhận tại [checkpoint cutover 08/10/2026](docs/render-aiven-final-cutover-2026-10-08.md), không phải bằng chứng vừa kiểm tra runtime. Railway là hạ tầng cũ (đã xóa ngày 21/11/2026; production là Render + Aiven); `render.yaml` là cấu hình Blueprint, không tự chứng minh đã sync/deploy.
 
 - Backend: Java **release 21**, Spring Boot **4.1.1**, Maven **3.9.14** qua Maven Wrapper, Spring JDBC/JdbcTemplate, Security, Session JDBC và OAuth2/OIDC. Không dùng JPA/Hibernate trong code hiện tại.
 - Frontend: React **19**, Vite **8**, JavaScript và Node test runner; xem phiên bản khai báo trong [package.json](frontend/package.json) và phiên bản chốt trong [lockfile](frontend/package-lock.json). Không dùng React Router.
@@ -57,7 +57,7 @@ flowchart LR
 
 Cần JDK 21 hoặc JDK mới hơn biên dịch được release 21; Node **^20.19.0 hoặc >=22.12.0** theo Vite hiện tại, cùng npm. Các ví dụ dùng PowerShell từ root repo; Linux/macOS dùng `./mvnw` và `npm` thay cho `mvnw.cmd`/`npm.cmd`.
 
-Kiểm tra biến môi trường trước khi chạy; không dùng profile/credential production cho local. Spring không tự nạp `backend/.env.local`; một số script nguồn có bộ đọc riêng. Không bật các runner sync/import chỉ để mở web.
+Kiểm tra biến môi trường trước khi chạy; không dùng profile/credential production cho local. `backend/.env.local` không bao giờ trỏ tới database thật; chạy local luôn dùng H2. Spring không tự nạp `backend/.env.local`; một số script nguồn có bộ đọc riêng. Không bật các runner sync/import chỉ để mở web.
 
 Terminal backend:
 
@@ -124,7 +124,7 @@ npm.cmd run build
 ## Dữ liệu và vận hành
 
 - Hai mùa tách biệt: `season=2024` là 2024/25, `season=2026` là 2026/27. Nhiều API tra cứu mặc định 2024 trong khi UI mặc định 2026; nên truyền season rõ ràng.
-- Nguồn 2026: football-data.org cho lịch/tỉ số/BXH, nguồn thống kê và danh sách trận đã xác minh cho chỉ số; rating SofaScore do người dùng cung cấp. NULL không đồng nghĩa 0.
+- Nguồn 2026: football-data.org cho lịch/tỉ số/BXH; số liệu cơ bản GW1–GW10 theo StatMuse (không nhập lại), từ GW11 theo FPL API qua collector; chỉ số mở rộng GW1+ từ FPL API (xem [docs/fpl-collection-2026.md](docs/fpl-collection-2026.md)); rating SofaScore do người dùng cung cấp. NULL không đồng nghĩa 0.
 - Điểm v1 mùa 2024, điểm Fantasy 2026 theo rating và điểm minigame là ba cơ chế khác nhau. OVR không phải rating trận.
 - Yêu cầu “thu thập GW” bao gồm nhập production phần đã xác minh, sau kiểm đích và backup theo [AGENTS](AGENTS.md) và [workflow GW](docs/gameweek-data-workflow.md). Mở GW, đổi deadline/roster, công bố/tái công bố kết quả và deploy cần phạm vi riêng.
 
@@ -143,7 +143,7 @@ Không coi code local hoặc một file Blueprint là bằng chứng đã deploy
 <details>
 <summary>Ghi chép dữ liệu, API-Football, Railway và nhập tay được giữ từ README trước đợt dọn 3</summary>
 
-Phần dưới được giữ nguyên để truy vết các mốc cũ, không phải hướng dẫn khởi động hiện hành. Ví dụ Railway và số liệu tại từng ngày không mô tả runtime hiện tại. Cơ chế bằng chứng v1/2024 và một số CLI nhập vẫn có thể được tham chiếu khi xử lý đúng mùa/phạm vi, sau đối chiếu code/config; quy trình 2026 hiện hành ở [mục lục dữ liệu](docs/README.md#dữ-liệu). Giới hạn 40/400 trong ghi chép cũ không phải chuẩn danh sách cầu thủ thực tế. Không chạy lại lệnh production, đổi nguồn hoặc ghi đè dữ liệu chỉ vì lệnh có trong phụ lục.
+Phần dưới được giữ nguyên để truy vết các mốc cũ, không phải hướng dẫn khởi động hiện hành. Railway đã xóa ngày 21/11/2026 (production hiện là Render + Aiven); ví dụ Railway và số liệu tại từng ngày không mô tả runtime hiện tại. Cơ chế bằng chứng v1/2024 và một số CLI nhập vẫn có thể được tham chiếu khi xử lý đúng mùa/phạm vi, sau đối chiếu code/config; quy trình 2026 hiện hành ở [mục lục dữ liệu](docs/README.md#dữ-liệu). Giới hạn 40/400 trong ghi chép cũ không phải chuẩn danh sách cầu thủ thực tế. Không chạy lại lệnh production, đổi nguồn hoặc ghi đè dữ liệu chỉ vì lệnh có trong phụ lục.
 
 Điểm v1 theo cầu thủ–trận: ra sân 1–59 phút +1, từ 60 phút +2; mỗi bàn của thủ môn/hậu vệ/tiền vệ/tiền đạo lần lượt +10/+6/+5/+4; kiến tạo +3; thẻ vàng −1, thẻ đỏ −3. Service `MatchScoringService` áp dụng quy tắc này khi đọc chi tiết trận. Nếu một chỉ số cần thiết là `null`, khoản đó không được tính là 0: API đánh dấu `PROVISIONAL`, trả tổng các khoản đã xác định và giao diện báo **Tạm tính** hoặc **Chưa đủ dữ liệu**. Chưa tính giữ sạch lưới hay bonus; đây không phải điểm Fantasy cuối cùng.
 

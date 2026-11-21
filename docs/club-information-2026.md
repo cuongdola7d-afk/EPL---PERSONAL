@@ -19,7 +19,7 @@ Chạy từ `backend/`, cấu hình kết nối qua biến môi trường, sau k
 java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar '--premierhub.club-information.enabled=true' '--premierhub.club-information.file=data/club-information-2026-10-04/clubs.csv'
 ```
 
-Lệnh không khởi động web server, thoát sau khi nhập. `schema.sql` tạo bảng mới nếu chưa có; chỉ bật cờ importer trong lệnh thủ công, không đặt ở Railway runtime, cron hoặc pre-deploy. Chạy lại cùng CSV trả `inserted=0`.
+Lệnh không khởi động web server, thoát sau khi nhập. `schema.sql` tạo bảng mới nếu chưa có; chỉ bật cờ importer trong lệnh thủ công, không đặt ở Render production runtime, cron hoặc pre-deploy (Railway đã xóa ngày 21/11/2026). Chạy lại cùng CSV trả `inserted=0`.
 
 ## API và giao diện
 

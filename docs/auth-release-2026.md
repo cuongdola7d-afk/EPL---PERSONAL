@@ -1,5 +1,7 @@
 # Phát hành tài khoản PrismaXI qua Vercel–Railway
 
+> **Cập nhật hạ tầng (21/11/2026):** Railway đã bị xóa; production hiện chạy trên **Vercel → Render (`https://epl-personal.onrender.com`) → Aiven MySQL**. Nội dung bên dưới giữ làm tài liệu lịch sử/checklist auth (các nguyên tắc cookie, CSRF, proxy cùng origin và Google callback vẫn áp dụng trên Render, thay cho host Railway cũ).
+
 ## Checkpoint production hiện tại
 
 Người dùng đã push main và cho phép phát hành sau lượt chuẩn bị. Migration đã hoàn tất trên MySQL Railway 9.7.2 sau backup mới được kiểm tra. Vercel và Railway **đã phát hành thành công cùng commit `446f044`**; cookie/CSRF/proxy và các trang công khai đã kiểm chứng trên production. **Google thật đã được người dùng xác nhận và đối chiếu MySQL: 2 account USER, 2 identity Google riêng, không trùng email/provider-subject; phiên được lưu đúng account.** Hiện chưa có account email–mật khẩu/ca LINK từ email để đối chiếu riêng trên production; kiểm chứng local vẫn giữ nguyên. Xem [biên bản và checkpoint hiện tại](auth-production-2026-10-04.md); không áp dụng lại phần “chưa ghi production” của biên bản bàn giao local bên dưới làm trạng thái hiện tại.
