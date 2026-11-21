@@ -22,8 +22,8 @@
 
 | Vòng | Trận ghép | Dòng nhập (`extra`) | Bị loại (`UNMAPPED_PLAYER`) | Bị loại (`FPL_PLAYED_DB_NOT_PLAYED`) | Đối ứng DB (`DB_PLAYED_UNMAPPED_PLAYER`) | Ghi chú |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| GW01 | 10/10 | 306 | 3 | 1 | 4 | 3 pending (`140`, `248`, `527`) + trùng ID lịch sử Iliman Ndiaye (`2000015003` vs `2000004005`) |
-| GW02 | 10/10 | 310 | 1 | 1 | 2 | 1 pending (`248`) + trùng ID lịch sử Iliman Ndiaye (`2000015003` vs `2000004005`) |
+| GW01 | 10/10 | 309 | 0 | 1 | 1 | Trùng ID lịch sử Iliman Ndiaye (`2000015003` vs `2000004005`) |
+| GW02 | 10/10 | 311 | 0 | 1 | 1 | Trùng ID lịch sử Iliman Ndiaye (`2000015003` vs `2000004005`) |
 | GW03 | 10/10 | 307 | 0 | 0 | 0 | Sạch 100% |
 | GW04 | 10/10 | 306 | 0 | 1 | 1 | Trùng ID lịch sử Chema Andrés (`2000030259` vs `2000030174`) |
 | GW05 | 10/10 | 301 | 0 | 1 | 1 | Trùng ID lịch sử Chema Andrés (`2000030259` vs `2000030174`) |
@@ -32,7 +32,7 @@
 | GW08 | 10/10 | 303 | 0 | 0 | 0 | Sạch 100% |
 | GW09 | 10/10 | 310 | 0 | 0 | 0 | Sạch 100% |
 | GW10 | 10/10 | 313 | 0 | 0 | 0 | Sạch 100% |
-| **Tổng** | **100/100** | **3.076** | **4** | **4** | **8** | 3.076 / 3.084 lượt `PLAYED` (8 lượt còn lại đã tách rõ trong `consistency.csv`) |
+| **Tổng** | **100/100** | **3.080** | **0** | **4** | **4** | 3.080 / 3.084 lượt `PLAYED` (4 lượt trùng ID lịch sử đã tách rõ trong `consistency.csv`) |
 
 ## Trình tự nhập production (khi được cho phép)
 

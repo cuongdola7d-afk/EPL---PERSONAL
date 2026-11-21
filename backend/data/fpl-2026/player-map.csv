@@ -122,6 +122,7 @@ fpl_element_id,player_id,fpl_name,player_name,source,verified_on
 137,2000030171,Stefanos Tzimas,Stefanos Tzimas,roster-2026-09-30,2026-11-21
 138,2000030051,Charalampos Kostoulas,Charalampos Kostoulas,roster-2026-09-30,2026-11-21
 139,2000030172,Evan Ferguson,Evan Ferguson,roster-2026-09-30,2026-11-21
+140,2000030144,Robert Lynch Sánchez,Robert Sánchez,owner_confirmed,2026-11-21
 142,2000005017,Reece James,Reece James,roster-2026-09-30,2026-11-21
 144,2000005019,Malo Gusto,Malo Gusto,roster-2026-09-30,2026-11-21
 145,2000005003,Wesley Fofana,Wesley Fofana,roster-2026-09-30,2026-11-21
@@ -207,6 +208,7 @@ fpl_element_id,player_id,fpl_name,player_name,source,verified_on
 245,2000020113,Tyler Dibling,Tyler Dibling,roster-2026-09-30,2026-11-21
 246,2000020090,Merlin Röhl,Merlin Röhl,roster-2026-09-30,2026-11-21
 247,2000020088,Hayden Hackney,Hayden Hackney,roster-2026-09-30,2026-11-21
+248,2000020092,Norberto Bercique Gomes Betuncal,Beto,owner_confirmed,2026-11-21
 249,2000015002,Thierno Barry,Thierno Barry,roster-2026-09-30,2026-11-21
 250,2000030138,Bernd Leno,Bernd Leno,roster-2026-09-30,2026-11-21
 251,2000030139,Benjamin Lecomte,Benjamin Lecomte,roster-2026-09-30,2026-11-21
@@ -437,6 +439,7 @@ fpl_element_id,player_id,fpl_name,player_name,source,verified_on
 524,2000030251,Callum Olusesi,Callum Olusesi,roster-2026-09-30,2026-11-21
 525,2000030024,Mateus Fernandes,Mateus Fernandes,roster-2026-09-30,2026-11-21
 526,2000030018,Dominic Solanke-Mitchell,Dominic Solanke,roster-2026-09-30,2026-11-21
+527,2000030019,Richarlison de Andrade,Richarlison,owner_confirmed,2026-11-21
 529,2000020030,Robin Roefs,Robin Roefs,roster-2026-09-30,2026-11-21
 531,2000020048,Melker Ellborg,Melker Ellborg,roster-2026-09-30,2026-11-21
 532,2000020032,Daniel Ballard,Daniel Ballard,roster-2026-09-30,2026-11-21
