@@ -3,6 +3,7 @@ package com.premierhub.service;
 import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.dto.MatchDetailResponse;
+import com.premierhub.web.dto.MatchPlayerExtraStatsResponse;
 import com.premierhub.web.dto.MatchPlayerStatResponse;
 import com.premierhub.web.dto.InferredMatchStatsResponse;
 import com.premierhub.web.dto.PlayerResponse;
@@ -326,6 +327,7 @@ public class FootballQueries {
     public Optional<MatchDetailResponse> matchDetail(int id, int season) {
         return match(id, season).map(match -> {
             if (season == 2026) {
+                Map<Integer, MatchPlayerExtraStatsResponse> extraByPlayer = extraStatsByPlayer(id);
                 List<MatchPlayerStatResponse> players = jdbc.query("""
                         SELECT m.player_id, p.name AS player_name, m.club_id, ps.position,
                                m.participation_status, m.rating, m.fantasy_points,
@@ -344,7 +346,7 @@ public class FootballQueries {
                         WHERE m.fixture_id=? AND m.league_id=? AND m.season_year=?
                           AND m.club_id IN (f.home_club_id, f.away_club_id)
                         ORDER BY m.club_id, p.name, m.player_id
-                        """, (rs, row) -> manualPlayerStat(rs), id, LEAGUE_ID, season);
+                        """, (rs, row) -> manualPlayerStat(rs, extraByPlayer.get(rs.getInt("player_id"))), id, LEAGUE_ID, season);
                 var home = players.stream().filter(player -> player.clubId() == match.homeClubId()).toList();
                 var away = players.stream().filter(player -> player.clubId() == match.awayClubId()).toList();
                 return new MatchDetailResponse(match, home, away,
@@ -423,7 +425,36 @@ public class FootballQueries {
                 kickoffUtc == null ? null : Instant.parse(kickoffUtc));
     }
 
+    private Map<Integer, MatchPlayerExtraStatsResponse> extraStatsByPlayer(int fixtureId) {
+        Map<Integer, MatchPlayerExtraStatsResponse> byPlayer = new HashMap<>();
+        jdbc.query("""
+                SELECT player_id, saves, goals_conceded, bps, bonus, tackles,
+                       clearances_blocks_interceptions, recoveries, defensive_contribution,
+                       expected_goals, expected_assists
+                FROM manual_fixture_player_extra_stats
+                WHERE fixture_id = ? AND league_id = ? AND season_year = ?
+                """, (RowCallbackHandler) rs -> byPlayer.put(rs.getInt("player_id"),
+                new MatchPlayerExtraStatsResponse(
+                        rs.getObject("saves", Integer.class),
+                        rs.getObject("goals_conceded", Integer.class),
+                        rs.getObject("bps", Integer.class),
+                        rs.getObject("bonus", Integer.class),
+                        rs.getObject("tackles", Integer.class),
+                        rs.getObject("clearances_blocks_interceptions", Integer.class),
+                        rs.getObject("recoveries", Integer.class),
+                        rs.getObject("defensive_contribution", Integer.class),
+                        rs.getBigDecimal("expected_goals"),
+                        rs.getBigDecimal("expected_assists")
+                )), fixtureId, LEAGUE_ID, 2026);
+        return byPlayer;
+    }
+
     private static MatchPlayerStatResponse manualPlayerStat(ResultSet rs) throws SQLException {
+        return manualPlayerStat(rs, null);
+    }
+
+    private static MatchPlayerStatResponse manualPlayerStat(ResultSet rs, MatchPlayerExtraStatsResponse extra)
+            throws SQLException {
         BigDecimal rating = rs.getBigDecimal("rating");
         return new MatchPlayerStatResponse(rs.getInt("player_id"), rs.getString("player_name"),
                 rs.getInt("club_id"), shortPosition(rs.getString("position")),
@@ -431,7 +462,7 @@ public class FootballQueries {
                 rs.getObject("assists", Integer.class), rs.getObject("yellow_cards", Integer.class),
                 rs.getObject("red_cards", Integer.class),
                 rating == null ? null : rating.toPlainString(), null, null, null, null,
-                null, null, rs.getString("participation_status"), rs.getBigDecimal("fantasy_points"));
+                null, null, rs.getString("participation_status"), rs.getBigDecimal("fantasy_points"), extra);
     }
 
     private static String shortPosition(String position) {
