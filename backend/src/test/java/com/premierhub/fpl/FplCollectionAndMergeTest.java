@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -424,5 +425,222 @@ class FplCollectionAndMergeTest {
         assertTrue(consistencyCsv.contains(",102,Ben Beta,UNMAPPED_PLAYER,2,,"));
         assertTrue(consistencyCsv.contains("1000560650,2000002002,104,Dan Delta,FPL_PLAYED_DB_NOT_PLAYED,15,DID_NOT_PLAY,0"));
         assertTrue(consistencyCsv.contains("1000560650,2000002001,103,Greg Gamma,DB_PLAYED_FPL_ZERO,0,PLAYED,10"));
+    }
+
+    private Path createTwoFixtureGw11Source(
+            String dirName,
+            boolean f101Finished, boolean f101Provisional,
+            boolean f102Finished, boolean f102Provisional,
+            int el101Assists
+    ) throws Exception {
+        Path src = temp.resolve(dirName);
+        Files.createDirectories(src);
+        Files.writeString(src.resolve("bootstrap-static.json"), """
+                {
+                  "teams": [
+                    {"id": 1, "name": "Arsenal", "short_name": "ARS"},
+                    {"id": 6, "name": "Chelsea", "short_name": "CHE"},
+                    {"id": 14, "name": "Liverpool", "short_name": "LIV"}
+                  ],
+                  "elements": [
+                    {"id": 101, "code": 1001, "web_name": "Alpha", "first_name": "Alex", "second_name": "Alpha", "team": 1},
+                    {"id": 102, "code": 1002, "web_name": "Beta", "first_name": "Ben", "second_name": "Beta", "team": 1},
+                    {"id": 103, "code": 1003, "web_name": "Gamma", "first_name": "Greg", "second_name": "Gamma", "team": 6},
+                    {"id": 104, "code": 1004, "web_name": "Delta", "first_name": "Dan", "second_name": "Delta", "team": 6}
+                  ],
+                  "events": [{"id": 11, "name": "Gameweek 11", "finished": false}]
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(src.resolve("fixtures-gw11.json"), String.format("""
+                [
+                  {"id":101,"event":11,"kickoff_time":"2026-11-21T15:00:00Z","team_h":1,"team_a":6,"team_h_score":2,"team_a_score":1,"finished":%s,"finished_provisional":%s},
+                  {"id":102,"event":11,"kickoff_time":"2026-11-22T16:30:00Z","team_h":14,"team_a":6,"team_h_score":1,"team_a_score":0,"finished":%s,"finished_provisional":%s}
+                ]
+                """, f101Finished, f101Provisional, f102Finished, f102Provisional), StandardCharsets.UTF_8);
+        Files.writeString(src.resolve("event-gw11-live.json"), String.format("""
+                {
+                  "elements": [
+                    {
+                      "id": 101,
+                      "stats": {
+                        "minutes": 90, "goals_scored": 1, "assists": %d, "clean_sheets": 0, "goals_conceded": 1,
+                        "own_goals": 0, "penalties_saved": 0, "penalties_missed": 0, "yellow_cards": 0, "red_cards": 0,
+                        "saves": 0, "bonus": 2, "bps": 30, "influence": "25.0", "creativity": "15.0", "threat": "30.0",
+                        "ict_index": "7.0", "clearances_blocks_interceptions": 1, "recoveries": 3, "tackles": 1,
+                        "defensive_contribution": 2, "starts": 1, "expected_goals": "0.55", "expected_assists": "0.20",
+                        "expected_goal_involvements": "0.75", "expected_goals_conceded": "0.90"
+                      },
+                      "explain": [{"fixture": 101, "stats": [{"identifier": "minutes", "points": 2, "value": 90}]}]
+                    },
+                    {
+                      "id": 103,
+                      "stats": {
+                        "minutes": 80, "goals_scored": 0, "assists": 0, "clean_sheets": 0, "goals_conceded": 1,
+                        "own_goals": 0, "penalties_saved": 0, "penalties_missed": 0, "yellow_cards": 0, "red_cards": 0,
+                        "saves": 0, "bonus": 0, "bps": 12, "influence": "10.0", "creativity": "5.0", "threat": "4.0",
+                        "ict_index": "1.9", "clearances_blocks_interceptions": 3, "recoveries": 4, "tackles": 2,
+                        "defensive_contribution": 5, "starts": 1, "expected_goals": "0.05", "expected_assists": "0.02",
+                        "expected_goal_involvements": "0.07", "expected_goals_conceded": "1.10"
+                      },
+                      "explain": [{"fixture": 102, "stats": [{"identifier": "minutes", "points": 2, "value": 80}]}]
+                    }
+                  ]
+                }
+                """, el101Assists), StandardCharsets.UTF_8);
+        return src;
+    }
+
+    private void seedSecondFixture() {
+        jdbc.update("""
+                INSERT INTO fixtures (id, league_id, season_year, home_club_id, away_club_id,
+                  gameweek, match_date, status, provider_status, home_goals, away_goals, payload_hash, synced_at)
+                VALUES (1000560651, 39, 2026, 1000000064, 1000000061, 11, DATE '2026-11-22',
+                        'FINISHED', 'FINISHED', 1, 0, 'hash11b', CURRENT_TIMESTAMP)
+                """);
+    }
+
+    @Test
+    void fixtureIdsCollectsOnlySelectedFinishedFixtureWhileOtherGwFixtureIsUnfinished() throws Exception {
+        seedBase();
+        seedSecondFixture();
+        Path mapDir = writeMappings(true);
+        Path src = createTwoFixtureGw11Source("src-partial-fin", true, true, false, false, 1);
+        Path out = temp.resolve("out-partial-fin");
+
+        // Without --fixture-ids: still rejects because fixture 102 is unfinished
+        IllegalStateException fullErr = assertThrows(IllegalStateException.class,
+                () -> collector.collect(2026, 11, mapDir, out, FplSource.fromDirectory(src)));
+        assertTrue(fullErr.getMessage().contains("fpl_fixture=102"));
+
+        // With --fixture-ids=1000560650: succeeds and exports ONLY fixture 1000560650
+        FplCollectorService.Result result = collector.collect(
+                2026, 11, mapDir, out, FplSource.fromDirectory(src), Set.of(1000560650), false);
+        assertTrue(result.finalCsvWritten());
+        assertEquals(1, result.fixturesMatched());
+        assertEquals(0, result.provisionalFixtures());
+        assertEquals(1, result.playedRows());
+
+        String fixtureMap = Files.readString(out.resolve("fixture-map.csv"), StandardCharsets.UTF_8);
+        assertTrue(fixtureMap.contains("101,1000560650,"));
+        assertTrue(fixtureMap.contains(",FINISHED"));
+        assertFalse(fixtureMap.contains("1000560651"));
+
+        String statsCsv = Files.readString(out.resolve("fpl-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8);
+        assertTrue(statsCsv.contains("1000560650,2000001001,90,1,1,0,0"));
+        assertFalse(statsCsv.contains("1000560651"));
+        assertFalse(statsCsv.contains("2000002001"));
+    }
+
+    @Test
+    void fixtureIdsProvisionalHandlingStopsWithoutFlagWarnsWithFlagAndStopsIfNotProvisional() throws Exception {
+        seedBase();
+        seedSecondFixture();
+        Path mapDir = writeMappings(true);
+        Path src = createTwoFixtureGw11Source("src-provisional", false, true, false, false, 1);
+
+        // 1. finished_provisional=true without allowProvisional -> stops clearly
+        IllegalStateException noFlagErr = assertThrows(IllegalStateException.class,
+                () -> collector.collect(2026, 11, mapDir, temp.resolve("out-prov-deny"),
+                        FplSource.fromDirectory(src), Set.of(1000560650), false));
+        assertTrue(noFlagErr.getMessage().contains("1000560650"));
+        assertTrue(noFlagErr.getMessage().contains("allow-provisional"));
+
+        // 2. finished_provisional=true with allowProvisional=true -> succeeds and marks PROVISIONAL
+        Path outProv = temp.resolve("out-prov-allow");
+        FplCollectorService.Result ok = collector.collect(
+                2026, 11, mapDir, outProv, FplSource.fromDirectory(src), Set.of(1000560650), true);
+        assertTrue(ok.finalCsvWritten());
+        assertEquals(1, ok.fixturesMatched());
+        assertEquals(1, ok.provisionalFixtures());
+        String mapCsv = Files.readString(outProv.resolve("fixture-map.csv"), StandardCharsets.UTF_8);
+        assertTrue(mapCsv.contains("fpl_status"));
+        assertTrue(mapCsv.contains("101,1000560650,"));
+        assertTrue(mapCsv.contains(",PROVISIONAL"));
+
+        // 3. Not even finished_provisional=true (fixture 1000560651) with allowProvisional=true -> STILL stops!
+        IllegalStateException notProvErr = assertThrows(IllegalStateException.class,
+                () -> collector.collect(2026, 11, mapDir, temp.resolve("out-not-prov"),
+                        FplSource.fromDirectory(src), Set.of(1000560651), true));
+        assertTrue(notProvErr.getMessage().contains("1000560651"));
+    }
+
+    @Test
+    void fixtureIdsRejectsFixtureNotBelongingToGameweek() throws Exception {
+        seedBase();
+        // Add a fixture in GW12 that is not in FPL GW11 JSON
+        jdbc.update("""
+                INSERT INTO fixtures (id, league_id, season_year, home_club_id, away_club_id,
+                  gameweek, match_date, status, provider_status, home_goals, away_goals, payload_hash, synced_at)
+                VALUES (1000560699, 39, 2026, 1000000064, 1000000057, 12, DATE '2026-11-28',
+                        'FINISHED', 'FINISHED', 2, 2, 'hash12', CURRENT_TIMESTAMP)
+                """);
+        Path mapDir = writeMappings(true);
+        Path src = createTwoFixtureGw11Source("src-bad-id", true, true, true, true, 1);
+
+        IllegalArgumentException err = assertThrows(IllegalArgumentException.class,
+                () -> collector.collect(2026, 11, mapDir, temp.resolve("out-bad-id"),
+                        FplSource.fromDirectory(src), Set.of(1000560699), false));
+        assertTrue(err.getMessage().contains("1000560699"));
+        assertTrue(err.getMessage().contains("GW11"));
+    }
+
+    @Test
+    void fixtureIdsIncrementalRunsMergeIntoExistingFilesDeduplicateRepeatsAndRejectConflicts() throws Exception {
+        seedBase();
+        seedSecondFixture();
+        Path mapDir = writeMappings(true);
+        Path src = createTwoFixtureGw11Source("src-inc", true, true, true, true, 1);
+        Path fplOut = temp.resolve("out-inc-fpl");
+        Path mergeOut = temp.resolve("out-inc-merge");
+
+        // Run 1: collect fixture 1000560650
+        collector.collect(2026, 11, mapDir, fplOut, FplSource.fromDirectory(src), Set.of(1000560650), false);
+        // Run 2: collect fixture 1000560651 -> merges both fixtures into the same GW11 files
+        collector.collect(2026, 11, mapDir, fplOut, FplSource.fromDirectory(src), Set.of(1000560651), false);
+        // Run 3: repeat fixture 1000560650 with identical values -> no duplicate rows!
+        collector.collect(2026, 11, mapDir, fplOut, FplSource.fromDirectory(src), Set.of(1000560650), false);
+
+        List<String> mapLines = Files.readAllLines(fplOut.resolve("fixture-map.csv"), StandardCharsets.UTF_8);
+        assertEquals(3, mapLines.size()); // header + 2 fixtures
+        List<String> matchLines = Files.readAllLines(fplOut.resolve("fpl-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8);
+        assertEquals(3, matchLines.size()); // header + 2 players across 2 fixtures
+        List<String> extraLines = Files.readAllLines(fplOut.resolve("fpl-extra-stats-2026-GW11.csv"), StandardCharsets.UTF_8);
+        assertEquals(3, extraLines.size()); // header + 2 players
+
+        // Conflict on same (fixture_id, player_id) with different assists -> throws!
+        Path srcConflict = createTwoFixtureGw11Source("src-inc-conflict", true, true, true, true, 2);
+        IllegalStateException conflictErr = assertThrows(IllegalStateException.class,
+                () -> collector.collect(2026, 11, mapDir, fplOut, FplSource.fromDirectory(srcConflict), Set.of(1000560650), false));
+        assertTrue(conflictErr.getMessage().contains("Conflict"));
+        assertTrue(conflictErr.getMessage().contains("1000560650"));
+
+        // Incremental rating merge across two fixtures + repeat + conflict detection
+        Path ratings1 = temp.resolve("ratings-f1.csv");
+        Files.writeString(ratings1,
+                "fixture_id,player_id,name,club,rating,visible_symbols\n"
+                + "1000560650,2000001001,Alex Alpha,Arsenal FC,8.1,\n"
+                + "1000560650,2000001002,Ben Beta,Arsenal FC,,\n", StandardCharsets.UTF_8);
+        Path ratings2 = temp.resolve("ratings-f2.csv");
+        Files.writeString(ratings2,
+                "fixture_id,player_id,name,club,rating,visible_symbols\n"
+                + "1000560651,2000002001,Greg Gamma,Chelsea FC,7.4,\n"
+                + "1000560651,2000002002,Dan Delta,Chelsea FC,,\n", StandardCharsets.UTF_8);
+
+        merger.merge(2026, 11, fplOut, ratings1, null, mergeOut, Set.of(1000560650));
+        merger.merge(2026, 11, fplOut, ratings2, null, mergeOut, Set.of(1000560651));
+        merger.merge(2026, 11, fplOut, ratings1, null, mergeOut, Set.of(1000560650)); // idempotent repeat
+
+        List<String> manualLines = Files.readAllLines(mergeOut.resolve("manual-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8);
+        assertEquals(5, manualLines.size()); // header + 4 rows (2 per fixture)
+
+        Path ratingsConflict = temp.resolve("ratings-f1-conflict.csv");
+        Files.writeString(ratingsConflict,
+                "fixture_id,player_id,name,club,rating,visible_symbols\n"
+                + "1000560650,2000001001,Alex Alpha,Arsenal FC,8.9,\n"
+                + "1000560650,2000001002,Ben Beta,Arsenal FC,,\n", StandardCharsets.UTF_8);
+        IllegalStateException mergeConflict = assertThrows(IllegalStateException.class,
+                () -> merger.merge(2026, 11, fplOut, ratingsConflict, null, mergeOut, Set.of(1000560650)));
+        assertTrue(mergeConflict.getMessage().contains("Conflict"));
+        assertTrue(mergeConflict.getMessage().contains("2000001001"));
     }
 }

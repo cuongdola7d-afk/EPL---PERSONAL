@@ -1,0 +1,2 @@
+fpl_fixture_id,fixture_id,kickoff_utc,home_club_id,away_club_id,fpl_home_goals,fpl_away_goals,db_home_goals,db_away_goals,fpl_status
+104,1000560642,2026-11-21T15:00:00Z,1000000061,1000000341,1,4,1,4,PROVISIONAL

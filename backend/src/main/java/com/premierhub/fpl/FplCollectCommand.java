@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @ConditionalOnProperty(name = "premierhub.fpl-collect.enabled", havingValue = "true")
@@ -37,20 +39,32 @@ public class FplCollectCommand implements ApplicationRunner {
                 "merge-only", "premierhub.fpl-collect.merge-only"));
         boolean backfillConsistency = Boolean.parseBoolean(optionalOption(args, "false",
                 "backfill-consistency", "premierhub.fpl-collect.backfill-consistency"));
+        Set<Integer> fixtureIds = parseFixtureIds(optionalOption(args, null,
+                "fixture-ids", "premierhub.fpl-collect.fixture-ids"));
+        boolean allowProvisional = Boolean.parseBoolean(optionalOption(args, "false",
+                "allow-provisional", "premierhub.fpl-collect.allow-provisional"));
 
         if (backfillConsistency && (merge || mergeOnly)) {
             throw new IllegalArgumentException(
                     "--backfill-consistency=true cannot be combined with --merge or --merge-only");
+        }
+        if (backfillConsistency && (!fixtureIds.isEmpty() || allowProvisional)) {
+            throw new IllegalArgumentException(
+                    "--backfill-consistency=true cannot be combined with --fixture-ids or --allow-provisional");
+        }
+        if (allowProvisional && fixtureIds.isEmpty() && !mergeOnly) {
+            throw new IllegalArgumentException(
+                    "--allow-provisional=true requires --fixture-ids=<id1,id2,...>");
         }
 
         if (!mergeOnly) {
             FplSource source = inputDirOpt != null ? FplSource.fromDirectory(Path.of(inputDirOpt)) : client;
             FplCollectorService.Result result = backfillConsistency
                     ? collector.collectBackfill(season, gameweek, mappingDir, outputDir, source)
-                    : collector.collect(season, gameweek, mappingDir, outputDir, source);
-            System.out.printf("FPL_COLLECT season=%d gw=%d fixtures=%d played=%d unmapped=%d summaries=%d finalCsv=%s%n",
-                    season, result.gameweek(), result.fixturesMatched(), result.playedRows(),
-                    result.unmappedCount(), result.elementSummaryCalls(), result.finalCsvWritten());
+                    : collector.collect(season, gameweek, mappingDir, outputDir, source, fixtureIds, allowProvisional);
+            System.out.printf("FPL_COLLECT season=%d gw=%d fixtures=%d provisional=%d played=%d unmapped=%d summaries=%d finalCsv=%s%n",
+                    season, result.gameweek(), result.fixturesMatched(), result.provisionalFixtures(),
+                    result.playedRows(), result.unmappedCount(), result.elementSummaryCalls(), result.finalCsvWritten());
             if (!result.finalCsvWritten()) {
                 throw new IllegalStateException("FPL collection found " + result.unmappedCount()
                         + " unmapped played player(s); see " + outputDir.resolve("unmapped.csv")
@@ -70,11 +84,35 @@ public class FplCollectCommand implements ApplicationRunner {
             FplRatingMergeService.Result merged = merger.merge(
                     season, gameweek, outputDir, Path.of(ratingsOpt),
                     lineupOpt != null && !lineupOpt.isBlank() ? Path.of(lineupOpt) : null,
-                    mergeOutDir);
+                    mergeOutDir, fixtureIds);
             System.out.printf("FPL_MERGE season=%d gw=%d included=%d blocked=%d rows=%d unrated=%d missing=%d anomalies=%d%n",
                     season, merged.gameweek(), merged.fixturesIncluded(), merged.fixturesBlocked(),
                     merged.statRowsWritten(), merged.unratedCount(), merged.missingCount(), merged.anomalyCount());
         }
+    }
+
+    static Set<Integer> parseFixtureIds(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Set.of();
+        }
+        Set<Integer> ids = new LinkedHashSet<>();
+        for (String token : raw.split(",", -1)) {
+            String trimmed = token.strip();
+            if (trimmed.isEmpty()) {
+                throw new IllegalArgumentException("fixture-ids contains an empty entry: '" + raw + "'");
+            }
+            int parsed;
+            try {
+                parsed = Integer.parseInt(trimmed);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException("fixture-ids must contain integer IDs: '" + trimmed + "'", error);
+            }
+            if (parsed <= 0) {
+                throw new IllegalArgumentException("fixture-ids must contain positive integers: " + parsed);
+            }
+            ids.add(parsed);
+        }
+        return ids;
     }
 
     private static int requiredIntOption(ApplicationArguments args, String... names) {

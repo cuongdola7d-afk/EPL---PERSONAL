@@ -24,7 +24,11 @@ Các endpoint được sử dụng:
 Ràng buộc kỹ thuật trong `FplClient` / `FplJsonParser` / `FplCollectorService`:
 - Gửi `User-Agent: PremierHub-PrismaXI/0.1 (FPL-collector)`, timeout 20 giây, tối đa 2 lần thử lại, gọi tuần tự (không gọi song song).
 - Kiểm tra nghiêm ngặt đủ trường và đúng kiểu dữ liệu (chuỗi số `influence`, `creativity`, `threat`, `ict_index`, `expected_*` chuyển sang `BigDecimal`). Nếu thiếu trường hoặc sai kiểu thì **dừng và báo lỗi rõ ràng**, không tự điền `0`.
-- Chỉ cho phép chạy khi **tất cả** trận của vòng đều có `finished = true` (không chấp nhận chỉ có `finished_provisional = true`). Nếu còn trận chưa xong, lệnh dừng và liệt kê các trận chưa kết thúc.
+- Chỉ cho phép chạy cả vòng khi **tất cả** trận của vòng đều có `finished = true` (không chấp nhận chỉ có `finished_provisional = true`). Nếu còn trận chưa xong, lệnh dừng và liệt kê các trận chưa kết thúc.
+- Khi muốn thu thập riêng một hoặc vài trận đã đá xong giữa vòng, truyền `--fixture-ids=<id1,id2,...>` (ID nội bộ bảng `fixtures`; hỗ trợ cả `--merge` / `--merge-only`):
+  - Chỉ kiểm tra `finished = true` đối với các trận được chọn (trận khác trong vòng chưa xong không chặn lệnh); các trận được chọn vẫn phải khớp 1-1 với FPL của đúng vòng, ID sai vòng sẽ dừng và báo lỗi.
+  - Có thể thêm `--allow-provisional=true` (mặc định `false`, chỉ dùng kèm `--fixture-ids`) để chấp nhận trận được chọn mới ở trạng thái `finished_provisional = true`; công cụ sẽ in cảnh báo rõ trên log và ghi `fpl_status=PROVISIONAL` trong `fixture-map.csv` (trận chưa `finished_provisional` vẫn bị dừng).
+  - Các CSV đầu ra giữ nguyên tên theo vòng (`...-GWNN.csv`), chỉ xuất các trận được chọn và tự gộp theo khóa `(fixture_id, player_id)` khi chạy bổ sung thêm trận khác về sau (không ghi đè mất trận đã làm; lặp cùng trận không nhân đôi dòng; cùng khóa khác giá trị sẽ dừng và báo xung đột).
 
 ## 3. Đối chiếu mã (lưu trong repo, không tạo bảng DB)
 

@@ -1,11 +1,14 @@
 package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
+import com.premierhub.service.PlayerSeasonProfileService;
 import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.dto.PlayerMatchResponse;
+import com.premierhub.web.dto.PlayerSeasonProfileResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,9 +22,16 @@ import java.util.List;
 @RequestMapping("/api/players")
 public class PlayerController {
     private final FootballQueries service;
+    private final PlayerSeasonProfileService seasonProfileService;
 
     public PlayerController(FootballQueries service) {
+        this(service, null);
+    }
+
+    @Autowired
+    public PlayerController(FootballQueries service, PlayerSeasonProfileService seasonProfileService) {
         this.service = service;
+        this.seasonProfileService = seasonProfileService;
     }
 
     @GetMapping
@@ -56,5 +66,11 @@ public class PlayerController {
                     .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
         }
         return service.playerMatches(id, season);
+    }
+
+    @GetMapping("/{id}/season-profile")
+    public PlayerSeasonProfileResponse getSeasonProfile(@PathVariable @Positive int id,
+                                                        @RequestParam(defaultValue = "2024") int season) {
+        return seasonProfileService.seasonProfile(id, season);
     }
 }

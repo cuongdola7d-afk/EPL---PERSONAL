@@ -180,6 +180,7 @@ public class FootballQueries {
         validateSeason(season);
         Map<Integer, MatchPlayerStatResponse> manualStats = new HashMap<>();
         if (season == 2026) {
+            Map<Integer, MatchPlayerExtraStatsResponse> extraByFixture = extraStatsByFixture(id);
             jdbc.query("""
                     SELECT m.fixture_id, m.player_id, m.club_id, m.minutes, m.goals, m.assists,
                            m.yellow_cards, m.red_cards, m.rating, m.fantasy_points,
@@ -197,8 +198,10 @@ public class FootballQueries {
                       AND ps.club_id=m.club_id
                     WHERE m.league_id=? AND m.season_year=? AND m.player_id=?
                       AND m.club_id IN (f.home_club_id, f.away_club_id)
-                    """, (RowCallbackHandler) rs -> manualStats.put(rs.getInt("fixture_id"),
-                    manualPlayerStat(rs)), LEAGUE_ID, season, id);
+                    """, (RowCallbackHandler) rs -> {
+                int fixtureId = rs.getInt("fixture_id");
+                manualStats.put(fixtureId, manualPlayerStat(rs, extraByFixture.get(fixtureId)));
+            }, LEAGUE_ID, season, id);
         }
         Set<Integer> fixtureIdsWithStats = Set.copyOf(jdbc.queryForList("""
                 SELECT s.fixture_id FROM fixture_player_stats s
@@ -434,19 +437,36 @@ public class FootballQueries {
                 FROM manual_fixture_player_extra_stats
                 WHERE fixture_id = ? AND league_id = ? AND season_year = ?
                 """, (RowCallbackHandler) rs -> byPlayer.put(rs.getInt("player_id"),
-                new MatchPlayerExtraStatsResponse(
-                        rs.getObject("saves", Integer.class),
-                        rs.getObject("goals_conceded", Integer.class),
-                        rs.getObject("bps", Integer.class),
-                        rs.getObject("bonus", Integer.class),
-                        rs.getObject("tackles", Integer.class),
-                        rs.getObject("clearances_blocks_interceptions", Integer.class),
-                        rs.getObject("recoveries", Integer.class),
-                        rs.getObject("defensive_contribution", Integer.class),
-                        rs.getBigDecimal("expected_goals"),
-                        rs.getBigDecimal("expected_assists")
-                )), fixtureId, LEAGUE_ID, 2026);
+                extraStatsRow(rs)), fixtureId, LEAGUE_ID, 2026);
         return byPlayer;
+    }
+
+    private Map<Integer, MatchPlayerExtraStatsResponse> extraStatsByFixture(int playerId) {
+        Map<Integer, MatchPlayerExtraStatsResponse> byFixture = new HashMap<>();
+        jdbc.query("""
+                SELECT fixture_id, saves, goals_conceded, bps, bonus, tackles,
+                       clearances_blocks_interceptions, recoveries, defensive_contribution,
+                       expected_goals, expected_assists
+                FROM manual_fixture_player_extra_stats
+                WHERE player_id = ? AND league_id = ? AND season_year = ?
+                """, (RowCallbackHandler) rs -> byFixture.put(rs.getInt("fixture_id"),
+                extraStatsRow(rs)), playerId, LEAGUE_ID, 2026);
+        return byFixture;
+    }
+
+    private static MatchPlayerExtraStatsResponse extraStatsRow(ResultSet rs) throws SQLException {
+        return new MatchPlayerExtraStatsResponse(
+                rs.getObject("saves", Integer.class),
+                rs.getObject("goals_conceded", Integer.class),
+                rs.getObject("bps", Integer.class),
+                rs.getObject("bonus", Integer.class),
+                rs.getObject("tackles", Integer.class),
+                rs.getObject("clearances_blocks_interceptions", Integer.class),
+                rs.getObject("recoveries", Integer.class),
+                rs.getObject("defensive_contribution", Integer.class),
+                rs.getBigDecimal("expected_goals"),
+                rs.getBigDecimal("expected_assists")
+        );
     }
 
     private static MatchPlayerStatResponse manualPlayerStat(ResultSet rs) throws SQLException {

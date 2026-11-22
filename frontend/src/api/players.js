@@ -18,6 +18,30 @@ export function isValidPlayer(player) {
     (player.shirtNumber === undefined || player.shirtNumber === null || (Number.isInteger(player.shirtNumber) && player.shirtNumber >= 0))
 }
 
+function isValidExtraStats(extra) {
+  if (extra === undefined || extra === null) return true
+  if (typeof extra !== 'object') return false
+  return ['saves', 'goalsConceded', 'bps', 'bonus', 'tackles',
+    'clearancesBlocksInterceptions', 'recoveries', 'defensiveContribution',
+    'expectedGoals', 'expectedAssists'].every((field) =>
+    extra[field] === undefined || extra[field] === null || typeof extra[field] === 'number')
+}
+
+export function isValidSeasonProfile(profile) {
+  return profile !== null &&
+    typeof profile === 'object' &&
+    Number.isInteger(profile.playerId) &&
+    Number.isInteger(profile.season) &&
+    typeof profile.roleGroup === 'string' &&
+    typeof profile.comparisonGroup === 'string' &&
+    typeof profile.comparisonGroupLabel === 'string' &&
+    profile.totals !== null &&
+    typeof profile.totals === 'object' &&
+    Number.isInteger(profile.totals.appearances) &&
+    Number.isInteger(profile.totals.clubFinishedMatches) &&
+    (profile.percentiles === null || Array.isArray(profile.percentiles))
+}
+
 export function playerPath(filters, season) {
   const params = new URLSearchParams({ season })
   if (filters.club) params.set('club', filters.club)
@@ -42,6 +66,13 @@ export function fetchPlayerMatches(id, season, signal) {
       (row.stats === null || (row.stats !== null && Number.isInteger(row.stats.playerId) &&
         ['minutes', 'goals', 'assists', 'yellowCards', 'redCards'].every((field) =>
           row.stats[field] === null || Number.isInteger(row.stats[field])) &&
-        (row.stats.rating === null || typeof row.stats.rating === 'string'))),
+        (row.stats.rating === null || typeof row.stats.rating === 'string') &&
+        isValidExtraStats(row.stats.extra))),
     'lịch sử trận đấu')
+}
+
+export async function fetchPlayerSeasonProfile(id, season, signal) {
+  const profile = await fetchApiJson(`/api/players/${id}/season-profile?season=${season}`, signal, 'Không tìm thấy hồ sơ mùa giải của cầu thủ.')
+  if (!isValidSeasonProfile(profile)) throw new Error('Dữ liệu hồ sơ mùa giải từ API không đúng định dạng.')
+  return profile
 }

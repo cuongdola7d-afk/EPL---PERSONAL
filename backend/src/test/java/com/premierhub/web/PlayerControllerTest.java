@@ -1,7 +1,10 @@
 package com.premierhub.web;
 
 import com.premierhub.service.FootballQueries;
+import com.premierhub.service.PlayerSeasonProfileService;
 import com.premierhub.web.dto.PlayerResponse;
+import com.premierhub.web.dto.PlayerSeasonProfileResponse;
+import com.premierhub.web.error.ResourceNotFoundException;
 import com.premierhub.web.dto.PlayerMatchResponse;
 import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.error.InvalidFilterException;
@@ -30,6 +33,9 @@ class PlayerControllerTest {
 
     @MockitoBean
     private FootballQueries service;
+
+    @MockitoBean
+    private PlayerSeasonProfileService seasonProfileService;
 
     @Test
     void getAllReturnsJsonArrayWithUnchangedFields() throws Exception {
@@ -165,5 +171,25 @@ class PlayerControllerTest {
 
         mockMvc.perform(get("/api/players").param("club", "Unknown"))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
+    }
+
+    @Test
+    void seasonProfileReturnsProfileAndUnknownReturns404() throws Exception {
+        var profile = new PlayerSeasonProfileResponse(2, 2026, "ATTACK", "M", "tiền vệ",
+                new PlayerSeasonProfileResponse.Totals(9, 10, 810, 4, 2, 2, 0, 7.18, 9,
+                        null, null, null, null, null, null, null, null, null, null),
+                new PlayerSeasonProfileResponse.TeamContribution(14, 4, 2), null, null);
+        when(seasonProfileService.seasonProfile(2, 2026)).thenReturn(profile);
+        when(seasonProfileService.seasonProfile(999, 2026))
+                .thenThrow(new ResourceNotFoundException("Player not found: 999"));
+
+        mockMvc.perform(get("/api/players/2/season-profile").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roleGroup").value("ATTACK"))
+                .andExpect(jsonPath("$.comparisonGroupLabel").value("tiền vệ"))
+                .andExpect(jsonPath("$.totals.appearances").value(9))
+                .andExpect(jsonPath("$.totals.clubFinishedMatches").value(10));
+        expectError(mockMvc.perform(get("/api/players/999/season-profile").param("season", "2026")),
+                HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "/api/players/999/season-profile");
     }
 }

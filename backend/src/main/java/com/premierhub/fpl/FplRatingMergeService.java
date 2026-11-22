@@ -47,6 +47,11 @@ public class FplRatingMergeService {
 
     public Result merge(int season, int gameweek, Path fplDir, Path ratingsFile,
                         Path lineupPlayersFile, Path outputDir) throws IOException {
+        return merge(season, gameweek, fplDir, ratingsFile, lineupPlayersFile, outputDir, Set.of());
+    }
+
+    public Result merge(int season, int gameweek, Path fplDir, Path ratingsFile,
+                        Path lineupPlayersFile, Path outputDir, Set<Integer> fixtureIds) throws IOException {
         if (season != SEASON_YEAR) {
             throw new IllegalArgumentException("Only season 2026 is supported, got " + season);
         }
@@ -55,6 +60,8 @@ public class FplRatingMergeService {
                     "Rating merge is only allowed from GW11 to GW38 (GW1-GW10 manual_fixture_player_stats are frozen); got GW"
                             + gameweek);
         }
+        Set<Integer> selectedFixtureIds = fixtureIds == null ? Set.of() : fixtureIds;
+        boolean filteredMode = !selectedFixtureIds.isEmpty();
 
         String gwUpper = String.format("GW%02d", gameweek);
         Path fixtureMapFile = fplDir.resolve("fixture-map.csv");
@@ -66,13 +73,29 @@ public class FplRatingMergeService {
             throw new IOException("Missing FPL match stats CSV (resolve unmapped.csv first): " + fplStatsFile);
         }
 
-        Map<Integer, FixtureScoreCheck> fixtureMap = readFixtureMap(fixtureMapFile);
-        Map<FixturePlayerKey, FplStatRow> fplStats = readFplMatchStats(fplStatsFile);
-        Map<FixturePlayerKey, BenchCardRow> benchCards = readBenchCards(fplDir.resolve("bench-cards.csv"));
-        Map<Integer, Set<Integer>> lineupSquadByFixture = lineupPlayersFile != null
-                ? readLineupSquad(lineupPlayersFile) : Map.of();
+        Map<Integer, FixtureScoreCheck> allFixtureMap = readFixtureMap(fixtureMapFile);
+        Map<Integer, FixtureScoreCheck> fixtureMap;
+        if (filteredMode) {
+            fixtureMap = new LinkedHashMap<>();
+            for (int id : selectedFixtureIds) {
+                FixtureScoreCheck found = allFixtureMap.get(id);
+                if (found == null) {
+                    throw new IllegalArgumentException("Requested fixture_id=" + id
+                            + " is not present in " + fixtureMapFile + " for GW" + gameweek);
+                }
+                fixtureMap.put(id, found);
+            }
+        } else {
+            fixtureMap = allFixtureMap;
+        }
 
-        List<RatingEntry> ratings = readRatings(ratingsFile, fixtureMap.keySet());
+        Map<FixturePlayerKey, FplStatRow> fplStats = filterByFixtures(readFplMatchStats(fplStatsFile), selectedFixtureIds);
+        Map<FixturePlayerKey, BenchCardRow> benchCards = filterByFixtures(
+                readBenchCards(fplDir.resolve("bench-cards.csv")), selectedFixtureIds);
+        Map<Integer, Set<Integer>> lineupSquadByFixture = lineupPlayersFile != null
+                ? filterFixtureSets(readLineupSquad(lineupPlayersFile), selectedFixtureIds) : Map.of();
+
+        List<RatingEntry> ratings = readRatings(ratingsFile, fixtureMap.keySet(), filteredMode);
         Map<Integer, Map<Integer, RatingEntry>> ratingsByFixture = new LinkedHashMap<>();
         for (RatingEntry entry : ratings) {
             Map<Integer, RatingEntry> perFixture = ratingsByFixture.computeIfAbsent(
@@ -217,27 +240,45 @@ public class FplRatingMergeService {
             }
         }
 
+        Path anomaliesFile = outputDir.resolve("anomalies.csv");
+        Path missingFile = outputDir.resolve("missing.csv");
+        Path unratedFile = outputDir.resolve("confirmed-unrated.csv");
+        Path manualStatsFile = outputDir.resolve("manual-match-stats-2026-" + gwUpper + ".csv");
+
+        // Validate/merge with existing CSVs before writing anything when --fixture-ids is active
+        List<MergedRow> finalMergedRows = filteredMode
+                ? mergeManualStats(manualStatsFile, mergedRows)
+                : new ArrayList<>(mergedRows);
+        List<UnratedRow> finalUnratedRows = filteredMode
+                ? mergeUnrated(unratedFile, unratedRows)
+                : new ArrayList<>(unratedRows);
+        List<MissingRow> finalMissingRows = filteredMode
+                ? mergeMissing(missingFile, missingRows, selectedFixtureIds)
+                : new ArrayList<>(missingRows);
+        List<Anomaly> finalAnomalies = filteredMode
+                ? mergeAnomalies(anomaliesFile, anomalies, selectedFixtureIds)
+                : new ArrayList<>(anomalies);
+
         Files.createDirectories(outputDir);
-        anomalies.sort(Comparator.comparingInt(Anomaly::fixtureId)
+        finalAnomalies.sort(Comparator.comparingInt(Anomaly::fixtureId)
                 .thenComparing(a -> a.playerId() == null ? 0 : a.playerId())
                 .thenComparing(Anomaly::code));
-        writeAnomalies(outputDir.resolve("anomalies.csv"), anomalies);
+        writeAnomalies(anomaliesFile, finalAnomalies);
 
-        missingRows.sort(Comparator.comparingInt(MissingRow::fixtureId)
+        finalMissingRows.sort(Comparator.comparingInt(MissingRow::fixtureId)
                 .thenComparingInt(MissingRow::playerId));
-        writeMissing(outputDir.resolve("missing.csv"), missingRows);
+        writeMissing(missingFile, finalMissingRows);
 
-        unratedRows.sort(Comparator.comparingInt(UnratedRow::fixtureId)
+        finalUnratedRows.sort(Comparator.comparingInt(UnratedRow::fixtureId)
                 .thenComparingInt(UnratedRow::playerId));
-        writeUnrated(outputDir.resolve("confirmed-unrated.csv"), unratedRows);
+        writeUnrated(unratedFile, finalUnratedRows);
 
-        Path manualStatsFile = outputDir.resolve("manual-match-stats-2026-" + gwUpper + ".csv");
-        if (mergedRows.isEmpty()) {
+        if (finalMergedRows.isEmpty()) {
             Files.deleteIfExists(manualStatsFile);
         } else {
-            mergedRows.sort(Comparator.comparingInt(MergedRow::fixtureId)
+            finalMergedRows.sort(Comparator.comparingInt(MergedRow::fixtureId)
                     .thenComparingInt(MergedRow::playerId));
-            writeManualMatchStats(manualStatsFile, mergedRows);
+            writeManualMatchStats(manualStatsFile, finalMergedRows);
         }
 
         int includedFixtures = (int) allFixtures.stream()
@@ -257,7 +298,7 @@ public class FplRatingMergeService {
         return rows.size() == 1 ? rows.getFirst() : null;
     }
 
-    private List<RatingEntry> readRatings(Path file, Set<Integer> knownFixtures) throws IOException {
+    private List<RatingEntry> readRatings(Path file, Set<Integer> knownFixtures, boolean filterToKnownFixtures) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
@@ -289,6 +330,9 @@ public class FplRatingMergeService {
                             + ": expected " + cols.length + " columns, got " + fields.length);
                 }
                 int fixtureId = Integer.parseInt(fields[idx.get("fixture_id")].strip());
+                if (filterToKnownFixtures && !knownFixtures.contains(fixtureId)) {
+                    continue;
+                }
                 String clubName = idx.containsKey("club") ? fields[idx.get("club")].strip() : "";
                 String displayName = idx.containsKey("name") ? fields[idx.get("name")].strip()
                         : idx.containsKey("display_name") ? fields[idx.get("display_name")].strip() : "";
@@ -387,8 +431,12 @@ public class FplRatingMergeService {
     private static Map<Integer, FixtureScoreCheck> readFixtureMap(Path file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String header = reader.readLine();
-            if (header == null || !header.replaceFirst("^\uFEFF", "").strip()
-                    .equals(FplCollectorService.FIXTURE_MAP_HEADER)) {
+            if (header == null) {
+                throw new IllegalArgumentException("fixture-map.csv: unexpected header");
+            }
+            String cleanHeader = header.replaceFirst("^\uFEFF", "").strip();
+            if (!cleanHeader.equals(FplCollectorService.FIXTURE_MAP_HEADER)
+                    && !cleanHeader.equals(FplCollectorService.FIXTURE_MAP_LEGACY_HEADER)) {
                 throw new IllegalArgumentException("fixture-map.csv: unexpected header");
             }
             Map<Integer, FixtureScoreCheck> map = new LinkedHashMap<>();
@@ -403,6 +451,173 @@ public class FplRatingMergeService {
             }
             return map;
         }
+    }
+
+    private static <V> Map<FixturePlayerKey, V> filterByFixtures(
+            Map<FixturePlayerKey, V> map, Set<Integer> selectedFixtureIds) {
+        if (selectedFixtureIds.isEmpty()) {
+            return map;
+        }
+        Map<FixturePlayerKey, V> filtered = new LinkedHashMap<>();
+        for (var entry : map.entrySet()) {
+            if (selectedFixtureIds.contains(entry.getKey().fixtureId())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
+    }
+
+    private static Map<Integer, Set<Integer>> filterFixtureSets(
+            Map<Integer, Set<Integer>> map, Set<Integer> selectedFixtureIds) {
+        if (selectedFixtureIds.isEmpty()) {
+            return map;
+        }
+        Map<Integer, Set<Integer>> filtered = new HashMap<>();
+        for (var entry : map.entrySet()) {
+            if (selectedFixtureIds.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
+    }
+
+    private static List<MergedRow> mergeManualStats(Path file, List<MergedRow> incoming) throws IOException {
+        Map<FixturePlayerKey, MergedRow> merged = new LinkedHashMap<>();
+        if (Files.exists(file)) {
+            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                String header = reader.readLine();
+                if (header == null || !header.replaceFirst("^\uFEFF", "").strip()
+                        .equals(ManualMatchStatsCsvReader.HEADER)) {
+                    throw new IllegalArgumentException("Existing manual-match-stats CSV has unexpected header: " + file);
+                }
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank()) continue;
+                    String[] f = line.split(",", -1);
+                    if (f.length != 10) {
+                        throw new IllegalArgumentException("Expected 10 columns in existing manual-match-stats CSV: " + file);
+                    }
+                    BigDecimal rating = f[4].isBlank() ? null : new BigDecimal(f[4].strip());
+                    MergedRow row = new MergedRow(
+                            Integer.parseInt(f[0].strip()), Integer.parseInt(f[1].strip()),
+                            Integer.parseInt(f[2].strip()), f[3].strip(), rating,
+                            Integer.parseInt(f[5].strip()), Integer.parseInt(f[6].strip()),
+                            Integer.parseInt(f[7].strip()), Integer.parseInt(f[8].strip()),
+                            Integer.parseInt(f[9].strip()));
+                    merged.put(new FixturePlayerKey(row.fixtureId(), row.playerId()), row);
+                }
+            }
+        }
+        for (MergedRow row : incoming) {
+            FixturePlayerKey key = new FixturePlayerKey(row.fixtureId(), row.playerId());
+            MergedRow prev = merged.get(key);
+            if (prev != null && !mergedRowsEqual(prev, row)) {
+                throw new IllegalStateException("Conflict in " + file.getFileName()
+                        + " for (fixture_id=" + row.fixtureId() + ", player_id=" + row.playerId()
+                        + "): existing=" + prev + " vs new=" + row);
+            }
+            merged.put(key, row);
+        }
+        return new ArrayList<>(merged.values());
+    }
+
+    private static boolean mergedRowsEqual(MergedRow a, MergedRow b) {
+        boolean ratingEq = (a.rating() == null && b.rating() == null)
+                || (a.rating() != null && b.rating() != null && a.rating().compareTo(b.rating()) == 0);
+        return a.season() == b.season()
+                && a.fixtureId() == b.fixtureId()
+                && a.playerId() == b.playerId()
+                && Objects.equals(a.status(), b.status())
+                && ratingEq
+                && a.minutes() == b.minutes()
+                && a.goals() == b.goals()
+                && a.assists() == b.assists()
+                && a.yellowCards() == b.yellowCards()
+                && a.redCards() == b.redCards();
+    }
+
+    private static List<UnratedRow> mergeUnrated(Path file, List<UnratedRow> incoming) throws IOException {
+        Map<FixturePlayerKey, UnratedRow> merged = new LinkedHashMap<>();
+        if (Files.exists(file)) {
+            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                String header = reader.readLine();
+                if (header == null || !header.replaceFirst("^\uFEFF", "").strip().equals(UNRATED_HEADER)) {
+                    throw new IllegalArgumentException("Existing confirmed-unrated.csv has unexpected header: " + file);
+                }
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank()) continue;
+                    String[] f = line.split(",", -1);
+                    UnratedRow row = new UnratedRow(
+                            Integer.parseInt(f[0].strip()), Integer.parseInt(f[1].strip()),
+                            f[2].strip(), Integer.parseInt(f[3].strip()));
+                    merged.put(new FixturePlayerKey(row.fixtureId(), row.playerId()), row);
+                }
+            }
+        }
+        for (UnratedRow row : incoming) {
+            FixturePlayerKey key = new FixturePlayerKey(row.fixtureId(), row.playerId());
+            UnratedRow prev = merged.get(key);
+            if (prev != null && !prev.equals(row)) {
+                throw new IllegalStateException("Conflict in confirmed-unrated.csv for (fixture_id="
+                        + row.fixtureId() + ", player_id=" + row.playerId()
+                        + "): existing=" + prev + " vs new=" + row);
+            }
+            merged.put(key, row);
+        }
+        return new ArrayList<>(merged.values());
+    }
+
+    private static List<MissingRow> mergeMissing(Path file, List<MissingRow> incoming, Set<Integer> selectedFixtureIds)
+            throws IOException {
+        List<MissingRow> merged = new ArrayList<>();
+        if (Files.exists(file)) {
+            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                String header = reader.readLine();
+                if (header == null || !header.replaceFirst("^\uFEFF", "").strip().equals(MISSING_HEADER)) {
+                    throw new IllegalArgumentException("Existing missing.csv has unexpected header: " + file);
+                }
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank()) continue;
+                    String[] f = line.split(",", -1);
+                    int fixtureId = Integer.parseInt(f[0].strip());
+                    if (selectedFixtureIds.contains(fixtureId)) {
+                        continue;
+                    }
+                    merged.add(new MissingRow(fixtureId, f[1].strip(), Integer.parseInt(f[2].strip()),
+                            f[3].strip(), f[4].strip()));
+                }
+            }
+        }
+        merged.addAll(incoming);
+        return merged;
+    }
+
+    private static List<Anomaly> mergeAnomalies(Path file, List<Anomaly> incoming, Set<Integer> selectedFixtureIds)
+            throws IOException {
+        List<Anomaly> merged = new ArrayList<>();
+        if (Files.exists(file)) {
+            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                String header = reader.readLine();
+                if (header == null || !header.replaceFirst("^\uFEFF", "").strip().equals(ANOMALIES_HEADER)) {
+                    throw new IllegalArgumentException("Existing anomalies.csv has unexpected header: " + file);
+                }
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank()) continue;
+                    String[] f = line.split(",", -1);
+                    int fixtureId = Integer.parseInt(f[0].strip());
+                    if (selectedFixtureIds.contains(fixtureId)) {
+                        continue;
+                    }
+                    Integer playerId = f[1].isBlank() ? null : Integer.valueOf(f[1].strip());
+                    merged.add(new Anomaly(fixtureId, playerId, f[2].strip(), f[3].strip()));
+                }
+            }
+        }
+        merged.addAll(incoming);
+        return merged;
     }
 
     private static Map<FixturePlayerKey, FplStatRow> readFplMatchStats(Path file) throws IOException {
