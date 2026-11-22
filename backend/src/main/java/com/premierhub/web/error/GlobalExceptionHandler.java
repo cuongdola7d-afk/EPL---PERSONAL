@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.time.Instant;
@@ -50,6 +51,11 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER",
                 "Missing required parameter: " + exception.getParameterName(), request);
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void clientDisconnected(AsyncRequestNotUsableException exception) {
+        // Normal SSE / async client tab closure; response is already closed.
     }
 
     @ExceptionHandler(Exception.class)

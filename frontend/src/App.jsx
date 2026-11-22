@@ -8,6 +8,7 @@ import PlayerDetailPage from './components/PlayerDetailPage.jsx'
 import ClubDetailPage from './components/ClubDetailPage.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import MinigamePage from './components/MinigamePage.jsx'
+import LiveTestPage from './components/LiveTestPage.jsx'
 import { parseMinigameRoute } from './minigame/playerGuess.js'
 import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
 import { parsePlayerDetailHash, parsePlayerListHash, playerDetailHash, playerListHash } from './utils/playerRoute.js'
@@ -50,6 +51,10 @@ const PAGES = {
   },
 }
 
+function isLiveTestHash(hash) {
+  return hash === '#live-test' || hash.startsWith('#live-test?')
+}
+
 function pageFromHash(hash) {
   const name = hash.slice(1)
   if (parseMinigameRoute(hash)) return 'minigame'
@@ -67,6 +72,7 @@ function App() {
   const [matchRoute, setMatchRoute] = useState(() => parseMatchRoute(window.location.hash))
   const [clubRoute, setClubRoute] = useState(() => parseClubRoute(window.location.hash))
   const [minigameRoute, setMinigameRoute] = useState(() => parseMinigameRoute(window.location.hash))
+  const [liveTest, setLiveTest] = useState(() => isLiveTestHash(window.location.hash))
   const [homeState, setHomeState] = useState({ query: '', slide: 0 })
   const [homeTheme, setHomeTheme] = useState('dark')
   const [standingsTab, setStandingsTab] = useState('clubs')
@@ -81,6 +87,7 @@ function App() {
       setMatchRoute(match)
       setClubRoute(club)
       setMinigameRoute(parseMinigameRoute(window.location.hash))
+      setLiveTest(isLiveTestHash(window.location.hash))
       if (detail?.season || playerList?.season || match?.season || club?.season) {
         setSeason(detail?.season ?? playerList?.season ?? match?.season ?? club?.season)
       }
@@ -96,8 +103,8 @@ function App() {
   const CurrentPage = current.component
 
   useEffect(() => {
-    document.title = `${playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
-  }, [current.label, playerDetail, clubRoute, page])
+    document.title = `${liveTest ? 'Kiểm tra đường truyền SSE' : playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
+  }, [current.label, playerDetail, clubRoute, page, liveTest])
 
   return (
     <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : page === 'standings' ? ' standings-shell' : ''}`} data-home-theme={homeTheme}>
@@ -112,7 +119,7 @@ function App() {
         }} />
 
       <main>
-        {!playerDetail && !current.fullPage && <section className="hero" aria-labelledby="hero-title">
+        {!liveTest && !playerDetail && !current.fullPage && <section className="hero" aria-labelledby="hero-title">
           <div className="container hero-inner">
             <div className="hero-copy">
               <p className="eyebrow"><span className="eyebrow-line" /> prismaXI / {current.label}</p>
@@ -135,7 +142,8 @@ function App() {
           </div>
         </section>}
 
-        {playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
+        {liveTest ? <LiveTestPage theme={homeTheme} /> :
+          playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
           theme={homeTheme} playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
           <CurrentPage theme={homeTheme} key={['fantasy', 'minigame'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
