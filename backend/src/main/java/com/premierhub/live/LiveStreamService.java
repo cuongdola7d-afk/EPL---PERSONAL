@@ -82,14 +82,22 @@ public class LiveStreamService {
     }
 
     public SseEmitter subscribeMain() {
-        return subscribe(CHANNEL_MAIN, new SseEmitter(emitterTimeoutMs));
+        return subscribe(CHANNEL_MAIN, new SseEmitter(emitterTimeoutMs), null);
+    }
+
+    public SseEmitter subscribeMain(Object initialSnapshot) {
+        return subscribe(CHANNEL_MAIN, new SseEmitter(emitterTimeoutMs), initialSnapshot);
     }
 
     public SseEmitter subscribeTest() {
-        return subscribe(CHANNEL_TEST, new SseEmitter(testStreamTimeoutMs));
+        return subscribe(CHANNEL_TEST, new SseEmitter(testStreamTimeoutMs), null);
     }
 
     public SseEmitter subscribe(String channel, SseEmitter emitter) {
+        return subscribe(channel, emitter, null);
+    }
+
+    public SseEmitter subscribe(String channel, SseEmitter emitter, Object initialSnapshot) {
         String id = nextConnectionId();
         Instant now = Instant.now(clock);
         LiveConnection connection = new LiveConnection(id, channel, emitter, now);
@@ -110,7 +118,9 @@ public class LiveStreamService {
         LOG.info("SSE connection opened: id={} channel={} active={}/{}",
                 id, channel, connections.size(), maxConnections);
 
-        sendHello(connection);
+        if (sendHello(connection) && initialSnapshot != null) {
+            sendSnapshot(connection, initialSnapshot);
+        }
         return emitter;
     }
 
@@ -181,14 +191,26 @@ public class LiveStreamService {
         }
     }
 
-    private void sendHello(LiveConnection conn) {
+    private boolean sendHello(LiveConnection conn) {
         HelloEvent payload = new HelloEvent(conn.id(), conn.channel(), Instant.now(clock).toString());
         try {
             conn.emitter().send(SseEmitter.event()
                     .name("hello")
                     .data(payload, MediaType.APPLICATION_JSON));
+            return true;
         } catch (IOException | RuntimeException ex) {
             removeConnection(conn.id(), "hello_failed", false);
+            return false;
+        }
+    }
+
+    private void sendSnapshot(LiveConnection conn, Object snapshot) {
+        try {
+            conn.emitter().send(SseEmitter.event()
+                    .name("snapshot")
+                    .data(snapshot, MediaType.APPLICATION_JSON));
+        } catch (IOException | RuntimeException ex) {
+            removeConnection(conn.id(), "snapshot_failed", false);
         }
     }
 

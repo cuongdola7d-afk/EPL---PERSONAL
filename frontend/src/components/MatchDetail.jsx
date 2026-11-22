@@ -3,6 +3,7 @@ import { fetchMatchDetail } from '../api/matches.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
 import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions, shortPlayerName } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
+import { formatLiveGoalText, resolveMatchDisplay } from '../utils/liveScores.js'
 import { formationLines, matchLineup } from '../utils/matchLineup.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
 import MatchKickoff from './MatchKickoff.jsx'
@@ -438,7 +439,34 @@ function Scorers({ detail, season }) {
   </div>)}</div>
 }
 
-function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đấu' }) {
+function LiveScorers({ goals }) {
+  if (!Array.isArray(goals) || goals.length === 0) return null
+  const homeGoals = goals.filter((goal) => goal.side === 'home')
+  const awayGoals = goals.filter((goal) => goal.side === 'away')
+  if (homeGoals.length === 0 && awayGoals.length === 0) return null
+  return (
+    <div className="mx-scorers mx-live-scorers">
+      <div>
+        {homeGoals.map((goal, idx) => (
+          <span key={`live-h-${idx}`} className="mx-scorer-item">
+            <GoalIcon />
+            <span>{formatLiveGoalText(goal)}</span>
+          </span>
+        ))}
+      </div>
+      <div>
+        {awayGoals.map((goal, idx) => (
+          <span key={`live-a-${idx}`} className="mx-scorer-item">
+            <GoalIcon />
+            <span>{formatLiveGoalText(goal)}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đấu', liveState = null, isFlashing = false }) {
   const [detail, setDetail] = useState(null)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -492,24 +520,29 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
   )
 
   const match = detail?.match ?? summary
-  const scored = match && hasMatchScore(match)
   const noStats = status === 'success' &&
     detail.homePlayers.length === 0 && detail.awayPlayers.length === 0
+  const hasVerifiedManualStats = Boolean(match?.hasManualStats) || (status === 'success' && !noStats)
+  const effectiveLiveState = hasVerifiedManualStats ? null : liveState
+  const display = resolveMatchDisplay(match, effectiveLiveState, { preferManualStats: true })
+  const scored = display.scored
   const activeTab = season === 2026 ? tab : (tab === 'stats' ? 'lineup' : tab)
 
   return <div className="mx-detail" aria-busy={status === 'loading'}>
     <button className="mx-back" type="button" onClick={onClose}>‹ <span>{backLabel}</span></button>
     {match && <header className="mx-detail-hero">
       <div className="mx-detail-meta"><span className="mx-gw">GW{match.matchweek}</span>
-        {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}<MatchStatus status={match.status} /></div>
+        {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}<MatchStatus status={match.status} liveState={effectiveLiveState} /></div>
       <div className="mx-detail-score"><div className="mx-detail-club"><ClubCrest name={match.homeClub} large />
-        <strong>{match.homeClub}</strong></div><div className="mx-big-score" ref={headingRef} tabIndex="-1"
-          aria-label={`${match.homeClub} ${scored ? match.homeGoals : 'đấu'} ${match.awayClub} ${scored ? match.awayGoals : ''}`}>
-          {scored ? `${match.homeGoals} – ${match.awayGoals}` : 'vs'}
+        <strong>{match.homeClub}</strong></div><div className={`mx-big-score${isFlashing && !hasVerifiedManualStats ? ' mx-score-flash' : ''}`} ref={headingRef} tabIndex="-1" aria-live="polite"
+          aria-label={`${match.homeClub} ${scored ? display.homeGoals : 'đấu'} ${match.awayClub} ${scored ? display.awayGoals : ''}`}>
+          {scored ? `${display.homeGoals} – ${display.awayGoals}` : 'vs'}
           {!scored && <small>Chưa có tỉ số</small>}</div>
         <div className="mx-detail-club"><ClubCrest name={match.awayClub} large />
           <strong>{match.awayClub}</strong></div></div>
-      {status === 'success' && !noStats && <Scorers detail={detail} season={season} />}
+      {status === 'success' && !noStats
+        ? <Scorers detail={detail} season={season} />
+        : display.useLiveGoals && effectiveLiveState && <LiveScorers goals={effectiveLiveState.goals} />}
     </header>}
 
     {status === 'loading' && <div className="mx-empty" role="status">Đang tải chi tiết trận...</div>}

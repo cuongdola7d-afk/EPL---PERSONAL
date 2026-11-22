@@ -56,6 +56,21 @@
 .mx-match-meta { display: flex; justify-content: space-between; align-items: center; min-height: 24px; gap: 8px; margin-bottom: 10px; }
 .mx-status, .mx-stat-tag, .mx-gw { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: #ffffff12; color: var(--mx-muted); font-size: .75rem; font-weight: 700; }
 .mx-status-done { background: #2fd29b26; color: #59dfaf; }
+.mx-status-live { gap: 6px; background: #e5484d2e; color: #ff6b6b; border: 1px solid #e5484d66; font-weight: 800; letter-spacing: .02em; }
+.mx-page[data-theme='light'] .mx-status-live,
+[data-mg-theme='light'] .mx-page .mx-status-live { background: #fde8e8; color: #c81e1e; border-color: #f8b4b4; }
+.mx-live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: mx-live-pulse 1.2s ease-in-out infinite; }
+@keyframes mx-live-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .28; transform: scale(.82); } }
+@keyframes mx-score-glow {
+  0%, 100% { background: #46e2b544; box-shadow: 0 0 0 2px var(--mx-accent), 0 0 18px #46e2b566; transform: scale(1.05); }
+  50% { background: #46e2b526; box-shadow: 0 0 0 1px var(--mx-accent); transform: scale(1); }
+}
+.mx-card-score.mx-score-flash strong,
+.mx-big-score.mx-score-flash {
+  animation: mx-score-glow 1s ease-in-out 3;
+  background: #46e2b538;
+  box-shadow: 0 0 0 2px var(--mx-accent);
+}
 .mx-stat-tag { background: #6fadf629; color: #a6c9ff; }
 .mx-match-main { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
 .mx-team { display: flex; align-items: center; min-width: 0; gap: 12px; font-size: 1.02rem; font-weight: 650; }
@@ -214,7 +229,10 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .mx-match-card { transition: none; }
-  .mx-skeletons > div { animation: none; }
+  .mx-skeletons > div,
+  .mx-live-dot,
+  .mx-card-score.mx-score-flash strong,
+  .mx-big-score.mx-score-flash { animation: none; }
 }
 
 .mx-lineup-notice { margin: 8px 0 12px; padding: 10px 12px; border: 1px solid var(--mx-line); border-radius: 12px; color: var(--mx-muted); font-size: .75rem; line-height: 1.5; }

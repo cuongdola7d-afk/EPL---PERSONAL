@@ -6,6 +6,7 @@ import { matchDetailHash, matchListHash } from '../utils/matchRoute.js'
 import { SEASONS } from '../utils/seasons.js'
 import MatchCard from './MatchCard.jsx'
 import MatchDetail from './MatchDetail.jsx'
+import { useLiveScores } from '../hooks/useLiveScores.js'
 import { compareMatchSchedule, matchDayKey, matchDayLabel } from '../utils/matchTime.js'
 import './MatchPage.css'
 
@@ -18,6 +19,7 @@ function MatchPage({ season, theme = 'dark', matchRoute }) {
   const [filter, setFilter] = useState(matchRoute?.filter ?? 'all')
   const [club, setClub] = useState(matchRoute?.club ?? '')
   const selectedMatchId = matchRoute?.matchId ?? null
+  const { liveByFixture, flashingIds } = useLiveScores(season === 2026)
   const requestMatches = useCallback((signal) => fetchMatches({ season }, signal), [season])
   const { data: matches, status, error, reload } = useApiList(requestMatches)
 
@@ -59,6 +61,8 @@ function MatchPage({ season, theme = 'dark', matchRoute }) {
 
       {selectedMatchId !== null ? <MatchDetail key={selectedMatchId} matchId={selectedMatchId}
         summary={selectedMatch} season={season} onClose={closeMatch}
+        liveState={season === 2026 ? (liveByFixture[selectedMatchId] ?? null) : null}
+        isFlashing={season === 2026 && Boolean(flashingIds[selectedMatchId])}
         backLabel={matchRoute?.backHash?.startsWith('#players/') ? 'Cầu thủ' : matchRoute?.backHash ? 'Câu lạc bộ' : 'Lịch đấu'} /> : <>
         <header className="mx-hero">
           <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
@@ -107,7 +111,9 @@ function MatchPage({ season, theme = 'dark', matchRoute }) {
             {visible.map((match, index) => <div key={match.id}>
               {(index === 0 || matchDayKey(visible[index - 1], season) !== matchDayKey(match, season)) &&
                 <h2 className="mx-date-heading">{season === 2026 ? matchDayLabel(match, season) : dateLabel(match.date)}</h2>}
-              <MatchCard match={match} season={season} onOpen={openMatch} />
+              <MatchCard match={match} season={season} onOpen={openMatch}
+                liveState={season === 2026 ? (liveByFixture[match.id] ?? null) : null}
+                isFlashing={season === 2026 && Boolean(flashingIds[match.id])} />
             </div>)}
           </div>}
           <p className="mx-attribution">Lịch và kết quả: <a href="https://www.football-data.org/" target="_blank" rel="noreferrer">football-data.org</a>.</p>

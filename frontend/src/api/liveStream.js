@@ -1,4 +1,11 @@
+import { fetchApiList } from './request.js'
+import { isValidLiveMatchState } from '../utils/liveScores.js'
+
 export const DELAY_THRESHOLD_MS = 15000
+
+export function fetchLiveMatches(signal) {
+  return fetchApiList('/api/live/matches', signal, isValidLiveMatchState, 'tỉ số trực tiếp')
+}
 
 export function resolveLiveStreamUrl(path, baseUrl = import.meta.env?.VITE_LIVE_STREAM_BASE) {
   const apiPath = `/${String(path ?? '').replace(/^\/+/, '')}`
@@ -230,6 +237,8 @@ export function openLiveStream({
   baseUrl,
   onOpen,
   onHello,
+  onSnapshot,
+  onScore,
   onTick,
   onError,
   reconnectDelayMs = 3000,
@@ -264,6 +273,30 @@ export function openLiveStream({
       if (closedByUser) return
       try {
         onHello?.(parseHelloPayload(event.data))
+      } catch (err) {
+        onError?.(err)
+      }
+    })
+
+    source.addEventListener('snapshot', (event) => {
+      if (closedByUser) return
+      try {
+        const list = JSON.parse(event.data)
+        if (Array.isArray(list)) {
+          onSnapshot?.(list)
+        }
+      } catch (err) {
+        onError?.(err)
+      }
+    })
+
+    source.addEventListener('score', (event) => {
+      if (closedByUser) return
+      try {
+        const item = JSON.parse(event.data)
+        if (isValidLiveMatchState(item)) {
+          onScore?.(item)
+        }
       } catch (err) {
         onError?.(err)
       }

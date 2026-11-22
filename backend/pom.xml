@@ -96,6 +96,14 @@
                     <include>players.csv</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>data/fpl-2026</directory>
+                <targetPath>data/fpl-2026</targetPath>
+                <includes>
+                    <include>team-map.csv</include>
+                    <include>player-map.csv</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>

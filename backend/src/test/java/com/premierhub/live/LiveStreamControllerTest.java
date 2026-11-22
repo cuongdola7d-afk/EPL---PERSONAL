@@ -32,7 +32,7 @@ class LiveStreamControllerTest {
         private MockMvc mockMvc;
 
         @Test
-        void mainStreamReturnsSseHeadersAndImmediateHelloEvent() throws Exception {
+        void mainStreamReturnsSseHeadersAndImmediateHelloAndSnapshotEvents() throws Exception {
             mockMvc.perform(get("/api/live/stream").accept(MediaType.TEXT_EVENT_STREAM))
                     .andExpect(status().isOk())
                     .andExpect(request().asyncStarted())
@@ -42,7 +42,12 @@ class LiveStreamControllerTest {
                     .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                     .andExpect(content().string(containsString("event:hello")))
                     .andExpect(content().string(containsString("\"connectionId\":\"sse-")))
-                    .andExpect(content().string(containsString("\"serverTime\":")));
+                    .andExpect(content().string(containsString("\"serverTime\":")))
+                    .andExpect(content().string(containsString("event:snapshot")));
+
+            mockMvc.perform(get("/api/live/matches").accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(content().json("[]"));
         }
 
         @Test

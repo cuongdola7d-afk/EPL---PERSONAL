@@ -2,8 +2,9 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 COPY pom.xml ./
 COPY src/main ./src/main
-# These two reviewed CSV resources are included by pom.xml; no database export is copied.
+# These reviewed CSV resources are included by pom.xml; no database export is copied.
 COPY data/match-lineups-2026-10-04/clubs.csv data/match-lineups-2026-10-04/players.csv ./data/match-lineups-2026-10-04/
+COPY data/fpl-2026/team-map.csv data/fpl-2026/player-map.csv ./data/fpl-2026/
 RUN mvn -B -ntp -DskipTests package
 
 FROM eclipse-temurin:21-jre-jammy
