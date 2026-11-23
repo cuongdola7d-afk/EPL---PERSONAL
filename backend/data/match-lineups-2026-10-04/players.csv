@@ -322,7 +322,7 @@ fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_inde
 1000560560,1000000062,2026,284500,SUB_USED,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
 1000560560,1000000062,2026,2000015001,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
 1000560560,1000000062,2026,2000015002,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
-1000560560,1000000062,2026,2000015003,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
+1000560560,1000000062,2026,2000004005,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
 1000560560,1000000062,2026,2000015004,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
 1000560560,1000000062,2026,2000015005,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
 1000560560,1000000062,2026,2000020085,STARTER,,,,,,2026-10-04,backend/data/gw2-next-three/sources.md
@@ -518,7 +518,7 @@ fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_inde
 1000560564,1000000397,2026,2000030169,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
 1000560564,1000000397,2026,2000030170,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
 1000560564,1000000397,2026,2000030173,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
-1000560564,1000000397,2026,2000030259,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
+1000560564,1000000397,2026,2000030174,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
 1000560565,1000000071,2026,2000012001,STARTER,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
 1000560565,1000000071,2026,2000012002,STARTER,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
 1000560565,1000000071,2026,2000020030,STARTER,,,,,,2026-10-04,backend/data/gw3-first-five/sources.md
@@ -1058,7 +1058,7 @@ fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_inde
 1000560578,1000000397,2026,2000030169,SUB_USED,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
 1000560578,1000000397,2026,2000030173,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
 1000560578,1000000397,2026,2000030176,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
-1000560578,1000000397,2026,2000030259,SUB_USED,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
+1000560578,1000000397,2026,2000030174,SUB_USED,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
 1000560578,1000001076,2026,2000002001,STARTER,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
 1000560578,1000001076,2026,2000002002,STARTER,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
 1000560578,1000001076,2026,2000002003,STARTER,,,,,,2026-10-04,backend/data/gw4-remaining-nine/sources.md
@@ -1358,7 +1358,7 @@ fixture_id,club_id,season_year,player_id,role,match_position,row_index,slot_inde
 1000560586,1000000397,2026,2000030167,STARTER,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
 1000560586,1000000397,2026,2000030169,SUB_USED,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
 1000560586,1000000397,2026,2000030173,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
-1000560586,1000000397,2026,2000030259,STARTER,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
+1000560586,1000000397,2026,2000030174,STARTER,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
 1000560587,1000000058,2026,18846,STARTER,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
 1000560587,1000000058,2026,144729,SUB_UNUSED,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md
 1000560587,1000000058,2026,283058,STARTER,,,,,,2026-10-04,backend/data/gw5-first-five/sources.md

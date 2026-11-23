@@ -200,6 +200,7 @@ export function buildSaveRateSummary(saves, goalsConceded) {
     shotsOnTarget,
     saveWidthPct,
     concededWidthPct,
+    subtitle: `${safeSaves} cứu thua · ${safeConceded} bàn thua`,
   }
 }
 

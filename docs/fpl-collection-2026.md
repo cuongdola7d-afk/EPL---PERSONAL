@@ -157,8 +157,8 @@ Chạy lặp lần 2 để xác nhận `inserted=0`. Với đợt bổ sung riê
 - **Định nghĩa kiến tạo (Assists) của FPL rộng hơn thống kê chính thức (Opta/StatMuse):** FPL tính kiến tạo cả cho tình huống kiếm phạt đền, kiếm đá phạt dẫn đến bàn thắng, hoặc cú sút bật cột/xà/thủ môn/hậu vệ để đồng đội ghi bàn. Do đó từ GW11 trở đi, số `assists` tuân theo định nghĩa FPL và không so sánh 1-1 tuyệt đối với GW1–GW10 (StatMuse).
 - **FPL API không có tài liệu chính thức (unofficial):** cấu trúc JSON hoặc tên trường có thể thay đổi bất ngờ giữa mùa. `FplJsonParser` kiểm tra chặt mọi trường bắt buộc và kiểu dữ liệu, dừng ngay kèm thông báo lỗi cụ thể thay vì tự điền `0`.
 - **Bảo vệ số liệu cơ bản GW1–GW10:** `FplRatingMergeService` chặn mọi vòng `< 11` để không vô tình tạo CSV nhập đè `manual_fixture_player_stats`. `ManualExtraStatsImporter` chỉ ghi vào `manual_fixture_player_extra_stats`.
-- **Việc còn tồn đọng — 2 cầu thủ bị trùng ID cần kiểm tra trước khi nhập GW11 nếu họ ra sân:**
-  - **Iliman Ndiaye:** `2000015003` (GW1–2) và `2000004005`.
-  - **Chema Andrés:** `2000030259` (GW4–5) và `2000030174`.
-  - 4 dòng chỉ số mở rộng của hai cầu thủ này ở GW1–GW10 đã bị loại khi bổ sung. Chưa gộp ID; chỉ ghi nhận để kiểm tra trước khi nhập nếu họ ra sân ở GW11 trở đi.
+- **Xử lý 2 cầu thủ trùng ID lịch sử (đã hoàn tất ngày 23/11/2026):**
+  - **Iliman Ndiaye:** đã gộp `2000015003` (GW1–2 Everton) vào ID giữ lại `2000004005` (giữ đủ membership Everton trước `2026-09-03` và Man City từ `2026-09-03`).
+  - **Chema Andrés / José María Andrés Baixauli:** đã gộp `2000030259` (GW3–5 Brighton) vào ID giữ lại `2000030174` (gộp tổng mùa Brighton và giữ đủ lịch sử membership trước `2026-09-30`).
+  - Đã bổ sung đủ 4 dòng chỉ số mở rộng bị loại (Ndiaye GW1–2, Chema GW4–5) từ `backend/data/fpl-2026/backfill/fpl-extra-stats-2026-merged-ids.csv` (idempotent, `inserted=4` rồi lặp `inserted=0`), cập nhật fallback `backend/data/match-lineups-2026-10-04/players.csv`, và lưu bảng tra cứu cặp ID đã gộp tại `backend/data/player-id-merges.csv`.
 - **Hiển thị API/UI của bảng mở rộng:** `GET /api/matches/{id}/details?season=2026` trả thêm trường `extra` (chỉ mùa 2026, bỏ qua khi cầu thủ không có dòng) phục vụ tab **Thống kê** và thẻ chi tiết cầu thủ trên frontend; giá trị `NULL` hiển thị `"—"`, không chuyển thành `0`.

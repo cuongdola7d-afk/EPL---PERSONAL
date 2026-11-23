@@ -1,0 +1,5 @@
+season,fixture_id,player_id,starts,clean_sheets,goals_conceded,own_goals,penalties_saved,penalties_missed,saves,bonus,bps,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,expected_goals,expected_assists,expected_goal_involvements,expected_goals_conceded,influence,creativity,threat,ict_index,source,fetched_at
+2026,1000560546,2000004005,1,1,0,0,0,0,0,1,36,0,8,4,12,0.24,0.32,0.56,1.96,40.8,39.8,48.0,12.9,FPL,2026-11-21T16:39:17Z
+2026,1000560560,2000004005,1,0,1,0,0,0,0,0,16,5,7,1,13,0.02,0.07,0.09,2.16,12.6,14.5,10.0,3.7,FPL,2026-11-21T16:39:20Z
+2026,1000560578,2000030174,0,0,0,0,0,0,0,0,10,2,1,1,4,0.24,0.01,0.25,0.22,18.8,13.1,2.0,3.4,FPL,2026-11-21T15:47:43Z
+2026,1000560586,2000030174,1,1,0,0,0,0,0,0,27,2,7,0,9,0.28,0.11,0.39,1.48,33.4,4.8,37.0,7.5,FPL,2026-11-21T15:47:46Z

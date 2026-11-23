@@ -15,12 +15,12 @@ export default function PlayerTeamShare({ mode, clubName, playerName, teamContri
         <SectionHeader
           icon={<GloveIcon />}
           title="Tỉ lệ cản phá"
-          lead="Cứu thua trên tổng số cú sút trúng đích"
+          lead="Tỉ lệ cứu thua trên tổng cứu thua và bàn thua"
         />
         <div className="pd-tc pd-tc-stack">
           <div className="pd-tc-big">
             <b>{summary.pct == null ? '—' : `${summary.pct}%`}</b>
-            <span>{summary.saves} cứu thua / {summary.shotsOnTarget} cú sút trúng đích</span>
+            <span>{summary.subtitle}</span>
           </div>
           {summary.shotsOnTarget > 0 && (
             <div

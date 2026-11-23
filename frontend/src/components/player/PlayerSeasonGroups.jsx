@@ -47,7 +47,7 @@ export default function PlayerSeasonGroups({ totals, roleGroup, season }) {
             <StatRow
               label="Tỉ lệ cản phá"
               value={saveRate?.pct != null ? `${saveRate.pct}%` : null}
-              sub={saveRate && saveRate.shotsOnTarget > 0 ? `${saveRate.saves}/${saveRate.shotsOnTarget}` : null}
+              sub={saveRate && saveRate.shotsOnTarget > 0 ? saveRate.subtitle : null}
             />
           </div>
         ) : (

@@ -139,11 +139,13 @@ test('buildSaveRateSummary and buildDefensiveActionsSummary compute summaries an
   assert.equal(saveSummary.goalsConceded, 13)
   assert.equal(saveSummary.shotsOnTarget, 47)
   assert.equal(saveSummary.pct, 72)
+  assert.equal(saveSummary.subtitle, '34 cứu thua · 13 bàn thua')
   assert.equal(Math.round(saveSummary.saveWidthPct), 72)
   assert.equal(Math.round(saveSummary.concededWidthPct), 28)
   const zeroShots = buildSaveRateSummary(0, 0)
   assert.equal(zeroShots.pct, null)
   assert.equal(zeroShots.shotsOnTarget, 0)
+  assert.equal(zeroShots.subtitle, '0 cứu thua · 0 bàn thua')
 
   assert.equal(buildDefensiveActionsSummary(null, 50, 40, 10), null)
   assert.equal(buildDefensiveActionsSummary(12, null, 40, 10), null)
