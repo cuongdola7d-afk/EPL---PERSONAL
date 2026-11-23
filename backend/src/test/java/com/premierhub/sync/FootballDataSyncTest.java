@@ -52,8 +52,10 @@ class FootballDataSyncTest {
         var second = sync.importBatch(batch);
         assertEquals(20, first.teamsInserted());
         assertEquals(380, first.fixturesInserted());
+        assertEquals(380, first.fixturesChanged());
         assertEquals(0, second.teamsInserted());
         assertEquals(0, second.fixturesInserted());
+        assertEquals(0, second.fixturesChanged());
         assertEquals(20, count("football_data_teams"));
         assertEquals(380, count("football_data_fixtures"));
         assertEquals(380, queries.matches(2026, null, null, null).size());
@@ -72,11 +74,30 @@ class FootballDataSyncTest {
         ObjectNode standing = (ObjectNode) input[2].path("standings").get(0).path("table").get(0);
         standing.put("playedGames", 1).put("won", 1).put("goalsFor", 2).put("goalsAgainst", 1)
                 .put("goalDifference", 1).put("points", 3);
-        sync.importBatch(FootballDataBatch.parse(input[0], input[1], input[2]));
+        var updatedResult = sync.importBatch(FootballDataBatch.parse(input[0], input[1], input[2]));
+        assertEquals(1, updatedResult.fixturesChanged());
         assertEquals(2, queries.match(1001208022, 2026).orElseThrow().homeGoals());
         assertEquals("2026-08-22T23:30:00Z", jdbc.queryForObject(
                 "SELECT kickoff_utc FROM football_data_fixtures WHERE provider_id=1208022", String.class));
         assertEquals(3, queries.standings(2026, null).getFirst().points());
+
+        // Regression guard: a FINISHED fixture must never be overwritten back to SCHEDULED / TIMED / LIVE.
+        for (String regressedStatus : new String[]{"SCHEDULED", "TIMED", "IN_PLAY", "PAUSED"}) {
+            changed.put("status", regressedStatus);
+            if ("SCHEDULED".equals(regressedStatus) || "TIMED".equals(regressedStatus)) {
+                ((ObjectNode) changed.path("score").path("fullTime")).putNull("home").putNull("away");
+            } else {
+                ((ObjectNode) changed.path("score").path("fullTime")).put("home", 1).put("away", 0);
+            }
+            var guarded = sync.importBatch(FootballDataBatch.parse(input[0], input[1], input[2]));
+            assertEquals(0, guarded.fixturesChanged(), "Regression must not count as a fixture change for " + regressedStatus);
+            var preserved = queries.match(1001208022, 2026).orElseThrow();
+            assertEquals("FINISHED", preserved.status());
+            assertEquals(2, preserved.homeGoals());
+            assertEquals(1, preserved.awayGoals());
+            assertEquals("FINISHED", jdbc.queryForObject(
+                    "SELECT provider_status FROM football_data_fixtures WHERE provider_id=1208022", String.class));
+        }
 
         var beforeFailure = queries.matches(2026, null, null, null);
         for (int status : new int[]{401, 403, 429}) {

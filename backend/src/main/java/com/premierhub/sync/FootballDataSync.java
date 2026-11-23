@@ -1,6 +1,8 @@
 package com.premierhub.sync;
 
 import com.premierhub.service.FootballQueries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -10,14 +12,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class FootballDataSync {
+    private static final Logger log = LoggerFactory.getLogger(FootballDataSync.class);
     private static final int LEAGUE = FootballQueries.LEAGUE_ID; // Internal PL: provider competition 2021 -> 39.
     private static final int SEASON = FootballDataBatch.SEASON;
     private static final int ID_BASE = 1_000_000_000;
@@ -43,6 +49,7 @@ public class FootballDataSync {
                     + "(SELECT 1 FROM seasons WHERE league_id=? AND season_year=?)", LEAGUE, SEASON, LEAGUE, SEASON);
             int teamsInserted = 0;
             int fixturesInserted = 0;
+            int fixturesChanged = 0;
             for (var team : batch.teams()) {
                 int internal = internalId(team.id());
                 List<Integer> mapped = jdbc.queryForList(
@@ -78,18 +85,56 @@ public class FootballDataSync {
                     jdbc.update("INSERT INTO football_data_fixtures (provider_id, fixture_id, kickoff_utc, provider_status) "
                                     + "VALUES (?, ?, ?, ?)", fixture.id(), internal, fixture.kickoff().toString(), fixture.providerStatus());
                     fixturesInserted++;
+                    fixturesChanged++;
                 } else {
                     requireMapping(mapped.getFirst(), internal);
+                    List<ExistingFixture> existingRows = jdbc.query("""
+                            SELECT status, provider_status, home_goals, away_goals
+                            FROM fixtures
+                            WHERE id=? AND league_id=? AND season_year=?
+                            """, (rs, rowNum) -> new ExistingFixture(
+                            rs.getString("status"),
+                            rs.getString("provider_status"),
+                            nullableInt(rs, "home_goals"),
+                            nullableInt(rs, "away_goals")
+                    ), internal, LEAGUE, SEASON);
+                    if (existingRows.isEmpty()) {
+                        throw new IllegalStateException("Mapped fixture belongs to a different season");
+                    }
+                    ExistingFixture existing = existingRows.getFirst();
+                    boolean regressedFromFinished = "FINISHED".equals(existing.status())
+                            && !"FINISHED".equals(fixture.status());
+                    String effectiveStatus = regressedFromFinished ? existing.status() : fixture.status();
+                    String effectiveProviderStatus = regressedFromFinished ? existing.providerStatus() : fixture.status();
+                    Integer effectiveHomeGoals = regressedFromFinished ? existing.homeGoals() : fixture.homeGoals();
+                    Integer effectiveAwayGoals = regressedFromFinished ? existing.awayGoals() : fixture.awayGoals();
+                    if (regressedFromFinished) {
+                        log.warn("Prevented status regression for FINISHED fixture id={} (providerId={}): "
+                                        + "keeping status={} score={}-{}, ignoring incoming status={} (providerStatus={})",
+                                internal, fixture.id(), existing.status(), existing.homeGoals(), existing.awayGoals(),
+                                fixture.status(), fixture.providerStatus());
+                    }
                     int updated = jdbc.update("""
                             UPDATE fixtures SET home_club_id=?, away_club_id=?, gameweek=?, match_date=?, status=?,
                               provider_status=?, home_goals=?, away_goals=?, payload_hash=?, synced_at=?
                             WHERE id=? AND league_id=? AND season_year=?
                             """, internalId(fixture.home()), internalId(fixture.away()), fixture.round(), date,
-                            fixture.status(), fixture.status(), fixture.homeGoals(), fixture.awayGoals(), hash(fixture.payload()),
-                            now, internal, LEAGUE, SEASON);
+                            effectiveStatus, effectiveProviderStatus, effectiveHomeGoals, effectiveAwayGoals,
+                            hash(fixture.payload()), now, internal, LEAGUE, SEASON);
                     if (updated != 1) throw new IllegalStateException("Mapped fixture belongs to a different season");
-                    jdbc.update("UPDATE football_data_fixtures SET kickoff_utc=?, provider_status=? WHERE provider_id=?",
-                            fixture.kickoff().toString(), fixture.providerStatus(), fixture.id());
+                    if (regressedFromFinished) {
+                        jdbc.update("UPDATE football_data_fixtures SET kickoff_utc=? WHERE provider_id=?",
+                                fixture.kickoff().toString(), fixture.id());
+                    } else {
+                        jdbc.update("UPDATE football_data_fixtures SET kickoff_utc=?, provider_status=? WHERE provider_id=?",
+                                fixture.kickoff().toString(), fixture.providerStatus(), fixture.id());
+                    }
+                    boolean statusOrScoreChanged = !Objects.equals(existing.status(), effectiveStatus)
+                            || !Objects.equals(existing.homeGoals(), effectiveHomeGoals)
+                            || !Objects.equals(existing.awayGoals(), effectiveAwayGoals);
+                    if (statusOrScoreChanged) {
+                        fixturesChanged++;
+                    }
                 }
             }
             for (var row : batch.standings()) {
@@ -107,7 +152,8 @@ public class FootballDataSync {
                         """, LEAGUE, SEASON, internal, row.position(), row.played(), row.won(), row.drawn(), row.lost(),
                         row.goalsFor(), row.goalsAgainst(), row.difference(), row.points());
             }
-            return new Result(teamsInserted, fixturesInserted, batch.teams().size(), batch.fixtures().size(), batch.standings().size());
+            return new Result(teamsInserted, fixturesInserted, fixturesChanged,
+                    batch.teams().size(), batch.fixtures().size(), batch.standings().size());
         });
     }
 
@@ -152,5 +198,17 @@ public class FootballDataSync {
         }
     }
 
-    public record Result(int teamsInserted, int fixturesInserted, int teams, int fixtures, int standings) { }
+    private static Integer nullableInt(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        return value == null ? null : ((Number) value).intValue();
+    }
+
+    private record ExistingFixture(String status, String providerStatus, Integer homeGoals, Integer awayGoals) { }
+
+    public record Result(int teamsInserted, int fixturesInserted, int fixturesChanged,
+                         int teams, int fixtures, int standings) {
+        public Result(int teamsInserted, int fixturesInserted, int teams, int fixtures, int standings) {
+            this(teamsInserted, fixturesInserted, fixturesInserted, teams, fixtures, standings);
+        }
+    }
 }

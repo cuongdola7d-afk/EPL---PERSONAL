@@ -24,7 +24,7 @@ function MatchPage({ season, theme = 'dark', matchRoute }) {
   const { data: matches, status, error, reload } = useApiList(requestMatches)
 
   const weeks = useMemo(() => [...new Set(matches.map((match) => match.matchweek))].sort((a, b) => a - b), [matches])
-  const currentWeek = week ?? preferredMatchweek(matches)
+  const currentWeek = week ?? preferredMatchweek(matches, new Date(), season === 2026 ? liveByFixture : null)
   const clubs = useMemo(() => [...new Set(matches.flatMap((match) => [match.homeClub, match.awayClub]))].sort(), [matches])
   const weekMatches = matches.filter((match) => match.matchweek === currentWeek &&
     (!club || match.homeClub === club || match.awayClub === club))

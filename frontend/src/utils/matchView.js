@@ -32,13 +32,100 @@ export function clubVisual(name) {
   }
 }
 
-export function preferredMatchweek(matches) {
-  const weeks = [...new Set(matches.map((match) => match.matchweek))].sort((a, b) => a - b)
-  const complete = weeks.filter((week) => {
-    const fixtures = matches.filter((match) => match.matchweek === week)
-    return fixtures.length === 10 && fixtures.every((match) => match.status === 'FINISHED')
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000
+const LIVE_DB_STATUSES = new Set(['LIVE', 'IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'])
+const DEFERRED_STATUSES = new Set(['POSTPONED', 'CANCELLED'])
+
+function lookupLiveState(liveByFixtureId, fixtureId) {
+  if (!liveByFixtureId || fixtureId == null) return null
+  if (liveByFixtureId instanceof Map) {
+    return liveByFixtureId.get(fixtureId) ?? liveByFixtureId.get(String(fixtureId)) ?? null
+  }
+  return liveByFixtureId[fixtureId] ?? liveByFixtureId[String(fixtureId)] ?? null
+}
+
+function isMatchLive(match, liveByFixtureId) {
+  if (LIVE_DB_STATUSES.has(match.status)) return true
+  const liveState = lookupLiveState(liveByFixtureId, match.id)
+  return liveState?.status === 'LIVE'
+}
+
+function isMatchFinished(match) {
+  return match.status === 'FINISHED'
+}
+
+function isMatchUnplayed(match) {
+  return !isMatchFinished(match) && !DEFERRED_STATUSES.has(match.status)
+}
+
+function parseKickoffMs(match) {
+  const timestamp = match.kickoffUtc ?? match.utcDate
+  if (typeof timestamp === 'string' && timestamp.trim()) {
+    const parsed = Date.parse(timestamp)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  if (typeof match.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(match.date)) {
+    const parsed = Date.parse(`${match.date}T00:00:00Z`)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return null
+}
+
+function resolveNowMs(now) {
+  if (now instanceof Date) return now.getTime()
+  if (typeof now === 'number') return now
+  if (typeof now === 'string') return Date.parse(now)
+  return Date.now()
+}
+
+export function preferredMatchweek(matches, now = new Date(), liveByFixtureId = null) {
+  if (!Array.isArray(matches) || matches.length === 0) return 1
+
+  const byWeek = new Map()
+  for (const match of matches) {
+    if (!byWeek.has(match.matchweek)) byWeek.set(match.matchweek, [])
+    byWeek.get(match.matchweek).push(match)
+  }
+  const weeks = [...byWeek.keys()].sort((a, b) => a - b)
+
+  // 1. Any gameweek with a LIVE match (from DB status or FPL live state).
+  const liveWeek = weeks.find((week) =>
+    byWeek.get(week).some((match) => isMatchLive(match, liveByFixtureId)))
+  if (liveWeek != null) return liveWeek
+
+  // 2. Smallest in-progress gameweek (has at least one FINISHED and at least one unplayed match).
+  const inProgressWeek = weeks.find((week) => {
+    const fixtures = byWeek.get(week)
+    return fixtures.some(isMatchFinished) && fixtures.some(isMatchUnplayed)
   })
-  return complete.at(-1) ?? weeks[0] ?? 1
+  if (inProgressWeek != null) return inProgressWeek
+
+  // 3. Latest completed gameweek, unless the next gameweek starts within 2 days.
+  const complete = weeks.filter((week) => {
+    const fixtures = byWeek.get(week)
+    return fixtures.length > 0 &&
+      fixtures.some(isMatchFinished) &&
+      fixtures.every((match) => isMatchFinished(match) || DEFERRED_STATUSES.has(match.status))
+  })
+  const latestComplete = complete.at(-1)
+  if (latestComplete != null) {
+    const nextWeek = weeks.find((week) => week > latestComplete)
+    if (nextWeek != null) {
+      const nowMs = resolveNowMs(now)
+      const kickoffs = byWeek.get(nextWeek)
+        .map(parseKickoffMs)
+        .filter((ms) => ms != null)
+      if (Number.isFinite(nowMs) && kickoffs.length > 0) {
+        const earliestKickoff = Math.min(...kickoffs)
+        if (earliestKickoff - nowMs <= TWO_DAYS_MS) {
+          return nextWeek
+        }
+      }
+    }
+    return latestComplete
+  }
+
+  return weeks[0] ?? 1
 }
 
 export function matchPlayerState(player) {
