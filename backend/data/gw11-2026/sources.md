@@ -49,10 +49,57 @@ Chrome production không đăng nhập ở 1440px và 390px: Vòng thi mặc đ�
     - Fantasy GW11: `AWAITING_RESULTS`, deadline `2026-11-19T17:00:00Z`, `rosterAsOf=2026-11-09`, chưa công bố kết quả.
 - **9 trận GW11 còn lại chưa thu thập:** `1000560643` (Man City–Fulham), `1000560644` (Aston Villa–Sunderland), `1000560645` (Liverpool–Man Utd), `1000560646` (Hull–Brighton), `1000560647` (Bournemouth–Nott'm Forest), `1000560648` (Tottenham–Ipswich), `1000560649` (Brentford–Everton), `1000560650` (Coventry–Crystal Palace), `1000560651` (Newcastle–Arsenal).
 
+## Thu thập đợt 2 — 6/8 trận GW11 đã nhập, 2 trận chờ hồ sơ dự bị mới (23/11/2026)
+
+> **Lưu ý dữ liệu tạm (provisional):** Cả 8 trận đều ở trạng thái `finished = false`, `finished_provisional = true` trên FPL tại thời điểm thu thập (23/11/2026 ~13:32 giờ Việt Nam); thu thập với `--allow-provisional=true` (ghi `fpl_status=PROVISIONAL` trong `fpl/fixture-map.csv`), cần đối chiếu lại khi FPL chốt `finished = true`.
+
+- **Đồng bộ football-data.org (23/11/2026):** `3` request, 20 CLB / 380 trận / 20 BXH. Cả 9 trận đã đá của GW11 (`1000560642..1000560648, 1000560650, 1000560651`) đều chuyển `FINISHED` với tỉ số chính thức (riêng `1000560651` Newcastle–Arsenal hết kẹt `LIVE` và chuyển `FINISHED 2–2`); `1000560649` (Brentford–Everton) giữ `SCHEDULED`.
+- **Đối chiếu 2 cầu thủ trùng ID:**
+  - **Iliman Ndiaye** (`1000560643` Man City–Fulham): FPL collector gắn đúng ID hiện hành `2000004005` (Manchester City FC, membership `[2026-09-03, NULL)`), không dùng ID cũ `2000015003`.
+  - **Chema Andrés** (`1000560646` Hull–Brighton): FPL collector gắn đúng ID hiện hành `2000030174` (José María Andrés Baixauli, Brighton, membership `[2026-09-30, NULL)`), không dùng ID cũ `2000030259`.
+- **6 trận đã thu thập & nhập production đầy đủ (`240` dòng thống kê mới, `191` dòng chỉ số mở rộng mới, `12` sơ đồ/đội hình mới, `7` confirmed-unrated mới):**
+  - `1000560645` (FPL `107`) — **Liverpool FC 4–0 Manchester United FC** (22/11, ảnh 3–4): 32 `PLAYED`, 8 `DID_NOT_PLAY`, 1 `UNRATED` (Andrey Santos `2000006016`, 3'). Sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - `1000560646` (FPL `106`) — **Hull City AFC 2–0 Brighton & Hove Albion FC** (22/11, ảnh 17–18): 32 `PLAYED`, 8 `DID_NOT_PLAY`, 1 `UNRATED` (Ibrahim Osman `2000030052`, 1'). Sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - `1000560647` (FPL `102`) — **AFC Bournemouth 2–0 Nottingham Forest FC** (21/11, ảnh 9–10): 32 `PLAYED`, 8 `DID_NOT_PLAY`, 1 `UNRATED` (Ben Gannon-Doak `2000030034`, 1'). Sơ đồ `4-2-3-1` / `3-4-2-1`.
+  - `1000560648` (FPL `110`) — **Tottenham Hotspur FC 2–0 Ipswich Town FC** (21/11, ảnh 13–14): 32 `PLAYED`, 8 `DID_NOT_PLAY`, 1 `UNRATED` (Archie Gray `2000030017`, 1'). Sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - `1000560650` (FPL `105`) — **Coventry City FC 3–2 Crystal Palace FC** (21/11, ảnh 11–12): 31 `PLAYED`, 9 `DID_NOT_PLAY`, 1 `UNRATED` (Darío Osorio `2000030189`, 1'). Ghi bàn: Sakamoto (1), Awoniyi (1), McNeil (OG 1) / Pino (1), Strand Larsen (1). Sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - `1000560651` (FPL `109`) — **Newcastle United FC 2–2 Arsenal FC** (21/11, ảnh 15–16): 32 `PLAYED`, 8 `DID_NOT_PLAY`, 2 `UNRATED` (Mikel Merino `2000001017` 1', Viktor Gyökeres `2000001012` 1'). Sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - Kiểm tra đối chiếu 6 trận: `unmapped.csv` = 0, `bench-cards.csv` = 0, `anomalies.csv` = 0, tổng bàn + phản lưới khớp tỉ số 6/6 trận.
+- **2 trận tạm bỏ qua nhập thống kê/đội hình (chờ quyền tạo hồ sơ tối thiểu cầu thủ dự bị mới):**
+  - `1000560643` (FPL `108`) — **Manchester City FC 1–1 Fulham FC** (21/11, ảnh 5–6): đủ ảnh và tỉ số khớp (31 `PLAYED`, 9 `DID_NOT_PLAY`, 0 `UNRATED`), nhưng dự bị không vào sân **#37 Dino Kaiser** (Fulham FC `1000000063`, FPL `element_id=674`, `GOALKEEPER`) chưa có trong bảng `players`/`player_season_stats`/`manual_player_memberships`. Đã ghi vào `backend/data/fpl-2026/player-map-pending.csv` và `backend/data/gw11-2026/missing.csv`.
+  - `1000560644` (FPL `101`) — **Aston Villa FC 0–0 Sunderland AFC** (21/11, ảnh 7–8): đủ ảnh và tỉ số khớp (27 `PLAYED`, 13 `DID_NOT_PLAY`, 0 `UNRATED`), nhưng dự bị không vào sân **#8 Alan Browne** (Sunderland AFC `1000000071`, FPL `element_id=673`, `MIDFIELDER`) chưa có trong bảng `players`/`player_season_stats`/`manual_player_memberships`. Đã ghi vào `backend/data/fpl-2026/player-map-pending.csv` và `backend/data/gw11-2026/missing.csv`.
+- **Trận còn lại chưa đá:** `1000560649` — **Brentford FC – Everton FC** (24/11/2026, `SCHEDULED`).
+- **Trạng thái kiểm tra & nhập đợt 2:**
+  - **H2 cô lập (`backend/target/gw11-batch2-h2`):** sync football-data đạt; nhập lượt 1 (`manual-match-stats` +240, `manual-extra-stats` +191, `match-lineups` `clubChanges=12 fixtureChanges=24 playerChanges=240`, `fantasy-evidence` `fixture_changes=6 unrated_changes=7`); nhập lượt 2 tất cả đều `0`.
+  - **Backup Aiven mới trước ghi (ngoài Git):** `backend/local-backups/gw11-batch2-20261123-071001/aiven-before-gw11-batch2-20261123-071001.sql` (`3.376.633` byte, 44 bảng, `Dump completed` OK, SHA-256 `cf8c1deadd36670ab1d555b5267f70a789b57c5e8f2c718e890da2f3b26860dd`).
+  - **Production (Aiven `defaultdb`, MySQL 8.4.11, UUID `71f8960b-df63-11f1-abd5-5e7cbc02b771`):**
+    - Sync football-data: 20 CLB / 380 trận / 20 BXH.
+    - Lần 1: `manual-match-stats` `inserted=240`, `manual-extra-stats` `inserted=191`, `match-lineups` `clubChanges=12 fixtureChanges=24 playerChanges=240`, `fantasy-evidence` `fixtures=7 fixture_changes=6 unrated_changes=7 absence_changes=0`.
+    - Lần 2 (idempotent): tất cả `inserted=0` / `changes=0`.
+    - Đối chiếu MySQL sau nhập: GW1–GW10 vẫn nguyên vẹn (`4.000` stats / `3.080` extra), Chelsea–Leeds vẫn nguyên vẹn (`40` stats / `32` extra); tổng mùa 2026 = `4.280` stats, `3.303` extra, `114` lineups, `2.280` lineup_players, `57` fixture confirmations, `35` unrated confirmations. Fantasy GW11 chưa công bố kết quả, `gw11_picks = 0`.
+
+## Thu thập đợt 3 — Tạo 2 hồ sơ tối thiểu & nhập nốt Man City–Fulham, Aston Villa–Sunderland (23/11/2026)
+
+Người dùng đã duyệt ngày **23/11/2026** tạo 2 hồ sơ tối thiểu (không thêm OVR, vị trí Fantasy chi tiết, giá hay ảnh) cho 2 cầu thủ dự bị không vào sân và nhập nốt 2 trận còn lại đã đá của GW11:
+
+- **2 hồ sơ tối thiểu đã tạo qua `ManualRosterCommand` (`backend/data/gw11-2026/manual-memberships-current-2026-GW11.csv`):**
+  - **Dino Kaiser** (`2000030265`, Fulham FC `1000000063`, `GOALKEEPER`, membership `[2026-11-21, NULL)`, số áo `37` trên ảnh lineup GW11, FPL `element_id=674`). Đã chuyển từ `player-map-pending.csv` sang `player-map.csv` (nguồn `gw11-lineup-and-fpl-bootstrap`).
+  - **Alan Browne** (`2000030266`, Sunderland AFC `1000000071`, `MIDFIELDER`, membership `[2026-11-21, NULL)`, số áo `8` trên ảnh lineup GW11, FPL `element_id=673`). Đã chuyển từ `player-map-pending.csv` sang `player-map.csv` (nguồn `gw11-lineup-and-fpl-bootstrap`).
+  - Kiểm tra trước khi nhập: cả 2 ID `2000030265` và `2000030266` chưa tồn tại trong `players`. Sau khi nhập: `player_season_profiles = 0` và `player_specific_positions = 0` cho cả 2 cầu thủ.
+- **2 trận đã nhập thêm (`80` dòng thống kê mới, `58` dòng chỉ số mở rộng mới, `4` sơ đồ/đội hình mới, `0` unrated mới, dữ liệu FPL ở trạng thái `PROVISIONAL`):**
+  - `1000560643` (FPL `108`) — **Manchester City FC 1–1 Fulham FC** (21/11, ảnh 5–6): 31 `PLAYED`, 9 `DID_NOT_PLAY`, 0 `UNRATED`; sơ đồ `4-2-3-1` / `4-4-2`.
+  - `1000560644` (FPL `101`) — **Aston Villa FC 0–0 Sunderland AFC** (21/11, ảnh 7–8): 27 `PLAYED`, 13 `DID_NOT_PLAY`, 0 `UNRATED`; sơ đồ `4-2-3-1` / `4-2-3-1`.
+  - Kiểm tra đối chiếu: `unmapped.csv = 0`, `bench-cards.csv = 0`, `anomalies.csv = 0`. `missing.csv` đã xóa 2 dòng trên, chỉ còn 1 dòng `1000560649` (Brentford – Everton chưa đá).
+- **Trạng thái kiểm tra & nhập đợt 3:**
+  - **H2 cô lập (`backend/target/gw11-batch2-h2`):** lượt 1 (`manual-roster` +2/+2/+2, `manual-match-stats` +80, `manual-extra-stats` +58, `match-lineups` `clubChanges=4 fixtureChanges=8 playerChanges=80`, `fantasy-evidence` `fixture_changes=2 unrated_changes=0`), lượt 2 tất cả đều `0`.
+  - **Backup Aiven mới trước ghi (ngoài Git):** `backend/local-backups/gw11-batch3-20261123-073706/aiven-before-gw11-batch3-20261123-073706.sql` (`3.443.189` byte, 44 bảng, `Dump completed` OK, SHA-256 `88994f7a6ea9ee8b44bddc0cf2dde9bd98e9864fc64cdda9ef571572dea28928`).
+  - **Production (Aiven `defaultdb`, MySQL 8.4.11, UUID `71f8960b-df63-11f1-abd5-5e7cbc02b771`):**
+    - Lần 1: `manual-roster` `playersInserted=2 membershipsInserted=2 intervalsInserted=2 intervalsUpdated=0`, `manual-match-stats` `rows=360 inserted=80`, `manual-extra-stats` `rows=281 inserted=58`, `match-lineups` `clubChanges=4 verifiedFormations=118 fixtureChanges=8 players=360 playerChanges=80`, `fantasy-evidence` `fixtures=9 fixture_changes=2 unrated_changes=0 absence_changes=0`.
+    - Lần 2 (idempotent): tất cả đều `0`.
+    - Đối chiếu MySQL sau nhập: GW1–GW10 nguyên vẹn (`4.000` stats / `3.080` extra), Chelsea–Leeds nguyên vẹn (`40` / `32`), 6 trận đợt 2 nguyên vẹn (`240` / `191`); tổng mùa 2026 = `4.360` stats, `3.361` extra, `118` lineups, `2.360` lineup players, `59` fixture confirmations, `35` unrated confirmations. Fantasy GW11 chưa công bố kết quả.
+
 ## Bước tiếp theo
 
-1. **Đối chiếu lại trận `1000560642` khi FPL chốt `finished = true`:** chạy collector riêng vào thư mục tách biệt (ví dụ `backend/data/gw11-2026/fpl-recheck/`), so sánh từng ô với bản đã thu thập ở `fpl/` và báo chủ dự án mọi khác biệt (thường là `bonus`, `bps`, `influence`/`creativity`/`threat`/`ict_index`, hoặc `assists`). **Không tự ghi đè dữ liệu đã nhập.**
-2. Khi 9 trận còn lại của GW11 đạt `FINISHED` (cả football-data.org và FPL `finished=true`) và người dùng cung cấp ảnh rating/lineups SofaScore:
-   - Rà soát `backend/data/fpl-2026/player-map-pending.csv` và kiểm tra 2 cầu thủ trùng ID (Iliman Ndiaye, Chema Andrés — xem mục 6 `docs/fpl-collection-2026.md`) nếu họ ra sân.
-   - Chạy collector + `--merge-only=true` với `--fixture-ids` cho các trận mới (tự gộp vào các CSV GW11 hiện có), đối chiếu tổng bàn/anomalies/missing.
-   - Thử trên H2 → backup Aiven mới → nhập production phần còn lại, tái tính tổng mùa, đối chiếu Đội hình tiêu biểu GW11 và readiness theo [docs/gameweek-data-workflow.md](../../../docs/gameweek-data-workflow.md). Chưa công bố kết quả GW11; chưa commit/push/deploy.
+1. **Thu thập trận cuối GW11:** `1000560649` (Brentford – Everton, 24/11) khi có trạng thái `FINISHED` và ảnh SofaScore.
+2. **Đối chiếu lại 9 trận lấy từ trạng thái `PROVISIONAL`** (`1000560642..1000560648, 1000560650, 1000560651`) khi FPL chốt `finished = true` bằng cách thu thập vào thư mục tách biệt để so sánh; không tự ghi đè dữ liệu đã nhập.
+3. Khi đủ 10/10 trận GW11: tái tính tổng mùa, đối chiếu Đội hình tiêu biểu GW11 và readiness trước khi ADMIN tự công bố. Chưa commit/push/deploy.
