@@ -1,6 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { estimatedPitchPlayers, matchPlayerState, matchPlayerValue, pitchPositions, preferredMatchweek, shortPlayerName } from './matchView.js'
+import {
+  buildScheduleHeroChips,
+  estimatedPitchPlayers,
+  matchPlayerState,
+  matchPlayerValue,
+  matchweekStartDate,
+  pitchPositions,
+  preferredMatchweek,
+  shortPlayerName,
+} from './matchView.js'
 import { parseMatchRoute } from './matchRoute.js'
 
 test('prefers the latest complete gameweek and falls back to the first available week', () => {
@@ -115,4 +124,88 @@ test('pitch estimate selects eleven unique played players and keeps substitutes 
   assert.equal(nodes.length, 11)
   assert.ok(nodes.every(({ x, y }) => x > 0 && x < 50 && y > 0 && y < 100))
   assert.deepEqual([8, 20, 32, 44].map((x) => nodes.filter((node) => node.x === x).length), [1, 4, 3, 3])
+})
+
+test('matchweekStartDate picks earliest kickoff in Vietnam time including 00:30 next-day rollover', () => {
+  const matches = [
+    // GW11 earliest kickoff is 2026-11-21T17:30:00Z -> 00:30 on 22/11 Vietnam time!
+    { id: 1, matchweek: 11, kickoffUtc: '2026-11-21T17:30:00Z', date: '2026-11-21' },
+    { id: 2, matchweek: 11, kickoffUtc: '2026-11-22T14:00:00Z', date: '2026-11-22' },
+    // GW12 has an earlier Saturday 19:30 VN kickoff
+    { id: 3, matchweek: 12, kickoffUtc: '2026-11-28T15:00:00Z', date: '2026-11-28' },
+    { id: 4, matchweek: 12, kickoffUtc: '2026-11-28T12:30:00Z', date: '2026-11-28' },
+    // GW13 has no valid date
+    { id: 5, matchweek: 13, kickoffUtc: null, date: null },
+  ]
+  assert.equal(matchweekStartDate(matches, 11, 2026), '22/11')
+  assert.equal(matchweekStartDate(matches, 12, 2026), '28/11')
+  assert.equal(matchweekStartDate(matches, 13, 2026), '')
+  assert.equal(matchweekStartDate(matches, 99, 2026), '')
+})
+
+test('buildScheduleHeroChips handles live, upcoming, finished-all, and legacy season states', () => {
+  const now = new Date('2026-11-23T18:20:00Z') // 01:20 VN on Tue 24/11
+  const gw11 = [
+    ...Array.from({ length: 9 }, (_, i) => ({
+      id: 100 + i,
+      matchweek: 11,
+      status: 'FINISHED',
+      homeClub: 'Manchester City FC',
+      awayClub: 'Fulham FC',
+      homeGoals: 1,
+      awayGoals: 1,
+      kickoffUtc: '2026-11-21T15:00:00Z',
+    })),
+    {
+      id: 200,
+      matchweek: 11,
+      status: 'SCHEDULED',
+      homeClub: 'Brentford FC',
+      awayClub: 'Everton FC',
+      homeGoals: null,
+      awayGoals: null,
+      kickoffUtc: '2026-11-23T20:00:00Z', // 03:00 Thứ Ba 24/11 VN
+    },
+  ]
+
+  // 1. No live match -> chip 1 + upcoming chip 2
+  const upcomingChips = buildScheduleHeroChips(gw11, { season: 2026, now, liveByFixture: {} })
+  assert.equal(upcomingChips.length, 2)
+  assert.deepEqual(upcomingChips[0], { kind: 'week', tone: 'accent', text: 'Vòng 11 · 9/10 trận đã đá' })
+  assert.deepEqual(upcomingChips[1], { kind: 'next', tone: 'up', text: 'Trận tiếp: 03:00 Thứ Ba 24/11' })
+
+  // 2. Single live match via liveByFixture -> chip 2 shows live score
+  const liveChips = buildScheduleHeroChips(gw11, {
+    season: 2026,
+    now,
+    liveByFixture: {
+      200: { fixtureId: 200, status: 'LIVE', minute: 67, homeScore: 1, awayScore: 0, goals: [], assists: [], redCards: [] },
+    },
+  })
+  assert.equal(liveChips.length, 2)
+  assert.deepEqual(liveChips[1], { kind: 'live', tone: 'live', text: 'Đang đá: BRE 1–0 EVE' })
+
+  // 3. Multiple live matches -> appends "+2 trận"
+  const multiLive = [
+    ...gw11,
+    { id: 201, matchweek: 11, status: 'LIVE', homeClub: 'Arsenal FC', awayClub: 'Chelsea FC', homeGoals: 2, awayGoals: 1, kickoffUtc: '2026-11-23T20:00:00Z' },
+    { id: 202, matchweek: 11, status: 'LIVE', homeClub: 'Liverpool FC', awayClub: 'Leeds United FC', homeGoals: 0, awayGoals: 0, kickoffUtc: '2026-11-23T20:00:00Z' },
+  ]
+  const multiLiveChips = buildScheduleHeroChips(multiLive, {
+    season: 2026,
+    now,
+    liveByFixture: {
+      200: { fixtureId: 200, status: 'LIVE', minute: 67, homeScore: 1, awayScore: 0, goals: [], assists: [], redCards: [] },
+    },
+  })
+  assert.equal(multiLiveChips[1].text, 'Đang đá: BRE 1–0 EVE +2 trận')
+
+  // 4. All matches finished -> chip 2 hidden
+  const allDone = gw11.map((m) => ({ ...m, status: 'FINISHED', homeGoals: 1, awayGoals: 0 }))
+  const doneChips = buildScheduleHeroChips(allDone, { season: 2026, now, liveByFixture: {} })
+  assert.equal(doneChips.length, 1)
+  assert.equal(doneChips[0].text, 'Vòng 11 · 10/10 trận đã đá')
+
+  // 5. Legacy season -> hidden completely
+  assert.deepEqual(buildScheduleHeroChips(gw11, { season: 2024, now }), [])
 })

@@ -1,6 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { kickoffInstant, matchDateTimeLabel, matchDayKey, compareMatchSchedule } from './matchTime.js'
+import {
+  compareMatchSchedule,
+  formatDayGroupHeading,
+  kickoffInstant,
+  matchDateTimeLabel,
+  matchDayKey,
+  matchKickoffParts,
+  matchWeekdayDateLabel,
+} from './matchTime.js'
 import { homeFixturePreview } from './homeView.js'
 import { clubMatches } from './clubView.js'
 import { isValidMatch } from '../api/matches.js'
@@ -69,4 +77,31 @@ test('match API validation accepts UTC or missing kickoff, rejects malformed new
   assert.equal(isValidMatch(fixture(1, undefined)), true)
   assert.equal(isValidMatch(fixture(1, '2026-10-04')), false)
   assert.equal(isValidMatch(fixture(1, '2026-10-04T20:00:00')), false)
+})
+
+test('formats Vietnamese weekday + dd/mm and day group headings with relative labels', () => {
+  // 2026-11-21 15:00Z = 22:00 Vietnam time, Saturday 21/11/2026
+  const satMatch = fixture(1, '2026-11-21T15:00:00Z', '2026-11-21')
+  assert.equal(matchWeekdayDateLabel(satMatch, 2026), 'Thứ Bảy 21/11')
+  const satParts = matchKickoffParts(satMatch, 2026)
+  assert.equal(satParts.time, '22:00')
+  assert.equal(satParts.weekdayDate, 'Thứ Bảy 21/11')
+  assert.equal(satParts.shortDate, '21/11')
+
+  // 2026-11-21 17:30Z = 00:30 Vietnam time, Sunday 22/11/2026
+  const sunEarly = fixture(2, '2026-11-21T17:30:00Z', '2026-11-21')
+  assert.equal(matchWeekdayDateLabel(sunEarly, 2026), 'Chủ nhật 22/11')
+  assert.equal(matchKickoffParts(sunEarly, 2026).time, '00:30')
+
+  // 2026-11-23 20:00Z = 03:00 Vietnam time, Tuesday 24/11/2026
+  const tueEarly = fixture(3, '2026-11-23T20:00:00Z', '2026-11-23')
+  assert.equal(matchWeekdayDateLabel(tueEarly, 2026), 'Thứ Ba 24/11')
+  assert.equal(matchKickoffParts(tueEarly, 2026).time, '03:00')
+
+  // Relative day labels in Vietnam timezone (now = 2026-11-24 01:20 VN = 2026-11-23T18:20:00Z)
+  const nowVn = new Date('2026-11-23T18:20:00Z')
+  assert.deepEqual(formatDayGroupHeading('2026-11-24', nowVn), { label: 'Thứ Ba, 24/11/2026', relative: 'Hôm nay' })
+  assert.deepEqual(formatDayGroupHeading('2026-11-25', nowVn), { label: 'Thứ Tư, 25/11/2026', relative: 'Ngày mai' })
+  assert.deepEqual(formatDayGroupHeading('2026-11-23', nowVn), { label: 'Thứ Hai, 23/11/2026', relative: 'Hôm qua' })
+  assert.deepEqual(formatDayGroupHeading('2026-11-21', nowVn), { label: 'Thứ Bảy, 21/11/2026', relative: '' })
 })

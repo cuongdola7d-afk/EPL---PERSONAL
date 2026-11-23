@@ -83,13 +83,13 @@ export function formatLiveStatusBadge(liveState, nowMs = Date.now(), prevDisplay
   if (!liveState || typeof liveState !== 'object') return null
   if (liveState.status === 'LIVE') {
     const minuteLabel = formatLiveMinuteLabel(liveState, nowMs, prevDisplayMinute)
-    return minuteLabel ? `LIVE ${minuteLabel}` : 'LIVE'
+    return minuteLabel ? `Đang đá ${minuteLabel}` : 'Đang đá'
   }
   if (liveState.status === 'FT') {
-    return 'Hết giờ'
+    return 'Kết thúc'
   }
   if (liveState.status === 'PRE') {
-    return 'Sắp diễn ra'
+    return 'Sắp đá'
   }
   return null
 }

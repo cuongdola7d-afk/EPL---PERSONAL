@@ -32,12 +32,12 @@ const sampleState = (overrides = {}) => ({
 })
 
 test('formatLiveStatusBadge and formatLiveGoalText format LIVE minute, 45+, 90+, FT, ~minute, null approxMinute, and own goals', () => {
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 67 }), T0_MS), "LIVE 67'")
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 45 }), T0_MS + 180_000), "LIVE 45'+")
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 90 }), T0_MS + 180_000), "LIVE 90'+")
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 0 }), T0_MS), 'LIVE')
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'FT', minute: 90 }), T0_MS), 'Hết giờ')
-  assert.equal(formatLiveStatusBadge(sampleState({ status: 'PRE', minute: 0 }), T0_MS), 'Sắp diễn ra')
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 67 }), T0_MS), "Đang đá 67'")
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 45 }), T0_MS + 180_000), "Đang đá 45'+")
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 90 }), T0_MS + 180_000), "Đang đá 90'+")
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'LIVE', minute: 0 }), T0_MS), 'Đang đá')
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'FT', minute: 90 }), T0_MS), 'Kết thúc')
+  assert.equal(formatLiveStatusBadge(sampleState({ status: 'PRE', minute: 0 }), T0_MS), 'Sắp đá')
 
   assert.equal(
     formatLiveGoalText({ playerName: 'Bruno Fernandes', approxMinute: 34, ownGoal: false }),
@@ -72,9 +72,9 @@ test('computeLiveDisplayMinute and formatLiveMinuteLabel increment over time, ca
   assert.equal(computeLiveDisplayMinute(s20, T0_MS), 20)
   assert.equal(computeLiveDisplayMinute(s20, T0_MS + 59_000), 20)
   assert.equal(computeLiveDisplayMinute(s20, T0_MS + 60_000), 21)
-  assert.equal(formatLiveStatusBadge(s20, T0_MS + 60_000), "LIVE 21'")
+  assert.equal(formatLiveStatusBadge(s20, T0_MS + 60_000), "Đang đá 21'")
   assert.equal(computeLiveDisplayMinute(s20, T0_MS + 120_000), 22)
-  assert.equal(formatLiveStatusBadge(s20, T0_MS + 120_000), "LIVE 22'")
+  assert.equal(formatLiveStatusBadge(s20, T0_MS + 120_000), "Đang đá 22'")
 
   // 2. Capped at server minute + 2 even if 3 or 10 minutes elapse without server change
   assert.equal(computeLiveDisplayMinute(s20, T0_MS + 180_000), 22)
@@ -85,13 +85,13 @@ test('computeLiveDisplayMinute and formatLiveMinuteLabel increment over time, ca
   assert.equal(computeLiveDisplayMinute(s45, T0_MS), 45)
   assert.equal(computeLiveDisplayMinute(s45, T0_MS + 120_000), 45)
   assert.equal(formatLiveMinuteLabel(s45, T0_MS + 300_000), "45'+")
-  assert.equal(formatLiveStatusBadge(s45, T0_MS + 300_000), "LIVE 45'+")
+  assert.equal(formatLiveStatusBadge(s45, T0_MS + 300_000), "Đang đá 45'+")
 
   const s90 = sampleState({ status: 'LIVE', minute: 90, updatedAt: T0_ISO })
   assert.equal(computeLiveDisplayMinute(s90, T0_MS), 90)
   assert.equal(computeLiveDisplayMinute(s90, T0_MS + 240_000), 90)
   assert.equal(formatLiveMinuteLabel(s90, T0_MS + 240_000), "90'+")
-  assert.equal(formatLiveStatusBadge(s90, T0_MS + 240_000), "LIVE 90'+")
+  assert.equal(formatLiveStatusBadge(s90, T0_MS + 240_000), "Đang đá 90'+")
 
   // 4. Resets immediately when server sends a new minute (even if smaller than currently displayed minute)
   //    Suppose client was showing 22 (20 + 2) at T0 + 130s, and server sends new minute=21 at T0 + 130s:
@@ -99,7 +99,7 @@ test('computeLiveDisplayMinute and formatLiveMinuteLabel increment over time, ca
   const { byFixture: b1 } = applyLiveSnapshot({}, [s20])
   const { byFixture: b2 } = applyLiveScoreUpdate(b1, sampleState({ minute: 21, updatedAt: t130Iso }))
   assert.equal(computeLiveDisplayMinute(b2[1000560642], T0_MS + 130_000, 22), 21)
-  assert.equal(formatLiveStatusBadge(b2[1000560642], T0_MS + 130_000, 22), "LIVE 21'")
+  assert.equal(formatLiveStatusBadge(b2[1000560642], T0_MS + 130_000, 22), "Đang đá 21'")
 
   //    And if server sends a larger backward correction (e.g. minute=17 when display was 22), resets to server (17):
   const { byFixture: b3 } = applyLiveScoreUpdate(b2, sampleState({ minute: 17, updatedAt: t130Iso }))
@@ -155,15 +155,15 @@ test('resolveMatchDisplay uses live state when LIVE/FT and prefers verified manu
   assert.equal(d1.homeGoals, 1)
   assert.equal(d1.awayGoals, 2)
   assert.equal(d1.isLive, true)
-  assert.equal(d1.badgeText, "LIVE 67'")
+  assert.equal(d1.badgeText, "Đang đá 67'")
   assert.equal(d1.useLiveGoals, true)
 
-  // FT live state -> uses FT score and "Hết giờ"
+  // FT live state -> uses FT score and "Kết thúc"
   const ft = sampleState({ status: 'FT', minute: 90, homeScore: 1, awayScore: 2 })
   const d2 = resolveMatchDisplay(scheduledDbMatch, ft, { nowMs: T0_MS })
   assert.equal(d2.isLive, false)
   assert.equal(d2.isLiveFt, true)
-  assert.equal(d2.badgeText, 'Hết giờ')
+  assert.equal(d2.badgeText, 'Kết thúc')
 
   // When match already has verified manual stats (hasManualStats: true) and preferManualStats is enabled
   const manualDbMatch = {

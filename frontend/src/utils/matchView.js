@@ -1,3 +1,6 @@
+import { compareMatchSchedule, formatShortDayMonth, kickoffInstant, matchDayKey, matchKickoffParts } from './matchTime.js'
+import { resolveMatchDisplay } from './liveScores.js'
+
 const COLORS = [
   ['arsenal', '#e0413a'], ['liverpool', '#c8102e'], ['manchester city', '#5ba3d9'],
   ['manchester united', '#da291c'], ['chelsea', '#1f4fa3'], ['newcastle', '#4a545b'],
@@ -126,6 +129,106 @@ export function preferredMatchweek(matches, now = new Date(), liveByFixtureId = 
   }
 
   return weeks[0] ?? 1
+}
+
+export function isMatchLiveNow(match, liveByFixtureId = null) {
+  return isMatchLive(match, liveByFixtureId)
+}
+
+export function isMatchDone(match, liveByFixtureId = null) {
+  if (match.status === 'FINISHED') return true
+  const liveState = lookupLiveState(liveByFixtureId, match.id)
+  return liveState?.status === 'FT'
+}
+
+/**
+ * Computes the earliest Vietnam start date (dd/mm) for a given matchweek from match kickoffs.
+ * Returns '' if no match in that week has a valid date.
+ */
+export function matchweekStartDate(matches, week, season = 2026) {
+  if (!Array.isArray(matches)) return ''
+  const weekMatches = matches.filter((match) => match.matchweek === week)
+  if (weekMatches.length === 0) return ''
+
+  let earliestInstant = null
+  let earliestInstantMatch = null
+  for (const match of weekMatches) {
+    const instant = kickoffInstant(match, season)
+    if (instant && (earliestInstant === null || instant < earliestInstant)) {
+      earliestInstant = instant
+      earliestInstantMatch = match
+    }
+  }
+  if (earliestInstantMatch) {
+    return formatShortDayMonth(matchDayKey(earliestInstantMatch, season))
+  }
+
+  const dayKeys = weekMatches
+    .map((match) => matchDayKey(match, season))
+    .filter((key) => typeof key === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(key))
+    .sort()
+  return dayKeys.length > 0 ? formatShortDayMonth(dayKeys[0]) : ''
+}
+
+/**
+ * Builds the 1 or 2 quick-info chips displayed in the 2026/27 schedule hero.
+ * Returns [] for legacy seasons or empty match lists.
+ */
+export function buildScheduleHeroChips(matches, { season = 2026, now = new Date(), liveByFixture = null } = {}) {
+  if (season !== 2026 || !Array.isArray(matches) || matches.length === 0) return []
+
+  const activeWeek = preferredMatchweek(matches, now, liveByFixture)
+  const activeMatches = matches.filter((match) => match.matchweek === activeWeek)
+  const doneCount = activeMatches.filter((match) => isMatchDone(match, liveByFixture)).length
+  const chips = [
+    {
+      kind: 'week',
+      tone: 'accent',
+      text: `Vòng ${activeWeek} · ${doneCount}/${activeMatches.length} trận đã đá`,
+    },
+  ]
+
+  const liveMatches = matches
+    .filter((match) => isMatchLive(match, liveByFixture))
+    .sort((a, b) => compareMatchSchedule(a, b, season))
+
+  if (liveMatches.length > 0) {
+    const first = liveMatches[0]
+    const liveState = lookupLiveState(liveByFixture, first.id)
+    const display = resolveMatchDisplay(first, liveState)
+    const homeCode = first.homeClubShort || clubVisual(first.homeClub).code
+    const awayCode = first.awayClubShort || clubVisual(first.awayClub).code
+    const score = display.scored ? `${display.homeGoals}–${display.awayGoals}` : 'vs'
+    const extra = liveMatches.length > 1 ? ` +${liveMatches.length - 1} trận` : ''
+    chips.push({
+      kind: 'live',
+      tone: 'live',
+      text: `Đang đá: ${homeCode} ${score} ${awayCode}${extra}`,
+    })
+    return chips
+  }
+
+  const nowMs = resolveNowMs(now)
+  const upcoming = matches
+    .filter((match) => (match.status === 'SCHEDULED' || match.status === 'TIMED') && !isMatchDone(match, liveByFixture))
+    .map((match) => ({ match, parts: matchKickoffParts(match, season) }))
+    .filter(({ parts }) => parts.instant !== null)
+    .sort((a, b) => a.parts.instant - b.parts.instant || a.match.id - b.match.id)
+
+  const nextUpcoming = (Number.isFinite(nowMs)
+    ? upcoming.find(({ parts }) => parts.instant.getTime() >= nowMs)
+    : null) ?? upcoming[0] ?? null
+
+  if (nextUpcoming) {
+    const { time, weekdayDate } = nextUpcoming.parts
+    chips.push({
+      kind: 'next',
+      tone: 'up',
+      text: `Trận tiếp: ${time} ${weekdayDate}`,
+    })
+  }
+
+  return chips
 }
 
 export function matchPlayerState(player) {
