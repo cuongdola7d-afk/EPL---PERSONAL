@@ -1,7 +1,121 @@
-import { buildCleanSheetCells, buildTeamShareCells } from '../../utils/playerProfile.js'
-import { SectionHeader, ShieldIcon, TeamIcon } from './PlayerSectionIcons.jsx'
+import {
+  buildCleanSheetCells,
+  buildDefensiveActionsSummary,
+  buildSaveRateSummary,
+  buildTeamShareCells,
+} from '../../utils/playerProfile.js'
+import { GloveIcon, SectionHeader, ShieldIcon, TeamIcon } from './PlayerSectionIcons.jsx'
 
-export default function PlayerTeamShare({ mode, clubName, playerName, teamContribution, cleanSheets }) {
+export default function PlayerTeamShare({ mode, clubName, playerName, teamContribution, cleanSheets, totals }) {
+  if (mode === 'saveRate') {
+    const summary = buildSaveRateSummary(totals?.saves, totals?.goalsConceded)
+    if (!summary) return null
+    return (
+      <section className="pd-card pd-sec">
+        <SectionHeader
+          icon={<GloveIcon />}
+          title="Tỉ lệ cản phá"
+          lead="Cứu thua trên tổng số cú sút trúng đích"
+        />
+        <div className="pd-tc pd-tc-stack">
+          <div className="pd-tc-big">
+            <b>{summary.pct == null ? '—' : `${summary.pct}%`}</b>
+            <span>{summary.saves} cứu thua / {summary.shotsOnTarget} cú sút trúng đích</span>
+          </div>
+          {summary.shotsOnTarget > 0 && (
+            <div
+              className="pd-split-bar"
+              role="img"
+              aria-label={`${summary.saves} cứu thua và ${summary.goalsConceded} bàn thua`}
+            >
+              {summary.saves > 0 && (
+                <span
+                  className="pd-split-seg pd-split-save"
+                  style={{ flexGrow: summary.saves }}
+                  title={`Cứu thua: ${summary.saves}`}
+                >
+                  {summary.saves}
+                </span>
+              )}
+              {summary.goalsConceded > 0 && (
+                <span
+                  className="pd-split-seg pd-split-gc"
+                  style={{ flexGrow: summary.goalsConceded }}
+                  title={`Bàn thua: ${summary.goalsConceded}`}
+                >
+                  {summary.goalsConceded}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="pd-tc-leg">
+          <span><i className="pd-c-g" />Cứu thua {summary.saves}</span>
+          <span><i className="pd-c-gc" />Bàn thua {summary.goalsConceded}</span>
+        </div>
+      </section>
+    )
+  }
+
+  if (mode === 'defensiveActions') {
+    const summary = buildDefensiveActionsSummary(
+      totals?.tackles,
+      totals?.clearancesBlocksInterceptions,
+      totals?.recoveries,
+      totals?.appearances,
+    )
+    if (!summary) return null
+    return (
+      <section className="pd-card pd-sec">
+        <SectionHeader
+          icon={<ShieldIcon />}
+          title="Hoạt động phòng ngự"
+          lead="Tắc bóng, chặn/cắt và đoạt bóng mỗi trận"
+        />
+        <div className="pd-tc pd-tc-stack">
+          <div className="pd-tc-big">
+            <b>{summary.perMatch == null ? '—' : summary.perMatch}</b>
+            <span>trung bình mỗi trận</span>
+          </div>
+          {summary.total > 0 && (
+            <div
+              className="pd-stack-bar"
+              role="img"
+              aria-label={`Tắc bóng ${summary.tackles}, Chặn/cắt ${summary.cbi}, Đoạt bóng ${summary.recoveries}`}
+            >
+              {summary.tackles > 0 && (
+                <span
+                  className="pd-stack-seg pd-def-s1"
+                  style={{ flexGrow: summary.tackles }}
+                  title={`Tắc bóng: ${summary.tackles}`}
+                />
+              )}
+              {summary.cbi > 0 && (
+                <span
+                  className="pd-stack-seg pd-def-s2"
+                  style={{ flexGrow: summary.cbi }}
+                  title={`Chặn/cắt: ${summary.cbi}`}
+                />
+              )}
+              {summary.recoveries > 0 && (
+                <span
+                  className="pd-stack-seg pd-def-s3"
+                  style={{ flexGrow: summary.recoveries }}
+                  title={`Đoạt bóng: ${summary.recoveries}`}
+                />
+              )}
+            </div>
+          )}
+        </div>
+        <div className="pd-tc-leg">
+          <span><i className="pd-def-s1" />Tắc bóng {summary.tackles}</span>
+          <span><i className="pd-def-s2" />Chặn/cắt {summary.cbi}</span>
+          <span><i className="pd-def-s3" />Đoạt bóng {summary.recoveries}</span>
+        </div>
+      </section>
+    )
+  }
+
   if (mode === 'cleanSheets') {
     const cs = cleanSheets?.cleanSheets ?? null
     const apps = cleanSheets?.appearances ?? 0

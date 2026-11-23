@@ -41,6 +41,17 @@ export function ShieldIcon() {
   )
 }
 
+export function GloveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 11V6.5a1.5 1.5 0 0 1 3 0V10" />
+      <path d="M10 10V5.5a1.5 1.5 0 0 1 3 0V10" />
+      <path d="M13 10V6.5a1.5 1.5 0 0 1 3 0V11" />
+      <path d="M16 10.5V8.5a1.5 1.5 0 0 1 3 0v5.5a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6v-3.5a1.5 1.5 0 0 1 3 0V12" />
+    </svg>
+  )
+}
+
 export function ListIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

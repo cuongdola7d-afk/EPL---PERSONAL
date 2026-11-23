@@ -178,6 +178,65 @@ export function buildCleanSheetCells(cleanSheets, appearances) {
   return { pct, other, cells }
 }
 
+export function buildSaveRateSummary(saves, goalsConceded) {
+  if (
+    saves == null ||
+    goalsConceded == null ||
+    !Number.isFinite(Number(saves)) ||
+    !Number.isFinite(Number(goalsConceded))
+  ) {
+    return null
+  }
+  const safeSaves = Math.max(0, Number(saves))
+  const safeConceded = Math.max(0, Number(goalsConceded))
+  const shotsOnTarget = safeSaves + safeConceded
+  const pct = shotsOnTarget > 0 ? Math.round((safeSaves / shotsOnTarget) * 100) : null
+  const saveWidthPct = shotsOnTarget > 0 ? (safeSaves / shotsOnTarget) * 100 : 0
+  const concededWidthPct = shotsOnTarget > 0 ? Math.max(0, 100 - saveWidthPct) : 0
+  return {
+    pct,
+    saves: safeSaves,
+    goalsConceded: safeConceded,
+    shotsOnTarget,
+    saveWidthPct,
+    concededWidthPct,
+  }
+}
+
+export function buildDefensiveActionsSummary(tackles, cbi, recoveries, appearances) {
+  if (
+    tackles == null ||
+    cbi == null ||
+    recoveries == null ||
+    appearances == null ||
+    !Number.isFinite(Number(tackles)) ||
+    !Number.isFinite(Number(cbi)) ||
+    !Number.isFinite(Number(recoveries)) ||
+    !Number.isFinite(Number(appearances)) ||
+    Number(appearances) <= 0
+  ) {
+    return null
+  }
+  const safeTackles = Math.max(0, Number(tackles))
+  const safeCbi = Math.max(0, Number(cbi))
+  const safeRecoveries = Math.max(0, Number(recoveries))
+  const total = safeTackles + safeCbi + safeRecoveries
+  const perMatch = (total / Number(appearances)).toFixed(1)
+  const tacklesPct = total > 0 ? (safeTackles / total) * 100 : 0
+  const cbiPct = total > 0 ? (safeCbi / total) * 100 : 0
+  const recoveriesPct = total > 0 ? Math.max(0, 100 - tacklesPct - cbiPct) : 0
+  return {
+    perMatch,
+    total,
+    tackles: safeTackles,
+    cbi: safeCbi,
+    recoveries: safeRecoveries,
+    tacklesPct,
+    cbiPct,
+    recoveriesPct,
+  }
+}
+
 export function formatPer90(value, minutes, decimals = 2) {
   if (value == null || minutes == null || minutes <= 0) return null
   return ((Number(value) * 90) / minutes).toFixed(decimals)
@@ -255,7 +314,7 @@ export function formatFormDetail(item) {
     return { headline, suffix: ' · Không ra sân.' }
   }
   if (item.state !== 'played') {
-    return { headline, suffix: ' · Chưa có dữ liệu.' }
+    return { headline, suffix: ' · Chưa có số liệu.' }
   }
   const parts = []
   if (item.rating != null) {

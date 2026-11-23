@@ -169,12 +169,18 @@ function OverviewTab({ player, season, profile, formSeries, effectiveTotals }) {
                 />
               </>
             ) : (
-              <PlayerTeamShare
-                mode="cleanSheets"
-                clubName={player.club}
-                playerName={player.name}
-                cleanSheets={profile.cleanSheets}
-              />
+              <>
+                <PlayerTeamShare
+                  mode="cleanSheets"
+                  clubName={player.club}
+                  playerName={player.name}
+                  cleanSheets={profile.cleanSheets}
+                />
+                <PlayerTeamShare
+                  mode={roleGroup === 'GK' ? 'saveRate' : 'defensiveActions'}
+                  totals={effectiveTotals}
+                />
+              </>
             )}
           </div>
         </div>
@@ -229,9 +235,12 @@ function PlayerDetailPage({ playerId, season, backHash, theme = 'dark' }) {
   const effectiveTotals = useMemo(() => {
     if (profile?.totals) return profile.totals
     const fallback = seasonSummary(finished)
+    const verifiedFinished = finished.filter(
+      (row) => row.stats != null || row.match?.hasManualStats || row.evidenceStatus === 'VERIFIED',
+    )
     return {
       appearances: fallback.appearances,
-      clubFinishedMatches: finished.length,
+      clubFinishedMatches: verifiedFinished.length,
       minutes: fallback.totalMinutes,
       goals: fallback.goals,
       assists: fallback.assists,

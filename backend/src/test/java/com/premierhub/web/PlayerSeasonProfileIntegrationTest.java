@@ -60,9 +60,11 @@ class PlayerSeasonProfileIntegrationTest {
                   (95004, 39, 2026, 9002, 9001, 4, DATE '2026-09-12', 'FINISHED', 'FINISHED', 2, 0, 'h4', CURRENT_TIMESTAMP),
                   (95005, 39, 2026, 9001, 9002, 5, DATE '2026-09-19', 'FINISHED', 'FINISHED', 4, 0, 'h5', CURRENT_TIMESTAMP),
                   (95006, 39, 2026, 9002, 9001, 6, DATE '2026-09-26', 'FINISHED', 'FINISHED', 1, 2, 'h6', CURRENT_TIMESTAMP),
-                  (95007, 39, 2026, 9001, 9002, 7, DATE '2026-10-03', 'SCHEDULED', 'SCHEDULED', NULL, NULL, 'h7', CURRENT_TIMESTAMP)
+                  (95007, 39, 2026, 9001, 9002, 7, DATE '2026-10-03', 'SCHEDULED', 'SCHEDULED', NULL, NULL, 'h7', CURRENT_TIMESTAMP),
+                  (95008, 39, 2026, 9001, 9002, 8, DATE '2026-10-10', 'FINISHED', 'FINISHED', 3, 1, 'h8', CURRENT_TIMESTAMP)
                 """);
-        // Total Test United goals across GW1-GW6 = 2 + 3 + 1 + 0 + 4 + 2 = 12 goals
+        // Total Test United goals across GW1-GW6 (with imported player stats) = 2 + 3 + 1 + 0 + 4 + 2 = 12 goals.
+        // GW8 (95008) is FINISHED on football-data (3-1) but has NO manual_fixture_player_stats imported yet -> must NOT be counted!
 
         // Players:
         // 9101: CAM (MIDFIELDER) - ATTACK, 5 played (450m) + 1 DNP (GW4) -> clubFinishedMatches=6, teamGoals=12

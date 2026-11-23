@@ -35,16 +35,17 @@ export default function PlayerFormChart({ formSeries, averageRating }) {
           {items.map((item) => {
             const isSelected = activeItem?.id === item.id
             if (item.state !== 'played') {
-              const tag = item.state === 'did-not-play' ? 'DNP' : '—'
-              const aria = item.state === 'did-not-play'
-                ? `GW${item.matchweek} gặp ${item.opponent}, không ra sân`
-                : `GW${item.matchweek} gặp ${item.opponent}, chưa có dữ liệu`
+              const isDnp = item.state === 'did-not-play'
+              const tag = isDnp ? 'DNP' : '—'
+              const statusText = isDnp ? 'không ra sân' : 'Chưa có số liệu'
+              const aria = `GW${item.matchweek} gặp ${item.opponent}, ${statusText}`
               return (
                 <button
                   key={item.id}
                   type="button"
                   className={`pd-fbar${isSelected ? ' on' : ''}`}
                   aria-label={aria}
+                  title={isDnp ? 'Không ra sân' : 'Chưa có số liệu'}
                   aria-pressed={isSelected}
                   onClick={() => setActiveId(item.id)}
                   onMouseEnter={() => setActiveId(item.id)}

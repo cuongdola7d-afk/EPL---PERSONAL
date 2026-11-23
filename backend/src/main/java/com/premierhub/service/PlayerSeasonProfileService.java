@@ -88,6 +88,21 @@ public class PlayerSeasonProfileService {
                 WHERE f.league_id = ? AND f.season_year = ?
                   AND f.status = 'FINISHED'
                   AND mem.player_id = ?
+                  AND EXISTS (
+                      SELECT 1
+                      FROM manual_fixture_player_stats ms
+                      JOIN manual_player_memberships ms_mem
+                        ON ms_mem.league_id = ms.league_id
+                       AND ms_mem.season_year = ms.season_year
+                       AND ms_mem.player_id = ms.player_id
+                       AND ms_mem.club_id = ms.club_id
+                       AND ms_mem.start_date <= f.match_date
+                       AND (ms_mem.end_date IS NULL OR ms_mem.end_date > f.match_date)
+                      WHERE ms.fixture_id = f.id
+                        AND ms.league_id = f.league_id
+                        AND ms.season_year = f.season_year
+                        AND ms.club_id IN (f.home_club_id, f.away_club_id)
+                  )
                 """, (rs, row) -> new ClubContext(toInt(rs.getObject("finished_matches")),
                 toInt(rs.getObject("team_goals"))), FootballQueries.LEAGUE_ID, 2026, playerId)
                 .stream().findFirst().orElse(new ClubContext(0, 0));
@@ -178,6 +193,7 @@ public class PlayerSeasonProfileService {
         List<PlayerMatchResponse> matches = footballQueries.playerMatches(playerId, season);
         List<PlayerMatchResponse> finished = matches.stream()
                 .filter(row -> "FINISHED".equals(row.match().status()))
+                .filter(row -> row.stats() != null || "VERIFIED".equals(row.evidenceStatus()))
                 .toList();
 
         List<PlayedRow> playedRows = new ArrayList<>();

@@ -2,7 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   buildCleanSheetCells,
+  buildDefensiveActionsSummary,
   buildFormSeries,
+  buildSaveRateSummary,
   buildTeamShareCells,
   expectedVerdict,
   formatFormDetail,
@@ -108,10 +110,53 @@ test('buildFormSeries orders matches chronologically, keeps DNP, picks highest r
   const dnpDetail = formatFormDetail(series.items[2])
   assert.equal(dnpDetail.suffix, ' · Không ra sân.')
 
+  const missingRow = {
+    clubId: 1,
+    evidenceStatus: 'PENDING',
+    match: {
+      id: 4, matchweek: 4, date: '2026-09-05', status: 'FINISHED',
+      homeClubId: 1, homeClub: 'Man United', awayClubId: 2, awayClub: 'Opponent',
+      homeGoals: 0, awayGoals: 0,
+    },
+    stats: null,
+  }
+  const seriesWithMissing = buildFormSeries([...rows, missingRow], 2026)
+  const missingItem = seriesWithMissing.items.find((i) => i.matchweek === 4)
+  assert.equal(missingItem.state, 'missing')
+  assert.equal(formatFormDetail(missingItem).suffix, ' · Chưa có số liệu.')
+
   // Null extra stat displays em dash, numeric zero is muted
   assert.deepEqual(formatMatchCellValue(rows[2], { key: 'expectedGoals', source: 'extra', decimals: 2 }), { text: '—', muted: true })
   assert.deepEqual(formatMatchCellValue(rows[1], { key: 'goals', source: 'base', decimals: 0 }), { text: '0', muted: true })
   assert.deepEqual(formatMatchCellValue(rows[1], { key: 'expectedGoals', source: 'extra', decimals: 2 }), { text: '0.12', muted: false })
+})
+
+test('buildSaveRateSummary and buildDefensiveActionsSummary compute summaries and return null when extra stats are null', () => {
+  assert.equal(buildSaveRateSummary(null, 13), null)
+  assert.equal(buildSaveRateSummary(34, null), null)
+  const saveSummary = buildSaveRateSummary(34, 13)
+  assert.equal(saveSummary.saves, 34)
+  assert.equal(saveSummary.goalsConceded, 13)
+  assert.equal(saveSummary.shotsOnTarget, 47)
+  assert.equal(saveSummary.pct, 72)
+  assert.equal(Math.round(saveSummary.saveWidthPct), 72)
+  assert.equal(Math.round(saveSummary.concededWidthPct), 28)
+  const zeroShots = buildSaveRateSummary(0, 0)
+  assert.equal(zeroShots.pct, null)
+  assert.equal(zeroShots.shotsOnTarget, 0)
+
+  assert.equal(buildDefensiveActionsSummary(null, 50, 40, 10), null)
+  assert.equal(buildDefensiveActionsSummary(12, null, 40, 10), null)
+  assert.equal(buildDefensiveActionsSummary(12, 50, null, 10), null)
+  const defSummary = buildDefensiveActionsSummary(14, 62, 41, 10)
+  assert.equal(defSummary.tackles, 14)
+  assert.equal(defSummary.cbi, 62)
+  assert.equal(defSummary.recoveries, 41)
+  assert.equal(defSummary.total, 117)
+  assert.equal(defSummary.perMatch, '11.7')
+  assert.equal(Math.round(defSummary.tacklesPct), 12)
+  assert.equal(Math.round(defSummary.cbiPct), 53)
+  assert.equal(Math.round(defSummary.recoveriesPct), 35)
 })
 
 test('normalizePlayerTab and rate formatters handle legacy season tab and null inputs', () => {

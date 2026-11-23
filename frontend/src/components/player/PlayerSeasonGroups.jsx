@@ -1,6 +1,6 @@
 import { CardIcon, GoalIcon } from '../EventIcons.jsx'
-import { formatPer90, formatPerMatch } from '../../utils/playerProfile.js'
-import { ListIcon, SectionHeader, ShieldIcon } from './PlayerSectionIcons.jsx'
+import { buildSaveRateSummary, formatPer90, formatPerMatch } from '../../utils/playerProfile.js'
+import { GloveIcon, ListIcon, SectionHeader, ShieldIcon } from './PlayerSectionIcons.jsx'
 
 function StatRow({ label, value, sub }) {
   return (
@@ -18,6 +18,7 @@ export default function PlayerSeasonGroups({ totals, roleGroup, season }) {
   const apps = totals?.appearances ?? 0
   const mins = totals?.minutes ?? null
   const isExtended = season === 2026
+  const isGkExtended = isExtended && roleGroup === 'GK'
   const lead = isExtended
     ? `${apps} trận · ${mins == null ? '—' : `${mins} phút`} · số nhỏ là trung bình mỗi 90 phút`
     : `${apps} trận · ${mins == null ? '—' : `${mins} phút`}`
@@ -28,25 +29,43 @@ export default function PlayerSeasonGroups({ totals, roleGroup, season }) {
   const csPct = totals?.cleanSheets != null && apps > 0
     ? `${Math.round((totals.cleanSheets / apps) * 100)}%`
     : null
+  const saveRate = isGkExtended ? buildSaveRateSummary(totals?.saves, totals?.goalsConceded) : null
 
   return (
     <section className="pd-card pd-sec">
       <SectionHeader icon={<ListIcon />} title="Số liệu mùa giải" lead={lead} />
       <div className={`pd-sgs${isExtended ? '' : ' pd-sgs-basic'}`}>
-        <div className="pd-sg pd-sg-att">
-          <div className="pd-sg-h">
-            <span className="pd-sg-ic"><GoalIcon /></span>
-            Tấn công
+        {isGkExtended ? (
+          <div className="pd-sg pd-sg-att">
+            <div className="pd-sg-h">
+              <span className="pd-sg-ic"><GloveIcon /></span>
+              Thủ môn
+            </div>
+            <StatRow label="Cứu thua" value={totals?.saves} sub={p90(totals?.saves)} />
+            <StatRow label="Bàn thua" value={totals?.goalsConceded} sub={p90(totals?.goalsConceded)} />
+            <StatRow label="Giữ sạch lưới" value={totals?.cleanSheets} sub={csPct} />
+            <StatRow
+              label="Tỉ lệ cản phá"
+              value={saveRate?.pct != null ? `${saveRate.pct}%` : null}
+              sub={saveRate && saveRate.shotsOnTarget > 0 ? `${saveRate.saves}/${saveRate.shotsOnTarget}` : null}
+            />
           </div>
-          <StatRow label="Bàn thắng" value={totals?.goals} sub={p90(totals?.goals)} />
-          <StatRow label="Kiến tạo" value={totals?.assists} sub={p90(totals?.assists)} />
-          {isExtended && (
-            <>
-              <StatRow label="xG" value={fmtDec(totals?.expectedGoals)} sub={p90(totals?.expectedGoals)} />
-              <StatRow label="xA" value={fmtDec(totals?.expectedAssists)} sub={p90(totals?.expectedAssists)} />
-            </>
-          )}
-        </div>
+        ) : (
+          <div className="pd-sg pd-sg-att">
+            <div className="pd-sg-h">
+              <span className="pd-sg-ic"><GoalIcon /></span>
+              Tấn công
+            </div>
+            <StatRow label="Bàn thắng" value={totals?.goals} sub={p90(totals?.goals)} />
+            <StatRow label="Kiến tạo" value={totals?.assists} sub={p90(totals?.assists)} />
+            {isExtended && (
+              <>
+                <StatRow label="xG" value={fmtDec(totals?.expectedGoals)} sub={p90(totals?.expectedGoals)} />
+                <StatRow label="xA" value={fmtDec(totals?.expectedAssists)} sub={p90(totals?.expectedAssists)} />
+              </>
+            )}
+          </div>
+        )}
 
         {isExtended && (
           <div className="pd-sg pd-sg-def">
@@ -57,13 +76,6 @@ export default function PlayerSeasonGroups({ totals, roleGroup, season }) {
             <StatRow label="Tắc bóng" value={totals?.tackles} sub={p90(totals?.tackles)} />
             <StatRow label="Chặn/cắt bóng" value={totals?.clearancesBlocksInterceptions} sub={p90(totals?.clearancesBlocksInterceptions)} />
             <StatRow label="Đoạt lại bóng" value={totals?.recoveries} sub={p90(totals?.recoveries)} />
-            {roleGroup === 'GK' && (
-              <>
-                <StatRow label="Cứu thua" value={totals?.saves} sub={p90(totals?.saves)} />
-                <StatRow label="Bàn thua" value={totals?.goalsConceded} sub={p90(totals?.goalsConceded)} />
-                <StatRow label="Giữ sạch lưới" value={totals?.cleanSheets} sub={csPct} />
-              </>
-            )}
           </div>
         )}
 
