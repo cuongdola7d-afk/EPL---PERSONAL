@@ -35,7 +35,8 @@ Ràng buộc kỹ thuật trong `FplClient` / `FplJsonParser` / `FplCollectorSer
 - **CLB:** `backend/data/fpl-2026/team-map.csv` (`fpl_team_id,club_id,fpl_name,club_name`) — đủ 20 CLB Premier League 2026/27.
 - **Cầu thủ:** `backend/data/fpl-2026/player-map.csv` (`fpl_element_id,player_id,fpl_name,player_name,source,verified_on`).
   - Khởi tạo từ các cặp `fpl_id` trong `backend/data/roster-2026-09-30/*.json` sau khi đối chiếu CLB theo membership hiện hành, bổ sung các trường hợp khớp **duy nhất** theo `(club_id, họ tên chuẩn hóa bỏ dấu)`.
-  - Các trường hợp chưa chắc chắn hoặc thiếu membership được ghi tại `backend/data/fpl-2026/player-map-pending.csv` để chủ dự án xác nhận; **không đoán**.
+  - Các trường hợp chưa chắc chắn hoặc nghi trùng hồ sơ cũ được ghi tại `backend/data/fpl-2026/player-map-pending.csv` để chủ dự án xác nhận; **không đoán**.
+  - **Quy tắc hồ sơ tối thiểu (chốt ngày 23/11/2026):** nếu cầu thủ chưa có trong DB nhưng có trong ảnh đội hình SofaScore **và** có trên FPL (`bootstrap-static`), đã kiểm tra không trùng với hồ sơ cũ (tên, CLB cũ/mới, FPL element), thì được **tự tạo hồ sơ tối thiểu không cần hỏi** (`players`, nhóm vị trí mùa trong `player_season_stats`, `manual_player_memberships`; **không** thêm OVR, vị trí Fantasy chi tiết, giá hay ảnh), cập nhật `player-map.csv`, ghi vào `sources.md` của vòng và liệt kê trong báo cáo. Nếu nghi trùng thì dừng và hỏi.
 - **Trận:** tính tự động lúc chạy theo bộ `(home_club_id, away_club_id)` trên **toàn bộ mùa 2026** trong bảng `fixtures`, đối chiếu thêm ngày đá UTC (`match_date`). Cách này xử lý cả trường hợp FPL dời trận sang `event` khác. Phải khớp đúng 1-1 cho cả vòng, nếu không thì dừng ngay. Kết quả ghi ra `fixture-map.csv` trong thư mục vòng.
 
 ## 4. Bảng chỉ số mở rộng (`manual_fixture_player_extra_stats`)
@@ -122,7 +123,7 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
    - `BENCH_CARD`: cầu thủ trong danh sách trận có FPL `minutes = 0` nhưng `yellow_cards > 0` hoặc `red_cards > 0` (không ghi `0` thẻ âm thầm).
    - `SCORE_MISMATCH`: tỉ số FPL khác tỉ số `fixtures` trong DB.
 
-### Bước 5 — Backup và nhập dữ liệu vào DB (thử H2 trước, sau đó production)
+### Bước 5 — Nhập dữ liệu vào DB (thử H2 trước, sau đó production)
 
 #### Cách chạy lệnh trên production (Aiven MySQL)
 
@@ -130,11 +131,13 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 - `PREMIERHUB_JDBC_URL` có dạng `jdbc:mysql://HOST:PORT/DATABASE`, **không có** phần `?…` phía sau.
 - Chỉ nạp các biến này vào đúng cửa sổ terminal/tiến trình chạy lệnh production, chạy xong thì đóng cửa sổ đó. **Không in** giá trị biến ra màn hình hay log, **không chép** vào bất kỳ file nào trong repo.
 - `backend/.env.local` **không bao giờ** trỏ tới database thật; chạy local luôn dùng H2.
-- Trước mọi lần ghi production, bắt buộc tuân thủ trình tự: **thử trên H2 → backup Aiven → được chủ dự án đồng ý rõ ràng**.
+- **Quy tắc thử H2 và backup Aiven (chốt ngày 23/11/2026):** luôn chạy thử thành công trên H2 trước khi ghi production.
+  - **Không bắt buộc backup Aiven** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng importer idempotent, đã chạy thử trên H2).
+  - **Bắt buộc backup Aiven** ngoài Git trước thao tác nguy hiểm: đổi schema; xóa hoặc sửa hàng loạt dữ liệu đã có (ví dụ gộp ID trùng); nhập lại hoặc ghi đè dữ liệu cũ.
 
 #### Trình tự nhập
 
-Thực hiện theo `docs/gameweek-data-workflow.md` (xác minh đúng đích, tạo backup mới ngoài Git, thử trên H2 trước):
+Thực hiện theo `docs/gameweek-data-workflow.md` (xác minh đúng đích, thử trên H2 trước; tạo backup mới ngoài Git nếu là thao tác nguy hiểm):
 1. Nhập thống kê chính bằng importer hiện có: `--premierhub.manual-match-stats.enabled=true --premierhub.manual-match-stats.file=data/gwNN-2026/manual-match-stats-2026-GWNN.csv` (trên production thêm `--spring.profiles.active=prod --spring.sql.init.mode=never`).
 2. Nhập chỉ số mở rộng bằng importer mới (idempotent, transactional, từ chối ghi đè giá trị khác `NULL`, hỗ trợ GW1–GW38 mùa 2026 và không bao giờ ghi vào `manual_fixture_player_stats`):
 

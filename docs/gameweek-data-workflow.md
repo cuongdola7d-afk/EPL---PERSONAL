@@ -38,9 +38,15 @@ Importer membership dùng `fixtures.match_date`, không dùng ngày hiện tại
 
 Ghi URL **nếu nguồn có URL**, hoặc tham chiếu ảnh/bảng người dùng gửi, ngày kiểm tra và phạm vi nguồn theo fixture/CLB trong `sources.md`. Ảnh Lineups là bằng chứng hợp lệ; không yêu cầu hay bịa URL SofaScore khi nguồn là ảnh. Không suy ra đá chính từ rating, phút, eligiblePositions hay sơ đồ thường dùng. Giữ sơ đồ mặc định do người dùng chốt; không biến nó thành sơ đồ trận đã xác minh. Cần đủ danh sách trận của cả hai đội, 11 người đá chính không trùng ID mỗi đội, dự bị vào sân và dự bị không vào sân, sơ đồ/vị trí cần để dựng sân, cùng phút/bàn/kiến tạo/thẻ và chỉ số mở rộng (từ GW11 thu thập bằng FPL collector rồi ghép ảnh rating SofaScore theo [fpl-collection-2026.md](fpl-collection-2026.md); GW1–GW10 giữ nguyên số liệu cơ bản StatMuse, không nhập lại).
 
-Đối chiếu `player_id`, membership tại ngày trận và roster hiện đang hiển thị. Khi có căn cứ CLB/ngày bắt đầu, dùng importer membership hiện có xử lý khoảng cũ và thêm khoảng hiện hành `end_date` trống cho người xác nhận còn thuộc CLB; kiểm tra không chồng lấn, không đổi ID và không tự kéo dài từ đầu mùa hoặc chỉ thêm một ngày của GW. Nếu chưa có căn cứ ngày bắt đầu/CLB, có nhiều ID có thể khớp hoặc thiếu dòng mùa, ghi tên, fixture, CLB và phần cần xác nhận; không âm thầm bỏ người, đặt ID/ngày giả. Lịch sử trận phải dựa trên membership **tại ngày trận**, không phụ thuộc roster hiện tại.
+Đối chiếu `player_id`, membership tại ngày trận và roster hiện đang hiển thị. Khi có căn cứ CLB/ngày bắt đầu, dùng importer membership hiện có xử lý khoảng cũ và thêm khoảng hiện hành `end_date` trống cho người xác nhận còn thuộc CLB; kiểm tra không chồng lấn, không đổi ID và không tự kéo dài từ đầu mùa hoặc chỉ thêm một ngày của GW. Nếu chưa có căn cứ ngày bắt đầu/CLB hoặc nghi ngờ có nhiều ID có thể khớp, ghi tên, fixture, CLB và phần cần xác nhận rồi dừng hỏi; không âm thầm bỏ người, đặt ID/ngày giả. Lịch sử trận phải dựa trên membership **tại ngày trận**, không phụ thuộc roster hiện tại.
 
-Chỉ bổ sung hồ sơ, OVR và vị trí của người mới khi được yêu cầu. Giữ mọi ngoại lệ người dùng đã xác nhận, dẫn lại bằng chứng thay vì yêu cầu xác nhận lại.
+**Quyết định thường trực ngày 23/11/2026 — Tự tạo hồ sơ tối thiểu:** được **tự tạo hồ sơ tối thiểu không cần hỏi** khi cầu thủ chưa có trong database, nếu thỏa đủ các điều kiện sau:
+- Cầu thủ có trong ảnh đội hình SofaScore **và** có trên FPL (`bootstrap-static`).
+- Đã kiểm tra không trùng người với hồ sơ cũ (đối chiếu tên, CLB cũ/mới, FPL element). Nếu nghi trùng thì **dừng và hỏi**.
+- Chỉ tạo thông tin tối thiểu: `players`, nhóm vị trí mùa trong `player_season_stats` (`GOALKEEPER`/`DEFENDER`/`MIDFIELDER`/`FORWARD`), và `manual_player_memberships`. **Không** thêm OVR, vị trí Fantasy chi tiết (`player_specific_positions`/`player_eligible_positions`), giá hay ảnh.
+- Ghi rõ lý do, ID mới và nguồn vào `sources.md` của vòng, đồng thời liệt kê trong báo cáo.
+
+Chỉ bổ sung hồ sơ đầy đủ, OVR và vị trí Fantasy chi tiết của người mới khi được yêu cầu. Giữ mọi ngoại lệ người dùng đã xác nhận, dẫn lại bằng chứng thay vì yêu cầu xác nhận lại.
 
 ## 3. Một thư mục và một CSV thống kê cuối cho mỗi GW
 
@@ -167,12 +173,14 @@ Membership theo importer: `manual_player_memberships.start_date <= fixtures.matc
 
 Khi nhận rating mới: ghép đúng `(fixture_id,player_id)` với ảnh/bảng, kiểm tra tên/CLB bằng ID hiện có; chỉ cập nhật rating được cung cấp, giữ các chỉ số cũ. Chạy reader chung và đối chiếu **phần thay đổi**, không thu thập lại phút/bàn/thẻ. Không dùng patch để thay giá trị khác đã lưu.
 
-## 6. Nhập production phần đã xác minh sau backup
+## 6. Nhập production phần đã xác minh (sau kiểm thử H2)
 
 Yêu cầu “Tổng hợp GW N mùa 2026/27” đã cho phép bước nhập dữ liệu **các fixture FINISHED được xác minh** theo quy trình thường trực. Nếu người dùng giới hạn rõ “chỉ chuẩn bị/chưa nhập SQL” thì giữ giới hạn đó. Không nhập phần còn thiếu ảnh, rating, membership hoặc trận chưa FINISHED. Trước khi ghi:
 
-1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server (Railway đã xóa ngày 21/11/2026; không mặc định H2 local là production, không in mật khẩu/URL chứa bí mật). Thông tin kết nối Aiven nằm ngoài repo tại `D:\File Jva\PrismaXI-secrets\aiven-production.env` (`PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`) và `D:\File Jva\PrismaXI-secrets\ca.pem`; `backend/.env.local` không bao giờ trỏ tới database thật (chi tiết xem [fpl-collection-2026.md](fpl-collection-2026.md#bước-5--backup-và-nhập-dữ-liệu-vào-db-thử-h2-trước-sau-đó-production)).
-2. Tạo SQL backup mới ngoài Git trước lần ghi, lưu đích/thời gian/phạm vi, đường dẫn, dung lượng và SHA-256 trong checkpoint. `backend/local-backups/` đã được ignore. Repo không có command backup MySQL 2026 chuyên dụng; dùng công cụ xuất SQL của môi trường đã xác minh, kiểm tra backup đọc được và có bảng sẽ bị tác động. Không dùng `premierhub.snapshot.mode`: đó là snapshot GW1 mùa 2024/25. Chưa tạo được backup thì chưa ghi.
+1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server (Railway đã xóa ngày 21/11/2026; không mặc định H2 local là production, không in mật khẩu/URL chứa bí mật). Thông tin kết nối Aiven nằm ngoài repo tại `D:\File Jva\PrismaXI-secrets\aiven-production.env` (`PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`) và `D:\File Jva\PrismaXI-secrets\ca.pem`; `backend/.env.local` không bao giờ trỏ tới database thật (chi tiết xem [fpl-collection-2026.md](fpl-collection-2026.md#bước-5--nhập-dữ-liệu-vào-db-thử-h2-trước-sau-đó-production)).
+2. **Quyết định thường trực ngày 23/11/2026 — Backup Aiven:**
+   - **Không bắt buộc** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng các importer idempotent đã chạy thử thành công trên H2 local).
+   - **Bắt buộc** tạo SQL backup mới ngoài Git trước mọi thao tác nguy hiểm: đổi schema/migration; xóa hoặc sửa hàng loạt dữ liệu đã có (ví dụ gộp ID trùng); nhập lại hoặc ghi đè dữ liệu cũ. Khi backup là bắt buộc, lưu đích/thời gian/phạm vi, đường dẫn, dung lượng và SHA-256 trong checkpoint (`backend/local-backups/` đã được ignore), kiểm tra backup đọc được và có bảng sẽ bị tác động; không dùng `premierhub.snapshot.mode` (đó là snapshot GW1 mùa 2024/25); chưa tạo được backup thì chưa ghi.
 3. So sánh đầu vào với dữ liệu đích theo fixture/player_id và từng trường. Lỗi/xung đột báo fixture, player_id, tên, trường, giá trị đã lưu và giá trị dự kiến; không tự đổi hoặc xóa dữ liệu cũ. Kiểm tra schema cần thiết trước khi nhập đội hình; không âm thầm chạy migration.
 4. Sau khi sync fixture/BXH và đối chiếu ID, nhập membership đã xác minh bằng importer hiện có, rồi thống kê trận → chỉ số mở rộng FPL (`manual_fixture_player_extra_stats`) → đội hình/sơ đồ → bằng chứng Fantasy (CSV cuối, unrated và vắng mặt nếu có). Đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt. Không bật runner thường trực hoặc thay cấu hình deploy.
 

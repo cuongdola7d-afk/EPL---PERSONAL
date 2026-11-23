@@ -74,7 +74,7 @@ Checkpoint và dữ liệu nằm ngoài `docs/`:
 | [Bộ hồ sơ hợp nhất](../backend/data/player-data-production-2026-10-04/README.md) | Snapshot và manifest nguồn; chữ production trong tên không tự cấp quyền ghi |
 | [backend/data](../backend/data), [backend/sql](../backend/sql) | Giữ batch/nguồn/bằng chứng và migration/preflight; CSV không tự được nhập khi commit/deploy |
 
-“Thu thập” bao gồm nhập production phần đã xác minh sau kiểm đích và backup, theo phạm vi người dùng giao. Mở GW, đổi deadline/roster, công bố/tái công bố và deploy là phạm vi riêng. Không tạo dòng giả để đủ 40/400 hoặc suy rating 0 từ NULL. Giữ nguồn/sidecar theo fixture/GW dù file chỉ có header.
+“Thu thập” bao gồm nhập production phần đã xác minh sau kiểm đích và thử thành công trên H2 (backup Aiven chỉ bắt buộc trước thao tác nguy hiểm; hồ sơ tối thiểu cho cầu thủ mới đủ điều kiện được tự tạo theo quy tắc 23/11/2026), theo phạm vi người dùng giao. Mở GW, đổi deadline/roster, công bố/tái công bố và deploy là phạm vi riêng. Không tạo dòng giả để đủ 40/400 hoặc suy rating 0 từ NULL. Giữ nguồn/sidecar theo fixture/GW dù file chỉ có header.
 
 ## Vận hành
 
