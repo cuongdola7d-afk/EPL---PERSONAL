@@ -634,6 +634,159 @@ class LiveScoreServiceTest {
         assertEquals(71, okaforGoals.get(1).approxMinute());
     }
 
+    @Test
+    void replayRealCaptureGw11CuratedSetVerifiesFinalScoresInternalPlayerIdsYoroRedCardFtTransitionsAndExactBroadcastCount() {
+        String realCapturePath = Path.of("src/test/resources/fpl-live/real-capture-gw11").toAbsolutePath().toString();
+        LiveScoreService replayService = new LiveScoreService(
+                jdbc, fplClient, streamService, objectMapper, clock, teamMap, playerMap, true, realCapturePath, List.of("default"));
+        assertTrue(replayService.isReplayEnabled());
+
+        String hullFtStatusAtStep14 = null;
+        String hullFtStatusAtStep15 = null;
+        String livFtStatusAtStep31 = null;
+        String livFtStatusAtStep32 = null;
+
+        int step = 0;
+        while (replayService.replayNextStep()) {
+            step++;
+            if (step == 14) {
+                hullFtStatusAtStep14 = replayService.currentMatches().stream()
+                        .filter(m -> m.fixtureId() == HULL_BHA_DB_ID)
+                        .map(LiveMatchState::status).findFirst().orElse(null);
+            } else if (step == 15) {
+                hullFtStatusAtStep15 = replayService.currentMatches().stream()
+                        .filter(m -> m.fixtureId() == HULL_BHA_DB_ID)
+                        .map(LiveMatchState::status).findFirst().orElse(null);
+            } else if (step == 31) {
+                livFtStatusAtStep31 = replayService.currentMatches().stream()
+                        .filter(m -> m.fixtureId() == LIV_MUN_DB_ID)
+                        .map(LiveMatchState::status).findFirst().orElse(null);
+            } else if (step == 32) {
+                livFtStatusAtStep32 = replayService.currentMatches().stream()
+                        .filter(m -> m.fixtureId() == LIV_MUN_DB_ID)
+                        .map(LiveMatchState::status).findFirst().orElse(null);
+            }
+        }
+
+        assertEquals(32, step, "Curated real capture directory has 32 files");
+        assertEquals(0L, fplClient.totalRequests(), "Replay mode must never call FPL over network");
+
+        // Out of 32 files: 6 files have no state change for active matches (205501 pre-match,
+        // 210135 unchanged min=0, 215803 halftime min=45, 225702 stoppage 1-0, 231611 between matches,
+        // 002652 halftime min=45). Only the 26 actual state transitions broadcast!
+        assertEquals(26, recorder.scoreEvents().size(),
+                "Number of broadcasts must equal the exact number of actual match state changes (26)");
+
+        // FT transitions happen on the exact step where finished_provisional becomes true
+        assertEquals("LIVE", hullFtStatusAtStep14);
+        assertEquals("FT", hullFtStatusAtStep15);
+        assertEquals("LIVE", livFtStatusAtStep31);
+        assertEquals("FT", livFtStatusAtStep32);
+
+        List<LiveMatchState> tracked = replayService.currentMatches();
+        assertEquals(2, tracked.size(), "Only the 2 Sunday matches (Hull-Brighton and Liverpool-MU) were LIVE during capture");
+
+        // 1. Verify Hull 2-0 Brighton (fixtureId = 1000560646)
+        LiveMatchState hullBrighton = tracked.stream()
+                .filter(m -> m.fixtureId() == HULL_BHA_DB_ID)
+                .findFirst().orElseThrow();
+        assertEquals("FT", hullBrighton.status());
+        assertEquals(2, hullBrighton.homeScore());
+        assertEquals(0, hullBrighton.awayScore());
+        assertEquals(2, hullBrighton.goals().size());
+        for (GoalEvent g : hullBrighton.goals()) {
+            assertEquals(2000020008, g.playerId());
+            assertEquals(295, g.fplElementId());
+            assertEquals("Oli McBurnie", g.playerName());
+            assertEquals("home", g.side());
+            assertFalse(g.ownGoal());
+            assertEquals(90, g.approxMinute());
+        }
+
+        // 2. Verify Liverpool 4-0 Manchester United (fixtureId = 1000560645)
+        LiveMatchState livMun = tracked.stream()
+                .filter(m -> m.fixtureId() == LIV_MUN_DB_ID)
+                .findFirst().orElseThrow();
+        assertEquals("FT", livMun.status());
+        assertEquals(4, livMun.homeScore());
+        assertEquals(0, livMun.awayScore());
+        assertEquals(4, livMun.goals().size());
+
+        // Goal 1: Dominik Szoboszlai (element 368 -> internal playerId 2000003008, approxMinute 10)
+        assertEquals(2000003008, livMun.goals().get(0).playerId());
+        assertEquals(368, livMun.goals().get(0).fplElementId());
+        assertEquals("Dominik Szoboszlai", livMun.goals().get(0).playerName());
+        assertEquals(10, livMun.goals().get(0).approxMinute());
+
+        // Goal 2: Florian Wirtz (element 366 -> internal playerId 2000003007, approxMinute 13)
+        assertEquals(2000003007, livMun.goals().get(1).playerId());
+        assertEquals(366, livMun.goals().get(1).fplElementId());
+        assertEquals("Florian Wirtz", livMun.goals().get(1).playerName());
+        assertEquals(13, livMun.goals().get(1).approxMinute());
+
+        // Goal 3: Rio Ngumoha (element 369 -> internal playerId 2000003024, approxMinute 66)
+        assertEquals(2000003024, livMun.goals().get(2).playerId());
+        assertEquals(369, livMun.goals().get(2).fplElementId());
+        assertEquals("Rio Ngumoha", livMun.goals().get(2).playerName());
+        assertEquals(66, livMun.goals().get(2).approxMinute());
+
+        // Goal 4: Victor Munoz (element 377 -> internal playerId 2000003014, approxMinute 82)
+        assertEquals(2000003014, livMun.goals().get(3).playerId());
+        assertEquals(377, livMun.goals().get(3).fplElementId());
+        assertEquals("Victor Munoz", livMun.goals().get(3).playerName());
+        assertEquals(82, livMun.goals().get(3).approxMinute());
+
+        // Red card: Leny Yoro (element 420 -> internal playerId 2000006014, away, approxMinute 8)
+        assertEquals(1, livMun.redCards().size());
+        PlayerEvent yoroRed = livMun.redCards().getFirst();
+        assertEquals(2000006014, yoroRed.playerId());
+        assertEquals(420, yoroRed.fplElementId());
+        assertEquals("Leny Yoro", yoroRed.playerName());
+        assertEquals("away", yoroRed.side());
+        assertEquals(8, yoroRed.approxMinute());
+    }
+
+    @Test
+    void mcBurnieStoppageTimeGoalsHaveApproxMinute90WhenTrackedLiveAndNullWhenFirstSeenAtFt() throws Exception {
+        Path dir = Path.of("src/test/resources/fpl-live/real-capture-gw11/fixtures");
+        String jsonLive00At89 = Files.readString(dir.resolve("20261122-225300.json"), StandardCharsets.UTF_8);
+        String jsonLive10At90 = Files.readString(dir.resolve("20261122-225601.json"), StandardCharsets.UTF_8);
+        String jsonLive20At90 = Files.readString(dir.resolve("20261122-225903.json"), StandardCharsets.UTF_8);
+        String jsonFt20At90 = Files.readString(dir.resolve("20261122-230104.json"), StandardCharsets.UTF_8);
+
+        // Case A: Backend is already tracking the match while LIVE (0-0 at 89'),
+        // then McBurnie scores at 22:56 (90') and 22:59 (90') in stoppage time -> approxMinute = 90 is accurate!
+        clock.setInstant(Instant.parse("2026-11-22T15:53:00Z"));
+        LiveScoreService liveTrackedService = new LiveScoreService(
+                jdbc, fplClient, streamService, objectMapper, clock, teamMap, playerMap, true, "", List.of());
+        liveTrackedService.processFixturesJson(jsonLive00At89, false);
+        liveTrackedService.processFixturesJson(jsonLive10At90, false);
+        liveTrackedService.processFixturesJson(jsonLive20At90, false);
+        liveTrackedService.processFixturesJson(jsonFt20At90, false);
+
+        LiveMatchState trackedState = liveTrackedService.currentMatches().stream()
+                .filter(m -> m.fixtureId() == HULL_BHA_DB_ID)
+                .findFirst().orElseThrow();
+        assertEquals(2, trackedState.goals().size());
+        assertEquals(90, trackedState.goals().get(0).approxMinute());
+        assertEquals(90, trackedState.goals().get(1).approxMinute());
+
+        // Case B: Backend sees the match for the FIRST time when it is already FT (20261122-230104.json)
+        // -> both McBurnie goals were pre-existing on initial sighting, so approxMinute MUST be null!
+        clock.setInstant(Instant.parse("2026-11-22T16:01:04Z"));
+        LiveScoreService lateStartService = new LiveScoreService(
+                jdbc, fplClient, streamService, objectMapper, clock, teamMap, playerMap, true, "", List.of());
+        lateStartService.processFixturesJson(jsonFt20At90, false);
+
+        LiveMatchState lateState = lateStartService.currentMatches().stream()
+                .filter(m -> m.fixtureId() == HULL_BHA_DB_ID)
+                .findFirst().orElseThrow();
+        assertEquals("FT", lateState.status());
+        assertEquals(2, lateState.goals().size());
+        assertNull(lateState.goals().get(0).approxMinute());
+        assertNull(lateState.goals().get(1).approxMinute());
+    }
+
     private static final class MutableClock extends Clock {
         private Instant current;
 

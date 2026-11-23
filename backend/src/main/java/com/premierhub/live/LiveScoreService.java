@@ -155,7 +155,7 @@ public class LiveScoreService {
         return List.copyOf(list);
     }
 
-    @Scheduled(fixedDelayString = "${premierhub.live.poll-interval-ms:60000}",
+    @Scheduled(fixedDelayString = "${premierhub.live.poll-interval-ms:30000}",
                initialDelayString = "${premierhub.live.poll-initial-delay-ms:5000}")
     public void scheduledPoll() {
         if (!enabled || replayEnabled) {
@@ -320,9 +320,7 @@ public class LiveScoreService {
     private boolean shouldTrackFixture(String status, TrackedFixture existing, DbFixture dbFixture,
                                        Instant kickoff, Instant now, boolean isReplay) {
         if (isReplay) {
-            return existing != null
-                    || LiveMatchState.STATUS_LIVE.equals(status)
-                    || LiveMatchState.STATUS_FT.equals(status);
+            return existing != null || LiveMatchState.STATUS_LIVE.equals(status);
         }
         if (evictedFtFixtureIds.contains(dbFixture.id())) {
             return false;

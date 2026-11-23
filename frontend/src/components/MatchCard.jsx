@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import { clubVisual } from '../utils/matchView.js'
-import { resolveMatchDisplay } from '../utils/liveScores.js'
+import { formatLiveStatusBadge, resolveMatchDisplay } from '../utils/liveScores.js'
 import MatchKickoff from './MatchKickoff.jsx'
 
 const LABELS = {
@@ -14,10 +15,26 @@ export function ClubCrest({ name, large = false }) {
 }
 
 export function MatchStatus({ status, liveState = null }) {
+  const isLiveTicking = liveState?.status === 'LIVE' &&
+    Number.isInteger(liveState.minute) &&
+    liveState.minute > 0 &&
+    liveState.minute !== 45 &&
+    liveState.minute !== 90
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    setNowMs(Date.now())
+    if (!isLiveTicking) {
+      return undefined
+    }
+    const timer = setInterval(() => {
+      setNowMs(Date.now())
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [isLiveTicking, liveState?.minute, liveState?.updatedAt, liveState?.minuteUpdatedAt])
+
   if (liveState?.status === 'LIVE') {
-    const label = Number.isInteger(liveState.minute) && liveState.minute > 0
-      ? `LIVE ${liveState.minute}'`
-      : 'LIVE'
+    const label = formatLiveStatusBadge(liveState, nowMs) ?? 'LIVE'
     return (
       <span className="mx-status mx-status-live">
         <span className="mx-live-dot" aria-hidden="true" />

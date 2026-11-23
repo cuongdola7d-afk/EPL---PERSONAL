@@ -1,5 +1,7 @@
 import { hasMatchScore } from './seasons.js'
 
+const MAX_SMOOTH_INCREMENT_MINUTES = 2
+
 export function isValidLiveMatchState(item) {
   return item !== null &&
     typeof item === 'object' &&
@@ -13,12 +15,75 @@ export function isValidLiveMatchState(item) {
     Array.isArray(item.redCards)
 }
 
-export function formatLiveStatusBadge(liveState) {
+/**
+ * Computes the smooth displayed minute for a LIVE match:
+ * - Returns 0 when not LIVE or server minute <= 0.
+ * - Stands still at 45 and 90 (does not auto-increment during stoppage time / halftime).
+ * - Otherwise adds floor((nowMs - updatedAt) / 60000), capped at server minute + 2.
+ * - When the server sends a new minute, resets immediately to the server minute (even if smaller).
+ *   If server minute did not change (minuteChanged === false), prevents jumping backward by > 1 minute.
+ */
+export function computeLiveDisplayMinute(liveState, nowMs = Date.now(), prevDisplayMinute = null) {
+  if (!liveState || typeof liveState !== 'object' || liveState.status !== 'LIVE') {
+    return 0
+  }
+  const serverMinute = Number.isInteger(liveState.minute) && liveState.minute >= 0
+    ? liveState.minute
+    : 0
+  if (serverMinute <= 0) {
+    return 0
+  }
+  if (serverMinute === 45 || serverMinute === 90) {
+    return serverMinute
+  }
+
+  const baseTimestamp = liveState.minuteUpdatedAt ?? liveState.updatedAt
+  const updatedAtMs = typeof baseTimestamp === 'number'
+    ? baseTimestamp
+    : typeof baseTimestamp === 'string'
+      ? Date.parse(baseTimestamp)
+      : NaN
+
+  let added = 0
+  if (Number.isFinite(updatedAtMs) && Number.isFinite(nowMs) && nowMs > updatedAtMs) {
+    const elapsedMinutes = Math.floor((nowMs - updatedAtMs) / 60000)
+    added = Math.min(MAX_SMOOTH_INCREMENT_MINUTES, Math.max(0, elapsedMinutes))
+  }
+
+  const candidate = serverMinute + added
+
+  if (Number.isInteger(prevDisplayMinute) && prevDisplayMinute > 0 && candidate < prevDisplayMinute) {
+    // When the server sends a new minute (minuteChanged !== false), reset to candidate immediately:
+    // - If diff <= 1 (e.g. client was at +2 and server advanced +1), it steps back at most 1 minute.
+    // - If diff > 1 (large server correction), it resets to the server's minute.
+    // Only when the server did NOT change the minute (minuteChanged === false) do we clamp backward jump to <= 1.
+    if (liveState.minuteChanged === false) {
+      return Math.max(candidate, prevDisplayMinute - 1)
+    }
+  }
+
+  return candidate
+}
+
+export function formatLiveMinuteLabel(liveState, nowMs = Date.now(), prevDisplayMinute = null) {
+  if (!liveState || typeof liveState !== 'object' || liveState.status !== 'LIVE') {
+    return ''
+  }
+  if (liveState.minute === 45) {
+    return "45'+"
+  }
+  if (liveState.minute === 90) {
+    return "90'+"
+  }
+  const displayMinute = computeLiveDisplayMinute(liveState, nowMs, prevDisplayMinute)
+  return displayMinute > 0 ? `${displayMinute}'` : ''
+}
+
+export function formatLiveStatusBadge(liveState, nowMs = Date.now(), prevDisplayMinute = null) {
   if (!liveState || typeof liveState !== 'object') return null
   if (liveState.status === 'LIVE') {
-    return Number.isInteger(liveState.minute) && liveState.minute > 0
-      ? `LIVE ${liveState.minute}'`
-      : 'LIVE'
+    const minuteLabel = formatLiveMinuteLabel(liveState, nowMs, prevDisplayMinute)
+    return minuteLabel ? `LIVE ${minuteLabel}` : 'LIVE'
   }
   if (liveState.status === 'FT') {
     return 'Hết giờ'
@@ -40,6 +105,28 @@ export function formatLiveGoalText(goal) {
   return `${name}${minutePart}${og}`
 }
 
+function enrichLiveStateTiming(prev, item) {
+  if (!prev || prev.status !== 'LIVE' || item.status !== 'LIVE') {
+    return {
+      ...item,
+      minuteUpdatedAt: item.updatedAt,
+      minuteChanged: true,
+    }
+  }
+  if (prev.minute === item.minute) {
+    return {
+      ...item,
+      minuteUpdatedAt: prev.minuteUpdatedAt ?? prev.updatedAt ?? item.updatedAt,
+      minuteChanged: false,
+    }
+  }
+  return {
+    ...item,
+    minuteUpdatedAt: item.updatedAt,
+    minuteChanged: true,
+  }
+}
+
 export function applyLiveSnapshot(currentByFixture = {}, snapshotList = []) {
   if (!Array.isArray(snapshotList)) {
     return { byFixture: currentByFixture, flashedIds: [] }
@@ -48,8 +135,8 @@ export function applyLiveSnapshot(currentByFixture = {}, snapshotList = []) {
   const flashedIds = []
   for (const item of snapshotList) {
     if (!isValidLiveMatchState(item)) continue
-    next[item.fixtureId] = item
     const prev = currentByFixture[item.fixtureId]
+    next[item.fixtureId] = enrichLiveStateTiming(prev, item)
     if (prev && hasScoreChanged(prev, item)) {
       flashedIds.push(item.fixtureId)
     }
@@ -66,7 +153,7 @@ export function applyLiveScoreUpdate(currentByFixture = {}, liveState) {
   return {
     byFixture: {
       ...currentByFixture,
-      [liveState.fixtureId]: liveState,
+      [liveState.fixtureId]: enrichLiveStateTiming(prev, liveState),
     },
     scoreChanged,
   }
@@ -82,7 +169,7 @@ function hasScoreChanged(prev, next) {
   return prev.homeScore !== next.homeScore || prev.awayScore !== next.awayScore
 }
 
-export function resolveMatchDisplay(match, liveState, { preferManualStats = false } = {}) {
+export function resolveMatchDisplay(match, liveState, { preferManualStats = false, nowMs = Date.now() } = {}) {
   if (!match) {
     return {
       scored: false,
@@ -110,7 +197,7 @@ export function resolveMatchDisplay(match, liveState, { preferManualStats = fals
       awayGoals,
       isLive: liveState.status === 'LIVE',
       isLiveFt: liveState.status === 'FT',
-      badgeText: formatLiveStatusBadge(liveState),
+      badgeText: formatLiveStatusBadge(liveState, nowMs),
       useLiveGoals: !match.hasManualStats && Array.isArray(liveState.goals) && liveState.goals.length > 0,
     }
   }
