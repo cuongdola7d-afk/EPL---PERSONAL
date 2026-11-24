@@ -24,10 +24,14 @@ Các endpoint được sử dụng:
 Ràng buộc kỹ thuật trong `FplClient` / `FplJsonParser` / `FplCollectorService`:
 - Gửi `User-Agent: PremierHub-PrismaXI/0.1 (FPL-collector)`, timeout 20 giây, tối đa 2 lần thử lại, gọi tuần tự (không gọi song song).
 - Kiểm tra nghiêm ngặt đủ trường và đúng kiểu dữ liệu (chuỗi số `influence`, `creativity`, `threat`, `ict_index`, `expected_*` chuyển sang `BigDecimal`). Nếu thiếu trường hoặc sai kiểu thì **dừng và báo lỗi rõ ràng**, không tự điền `0`.
-- Chỉ cho phép chạy cả vòng khi **tất cả** trận của vòng đều có `finished = true` (không chấp nhận chỉ có `finished_provisional = true`). Nếu còn trận chưa xong, lệnh dừng và liệt kê các trận chưa kết thúc.
-- Khi muốn thu thập riêng một hoặc vài trận đã đá xong giữa vòng, truyền `--fixture-ids=<id1,id2,...>` (ID nội bộ bảng `fixtures`; hỗ trợ cả `--merge` / `--merge-only`):
+- **Quy tắc bắt buộc (chốt ngày 24/11/2026) — Chỉ nhập trận khi FPL đã chốt (`finished = true`):**
+  - Trước khi nhập bất kỳ trận nào, luôn kiểm tra `fixtures/?event=N`.
+  - Trận nào mới ở trạng thái `finished_provisional = true` (chưa `finished = true`) thì **không nhập**: báo lại cho người dùng và chờ FPL chốt (trong lúc chờ, website đã có số liệu tạm từ job `FplProvisionalSync`).
+  - Luôn ghi rõ trạng thái FPL lúc lấy (`finished_provisional` / `finished`) vào `sources.md` và báo cáo.
+- Chỉ cho phép chạy cả vòng khi **tất cả** trận của vòng đều có `finished = true`. Nếu còn trận chưa xong, lệnh dừng và liệt kê các trận chưa kết thúc.
+- Khi muốn thu thập riêng một hoặc vài trận đã chốt (`finished = true`) giữa vòng, truyền `--fixture-ids=<id1,id2,...>` (ID nội bộ bảng `fixtures`; hỗ trợ cả `--merge` / `--merge-only`):
   - Chỉ kiểm tra `finished = true` đối với các trận được chọn (trận khác trong vòng chưa xong không chặn lệnh); các trận được chọn vẫn phải khớp 1-1 với FPL của đúng vòng, ID sai vòng sẽ dừng và báo lỗi.
-  - Có thể thêm `--allow-provisional=true` (mặc định `false`, chỉ dùng kèm `--fixture-ids`) để chấp nhận trận được chọn mới ở trạng thái `finished_provisional = true`; công cụ sẽ in cảnh báo rõ trên log và ghi `fpl_status=PROVISIONAL` trong `fixture-map.csv` (trận chưa `finished_provisional` vẫn bị dừng).
+  - Cờ `--allow-provisional=true` (mặc định `false`) chỉ tồn tại trong công cụ cho nhu cầu kiểm tra/đối chiếu kỹ thuật; **không dùng để nhập chính thức** theo quy tắc 24/11/2026.
   - Các CSV đầu ra giữ nguyên tên theo vòng (`...-GWNN.csv`), chỉ xuất các trận được chọn và tự gộp theo khóa `(fixture_id, player_id)` khi chạy bổ sung thêm trận khác về sau (không ghi đè mất trận đã làm; lặp cùng trận không nhân đôi dòng; cùng khóa khác giá trị sẽ dừng và báo xung đột).
 
 ## 3. Đối chiếu mã (lưu trong repo, không tạo bảng DB)
@@ -131,8 +135,8 @@ java -jar target/premierhub-backend-0.1.0-SNAPSHOT.jar `
 - `PREMIERHUB_JDBC_URL` có dạng `jdbc:mysql://HOST:PORT/DATABASE`, **không có** phần `?…` phía sau.
 - Chỉ nạp các biến này vào đúng cửa sổ terminal/tiến trình chạy lệnh production, chạy xong thì đóng cửa sổ đó. **Không in** giá trị biến ra màn hình hay log, **không chép** vào bất kỳ file nào trong repo.
 - `backend/.env.local` **không bao giờ** trỏ tới database thật; chạy local luôn dùng H2.
-- **Quy tắc thử H2 và backup Aiven (chốt ngày 23/11/2026):** luôn chạy thử thành công trên H2 trước khi ghi production.
-  - **Không bắt buộc backup Aiven** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng importer idempotent, đã chạy thử trên H2).
+- **Quy tắc thử H2 và backup Aiven (chốt ngày 23/11/2026 & 24/11/2026):** trước mỗi đợt nhập, luôn tạo lại H2 thử nghiệm **từ dump Aiven mới nhất** (không dùng lại file H2 cũ) và chạy thử thành công 2 lượt trước khi ghi production.
+  - **Không bắt buộc backup Aiven** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng importer idempotent, đã chạy thử trên H2 mới).
   - **Bắt buộc backup Aiven** ngoài Git trước thao tác nguy hiểm: đổi schema; xóa hoặc sửa hàng loạt dữ liệu đã có (ví dụ gộp ID trùng); nhập lại hoặc ghi đè dữ liệu cũ.
 
 #### Trình tự nhập

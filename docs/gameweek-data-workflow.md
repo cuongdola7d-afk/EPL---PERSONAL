@@ -4,12 +4,27 @@
 
 Mục tiêu vận hành từ 21/10/2026: người dùng gửi ảnh rating/danh sách trận cuối đủ 10 trận và yêu cầu thu thập thì tự hoàn thành đến readiness, để ADMIN chỉ còn công bố. Không dừng ở CSV hoặc nhập thống kê. Tự xử lý dự bị không vào sân, người ngoài danh sách và PLAYED được xác nhận không chấm bằng căn cứ đúng fixture/player; chỉ hỏi bổ sung khi thiếu nguồn, không đọc được ảnh, danh tính/membership chưa xác định hoặc trận chưa FINISHED. Không báo ready khi những điều kiện này chưa đạt.
 
+## Quy trình mỗi vòng (tóm tắt)
+
+- **A. Tự động:**
+  - auto-sync lịch và tỉ số (`football-data.org`);
+  - tỉ số live (FPL);
+  - số liệu tạm FPL (`FplProvisionalSync`) khoảng 100 phút sau giờ đá.
+- **B. Mỗi trận:**
+  - người dùng gửi 2 ảnh SofaScore (sơ đồ + điểm đánh giá, danh sách thay người/dự bị);
+  - kiểm tra `fixtures/?event=N` trên FPL đã `finished=true` (nếu mới `finished_provisional` thì **không nhập**, báo lại cho người dùng và chờ — trong lúc chờ web đã có số liệu tạm từ `FplProvisionalSync`);
+  - lấy FPL, ghép ảnh, tạo hồ sơ tối thiểu nếu thiếu theo quy tắc 23/11/2026; ghi trạng thái FPL lúc lấy vào `sources.md` và báo cáo;
+  - tạo H2 thử nghiệm **từ dump Aiven mới nhất** (không dùng lại file H2 cũ), chạy nhập H2 rồi production 2 lượt (không cần backup Aiven với nhập vòng thường);
+  - kiểm tra web thật;
+  - người dùng tự commit và push (không cần deploy nếu chỉ có dữ liệu).
+- **C. Chốt vòng:** đủ 10 trận thì kiểm tra tổng mùa, Đội hình tiêu biểu và readiness; người dùng tự công bố Fantasy bằng tài khoản ADMIN.
+
 ## 1. Bắt đầu từ phần còn lại của vòng được giao
 
 1. Đọc checkpoint và file đã có của đúng GW; kiểm tra Git và dữ liệu liên quan. Nếu vòng đã hoàn thành, chỉ báo trạng thái hoặc xử lý phần người dùng yêu cầu bổ sung. Không thu thập lại GW đã xong, không kiểm kê toàn database.
 2. Lấy đúng 10 fixture của GW từ API PremierHub và đối chiếu database/provider. Dùng ID nội bộ `fixtures.id`, không nhầm với `football_data_fixtures.provider_id`; ánh xạ bằng `football_data_fixtures.fixture_id`. Giữ thời điểm UTC đầy đủ từ `utcDate`/`kickoff_utc`, không tự thêm giờ vào ngày không có giờ. Nếu API chưa trả đủ 10, báo thiếu/mapping sai trước khi kết luận vòng đủ; không bịa fixture.
 3. Chuẩn bị dữ liệu mùa đầy đủ cho mã đồng bộ football-data.org hiện có; sau khi xác minh đích và backup ở mục 6, chạy sync để cập nhật lịch, trạng thái, tỉ số và BXH, rồi đọc lại database/API và xác nhận mapping `fixture_id` từng trận. Không đưa JSON một GW vào batch yêu cầu 20 CLB/380 fixture/20 dòng BXH. Trận chưa đá hoặc chưa được provider xác nhận xong phải giữ trạng thái tương ứng, không tự đổi thành `FINISHED`.
-4. **Điều kiện bắt đầu thu thập (từ GW11):** trận phải đạt `FINISHED` trên football-data.org **và** `finished=true` trên FPL API (không chấp nhận chỉ `finished_provisional=true`, xem [fpl-collection-2026.md](fpl-collection-2026.md)). Xử lý cả hai đội của **mọi fixture đủ điều kiện** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa xác nhận vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã xong.
+4. **Điều kiện bắt đầu thu thập (chốt ngày 24/11/2026 — chỉ nhập khi FPL đã chốt `finished=true`):** trước khi nhập, luôn kiểm tra `fixtures/?event=N` trên FPL. Trận phải đạt `FINISHED` trên football-data.org **và** `finished=true` trên FPL API. Trận nào mới ở trạng thái `finished_provisional=true` (chưa `finished=true`) thì **không nhập**: báo lại cho người dùng và chờ (trong lúc chờ, web đã có số liệu tạm từ job `FplProvisionalSync`). Luôn ghi rõ trạng thái FPL lúc lấy vào `sources.md` và báo cáo (xem [fpl-collection-2026.md](fpl-collection-2026.md)). Xử lý cả hai đội của **mọi fixture đủ điều kiện** trong GW. Ghi trận hoãn, chưa kết thúc hoặc chưa chốt FPL vào danh sách chờ trong `sources.md` và `missing.csv`. Không để trận chờ ngăn phần độc lập của các trận đã chốt.
 5. Có thể chia nội bộ thành batch 5 trận nhưng phải tiếp tục hết danh sách FINISHED, không dừng ở batch đầu. Lấy đúng danh sách trận và cầu thủ thực tế, không ép 10 trận đã xong hoặc 40 người/trận.
 
 Khi cần đọc database, chỉ truy vấn đúng GW/fixture/player liên quan. Ví dụ SQL chỉ đọc, thay `6` bằng GW được giao:
@@ -178,8 +193,9 @@ Khi nhận rating mới: ghép đúng `(fixture_id,player_id)` với ảnh/bản
 Yêu cầu “Tổng hợp GW N mùa 2026/27” đã cho phép bước nhập dữ liệu **các fixture FINISHED được xác minh** theo quy trình thường trực. Nếu người dùng giới hạn rõ “chỉ chuẩn bị/chưa nhập SQL” thì giữ giới hạn đó. Không nhập phần còn thiếu ảnh, rating, membership hoặc trận chưa FINISHED. Trước khi ghi:
 
 1. Xác nhận đích Aiven MySQL mà backend Render production thực sự dùng bằng cấu hình kết nối và đọc danh tính database/server (Railway đã xóa ngày 21/11/2026; không mặc định H2 local là production, không in mật khẩu/URL chứa bí mật). Thông tin kết nối Aiven nằm ngoài repo tại `D:\File Jva\PrismaXI-secrets\aiven-production.env` (`PREMIERHUB_JDBC_URL`, `PREMIERHUB_DB_USER`, `PREMIERHUB_DB_PASSWORD`) và `D:\File Jva\PrismaXI-secrets\ca.pem`; `backend/.env.local` không bao giờ trỏ tới database thật (chi tiết xem [fpl-collection-2026.md](fpl-collection-2026.md#bước-5--nhập-dữ-liệu-vào-db-thử-h2-trước-sau-đó-production)).
-2. **Quyết định thường trực ngày 23/11/2026 — Backup Aiven:**
-   - **Không bắt buộc** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng các importer idempotent đã chạy thử thành công trên H2 local).
+2. **Quyết định thường trực ngày 23/11/2026 & 24/11/2026 — H2 thử nghiệm và Backup Aiven:**
+   - **H2 thử nghiệm:** trước mỗi đợt nhập, luôn tạo lại bản H2 local **từ dump Aiven mới nhất** (không dùng lại file H2 cũ có thể đã lệch sau các đợt nhập/gộp trước) và chạy thử thành công 2 lượt trước khi ghi production.
+   - **Không bắt buộc backup Aiven** khi nhập dữ liệu vòng đấu thường (chỉ thêm dòng mới bằng các importer idempotent đã chạy thử thành công trên H2 local mới).
    - **Bắt buộc** tạo SQL backup mới ngoài Git trước mọi thao tác nguy hiểm: đổi schema/migration; xóa hoặc sửa hàng loạt dữ liệu đã có (ví dụ gộp ID trùng); nhập lại hoặc ghi đè dữ liệu cũ. Khi backup là bắt buộc, lưu đích/thời gian/phạm vi, đường dẫn, dung lượng và SHA-256 trong checkpoint (`backend/local-backups/` đã được ignore), kiểm tra backup đọc được và có bảng sẽ bị tác động; không dùng `premierhub.snapshot.mode` (đó là snapshot GW1 mùa 2024/25); chưa tạo được backup thì chưa ghi.
 3. So sánh đầu vào với dữ liệu đích theo fixture/player_id và từng trường. Lỗi/xung đột báo fixture, player_id, tên, trường, giá trị đã lưu và giá trị dự kiến; không tự đổi hoặc xóa dữ liệu cũ. Kiểm tra schema cần thiết trước khi nhập đội hình; không âm thầm chạy migration.
 4. Sau khi sync fixture/BXH và đối chiếu ID, nhập membership đã xác minh bằng importer hiện có, rồi thống kê trận → chỉ số mở rộng FPL (`manual_fixture_player_extra_stats`) → đội hình/sơ đồ → bằng chứng Fantasy (CSV cuối, unrated và vắng mặt nếu có). Đọc kết quả, chạy lại đúng đầu vào để xác nhận không thêm/cập nhật; đối chiếu MySQL và API từng trận. Các lệnh dưới đây chạy từ `backend/`, dùng JAR hiện có khớp code được duyệt. Không bật runner thường trực hoặc thay cấu hình deploy.

@@ -130,7 +130,25 @@ Người dùng đã duyệt ngày **23/11/2026** tạo 2 hồ sơ tối thiểu 
   - Hồ sơ `K. Lewis-Potter` (`2000030002`): GW11 có `dataStatus=CONFIRMED`, không còn nhãn `Tạm`, tổng mùa `11/11` trận · `846'` · `4` bàn · `1` kiến tạo · rating TB `7.0`.
   - Fantasy GW11 giữ `status=AWAITING_RESULTS`, **chưa công bố**.
 
+## Cập nhật số liệu FPL đã chốt cho 2 trận GW11 (24/11/2026)
+
+- **Lý do & nguồn:** Đối chiếu chỉ đọc toàn bộ 9 trận thu thập ở trạng thái `PROVISIONAL` trước đó với bản FPL đã chốt (`finished = true` trên cả 10/10 trận GW11, raw JSON lưu riêng tại `backend/data/gw11-2026/fpl/raw-final/`). Kết quả: `7/9` trận khớp tuyệt đối `0` ô lệch; chỉ `2` trận (`1000560642` Chelsea 1–4 Leeds và `1000560648` Tottenham 2–0 Ipswich) có tổng `50` ô lệch trên 20 cột so sánh (và chỉ số ICT/xGI) — toàn bộ nằm ở bảng `manual_fixture_player_extra_stats`, **`0` ô lệch** ở `manual_fixture_player_stats` (phút/bàn/kiến tạo/thẻ), không ảnh hưởng rating, đội hình, Fantasy GW11 hay Đội hình tiêu biểu GW11.
+- **Phạm vi cập nhật:** chỉ ghi đè có kiểm soát `manual_fixture_player_extra_stats` cho đúng 2 trận `1000560642` (32 dòng) và `1000560648` (32 dòng) bằng câu lệnh `UPDATE` có giới hạn theo `(fixture_id, player_id)` trong một transaction duy nhất; cập nhật `fpl/fpl-extra-stats-2026-GW11.csv` cho đúng 2 trận này và chuyển `fpl_status` trong `fpl/fixture-map.csv` sang `FINISHED`. Không đụng `manual_fixture_player_stats`, không đụng 8 trận GW11 còn lại, không đụng GW1–GW10, không đổi rating/đội hình/Fantasy.
+- **Backup Aiven bắt buộc trước ghi đè (ngoài Git):**
+  - Đường dẫn: `backend/local-backups/gw11-fpl-final-20261124-165729/aiven-before-gw11-fpl-final-20261124-165729.sql`
+  - Dung lượng: `3.486.807` byte · Số bảng: `46` · `Dump completed`: `True`
+  - SHA-256: `531db8c9a5f0d3904e78e150de8b8b0d60dcae7a64cdf97129d3b1afeb3c2e9e`
+- **Thử nghiệm H2 mới từ dump Aiven (`gw11-fpl-final-h2`):**
+  - Lượt 1: `TX_UPDATE statements=64 rows_updated=64`; Lượt 2: `rows_updated=0`.
+  - Đối chiếu `ManualExtraStatsImporter`: `MANUAL_EXTRA_STATS season=2026 rows=313 inserted=0`; `walton_saves` giảm từ `23` xuống `22`.
+- **Production (Aiven `defaultdb`):**
+  - Lượt 1: `TX_UPDATE statements=64 rows_updated=64`; Lượt 2: `rows_updated=0`.
+  - Đối chiếu `ManualExtraStatsImporter`: `MANUAL_EXTRA_STATS season=2026 rows=313 inserted=0`.
+  - Đếm dòng trước/sau không đổi: `manual_fixture_player_stats` (2026) = `4.400`, `manual_fixture_player_extra_stats` (2026) = `3.397`, `fixture_lineups` (2026) = `120`, `fixture_lineup_players` = `2.400`, `player_season_stats` (2026) = `599`.
+  - Đối chiếu lại cả 9 trận với `raw-final`: **`0` ô lệch** trên toàn bộ 20 cột so sánh và `0` ô lệch trên 4 cột ICT + `expected_goal_involvements` ở 2 trận cập nhật.
+  - Tổng mùa `MANUAL_SEASON_STATS`: chỉ tổng hợp `appearances`, `minutes`, `goals`, `assists` từ `manual_fixture_player_stats` (không đọc `manual_fixture_player_extra_stats` hay `saves`), nên `0` dòng cần cập nhật; số cứu thua mùa của Christian Walton (`2000020044`) trên web tính trực tiếp từ bảng mở rộng đã tự giảm từ `23` xuống `22` (GW11 từ `8` xuống `7`).
+- **Kiểm tra web thật (`https://premierhub.vercel.app`):** trận `1000560648` hiện Walton `7` cứu thua (`BPS 22`), API trả Porro `bonus = 2`, Williams-Barnett `bonus = 3` (`BPS 45`, `xG 0.81`); hồ sơ Christian Walton hiện tổng mùa `22` cứu thua (`22 cứu thua · 12 bàn thua`); trạng thái Fantasy GW11 giữ nguyên (đã được ADMIN tự công bố trước đó, không tác động tới Fantasy).
+
 ## Bước tiếp theo
 
-1. **Đối chiếu lại 9 trận lấy từ trạng thái `PROVISIONAL`** (`1000560642..1000560648, 1000560650, 1000560651`) khi FPL đã chốt `finished = true` nếu cần; không tự ghi đè dữ liệu đã nhập.
-2. **ADMIN tự công bố Fantasy GW11** (khi sẵn sàng). Chưa commit/push/deploy.
+1. GW11 đã hoàn tất 10/10 trận và toàn bộ số liệu FPL đã chốt `FINISHED`. Người dùng tự review, commit và push (không cần deploy nếu chỉ có dữ liệu/tài liệu).
