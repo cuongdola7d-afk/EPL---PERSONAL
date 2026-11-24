@@ -98,8 +98,39 @@ Người dùng đã duyệt ngày **23/11/2026** tạo 2 hồ sơ tối thiểu 
     - Lần 2 (idempotent): tất cả đều `0`.
     - Đối chiếu MySQL sau nhập: GW1–GW10 nguyên vẹn (`4.000` stats / `3.080` extra), Chelsea–Leeds nguyên vẹn (`40` / `32`), 6 trận đợt 2 nguyên vẹn (`240` / `191`); tổng mùa 2026 = `4.360` stats, `3.361` extra, `118` lineups, `2.360` lineup players, `59` fixture confirmations, `35` unrated confirmations. Fantasy GW11 chưa công bố kết quả.
 
+## Thu thập đợt 4 — Brentford FC 4–0 Everton FC (24/11/2026) — hoàn tất 10/10 trận GW11
+
+- **Trận đã thu thập:** `1000560649` (football-data `560649`, FPL `103`) — **Brentford FC (`1000000402`) 4–0 Everton FC (`1000000062`)**, kickoff `2026-11-23T20:00:00Z` (03:00 giờ Việt Nam ngày 24/11/2026).
+- **Trạng thái nguồn lúc thu thập (24/11/2026 ~21:55 giờ Việt Nam):**
+  - FPL API (`fixtures/?event=11`, `event/11/live/`, `bootstrap-static/`): `started=true`, `finished_provisional=true`, `finished=true` (`fpl_status=FINISHED` trong `fpl/fixture-map.csv`), tỉ số `4–0`. Bản raw JSON lưu riêng tại `backend/data/gw11-2026/fpl/raw-1000560649/` để không ảnh hưởng snapshot `raw/` của các đợt trước.
+  - Ảnh SofaScore (2 ảnh người dùng gửi ngày 24/11/2026: ảnh 19 sơ đồ 11v11 + rating đá chính, ảnh 20 danh sách thay người/dự bị + rating). **3 điểm trong ảnh khác bản chép tay của người dùng (đã nhập theo ảnh):**
+    - `M. Kayode` (`2000030004`, #33 Brentford): bản chép ghi `8.3` → ảnh là thẻ cam **`6.3`**.
+    - `J. O'Brien` (`2000020112`, #15 Everton): bản chép ghi `8.5` → ảnh là thẻ vàng **`6.5`**.
+    - `H. Armstrong` (`2000015004`, #45 Everton): bản chép ghi `8.5` → ảnh là thẻ vàng **`6.5`**.
+- **Hồ sơ tối thiểu:** `0` — toàn bộ 40 cầu thủ (20 Brentford + 20 Everton) đã có sẵn trong `players`, `player_season_stats` và `manual_player_memberships` đang mở (`end_date IS NULL`).
+- **Tổng hợp cầu thủ trận `1000560649` (40 dòng):**
+  - **Brentford FC (20 người, `4-2-3-1`):** 16 `PLAYED` (11 đá chính + 5 dự bị vào sân), 4 `DID_NOT_PLAY`, 0 `UNRATED`. Ghi bàn: K. Lewis-Potter (2), V. Janelt (1), F. Carvalho (1); kiến tạo: J. Anthony (2), M. Jensen (1); thẻ vàng/đỏ: 0.
+  - **Everton FC (20 người, `4-2-3-1`):** 16 `PLAYED` (11 đá chính + 5 dự bị vào sân), 4 `DID_NOT_PLAY`, 0 `UNRATED`. Thẻ vàng: V. Mykolenko (1); thẻ đỏ: J. Tarkowski (1).
+  - **Đối chiếu Fantasy GW11:** `fantasy_submitted_picks` cho GW11 = `0`, không phát sinh `confirmed-not-registered.csv`; `missing.csv` = `0` dòng (đủ 10/10 trận GW11).
+- **Trạng thái kiểm tra & nhập đợt 4 (nhập vòng thường — không bắt buộc backup Aiven theo quy tắc 23/11/2026):**
+  - **H2 cô lập (2 lượt):** lượt 1 `MANUAL_MATCH_STATS inserted=40`, `MANUAL_EXTRA_STATS inserted=32`, `MATCH_LINEUPS clubChanges=2 fixtureChanges=4 playerChanges=40`, `FANTASY_EVIDENCE fixture_changes=1`, `MANUAL_SEASON_STATS throughGW=11 fixtures=110 matchRows=4400 seasonRows=600 updated=0`; lượt 2 tất cả `0`.
+  - **Production (Aiven `defaultdb`, 2 lượt):**
+    - Lần 1: `MANUAL_MATCH_STATS rows=400 inserted=40`, `MANUAL_EXTRA_STATS rows=313 inserted=32`, `MATCH_LINEUPS clubs=20 clubChanges=2 verifiedFormations=120 fixtureChanges=4 players=400 playerChanges=40`, `FANTASY_EVIDENCE fixtures=10 fixture_changes=1 unrated_changes=0 absence_changes=0`, `MANUAL_SEASON_STATS throughGW=11 fixtures=110 matchRows=4400 seasonRows=599 updated=0 missingMinutes=1 missingGoals=2 missingAssists=4`.
+    - Lần 2 (idempotent): toàn bộ `inserted=0` / `changes=0` / `updated=0`.
+    - Đối chiếu MySQL sau nhập: GW1–GW10 nguyên vẹn (`4.000` stats / `3.084` extra); GW11 đủ `400` stats (`10` trận) / `313` extra (`10` trận); `fixture_lineups` = `120`; `fixture_lineup_players` = `2.400`; `fantasy_fixture_confirmations` = `60`. Tổng mùa `K. Lewis-Potter` (`2000030002`) cập nhật lên `11` trận / `846` phút / `4` bàn / `1` kiến tạo.
+- **Đối chiếu bảng tạm FPL (`fpl_provisional_player_stats`, giữ nguyên không sửa/xóa):**
+  - `fpl_provisional_player_stats` cho `1000560649` có `32` dòng (`fpl_status=FINAL_FPL`, `fetched_at=2026-11-24T14:49:24Z`), `fpl_provisional_unmapped` = `0`.
+  - So sánh 13 cột (`minutes, goals, assists, yellow_cards, red_cards, saves, bonus, bps, expected_goals, expected_assists, tackles, clearances_blocks_interceptions, recoveries`) với `manual_fixture_player_stats` + `manual_fixture_player_extra_stats`: **32/32 cầu thủ khớp tuyệt đối, `0` sai lệch**, `0` cầu thủ ra sân bị thiếu ở bảng tạm.
+- **Đội hình tiêu biểu GW11 (`/api/fantasy/2026/team-of-week?gameweek=11`):**
+  - `status=COMPLETE`, sơ đồ `4-3-3`, tổng rating **`97.60`**, `completedFixtures=10`, `recordedFixtures=10`, `playedCount=313`, `ratedCount=304`, `candidateCount=283`, `excludedMissingPositions=21`, `excludedNullRatings=9`, `missingSlots=[]`, `conflicts=[]`.
+  - 11 cầu thủ: GK Christian Walton (`2000020044`, IPS, `9.2`), LB Destiny Udogie (`2000030016`, TOT, `8.0`), LCB António Silva (`2000030035`, BOU, `8.2`), RCB James Hill (`2000030109`, BOU, `8.2`), RB Dominik Szoboszlai (`2000003008`, LIV, `8.8`), LCM Florian Wirtz (`2000003007`, LIV, `10.0`), CM Vitaly Janelt (`2000030003`, BRE, `9.2`), RCM Yehor Yarmoliuk (`2000030011`, BRE, `8.7`), LW Rio Ngumoha (`2000003024`, LIV, `10.0`), ST Oli McBurnie (`2000020008`, HUL, `8.7`), RW Noni Madueke (`2000001015`, ARS, `8.6`).
+- **Kiểm tra website production (`https://premierhub.vercel.app`):**
+  - `/api/matches/1000560649/details?season=2026` trả `dataStatus=CONFIRMED`, `evidenceStatus=MANUAL_VERIFIED`, sơ đồ `4-2-3-1` hai bên.
+  - Giao diện trận `1000560649` bỏ nhãn vàng `Số liệu tạm`, mở khóa tab Đội hình (sơ đồ 4-2-3-1 + rating đầy đủ), tab Thống kê hiện `Rating trung bình` (`7.4` vs `6.5`), tab Tổng quan hiện `Cầu thủ xuất sắc nhất trận: K. Lewis-Potter (9.2)`.
+  - Hồ sơ `K. Lewis-Potter` (`2000030002`): GW11 có `dataStatus=CONFIRMED`, không còn nhãn `Tạm`, tổng mùa `11/11` trận · `846'` · `4` bàn · `1` kiến tạo · rating TB `7.0`.
+  - Fantasy GW11 giữ `status=AWAITING_RESULTS`, **chưa công bố**.
+
 ## Bước tiếp theo
 
-1. **Thu thập trận cuối GW11:** `1000560649` (Brentford – Everton, 24/11) khi có trạng thái `FINISHED` và ảnh SofaScore.
-2. **Đối chiếu lại 9 trận lấy từ trạng thái `PROVISIONAL`** (`1000560642..1000560648, 1000560650, 1000560651`) khi FPL chốt `finished = true` bằng cách thu thập vào thư mục tách biệt để so sánh; không tự ghi đè dữ liệu đã nhập.
-3. Khi đủ 10/10 trận GW11: tái tính tổng mùa, đối chiếu Đội hình tiêu biểu GW11 và readiness trước khi ADMIN tự công bố. Chưa commit/push/deploy.
+1. **Đối chiếu lại 9 trận lấy từ trạng thái `PROVISIONAL`** (`1000560642..1000560648, 1000560650, 1000560651`) khi FPL đã chốt `finished = true` nếu cần; không tự ghi đè dữ liệu đã nhập.
+2. **ADMIN tự công bố Fantasy GW11** (khi sẵn sàng). Chưa commit/push/deploy.
