@@ -43,7 +43,7 @@ function SheetRow({ label, value }) {
   )
 }
 
-function PlayerMatchSheet({ player, club, season, evidenceStatus, onClose, returnFocusRef }) {
+function PlayerMatchSheet({ player, club, season, evidenceStatus, isProvisional = false, onClose, returnFocusRef }) {
   const closeRef = useRef(null)
 
   useEffect(() => {
@@ -182,7 +182,11 @@ function PlayerMatchSheet({ player, club, season, evidenceStatus, onClose, retur
           <a className="mx-sh-profile-link" href={profileUrl} onClick={onClose}>
             Xem hồ sơ cầu thủ ›
           </a>
-          <p className="mx-sh-src">Rating: Sofascore · Chỉ số mở rộng: Fantasy Premier League</p>
+          <p className="mx-sh-src">
+            {isProvisional
+              ? 'Số liệu tạm: Fantasy Premier League · Chờ xác nhận rating SofaScore'
+              : 'Rating: Sofascore · Chỉ số mở rộng: Fantasy Premier League'}
+          </p>
         </div>
       </div>
     </div>

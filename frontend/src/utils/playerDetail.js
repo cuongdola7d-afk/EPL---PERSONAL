@@ -34,7 +34,7 @@ export function matchRating(row) {
 }
 
 export function seasonSummary(rows) {
-  const played = rows.filter((row) => matchState(row) === 'played')
+  const played = rows.filter((row) => row.dataStatus !== 'PROVISIONAL_FPL' && matchState(row) === 'played')
   const sum = (field) => played.every((row) => effectiveStat(row, field) !== null)
     ? played.reduce((total, row) => total + effectiveStat(row, field), 0) : null
   const ratings = played.map(matchRating).filter((value) => value !== null)

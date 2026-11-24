@@ -20,6 +20,31 @@ public final class FplMappingReader {
     public static final String CLASSPATH_TEAM_MAP = "data/fpl-2026/team-map.csv";
     public static final String CLASSPATH_PLAYER_MAP = "data/fpl-2026/player-map.csv";
 
+    private final String classpathTeamMap;
+    private final String classpathPlayerMap;
+    private final java.util.List<Path> teamFallbackPaths;
+    private final java.util.List<Path> playerFallbackPaths;
+
+    public FplMappingReader() {
+        this(
+                CLASSPATH_TEAM_MAP,
+                CLASSPATH_PLAYER_MAP,
+                java.util.List.of(Path.of("data/fpl-2026/team-map.csv"), Path.of("backend/data/fpl-2026/team-map.csv")),
+                java.util.List.of(Path.of("data/fpl-2026/player-map.csv"), Path.of("backend/data/fpl-2026/player-map.csv"))
+        );
+    }
+
+    FplMappingReader(
+            String classpathTeamMap,
+            String classpathPlayerMap,
+            java.util.List<Path> teamFallbackPaths,
+            java.util.List<Path> playerFallbackPaths) {
+        this.classpathTeamMap = classpathTeamMap;
+        this.classpathPlayerMap = classpathPlayerMap;
+        this.teamFallbackPaths = teamFallbackPaths;
+        this.playerFallbackPaths = playerFallbackPaths;
+    }
+
     public record TeamMapping(int fplTeamId, int clubId, String fplName, String clubName) {
     }
 
@@ -27,34 +52,65 @@ public final class FplMappingReader {
                                 String source, LocalDate verifiedOn) {
     }
 
+    public record BundledMappings(
+            Map<Integer, TeamMapping> teams,
+            Map<Integer, PlayerMapping> players,
+            String teamsSource,
+            String playersSource
+    ) {
+    }
+
+    public BundledMappings readBundledMappings() throws IOException {
+        LoadedResource<Map<Integer, TeamMapping>> teams = loadBundled(
+                classpathTeamMap, teamFallbackPaths, this::readTeams, this::readTeams);
+        LoadedResource<Map<Integer, PlayerMapping>> players = loadBundled(
+                classpathPlayerMap, playerFallbackPaths, this::readPlayers, this::readPlayers);
+        return new BundledMappings(teams.value(), players.value(), teams.source(), players.source());
+    }
+
     public Map<Integer, TeamMapping> readBundledTeams() throws IOException {
-        ClassPathResource resource = new ClassPathResource(CLASSPATH_TEAM_MAP);
-        if (resource.exists()) {
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-                return readTeams(reader);
-            }
-        }
-        Path local = Path.of("data/fpl-2026/team-map.csv");
-        if (Files.exists(local)) {
-            return readTeams(local);
-        }
-        return readTeams(Path.of("backend/data/fpl-2026/team-map.csv"));
+        return loadBundled(classpathTeamMap, teamFallbackPaths, this::readTeams, this::readTeams).value();
     }
 
     public Map<Integer, PlayerMapping> readBundledPlayers() throws IOException {
-        ClassPathResource resource = new ClassPathResource(CLASSPATH_PLAYER_MAP);
-        if (resource.exists()) {
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-                return readPlayers(reader);
+        return loadBundled(classpathPlayerMap, playerFallbackPaths, this::readPlayers, this::readPlayers).value();
+    }
+
+    private <T> LoadedResource<T> loadBundled(
+            String classpathLocation,
+            java.util.List<Path> fallbackPaths,
+            ReaderLoader<T> fromReader,
+            PathLoader<T> fromPath) throws IOException {
+        if (classpathLocation != null && !classpathLocation.isBlank()) {
+            ClassPathResource resource = new ClassPathResource(classpathLocation);
+            if (resource.exists()) {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    return new LoadedResource<>(fromReader.load(reader), "classpath:" + classpathLocation);
+                }
             }
         }
-        Path local = Path.of("data/fpl-2026/player-map.csv");
-        if (Files.exists(local)) {
-            return readPlayers(local);
+        for (Path candidate : fallbackPaths) {
+            if (Files.exists(candidate)) {
+                return new LoadedResource<>(fromPath.load(candidate), candidate.toAbsolutePath().normalize().toString());
+            }
         }
-        return readPlayers(Path.of("backend/data/fpl-2026/player-map.csv"));
+        throw new java.io.FileNotFoundException(
+                "Bundled FPL mapping not found on classpath:" + classpathLocation
+                        + " or fallback paths " + fallbackPaths);
+    }
+
+    @FunctionalInterface
+    private interface ReaderLoader<T> {
+        T load(BufferedReader reader) throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface PathLoader<T> {
+        T load(Path path) throws IOException;
+    }
+
+    private record LoadedResource<T>(T value, String source) {
     }
 
     public Map<Integer, TeamMapping> readTeams(Path file) throws IOException {

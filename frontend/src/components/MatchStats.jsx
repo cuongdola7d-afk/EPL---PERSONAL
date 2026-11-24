@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { clubVisual, matchPlayerState, matchRating, shortPlayerName } from '../utils/matchView.js'
 import { hasAnyExtraStats, playerStatValue, sortPlayers, teamTotals, topValues } from '../utils/matchStats.js'
 
@@ -57,10 +57,15 @@ function subtitleText(player) {
   return pos
 }
 
-function MatchStats({ match, homePlayers, awayPlayers, evidenceStatus, onSelectPlayer }) {
+function MatchStats({ match, homePlayers, awayPlayers, evidenceStatus, isProvisional = false, onSelectPlayer }) {
   const [side, setSide] = useState('home')
-  const [sortKey, setSortKey] = useState('rating')
+  const [sortKey, setSortKey] = useState(isProvisional ? 'bps' : 'rating')
   const [sortDir, setSortDir] = useState('desc')
+
+  useEffect(() => {
+    setSortKey(isProvisional ? 'bps' : 'rating')
+    setSortDir('desc')
+  }, [match.id, isProvisional])
 
   const homeColor = clubVisual(match.homeClub).color
   const awayColor = clubVisual(match.awayClub).color
@@ -69,7 +74,8 @@ function MatchStats({ match, homePlayers, awayPlayers, evidenceStatus, onSelectP
   const hasExtra = hasAnyExtraStats(homePlayers) || hasAnyExtraStats(awayPlayers)
 
   const visibleCompareRows = COMPARE_ROWS.filter(
-    (row) => homeTotals[row.key] != null || awayTotals[row.key] != null,
+    (row) => !(isProvisional && row.key === 'averageRating') &&
+      (homeTotals[row.key] != null || awayTotals[row.key] != null),
   )
 
   const activeClub = side === 'home' ? match.homeClub : match.awayClub

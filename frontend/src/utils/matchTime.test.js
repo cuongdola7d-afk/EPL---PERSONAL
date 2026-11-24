@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   compareMatchSchedule,
   formatDayGroupHeading,
+  formatVietnamTimeHHmm,
   kickoffInstant,
   matchDateTimeLabel,
   matchDayKey,
@@ -104,4 +105,12 @@ test('formats Vietnamese weekday + dd/mm and day group headings with relative la
   assert.deepEqual(formatDayGroupHeading('2026-11-25', nowVn), { label: 'Thứ Tư, 25/11/2026', relative: 'Ngày mai' })
   assert.deepEqual(formatDayGroupHeading('2026-11-23', nowVn), { label: 'Thứ Hai, 23/11/2026', relative: 'Hôm qua' })
   assert.deepEqual(formatDayGroupHeading('2026-11-21', nowVn), { label: 'Thứ Bảy, 21/11/2026', relative: '' })
+})
+
+test('formatVietnamTimeHHmm converts UTC ISO timestamp to Vietnam HH:mm and handles null/invalid', () => {
+  assert.equal(formatVietnamTimeHHmm('2026-11-22T19:30:00Z'), '02:30')
+  assert.equal(formatVietnamTimeHHmm('2026-11-22T12:05:00Z'), '19:05')
+  assert.equal(formatVietnamTimeHHmm(null), null)
+  assert.equal(formatVietnamTimeHHmm(''), null)
+  assert.equal(formatVietnamTimeHHmm('invalid'), null)
 })

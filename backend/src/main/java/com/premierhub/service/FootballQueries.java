@@ -179,6 +179,7 @@ public class FootballQueries {
     public List<PlayerMatchResponse> playerMatches(int id, int season) {
         validateSeason(season);
         Map<Integer, MatchPlayerStatResponse> manualStats = new HashMap<>();
+        Map<Integer, MatchPlayerStatResponse> provisionalStats = new HashMap<>();
         if (season == 2026) {
             Map<Integer, MatchPlayerExtraStatsResponse> extraByFixture = extraStatsByFixture(id);
             jdbc.query("""
@@ -201,6 +202,27 @@ public class FootballQueries {
                     """, (RowCallbackHandler) rs -> {
                 int fixtureId = rs.getInt("fixture_id");
                 manualStats.put(fixtureId, manualPlayerStat(rs, extraByFixture.get(fixtureId)));
+            }, LEAGUE_ID, season, id);
+            jdbc.query("""
+                    SELECT fp.fixture_id, fp.player_id, fp.club_id, fp.minutes, fp.goals, fp.assists,
+                           fp.yellow_cards, fp.red_cards, fp.saves, fp.goals_conceded, fp.bps, fp.bonus,
+                           fp.tackles, fp.clearances_blocks_interceptions, fp.recoveries,
+                           fp.defensive_contribution, fp.expected_goals, fp.expected_assists,
+                           p.name AS player_name, ps.position
+                    FROM fpl_provisional_player_stats fp
+                    JOIN fixtures f ON f.id=fp.fixture_id AND f.league_id=fp.league_id
+                      AND f.season_year=fp.season_year
+                    JOIN players p ON p.id=fp.player_id
+                    LEFT JOIN player_season_stats ps ON ps.league_id=fp.league_id
+                      AND ps.season_year=fp.season_year AND ps.player_id=fp.player_id
+                      AND ps.club_id=fp.club_id
+                    WHERE fp.league_id=? AND fp.season_year=? AND fp.player_id=?
+                      AND fp.club_id IN (f.home_club_id, f.away_club_id)
+                    """, (RowCallbackHandler) rs -> {
+                int fixtureId = rs.getInt("fixture_id");
+                if (!manualStats.containsKey(fixtureId)) {
+                    provisionalStats.put(fixtureId, provisionalPlayerStat(rs));
+                }
             }, LEAGUE_ID, season, id);
         }
         Set<Integer> fixtureIdsWithStats = Set.copyOf(jdbc.queryForList("""
@@ -230,14 +252,19 @@ public class FootballQueries {
         }
         List<MatchResponse> fixtures = matches(season, null, null, null);
         return fixtures.stream().filter(match -> manualStats.containsKey(match.id())
-                || fixtureIdsWithStats.contains(match.id()) ||
-                fixtureClubs.containsKey(match.id())).map(match -> {
+                || provisionalStats.containsKey(match.id())
+                || fixtureIdsWithStats.contains(match.id())
+                || fixtureClubs.containsKey(match.id())).map(match -> {
             MatchPlayerStatResponse manual = manualStats.get(match.id());
             if (manual != null) {
-                return new PlayerMatchResponse(match, manual.clubId(), manual, "MANUAL_VERIFIED");
+                return new PlayerMatchResponse(match, manual.clubId(), manual, "MANUAL_VERIFIED", "CONFIRMED");
+            }
+            MatchPlayerStatResponse provisional = provisionalStats.get(match.id());
+            if (provisional != null) {
+                return new PlayerMatchResponse(match, provisional.clubId(), provisional, "PROVISIONAL_FPL", "PROVISIONAL_FPL");
             }
             if (!fixtureIdsWithStats.contains(match.id())) {
-                return new PlayerMatchResponse(match, fixtureClubs.get(match.id()), null, null);
+                return new PlayerMatchResponse(match, fixtureClubs.get(match.id()), null, null, "NONE");
             }
             MatchDetailResponse detail = matchDetail(match.id(), season).orElseThrow();
             MatchPlayerStatResponse stats = java.util.stream.Stream.concat(
@@ -245,7 +272,7 @@ public class FootballQueries {
                     .filter(row -> row.playerId() == id).findFirst().orElse(null);
             return new PlayerMatchResponse(match,
                     stats == null ? fixtureClubs.get(match.id()) : stats.clubId(),
-                    stats, detail.evidenceStatus());
+                    stats, detail.evidenceStatus(), stats != null ? "CONFIRMED" : "NONE");
         }).toList();
     }
 
@@ -352,9 +379,45 @@ public class FootballQueries {
                         """, (rs, row) -> manualPlayerStat(rs, extraByPlayer.get(rs.getInt("player_id"))), id, LEAGUE_ID, season);
                 var home = players.stream().filter(player -> player.clubId() == match.homeClubId()).toList();
                 var away = players.stream().filter(player -> player.clubId() == match.awayClubId()).toList();
-                return new MatchDetailResponse(match, home, away,
-                        players.isEmpty() ? "MISSING" : "MANUAL_VERIFIED", null,
-                        lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away));
+                if (!players.isEmpty()) {
+                    return new MatchDetailResponse(match, home, away, "MANUAL_VERIFIED", null,
+                            lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away),
+                            "CONFIRMED", null);
+                }
+                List<ProvisionalDetailRow> provisionalRows = jdbc.query("""
+                        SELECT fp.player_id, p.name AS player_name, fp.club_id, ps.position,
+                               fp.minutes, fp.goals, fp.assists, fp.yellow_cards, fp.red_cards,
+                               fp.saves, fp.goals_conceded, fp.bps, fp.bonus, fp.tackles,
+                               fp.clearances_blocks_interceptions, fp.recoveries, fp.defensive_contribution,
+                               fp.expected_goals, fp.expected_assists, fp.fetched_at
+                        FROM fpl_provisional_player_stats fp
+                        JOIN fixtures f ON f.id=fp.fixture_id AND f.league_id=fp.league_id
+                          AND f.season_year=fp.season_year
+                        JOIN players p ON p.id=fp.player_id
+                        LEFT JOIN player_season_stats ps ON ps.league_id=fp.league_id
+                          AND ps.season_year=fp.season_year AND ps.player_id=fp.player_id
+                          AND ps.club_id=fp.club_id
+                        WHERE fp.fixture_id=? AND fp.league_id=? AND fp.season_year=?
+                          AND fp.club_id IN (f.home_club_id, f.away_club_id)
+                        ORDER BY fp.club_id, p.name, fp.player_id
+                        """, (rs, row) -> new ProvisionalDetailRow(
+                        provisionalPlayerStat(rs),
+                        rs.getTimestamp("fetched_at").toInstant()
+                ), id, LEAGUE_ID, season);
+                if (!provisionalRows.isEmpty()) {
+                    List<MatchPlayerStatResponse> provPlayers = provisionalRows.stream()
+                            .map(ProvisionalDetailRow::stat).toList();
+                    Instant latestFetchedAt = provisionalRows.stream()
+                            .map(ProvisionalDetailRow::fetchedAt)
+                            .max(Instant::compareTo).orElse(null);
+                    var provHome = provPlayers.stream().filter(player -> player.clubId() == match.homeClubId()).toList();
+                    var provAway = provPlayers.stream().filter(player -> player.clubId() == match.awayClubId()).toList();
+                    return new MatchDetailResponse(match, provHome, provAway, "PROVISIONAL_FPL", null,
+                            null, null, "PROVISIONAL_FPL", latestFetchedAt);
+                }
+                return new MatchDetailResponse(match, home, away, "MISSING", null,
+                        lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away),
+                        "NONE", null);
             }
             List<MatchPlayerStatResponse> rawPlayers = jdbc.query("""
                     SELECT s.player_id, p.name AS player_name, s.club_id, s.position,
@@ -483,6 +546,29 @@ public class FootballQueries {
                 rs.getObject("red_cards", Integer.class),
                 rating == null ? null : rating.toPlainString(), null, null, null, null,
                 null, null, rs.getString("participation_status"), rs.getBigDecimal("fantasy_points"), extra);
+    }
+
+    private static MatchPlayerStatResponse provisionalPlayerStat(ResultSet rs) throws SQLException {
+        Integer minutes = rs.getObject("minutes", Integer.class);
+        String participation = minutes != null && minutes > 0 ? "PLAYED" : "DID_NOT_PLAY";
+        return new MatchPlayerStatResponse(
+                rs.getInt("player_id"),
+                rs.getString("player_name"),
+                rs.getInt("club_id"),
+                shortPosition(rs.getString("position")),
+                minutes,
+                rs.getObject("goals", Integer.class),
+                rs.getObject("assists", Integer.class),
+                rs.getObject("yellow_cards", Integer.class),
+                rs.getObject("red_cards", Integer.class),
+                null, null, null, null, null, null, null,
+                participation,
+                null,
+                extraStatsRow(rs)
+        );
+    }
+
+    private record ProvisionalDetailRow(MatchPlayerStatResponse stat, Instant fetchedAt) {
     }
 
     private static String shortPosition(String position) {

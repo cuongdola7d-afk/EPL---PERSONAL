@@ -326,3 +326,60 @@ CREATE TABLE IF NOT EXISTS football_data_fixtures (
     provider_status VARCHAR(30) NOT NULL,
     FOREIGN KEY (fixture_id) REFERENCES fixtures(id)
 );
+
+-- Provisional per-match statistics fetched automatically from FPL after a match finishes
+-- while awaiting confirmed SofaScore ratings/lineups. Never merged into season/Fantasy totals.
+CREATE TABLE IF NOT EXISTS fpl_provisional_player_stats (
+    fixture_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    league_id INTEGER NOT NULL,
+    season_year INTEGER NOT NULL,
+    club_id INTEGER NOT NULL,
+    minutes INTEGER NOT NULL,
+    goals INTEGER NOT NULL,
+    assists INTEGER NOT NULL,
+    yellow_cards INTEGER NOT NULL,
+    red_cards INTEGER NOT NULL,
+    starts INTEGER,
+    clean_sheets INTEGER,
+    goals_conceded INTEGER,
+    own_goals INTEGER,
+    penalties_saved INTEGER,
+    penalties_missed INTEGER,
+    saves INTEGER,
+    bonus INTEGER,
+    bps INTEGER,
+    clearances_blocks_interceptions INTEGER,
+    recoveries INTEGER,
+    tackles INTEGER,
+    defensive_contribution INTEGER,
+    expected_goals DECIMAL(5,2),
+    expected_assists DECIMAL(5,2),
+    expected_goal_involvements DECIMAL(5,2),
+    expected_goals_conceded DECIMAL(5,2),
+    influence DECIMAL(6,1),
+    creativity DECIMAL(6,1),
+    threat DECIMAL(6,1),
+    ict_index DECIMAL(6,1),
+    fpl_status VARCHAR(20) NOT NULL,
+    fetched_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (fixture_id, player_id),
+    FOREIGN KEY (fixture_id) REFERENCES fixtures(id),
+    FOREIGN KEY (player_id) REFERENCES players(id),
+    FOREIGN KEY (club_id) REFERENCES clubs(id),
+    FOREIGN KEY (league_id, season_year) REFERENCES seasons(league_id, season_year),
+    CHECK (fpl_status IN ('PROVISIONAL', 'FINAL_FPL'))
+);
+
+CREATE TABLE IF NOT EXISTS fpl_provisional_unmapped (
+    fixture_id INTEGER NOT NULL,
+    fpl_element_id INTEGER NOT NULL,
+    fpl_name VARCHAR(200) NOT NULL,
+    club_id INTEGER,
+    club_name VARCHAR(200),
+    minutes INTEGER NOT NULL,
+    fetched_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (fixture_id, fpl_element_id),
+    FOREIGN KEY (fixture_id) REFERENCES fixtures(id),
+    FOREIGN KEY (club_id) REFERENCES clubs(id)
+);

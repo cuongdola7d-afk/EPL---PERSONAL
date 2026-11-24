@@ -6,6 +6,7 @@ import { matchDetailHash } from '../../utils/matchRoute.js'
 const RESULT_LABEL = { W: 'Thắng', D: 'Hòa', L: 'Thua' }
 
 export default function PlayerMatchRow({ row, season, columns }) {
+  const isProvisional = row.dataStatus === 'PROVISIONAL_FPL'
   const state = matchState(row)
   const result = matchResult(row)
   const home = row.clubId === row.match.homeClubId
@@ -28,12 +29,22 @@ export default function PlayerMatchRow({ row, season, columns }) {
         className={`pd-mrow${played ? '' : ' dnp'}`}
         href={matchDetailHash(row.match.id, { season, week: row.match.matchweek }, window.location.hash)}
       >
-        <span
-          className={`pd-res pd-res-${result ?? 'U'}`}
-          aria-label={result ? `${RESULT_LABEL[result]} ${score}` : `Tỉ số ${score}`}
-        >
-          {result ?? '—'}
-        </span>
+        {isProvisional ? (
+          <span
+            className="pd-res pd-res-prov"
+            aria-label={`Số liệu tạm FPL · ${score}`}
+            title="Số liệu tạm từ FPL"
+          >
+            Tạm
+          </span>
+        ) : (
+          <span
+            className={`pd-res pd-res-${result ?? 'U'}`}
+            aria-label={result ? `${RESULT_LABEL[result]} ${score}` : `Tỉ số ${score}`}
+          >
+            {result ?? '—'}
+          </span>
+        )}
 
         <span className="pd-mmain">
           <b>{opponent}</b>

@@ -5,6 +5,7 @@ import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, 
 import { hasMatchScore } from '../utils/seasons.js'
 import { formatLiveGoalText, resolveMatchDisplay } from '../utils/liveScores.js'
 import { formationLines, matchLineup } from '../utils/matchLineup.js'
+import { formatVietnamTimeHHmm } from '../utils/matchTime.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
 import MatchKickoff from './MatchKickoff.jsx'
 import {
@@ -397,27 +398,66 @@ function TeamAverage({ club, players }) {
   </span><strong>{average == null ? '—' : average.toFixed(1)}</strong></div>
 }
 
-function Overview({ match, detail, season }) {
+function Overview({ match, detail, season, isProvisional = false }) {
   const all = [...detail.homePlayers.map((player) => ({ player, club: match.homeClub })),
     ...detail.awayPlayers.map((player) => ({ player, club: match.awayClub }))]
-  const best = all.filter(({ player }) => matchPlayerState(player) === 'played' && matchRating(player) != null)
-    .sort((a, b) => matchRating(b.player) - matchRating(a.player))[0]
+  const best = !isProvisional
+    ? all.filter(({ player }) => matchPlayerState(player) === 'played' && matchRating(player) != null)
+      .sort((a, b) => matchRating(b.player) - matchRating(a.player))[0]
+    : null
+  const topBps = isProvisional
+    ? all.filter(({ player }) => matchPlayerState(player) === 'played' && player.extra?.bps != null)
+      .sort((a, b) => (b.player.extra.bps - a.player.extra.bps) ||
+        ((b.player.extra.bonus ?? 0) - (a.player.extra.bonus ?? 0)) ||
+        ((matchPlayerValue(b.player, 'goals', detail.evidenceStatus) ?? 0) -
+          (matchPlayerValue(a.player, 'goals', detail.evidenceStatus) ?? 0)) ||
+        a.player.playerName.localeCompare(b.player.playerName))
+      .slice(0, 3)
+    : []
   return <div className="mx-overview">
-    <section className="mx-block"><h3>Cầu thủ xuất sắc nhất trận</h3>
-      {best ? <div className="mx-best"><Avatar name={best.player.playerName} club={best.club} />
-        <span><strong title={best.player.playerName}>{playerLabel(best.player.playerName, season)}</strong><small>{best.club}</small></span>
-        <span className={`mx-rating mx-best-rating mx-rating-${ratingTier(matchRating(best.player))}`}>
-          {matchRating(best.player).toFixed(1)}</span></div> : <p>Chưa có điểm đánh giá nào.</p>}
-    </section>
+    {isProvisional ? (
+      <section className="mx-block"><h3>Nổi bật theo BPS</h3>
+        {topBps.length ? (
+          <div className="mx-bps-list">
+            {topBps.map(({ player, club }, index) => {
+              const bonus = player.extra?.bonus ?? 0
+              return (
+                <div className="mx-bps-row" key={player.playerId}>
+                  <span className="mx-bps-rank" aria-hidden="true">#{index + 1}</span>
+                  <Avatar name={player.playerName} club={club} />
+                  <span className="mx-bps-who">
+                    <strong title={player.playerName}>{playerLabel(player.playerName, season)}</strong>
+                    <small>{club}</small>
+                  </span>
+                  <span className="mx-bps-metrics">
+                    {bonus > 0 && <span className="mx-bps-bonus">+{bonus} bonus</span>}
+                    <span className="mx-bps-val">{player.extra.bps} <small>BPS</small></span>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        ) : <p>Chưa có dữ liệu BPS cho trận này.</p>}
+      </section>
+    ) : (
+      <section className="mx-block"><h3>Cầu thủ xuất sắc nhất trận</h3>
+        {best ? <div className="mx-best"><Avatar name={best.player.playerName} club={best.club} />
+          <span><strong title={best.player.playerName}>{playerLabel(best.player.playerName, season)}</strong><small>{best.club}</small></span>
+          <span className={`mx-rating mx-best-rating mx-rating-${ratingTier(matchRating(best.player))}`}>
+            {matchRating(best.player).toFixed(1)}</span></div> : <p>Chưa có điểm đánh giá nào.</p>}
+      </section>
+    )}
     <section className="mx-block"><h3>Sự kiện chính</h3>
       <div className="mx-event-grid"><EventColumn club={match.homeClub} players={detail.homePlayers} evidenceStatus={detail.evidenceStatus} season={season} />
         <EventColumn club={match.awayClub} players={detail.awayPlayers} evidenceStatus={detail.evidenceStatus} season={season} /></div>
       <p className="mx-detail-note">Nguồn hiện chưa lưu phút xảy ra sự kiện.</p>
     </section>
-    <section className="mx-block"><h3>Rating trung bình của đội</h3>
-      <TeamAverage club={match.homeClub} players={detail.homePlayers} />
-      <TeamAverage club={match.awayClub} players={detail.awayPlayers} />
-    </section>
+    {!isProvisional && (
+      <section className="mx-block"><h3>Rating trung bình của đội</h3>
+        <TeamAverage club={match.homeClub} players={detail.homePlayers} />
+        <TeamAverage club={match.awayClub} players={detail.awayPlayers} />
+      </section>
+    )}
   </div>
 }
 
@@ -483,9 +523,7 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
 
   useEffect(() => {
     setSelectedPlayer(null)
-    if (season !== 2026) {
-      setTab((prev) => (prev === 'stats' ? 'lineup' : prev))
-    }
+    setTab('lineup')
   }, [matchId, season])
 
   useEffect(() => {
@@ -522,17 +560,35 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
   const match = detail?.match ?? summary
   const noStats = status === 'success' &&
     detail.homePlayers.length === 0 && detail.awayPlayers.length === 0
-  const hasVerifiedManualStats = Boolean(match?.hasManualStats) || (status === 'success' && !noStats)
-  const effectiveLiveState = hasVerifiedManualStats ? null : liveState
+  const isProvisional = status === 'success' && detail?.dataStatus === 'PROVISIONAL_FPL'
+  const hasVerifiedManualStats = Boolean(match?.hasManualStats) ||
+    (status === 'success' && (detail?.dataStatus === 'CONFIRMED' || (season !== 2026 && !noStats)))
+  const effectiveLiveState = (hasVerifiedManualStats || isProvisional) ? null : liveState
   const display = resolveMatchDisplay(match, effectiveLiveState, { preferManualStats: true })
   const scored = display.scored
-  const activeTab = season === 2026 ? tab : (tab === 'stats' ? 'lineup' : tab)
+  const provisionalTime = isProvisional ? formatVietnamTimeHHmm(detail?.provisionalFetchedAt) : null
+  const activeTab = isProvisional && tab === 'lineup'
+    ? 'overview'
+    : (season === 2026 ? tab : (tab === 'stats' ? 'lineup' : tab))
+  const canShowTabs = status === 'success' && !noStats && (match.status === 'FINISHED' || isProvisional)
 
   return <div className="mx-detail" aria-busy={status === 'loading'}>
     <button className="mx-back" type="button" onClick={onClose}>‹ <span>{backLabel}</span></button>
     {match && <header className="mx-detail-hero">
-      <div className="mx-detail-meta"><span className="mx-gw">GW{match.matchweek}</span>
-        {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}<MatchStatus status={match.status} liveState={effectiveLiveState} /></div>
+      <div className="mx-detail-meta">
+        <span className="mx-gw">GW{match.matchweek}</span>
+        {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}
+        <MatchStatus status={match.status} liveState={effectiveLiveState} />
+        {isProvisional && (
+          <span className="mx-status mx-status-prov" role="status">
+            <span className="mx-prov-dot" aria-hidden="true" />
+            Số liệu tạm · FPL
+          </span>
+        )}
+      </div>
+      {isProvisional && provisionalTime && (
+        <p className="mx-prov-updated">Cập nhật tự động lúc {provisionalTime}</p>
+      )}
       <div className="mx-detail-score"><div className="mx-detail-club"><ClubCrest name={match.homeClub} large />
         <strong>{match.homeClub}</strong></div><div className={`mx-big-score${isFlashing && !hasVerifiedManualStats ? ' mx-score-flash' : ''}`} ref={headingRef} tabIndex="-1" aria-live="polite"
           aria-label={`${match.homeClub} ${scored ? display.homeGoals : 'đấu'} ${match.awayClub} ${scored ? display.awayGoals : ''}`}>
@@ -550,12 +606,23 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
       <p>{error}</p><button type="button" onClick={() => { setStatus('loading'); setReloadCount((count) => count + 1) }}>Thử lại</button></div>}
     {status === 'success' && detail.evidenceStatus === 'INVALID' &&
       <p className="mx-evidence-error" role="alert">Bằng chứng trận không khớp: {detail.evidenceError}. Điểm vẫn tạm tính.</p>}
-    {status === 'success' && (noStats || match.status !== 'FINISHED') &&
+    {status === 'success' && !canShowTabs &&
       <div className="mx-empty"><strong>{match.status === 'FINISHED' ? 'Chưa có chỉ số cầu thủ' : 'Trận chưa kết thúc'}</strong>
         <p>{match.status === 'FINISHED' ? 'Tỉ số đã có, thống kê cầu thủ của trận này chưa được lưu.' : 'Thông tin cầu thủ sẽ hiện khi trận kết thúc và có dữ liệu.'}</p></div>}
-    {status === 'success' && !noStats && match.status === 'FINISHED' && <>
+    {canShowTabs && <>
       <div className="mx-detail-tabs" role="tablist" aria-label="Chi tiết trận đấu">
-        <button type="button" role="tab" aria-selected={activeTab === 'lineup'} onClick={() => setTab('lineup')}>Đội hình</button>
+        <button
+          type="button"
+          role="tab"
+          className={isProvisional ? 'mx-tab-disabled' : undefined}
+          disabled={isProvisional}
+          title={isProvisional ? 'Chờ xác nhận' : undefined}
+          aria-selected={activeTab === 'lineup'}
+          onClick={() => { if (!isProvisional) setTab('lineup') }}
+        >
+          Đội hình
+          {isProvisional && <small className="mx-tab-wait">chờ</small>}
+        </button>
         {season === 2026 && (
           <button type="button" role="tab" aria-selected={activeTab === 'stats'} onClick={() => setTab('stats')}>Thống kê</button>
         )}
@@ -570,10 +637,11 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
             homePlayers={enrichedHomePlayers}
             awayPlayers={enrichedAwayPlayers}
             evidenceStatus={detail.evidenceStatus}
+            isProvisional={isProvisional}
             onSelectPlayer={openPlayerSheet}
           />
         ) : (
-          <Overview match={match} detail={detail} season={season} />
+          <Overview match={match} detail={detail} season={season} isProvisional={isProvisional} />
         )}
       </section>
     </>}
@@ -584,6 +652,7 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
         club={selectedPlayer.club}
         season={season}
         evidenceStatus={detail.evidenceStatus}
+        isProvisional={isProvisional}
         onClose={closePlayerSheet}
         returnFocusRef={sheetTriggerRef}
       />

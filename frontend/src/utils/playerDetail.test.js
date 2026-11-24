@@ -60,3 +60,20 @@ test('manual participation keeps an ungraded appearance separate from a DNP', ()
   assert.equal(seasonSummary([played, dnp]).appearances, 1)
   assert.equal(seasonSummary([played, dnp]).totalMinutes, null)
 })
+
+test('seasonSummary excludes PROVISIONAL_FPL rows so provisional matches never inflate season totals', () => {
+  const confirmed = {
+    match: finished, clubId: 10, dataStatus: 'CONFIRMED',
+    stats: { participationStatus: 'PLAYED', minutes: 90, goals: 1, assists: 0, yellowCards: 0, redCards: 0, rating: '8.0' },
+  }
+  const provisional = {
+    match: { ...finished, id: 2, matchweek: 11 }, clubId: 10, dataStatus: 'PROVISIONAL_FPL',
+    stats: { participationStatus: 'PLAYED', minutes: 90, goals: 2, assists: 1, yellowCards: 0, redCards: 0, rating: null },
+  }
+  const summary = seasonSummary([confirmed, provisional])
+  assert.equal(summary.appearances, 1)
+  assert.equal(summary.totalMinutes, 90)
+  assert.equal(summary.goals, 1)
+  assert.equal(summary.assists, 0)
+  assert.equal(summary.averageRating, 8.0)
+})

@@ -236,7 +236,8 @@ function PlayerDetailPage({ playerId, season, backHash, theme = 'dark' }) {
     if (profile?.totals) return profile.totals
     const fallback = seasonSummary(finished)
     const verifiedFinished = finished.filter(
-      (row) => row.stats != null || row.match?.hasManualStats || row.evidenceStatus === 'VERIFIED',
+      (row) => row.dataStatus !== 'PROVISIONAL_FPL' &&
+        (row.stats != null || row.match?.hasManualStats || row.evidenceStatus === 'VERIFIED'),
     )
     return {
       appearances: fallback.appearances,

@@ -171,3 +171,26 @@ test('normalizePlayerTab and rate formatters handle legacy season tab and null i
   assert.equal(formatPerMatch(220, 9), '24.4')
   assert.equal(formatPerMatch(null, 9), null)
 })
+
+test('formatFormDetail labels PROVISIONAL_FPL unrated match cleanly', () => {
+  const provisionalRow = {
+    clubId: 1,
+    dataStatus: 'PROVISIONAL_FPL',
+    evidenceStatus: 'MANUAL_PENDING',
+    match: {
+      id: 99, matchweek: 11, date: '2026-11-22', status: 'FINISHED',
+      homeClubId: 1, homeClub: 'Liverpool FC', awayClubId: 2, awayClub: 'Manchester United FC',
+      homeGoals: 4, awayGoals: 0,
+    },
+    stats: {
+      playerId: 10, participationStatus: 'PLAYED',
+      minutes: 90, goals: 2, assists: 1, yellowCards: 0, redCards: 0,
+      rating: null, extra: { expectedGoals: 1.15, expectedAssists: 0.42 },
+    },
+  }
+  const series = buildFormSeries([provisionalRow], 2026)
+  assert.equal(series.items[0].rating, null)
+  const detail = formatFormDetail(series.items[0])
+  assert.equal(detail.headline, 'GW11 · Liverpool FC 4–0 Manchester United FC')
+  assert.match(detail.suffix, /số liệu tạm \(FPL\) · 2 bàn · 1 kiến tạo/)
+})

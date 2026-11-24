@@ -320,6 +320,8 @@ export function formatFormDetail(item) {
   const parts = []
   if (item.rating != null) {
     parts.push(`rating ${item.rating.toFixed(1)}`)
+  } else if (item.row?.dataStatus === 'PROVISIONAL_FPL') {
+    parts.push('số liệu tạm (FPL)')
   } else {
     parts.push('chưa được chấm điểm')
   }

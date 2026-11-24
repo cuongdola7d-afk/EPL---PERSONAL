@@ -48,7 +48,12 @@ export async function fetchMatchDetail(id, signal, season) {
     (player.inferred === null || (player.inferred !== null &&
       ['minutes', 'goals', 'assists'].every((field) =>
         player.inferred[field] === null || Number.isInteger(player.inferred[field]))))
-  if (!detail || !isValidMatch(detail.match) ||
+  const isValidDataStatus = detail?.dataStatus === undefined ||
+    ['CONFIRMED', 'PROVISIONAL_FPL', 'NONE'].includes(detail.dataStatus)
+  const isValidFetchedAt = detail?.provisionalFetchedAt === undefined ||
+    detail.provisionalFetchedAt === null ||
+    typeof detail.provisionalFetchedAt === 'string'
+  if (!detail || !isValidMatch(detail.match) || !isValidDataStatus || !isValidFetchedAt ||
       !Array.isArray(detail.homePlayers) || !detail.homePlayers.every(isValidPlayer) ||
       !Array.isArray(detail.awayPlayers) || !detail.awayPlayers.every(isValidPlayer)) {
     throw new Error('Dữ liệu chi tiết trận đấu từ API không đúng định dạng.')

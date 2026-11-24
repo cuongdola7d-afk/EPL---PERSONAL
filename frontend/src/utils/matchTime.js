@@ -128,6 +128,17 @@ export function formatShortDayMonth(dayKey) {
   return parts ? `${parts.day}/${parts.month}` : ''
 }
 
+/**
+ * Formats an ISO-8601 UTC timestamp to HH:mm in Vietnam time (Asia/Ho_Chi_Minh).
+ */
+export function formatVietnamTimeHHmm(isoTimestamp) {
+  if (typeof isoTimestamp !== 'string' || !isoTimestamp.trim()) return null
+  const instant = new Date(isoTimestamp)
+  if (!Number.isFinite(instant.getTime())) return null
+  const { hour, minute } = vietnamParts(instant)
+  return `${hour}:${minute}`
+}
+
 export function compareMatchSchedule(a, b, season = 2026) {
   const dayOrder = (matchDayKey(a, season) ?? '').localeCompare(matchDayKey(b, season) ?? '')
   if (dayOrder) return dayOrder

@@ -164,57 +164,27 @@ public class FplCollectorService {
         }
 
         Instant fetchedAt = clock.instant().truncatedTo(ChronoUnit.SECONDS);
+        ExtractionBatch extracted = extractElements(
+                gameweek, liveElements, elementsById, teamMap, playerMap,
+                matchedFixtures, allGwFplFixtureIds, filteredMode, rawDir, source);
         List<MatchStatRow> matchRows = new ArrayList<>();
         List<ExtraStatRow> extraRows = new ArrayList<>();
         List<BenchCardRow> benchCardRows = new ArrayList<>();
-        List<UnmappedRow> unmappedRows = new ArrayList<>();
-        int elementSummaryCalls = 0;
+        List<UnmappedRow> unmappedRows = new ArrayList<>(extracted.unmappedRows());
+        int elementSummaryCalls = extracted.elementSummaryCalls();
 
-        for (FplModels.LiveElement live : liveElements) {
-            boolean played = live.stats().minutes() > 0;
-            boolean hasCard = hasCard(live.stats());
-            if (!played && !hasCard) {
-                continue;
-            }
-            ResolvedElementStats resolved = resolvePerFixtureStats(
-                    gameweek, live, elementsById.get(live.elementId()), teamMap,
-                    matchedFixtures, allGwFplFixtureIds, filteredMode, rawDir, source);
-            if (resolved.usedElementSummary()) {
-                elementSummaryCalls++;
-            }
-            if (resolved.entries().isEmpty()) {
-                continue;
-            }
-
-            FplMappingReader.PlayerMapping mapped = playerMap.get(live.elementId());
-            if (mapped == null) {
-                FplModels.Element el = elementsById.get(live.elementId());
-                String fplName = el != null ? el.fullName() : ("UNKNOWN_" + live.elementId());
-                String webName = el != null ? el.webName() : "";
-                int fplTeamId = el != null ? el.teamId() : 0;
-                Integer clubId = el != null && teamMap.containsKey(el.teamId())
-                        ? teamMap.get(el.teamId()).clubId() : null;
-                for (PerFixtureStats pf : resolved.entries()) {
-                    unmappedRows.add(new UnmappedRow(
-                            live.elementId(), fplName, webName, fplTeamId, clubId,
-                            pf.fixture().internalFixtureId(), pf.stats().minutes()));
-                }
-                continue;
-            }
-
-            for (PerFixtureStats pf : resolved.entries()) {
-                FplModels.PlayerStats s = pf.stats();
-                int internalFixtureId = pf.fixture().internalFixtureId();
-                if (s.minutes() > 0) {
-                    matchRows.add(new MatchStatRow(
-                            internalFixtureId, mapped.playerId(),
-                            s.minutes(), s.goalsScored(), s.assists(), s.yellowCards(), s.redCards()));
-                    extraRows.add(new ExtraStatRow(
-                            SEASON_YEAR, internalFixtureId, mapped.playerId(), s, "FPL", fetchedAt));
-                } else if (hasCard(s)) {
-                    benchCardRows.add(new BenchCardRow(
-                            internalFixtureId, mapped.playerId(), s.yellowCards(), s.redCards()));
-                }
+        for (ExtractedPlayerStat row : extracted.playerStats()) {
+            FplModels.PlayerStats s = row.stats();
+            int internalFixtureId = row.fixture().internalFixtureId();
+            if (s.minutes() > 0) {
+                matchRows.add(new MatchStatRow(
+                        internalFixtureId, row.playerId(),
+                        s.minutes(), s.goalsScored(), s.assists(), s.yellowCards(), s.redCards()));
+                extraRows.add(new ExtraStatRow(
+                        SEASON_YEAR, internalFixtureId, row.playerId(), s, "FPL", fetchedAt));
+            } else if (hasCard(s)) {
+                benchCardRows.add(new BenchCardRow(
+                        internalFixtureId, row.playerId(), s.yellowCards(), s.redCards()));
             }
         }
 
@@ -358,6 +328,190 @@ public class FplCollectorService {
                 0, elementSummaryCalls, true, provisionalCount);
     }
 
+    /**
+     * In-memory extraction shared with {@link FplProvisionalSync}: matches candidate DB fixtures
+     * to FPL fixtures (requiring finished or finished_provisional AND matching scores) and splits
+     * per-fixture player stats (calling element-summary only for multi-fixture elements) without
+     * writing any files to disk.
+     */
+    public ProvisionalExtraction extractForProvisional(
+            int gameweek,
+            FplModels.Bootstrap bootstrap,
+            List<FplModels.FplFixture> fplFixtures,
+            List<FplModels.LiveElement> liveElements,
+            Map<Integer, FplMappingReader.TeamMapping> teamMap,
+            Map<Integer, FplMappingReader.PlayerMapping> playerMap,
+            Set<Integer> candidateFixtureIds,
+            FplSource source
+    ) throws IOException, InterruptedException {
+        if (candidateFixtureIds == null || candidateFixtureIds.isEmpty() || fplFixtures.isEmpty()) {
+            return new ProvisionalExtraction(List.of(), 0, 0, 0);
+        }
+        List<DbFixture> dbFixtures = loadSeasonFixtures();
+        Map<Integer, DbFixture> dbById = new HashMap<>();
+        Map<TeamPairKey, List<DbFixture>> dbByPair = new HashMap<>();
+        for (DbFixture db : dbFixtures) {
+            dbById.put(db.id(), db);
+            dbByPair.computeIfAbsent(new TeamPairKey(db.homeClubId(), db.awayClubId()), ignored -> new ArrayList<>()).add(db);
+        }
+
+        Set<Integer> allGwFplFixtureIds = new HashSet<>();
+        Map<TeamPairKey, List<FplModels.FplFixture>> fplByPair = new HashMap<>();
+        for (FplModels.FplFixture fpl : fplFixtures) {
+            allGwFplFixtureIds.add(fpl.id());
+            FplMappingReader.TeamMapping home = teamMap.get(fpl.teamH());
+            FplMappingReader.TeamMapping away = teamMap.get(fpl.teamA());
+            if (home != null && away != null) {
+                fplByPair.computeIfAbsent(new TeamPairKey(home.clubId(), away.clubId()), ignored -> new ArrayList<>()).add(fpl);
+            }
+        }
+
+        Map<Integer, MatchedFixture> readyMatched = new LinkedHashMap<>();
+        Map<Integer, LocalDate> matchDateByFixture = new HashMap<>();
+        int skippedNotFinished = 0;
+        int skippedScoreMismatch = 0;
+
+        for (int fixtureId : candidateFixtureIds) {
+            DbFixture db = dbById.get(fixtureId);
+            if (db == null) {
+                continue;
+            }
+            TeamPairKey pair = new TeamPairKey(db.homeClubId(), db.awayClubId());
+            List<DbFixture> dbCandidates = dbByPair.getOrDefault(pair, List.of());
+            List<FplModels.FplFixture> fplCandidates = fplByPair.getOrDefault(pair, List.of());
+            if (dbCandidates.size() != 1 || fplCandidates.size() != 1) {
+                log.warn("FPL provisional sync skipped fixture_id={} in GW{}: unable to match uniquely 1-to-1 (db={}, fpl={})",
+                        fixtureId, gameweek, dbCandidates.size(), fplCandidates.size());
+                continue;
+            }
+            FplModels.FplFixture fpl = fplCandidates.getFirst();
+            if (!db.matchDate().equals(fpl.kickoffDateUtc())) {
+                log.warn("FPL provisional sync skipped fixture_id={} in GW{}: UTC date mismatch (db={}, fpl={})",
+                        fixtureId, gameweek, db.matchDate(), fpl.kickoffDateUtc());
+                continue;
+            }
+            if (!fpl.finished() && !fpl.finishedProvisional()) {
+                skippedNotFinished++;
+                continue;
+            }
+            if (fpl.teamHScore() == null || fpl.teamAScore() == null
+                    || db.homeGoals() == null || db.awayGoals() == null
+                    || !Objects.equals(fpl.teamHScore(), db.homeGoals())
+                    || !Objects.equals(fpl.teamAScore(), db.awayGoals())) {
+                skippedScoreMismatch++;
+                log.warn("FPL provisional sync skipped fixture_id={} (fpl_fixture={}): score mismatch db={}-{} vs fpl={}-{}",
+                        db.id(), fpl.id(), db.homeGoals(), db.awayGoals(), fpl.teamHScore(), fpl.teamAScore());
+                continue;
+            }
+            String fplStatus = fpl.finished() ? "FINAL_FPL" : "PROVISIONAL";
+            readyMatched.put(fpl.id(), new MatchedFixture(
+                    fpl.id(), db.id(), fpl.kickoffTime(), db.homeClubId(), db.awayClubId(),
+                    fpl.teamHScore(), fpl.teamAScore(), db.homeGoals(), db.awayGoals(), fplStatus));
+            matchDateByFixture.put(db.id(), db.matchDate());
+        }
+
+        if (readyMatched.isEmpty()) {
+            return new ProvisionalExtraction(List.of(), skippedNotFinished, skippedScoreMismatch, 0);
+        }
+
+        Map<Integer, FplModels.Element> elementsById = new HashMap<>();
+        for (FplModels.Element el : bootstrap.elements()) {
+            elementsById.put(el.id(), el);
+        }
+
+        ExtractionBatch extracted = extractElements(
+                gameweek, liveElements, elementsById, teamMap, playerMap,
+                readyMatched, allGwFplFixtureIds, true, null, source);
+
+        Map<Integer, List<ProvisionalPlayerRow>> playersByFixture = new LinkedHashMap<>();
+        Map<Integer, List<ProvisionalUnmappedRow>> unmappedByFixture = new LinkedHashMap<>();
+        for (MatchedFixture mf : readyMatched.values()) {
+            playersByFixture.put(mf.internalFixtureId(), new ArrayList<>());
+            unmappedByFixture.put(mf.internalFixtureId(), new ArrayList<>());
+        }
+        for (ExtractedPlayerStat row : extracted.playerStats()) {
+            playersByFixture.get(row.fixture().internalFixtureId()).add(new ProvisionalPlayerRow(
+                    row.playerId(), row.fplTeamClubId(), row.stats()));
+        }
+        for (UnmappedRow u : extracted.unmappedRows()) {
+            String clubName = u.fplTeamId() > 0 && teamMap.containsKey(u.fplTeamId())
+                    ? teamMap.get(u.fplTeamId()).clubName() : null;
+            unmappedByFixture.get(u.fixtureId()).add(new ProvisionalUnmappedRow(
+                    u.fplElementId(), u.fplName(), u.clubId(), clubName, u.minutes()));
+        }
+
+        List<ProvisionalFixture> fixtures = new ArrayList<>();
+        for (MatchedFixture mf : readyMatched.values()) {
+            fixtures.add(new ProvisionalFixture(
+                    mf.internalFixtureId(),
+                    mf.fplFixtureId(),
+                    mf.homeClubId(),
+                    mf.awayClubId(),
+                    matchDateByFixture.get(mf.internalFixtureId()),
+                    mf.fplStatus(),
+                    List.copyOf(playersByFixture.get(mf.internalFixtureId())),
+                    List.copyOf(unmappedByFixture.get(mf.internalFixtureId()))
+            ));
+        }
+        return new ProvisionalExtraction(List.copyOf(fixtures), skippedNotFinished, skippedScoreMismatch,
+                extracted.elementSummaryCalls());
+    }
+
+    private ExtractionBatch extractElements(
+            int gameweek,
+            List<FplModels.LiveElement> liveElements,
+            Map<Integer, FplModels.Element> elementsById,
+            Map<Integer, FplMappingReader.TeamMapping> teamMap,
+            Map<Integer, FplMappingReader.PlayerMapping> playerMap,
+            Map<Integer, MatchedFixture> matchedFixtures,
+            Set<Integer> allGwFplFixtureIds,
+            boolean filteredMode,
+            Path optionalRawDir,
+            FplSource source
+    ) throws IOException, InterruptedException {
+        List<ExtractedPlayerStat> playerStats = new ArrayList<>();
+        List<UnmappedRow> unmappedRows = new ArrayList<>();
+        int elementSummaryCalls = 0;
+
+        for (FplModels.LiveElement live : liveElements) {
+            boolean played = live.stats().minutes() > 0;
+            boolean hasCard = hasCard(live.stats());
+            if (!played && !hasCard) {
+                continue;
+            }
+            FplModels.Element el = elementsById.get(live.elementId());
+            ResolvedElementStats resolved = resolvePerFixtureStats(
+                    gameweek, live, el, teamMap,
+                    matchedFixtures, allGwFplFixtureIds, filteredMode, optionalRawDir, source);
+            if (resolved.usedElementSummary()) {
+                elementSummaryCalls++;
+            }
+            if (resolved.entries().isEmpty()) {
+                continue;
+            }
+
+            Integer fplTeamClubId = el != null && teamMap.containsKey(el.teamId())
+                    ? teamMap.get(el.teamId()).clubId() : null;
+            FplMappingReader.PlayerMapping mapped = playerMap.get(live.elementId());
+            if (mapped == null) {
+                String fplName = el != null ? el.fullName() : ("UNKNOWN_" + live.elementId());
+                String webName = el != null ? el.webName() : "";
+                int fplTeamId = el != null ? el.teamId() : 0;
+                for (PerFixtureStats pf : resolved.entries()) {
+                    unmappedRows.add(new UnmappedRow(
+                            live.elementId(), fplName, webName, fplTeamId, fplTeamClubId,
+                            pf.fixture().internalFixtureId(), pf.stats().minutes()));
+                }
+                continue;
+            }
+
+            for (PerFixtureStats pf : resolved.entries()) {
+                playerStats.add(new ExtractedPlayerStat(pf.fixture(), mapped.playerId(), fplTeamClubId, pf.stats()));
+            }
+        }
+        return new ExtractionBatch(playerStats, unmappedRows, elementSummaryCalls);
+    }
+
     private static boolean hasCard(FplModels.PlayerStats stats) {
         return stats.yellowCards() > 0 || stats.redCards() > 0;
     }
@@ -439,8 +593,10 @@ public class FplCollectorService {
             FplSource source
     ) throws IOException, InterruptedException {
         String summaryJson = source.fetchElementSummary(live.elementId());
-        Files.writeString(rawDir.resolve("element-summary-" + live.elementId() + ".json"),
-                summaryJson, StandardCharsets.UTF_8);
+        if (rawDir != null) {
+            Files.writeString(rawDir.resolve("element-summary-" + live.elementId() + ".json"),
+                    summaryJson, StandardCharsets.UTF_8);
+        }
         List<FplModels.HistoryMatch> history = parser.parseElementSummary(summaryJson, live.elementId());
         List<PerFixtureStats> split = new ArrayList<>();
         for (FplModels.HistoryMatch match : history) {
@@ -1075,6 +1231,30 @@ public class FplCollectorService {
 
     private record UnmappedRow(int fplElementId, String fplName, String fplWebName, int fplTeamId,
                                Integer clubId, int fixtureId, int minutes) {
+    }
+
+    private record ExtractedPlayerStat(MatchedFixture fixture, int playerId, Integer fplTeamClubId,
+                                       FplModels.PlayerStats stats) {
+    }
+
+    private record ExtractionBatch(List<ExtractedPlayerStat> playerStats, List<UnmappedRow> unmappedRows,
+                                   int elementSummaryCalls) {
+    }
+
+    public record ProvisionalPlayerRow(int playerId, Integer fplTeamClubId, FplModels.PlayerStats stats) {
+    }
+
+    public record ProvisionalUnmappedRow(int fplElementId, String fplName, Integer clubId,
+                                         String clubName, int minutes) {
+    }
+
+    public record ProvisionalFixture(int fixtureId, int fplFixtureId, int homeClubId, int awayClubId,
+                                     LocalDate matchDate, String fplStatus,
+                                     List<ProvisionalPlayerRow> players, List<ProvisionalUnmappedRow> unmapped) {
+    }
+
+    public record ProvisionalExtraction(List<ProvisionalFixture> fixtures, int skippedNotFinished,
+                                        int skippedScoreMismatch, int elementSummaryCalls) {
     }
 
     public record Result(int gameweek, int fixturesMatched, int playedRows, int unmappedCount,

@@ -6,7 +6,9 @@ export default function PlayerHeroStats({ totals, formItems }) {
   const avg = totals?.averageRating ?? null
   const rated = totals?.ratedMatches ?? 0
   const apps = totals?.appearances ?? 0
-  const verifiedMatchesCount = formItems.filter((item) => item.state === 'played' || item.state === 'did-not-play').length
+  const verifiedMatchesCount = formItems.filter(
+    (item) => item.row?.dataStatus !== 'PROVISIONAL_FPL' && (item.state === 'played' || item.state === 'did-not-play'),
+  ).length
   const totalMatches = totals?.clubFinishedMatches ?? verifiedMatchesCount
   const dnpCount = Math.max(0, totalMatches - apps)
   const mins = totals?.minutes ?? null

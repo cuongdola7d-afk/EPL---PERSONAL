@@ -63,6 +63,7 @@ export async function fetchPlayer(id, season, signal) {
 export function fetchPlayerMatches(id, season, signal) {
   return fetchApiList(`/api/players/${id}/matches?season=${season}`, signal,
     (row) => row !== null && isValidMatch(row.match) && Number.isInteger(row.clubId) &&
+      (row.dataStatus === undefined || ['CONFIRMED', 'PROVISIONAL_FPL', 'NONE'].includes(row.dataStatus)) &&
       (row.stats === null || (row.stats !== null && Number.isInteger(row.stats.playerId) &&
         ['minutes', 'goals', 'assists', 'yellowCards', 'redCards'].every((field) =>
           row.stats[field] === null || Number.isInteger(row.stats[field])) &&
