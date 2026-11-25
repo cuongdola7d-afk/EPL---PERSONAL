@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -310,19 +311,24 @@ public class AdminOverviewService {
     }
 
     private GameweekCard buildPublishedCard(GameweekService.View view) {
-        List<Map<String, Object>> pubs = jdbc.queryForList("""
+        record PublishedMeta(String email, Instant publishedAt) {
+        }
+        List<PublishedMeta> pubs = jdbc.query("""
                 SELECT a.email, p.published_at
                 FROM fantasy_result_publications p
                 JOIN accounts a ON a.id = p.published_by
                 WHERE p.season = ? AND p.gameweek = ?
                 ORDER BY p.version DESC
                 LIMIT 1
-                """, SEASON, view.gameweek());
+                """, (rs, idx) -> new PublishedMeta(
+                rs.getString("email"),
+                toInstant(rs.getTimestamp("published_at"))
+        ), SEASON, view.gameweek());
         boolean bySystem = false;
         Instant publishedAt = null;
         if (!pubs.isEmpty()) {
-            bySystem = SystemAccount.isSystemEmail((String) pubs.getFirst().get("email"));
-            publishedAt = toInstant((Timestamp) pubs.getFirst().get("published_at"));
+            bySystem = SystemAccount.isSystemEmail(pubs.getFirst().email());
+            publishedAt = pubs.getFirst().publishedAt();
         }
         int totalFixtures = (int) queryLong(
                 "SELECT COUNT(*) FROM fixtures WHERE league_id = ? AND season_year = ? AND gameweek = ?",
@@ -418,7 +424,15 @@ public class AdminOverviewService {
         return value == null ? 0L : value;
     }
 
-    private static Instant toInstant(Timestamp ts) {
-        return ts == null ? null : ts.toLocalDateTime().toInstant(ZoneOffset.UTC);
+    static Instant toInstant(Object value) {
+        return switch (value) {
+            case null -> null;
+            case Instant instant -> instant;
+            case Timestamp ts -> ts.toLocalDateTime().toInstant(ZoneOffset.UTC);
+            case LocalDateTime ldt -> ldt.toInstant(ZoneOffset.UTC);
+            case OffsetDateTime odt -> odt.toInstant();
+            default -> throw new IllegalArgumentException(
+                    "Unsupported timestamp type: " + value.getClass().getName());
+        };
     }
 }

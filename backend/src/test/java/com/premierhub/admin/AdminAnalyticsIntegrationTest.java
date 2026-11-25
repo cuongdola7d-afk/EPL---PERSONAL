@@ -50,6 +50,10 @@ class AdminAnalyticsIntegrationTest {
     @BeforeEach
     void setUp() {
         when(clock.instant()).thenReturn(NOW);
+        jdbc.update("DELETE FROM fantasy_result_publications");
+        jdbc.update("DELETE FROM fantasy_deadline_changes");
+        jdbc.update("DELETE FROM fantasy_gameweeks");
+        jdbc.update("DELETE FROM fixtures WHERE league_id = 39 AND season_year = 2026 AND gameweek = 11");
         jdbc.update("DELETE FROM site_visitors_daily");
         jdbc.update("DELETE FROM site_page_views_daily");
         jdbc.update("DELETE FROM account_activity_days");
@@ -159,5 +163,50 @@ class AdminAnalyticsIntegrationTest {
         mvc.perform(get("/api/admin/overview?range=14")
                         .with(user("admin@example.test").roles("ADMIN")))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminOverviewReturns200WhenPublishedGameweekExists() throws Exception {
+        Long systemId = jdbc.queryForObject(
+                "SELECT id FROM accounts WHERE email = ?", Long.class, SystemAccount.EMAIL);
+        assertNotNull(systemId);
+
+        jdbc.update("MERGE INTO seasons (league_id, season_year) KEY (league_id, season_year) VALUES (39, 2026)");
+        jdbc.update("MERGE INTO clubs (id, name, city) KEY (id) VALUES (901, 'Club Alpha', 'London')");
+        jdbc.update("MERGE INTO clubs (id, name, city) KEY (id) VALUES (902, 'Club Beta', 'Liverpool')");
+        String hash = "0".repeat(64);
+        jdbc.update("""
+                INSERT INTO fixtures (id, league_id, season_year, home_club_id, away_club_id, gameweek,
+                                      match_date, status, provider_status, home_goals, away_goals, payload_hash, synced_at)
+                VALUES (990001, 39, 2026, 901, 902, 11, DATE '2026-11-21', 'FINISHED', 'FINISHED', 2, 1, ?, TIMESTAMP '2026-11-21 17:00:00'),
+                       (990002, 39, 2026, 902, 901, 11, DATE '2026-11-22', 'FINISHED', 'FINISHED', 1, 0, ?, TIMESTAMP '2026-11-22 17:00:00')
+                """, hash, hash);
+        jdbc.update("""
+                INSERT INTO fantasy_gameweeks (season, gameweek, deadline_utc, deadline_published_at,
+                                               first_fixture_id, first_kickoff_utc, workflow_status,
+                                               results_published_at, revision, updated_at, roster_as_of)
+                VALUES (2026, 11, TIMESTAMP '2026-11-21 11:00:00', TIMESTAMP '2026-11-15 10:00:00',
+                        990001, TIMESTAMP '2026-11-21 12:30:00', 'PUBLISHED',
+                        TIMESTAMP '2026-11-24 12:00:00', 1, TIMESTAMP '2026-11-24 12:00:00', DATE '2026-11-15')
+                """);
+        jdbc.update("""
+                INSERT INTO fantasy_result_publications (season, gameweek, version, source_hash,
+                                                         published_at, published_by, action, reason)
+                VALUES (2026, 11, 1, ?, TIMESTAMP '2026-11-24 12:00:00', ?, 'PUBLISH', 'Tự động công bố khi đủ 10/10 trận')
+                """, hash, systemId);
+
+        mvc.perform(get("/api/admin/overview?range=30")
+                        .with(user("admin@example.test").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.gameweek").value(11))
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.actionAtUtc").value("2026-11-24T12:00:00Z"))
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.bySystem").value(true))
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.finishedFixtures").value(2))
+                .andExpect(jsonPath("$.fantasy.latestPublishedGameweek.totalFixtures").value(2))
+                .andExpect(jsonPath("$.fantasy.history[0].actionType").value("PUBLISH_RESULTS"))
+                .andExpect(jsonPath("$.fantasy.history[0].gameweek").value(11))
+                .andExpect(jsonPath("$.fantasy.history[0].occurredAtUtc").value("2026-11-24T12:00:00Z"))
+                .andExpect(jsonPath("$.fantasy.history[0].actorType").value("SYSTEM"));
     }
 }
