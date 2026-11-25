@@ -1,0 +1,5 @@
+player_id,name,club_id,club,old_intervals,new_start_date,new_end_date,reason
+2000030019,Richarlison,1000000073,Tottenham Hotspur FC,2026-08-22..2026-08-23,2026-08-22,,Bị bỏ qua đợt chốt roster 30/09 do FPL status=u; người dùng xác nhận vẫn đang ở Tottenham
+2000020051,Romaine Mundle,1000000071,Sunderland AFC,2026-08-22..2026-08-23;2026-08-30..2026-08-31,2026-08-22,,Bị bỏ qua đợt chốt roster 30/09 do lệch nhóm vị trí DB/FPL (pending-confirmation.md); người dùng xác nhận vẫn đang ở Sunderland
+2000030053,Zadok Yohanna,1000000397,Brighton & Hove Albion FC,2026-08-23..2026-08-24,2026-08-23,,Bị bỏ qua đợt chốt roster 30/09 do lệch nhóm vị trí DB/FPL (pending-confirmation.md); người dùng xác nhận vẫn đang ở Brighton
+2000020012,Cody Drameh,1000000322,Hull City AFC,2026-08-22..2026-08-23;2026-08-29..2026-08-30,2026-08-22,,Bị bỏ qua đợt chốt roster 30/09 do FPL status=u; người dùng xác nhận vẫn đang ở Hull City

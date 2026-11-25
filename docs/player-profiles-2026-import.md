@@ -10,6 +10,15 @@ Mỗi lần nhập phải cung cấp ngày chốt membership. Importer kiểm tr
 
 Người có `fc27_overall IS NULL` vẫn có hồ sơ cầu thủ nhưng **chưa đủ điều kiện chọn Fantasy**. Lượt này chỉ lưu dữ liệu; giao diện và logic chọn Fantasy chưa được thay đổi. Carlos Baleba giữ membership Manchester United (`club_id=1000000066`); nhãn Brighton trên EA không làm đổi CLB của anh.
 
+## Quy tắc OVR mặc định khi EA FC 27 không có thẻ (chốt ngày 25/11/2026)
+
+- Nguồn `fc27_overall` chuẩn là thẻ cơ bản chính thức trên **EA SPORTS FC 27** (`https://www.ea.com/games/ea-sports-fc/ratings/...`). Không lấy OVR từ trang bên thứ ba (FUTBIN, SoFIFA, FIFACM…).
+- **Chỉ áp dụng khi EA SPORTS FC 27 thật sự không có thẻ** cho cầu thủ đó (thường là cầu thủ trẻ/học viện mới lên đội một). Nếu chỉ chưa chắc danh tính thì vẫn giữ `fc27_overall = NULL` và báo, không gán mặc định.
+- **Công thức:** `fc27_overall = MAX(56, min OVR EA thật của CLB)`.
+  - "min OVR EA thật của CLB" chỉ tính trên các cầu thủ **có membership đang mở** (`end_date IS NULL`) ở CLB đó trong mùa 2026 và có `fc27_overall` **lấy từ EA thật**.
+  - **Không tính các số ước tính / do người dùng đặt** (kể cả Max Dowman `72`, các OVR `USER_PROVIDED` ngày 02–03/10/2026 và các số mặc định tạo về sau), để số mặc định không tự kéo nhau xuống.
+- **Truy vết nguồn:** mỗi cầu thủ dùng số mặc định phải ghi trong `sources.md` dạng `ước tính PremierHub: MAX(56, min OVR EA của <CLB> = X) = Y` và đánh dấu `estimated=true` (trong cột hoặc file đi kèm), để khi EA ra thẻ chính thức có thể thay thế bằng số thật.
+
 ## Dùng lại cho CLB tiếp theo
 
 1. Chốt roster từ PremierHub theo `season=2026&asOf=<ngày>`, tạo CSV tám cột cùng file ghi chú URL nguồn như hai batch hiện tại.

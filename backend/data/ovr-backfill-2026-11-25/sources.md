@@ -1,0 +1,64 @@
+# Nguồn bổ sung OVR FC 27 & mở lại membership (25/11/2026)
+
+## 1. Mở lại membership cho 4 cầu thủ đang thi đấu tại EPL
+
+Nguyên nhân bị đóng: đợt nhập GW1–GW2 (tháng 8/2026) chỉ tạo khoảng 1 ngày theo ngày trận (`[match_date, match_date+1)`). Tới đợt chốt roster mở `end_date = NULL` ngày 30/09/2026 (`backend/data/roster-2026-09-30/`), 4 cầu thủ này bị bỏ qua:
+- **Romaine Mundle** (`2000020051`) & **Zadok Yohanna** (`2000030053`): nằm trong danh sách 28 cầu thủ lệch nhóm vị trí DB `FORWARD` vs FPL `MID` (`pending-confirmation.md`) và không ra sân thêm sau GW2.
+- **Richarlison** (`2000030019`) & **Cody Drameh** (`2000020012`): nằm trong `fpl-unavailable.json` (`status=u`) tại thời điểm 30/09/2026.
+
+Đã xác minh cả 4 cầu thủ đúng CLB trong DB và không có trận hay membership ở CLB khác sau tháng 8. 5 cầu thủ đã chuyển đi (Beto, Robert Sánchez, Nick Woltemade, Liam Millar, Mikey Moore) giữ nguyên membership đã đóng.
+
+| `player_id` | Cầu thủ | CLB | Khoảng cũ | Khoảng mới |
+|---:|---|---|---|---|
+| `2000030019` | Richarlison | Tottenham Hotspur FC (`1000000073`) | `2026-08-22..2026-08-23` | `2026-08-22..NULL` |
+| `2000020051` | Romaine Mundle | Sunderland AFC (`1000000071`) | `2026-08-22..2026-08-23`, `2026-08-30..2026-08-31` | `2026-08-22..NULL` |
+| `2000030053` | Zadok Yohanna | Brighton & Hove Albion FC (`1000000397`) | `2026-08-23..2026-08-24` | `2026-08-23..NULL` |
+| `2000020012` | Cody Drameh | Hull City AFC (`1000000322`) | `2026-08-22..2026-08-23`, `2026-08-29..2026-08-30` | `2026-08-22..NULL` |
+
+## 2. Nguồn `fc27_overall` & hồ sơ cho 39 cầu thủ thiếu OVR trong roster GW12
+
+- **32 cầu thủ có thẻ cơ bản chính thức trên EA SPORTS FC 27** (`https://www.ea.com/games/ea-sports-fc/ratings/teams-ratings/...` & `/player-ratings/...`), đối chiếu khớp tên, CLB và ngày sinh với FPL/SofaScore. Không sử dụng bất kỳ nguồn OVR bên thứ ba nào (FUTBIN, SoFIFA, FIFACM…).
+- **7 cầu thủ EA SPORTS FC 27 không có thẻ** (`estimated=true`, lưu riêng tại `estimated-ovr.csv`): áp dụng quy tắc 25/11/2026 `MAX(56, min OVR EA thật của CLB)` trên các cầu thủ có membership đang mở mùa 2026, loại trừ toàn bộ 23 cầu thủ có OVR không phải EA thật từ các đợt 02–03/10/2026 (gồm Max Dowman `72` và 22 trường hợp thiếu EA / `USER_PROVIDED`).
+- **3 cầu thủ đã có dòng trong `player_season_profiles`** (`2000005021` Mahdi Nicoll-Jazuli, `2000030180` George Shepherd, `2000030229` Wellity Lucky): chỉ điền cột `fc27_overall` đang `NULL`, giữ nguyên 100% các trường hiện có.
+
+| `player_id` | Cầu thủ | CLB | OVR | `estimated` | EA SPORTS FC 27 | SofaScore | Ghi chú |
+|---:|---|---|---:|---|---|---|---|
+| `2000030114` | Juanlu Sánchez | AFC Bournemouth | 76 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/juanlu-sanchez/264174) | [SofaScore](https://www.sofascore.com/football/player/juanlu-sanchez/1010655) |  |
+| `2000030060` | Alejandro Garnacho | Aston Villa FC | 77 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alejandro-garnacho/268438) | [SofaScore](https://www.sofascore.com/football/player/alejandro-garnacho/1135873) |  |
+| `2000030062` | Alysson | Aston Villa FC | 70 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alysson/82968) | [SofaScore](https://www.sofascore.com/football/player/alysson-edward/1631879) | Full name: Alysson Edward Franco da Rocha dos Santos |
+| `2000030263` | Modou Kéba Cissé | Aston Villa FC | 68 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/modou-keba-cisse/77524) | [SofaScore](https://www.sofascore.com/football/player/modou-keba-cisse/1944705) | Chưa có vị trí chi tiết trong player_eligible_positions |
+| `2000030002` | Keane Lewis-Potter | Brentford FC | 77 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/keane-lewis-potter/243606) | [SofaScore](https://www.sofascore.com/football/player/keane-lewis-potter/1014120) |  |
+| `2000030044` | Georginio Rutter | Brighton & Hove Albion FC | 77 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/georginio-rutter/245637) | [SofaScore](https://www.sofascore.com/football/player/georginio-rutter/946695) |  |
+| `2000030053` | Zadok Yohanna | Brighton & Hove Albion FC | 67 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/zadok-yohanna/80314) | [SofaScore](https://www.sofascore.com/football/player/zadok-yohanna/) | Mở lại membership Brighton từ 2026-08-23 |
+| `2000005021` | Mahdi Nicoll-Jazuli | Chelsea FC | 64 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/mahdi-nicoll-jazuli/2037476) | Hồ sơ có sẵn (giữ nguyên 5 trường SofaScore); ước tính PremierHub: MAX(56, min OVR EA của Chelsea FC = 64 [Teddy Sharman-Lowe]) = 64 |
+| `2000030262` | Olutayo Subuloye | Chelsea FC | 64 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/olutayo-subuloye/) | ước tính PremierHub: MAX(56, min OVR EA của Chelsea FC = 64 [Teddy Sharman-Lowe]) = 64; chưa có vị trí chi tiết |
+| `2000030261` | Teddy Sharman-Lowe | Chelsea FC | 64 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/teddy-sharman-lowe/257126) | [SofaScore](https://www.sofascore.com/football/player/teddy-sharman-lowe/) | Chưa có vị trí chi tiết trong player_eligible_positions |
+| `2000030180` | George Shepherd | Coventry City FC | 68 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/george-shepherd/2318050) | Hồ sơ có sẵn (giữ nguyên nat/dob và 3 trường NULL từ SofaScore); ước tính PremierHub: MAX(56, min OVR EA của Coventry City FC = 68 [Ben Wilson, Jake Bidwell]) = 68; chưa có vị trí chi tiết |
+| `2000016002` | Anan Khalaili | Crystal Palace FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/anan-khalaili/70888) | [SofaScore](https://www.sofascore.com/football/player/anan-khalaili/) |  |
+| `2000020107` | Evann Guessand | Crystal Palace FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/evann-guessand/258444) | [SofaScore](https://www.sofascore.com/football/player/evann-guessand/) |  |
+| `2000020103` | Tyrick Mitchell | Crystal Palace FC | 79 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/tyrick-mitchell/240947) | [SofaScore](https://www.sofascore.com/football/player/tyrick-mitchell/) |  |
+| `2000020105` | Yéremy Pino | Crystal Palace FC | 79 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/yeremy-pino/259377) | [SofaScore](https://www.sofascore.com/football/player/yeremy-pino/984624) |  |
+| `2000020116` | Óscar Mingueza | Crystal Palace FC | 80 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mingueza/259694) | [SofaScore](https://www.sofascore.com/football/player/oscar-mingueza/859773) | EA hiển thị Mingueza |
+| `2000020093` | Brennan Johnson | Everton FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/brennan-johnson/251421) | [SofaScore](https://www.sofascore.com/football/player/brennan-johnson/1085180) |  |
+| `2000020087` | Tyrique George | Everton FC | 72 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/tyrique-george/71998) | [SofaScore](https://www.sofascore.com/football/player/tyrique-george/1403061) |  |
+| `2000030265` | Dino Kaiser | Fulham FC | 62 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/dino-kaiser/) | shirt_number để NULL (số 37 trên SofaScore thuộc Margate); ước tính PremierHub: MAX(56, min OVR EA của Fulham FC = 62 [Jonah Kusi-Asare]) = 62; chưa có vị trí chi tiết |
+| `2000020012` | Cody Drameh | Hull City AFC | 69 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/cody-drameh/254529) | [SofaScore](https://www.sofascore.com/football/player/cody-drameh/) | Mở lại & nối membership Hull City từ 2026-08-22 |
+| `2000020028` | Abdoul Ouattara | Ipswich Town FC | 73 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/abdoul-ouattara/75318) | [SofaScore](https://www.sofascore.com/football/player/abdoul-ouattara/1930811) |  |
+| `2000020024` | Daizen Maeda | Ipswich Town FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/daizen-maeda/246321) | [SofaScore](https://www.sofascore.com/football/player/daizen-maeda/823348) |  |
+| `2000020069` | Brenden Aaronson | Leeds United FC | 76 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/brenden-aaronson/247361) | [SofaScore](https://www.sofascore.com/football/player/brenden-aaronson/973431) |  |
+| `2000020068` | Ethan Ampadu | Leeds United FC | 80 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ethan-ampadu/235735) | [SofaScore](https://www.sofascore.com/football/player/ethan-ampadu/847097) |  |
+| `2000020065` | Jayden Bogle | Leeds United FC | 76 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jayden-bogle/244591) | [SofaScore](https://www.sofascore.com/football/player/jayden-bogle/929132) |  |
+| `2000020071` | Noah Okafor | Leeds United FC | 77 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/noah-okafor/242530) | [SofaScore](https://www.sofascore.com/football/player/noah-okafor/865523) |  |
+| `2000030229` | Wellity Lucky | Liverpool FC | 61 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/wellity-lucky/1403123) | Hồ sơ có sẵn (giữ nguyên 5 trường SofaScore); ước tính PremierHub: MAX(56, min OVR EA của Liverpool FC = 61 [Harvey Davies]) = 61 |
+| `2000030070` | Anthony Elanga | Newcastle United FC | 79 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/anthony-elanga/257470) | [SofaScore](https://www.sofascore.com/football/player/anthony-elanga/979232) |  |
+| `2000030076` | Jacob Murphy | Newcastle United FC | 79 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jacob-murphy/206085) | [SofaScore](https://www.sofascore.com/football/player/jacob-murphy/372336) |  |
+| `2000020060` | Ola Aina | Nottingham Forest FC | 79 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ola-aina/224656) | [SofaScore](https://www.sofascore.com/football/player/ola-aina/82548) |  |
+| `2000030266` | Alan Browne | Sunderland AFC | 72 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alan-browne/216464) | [SofaScore](https://www.sofascore.com/football/player/alan-browne/288988) | Chưa có vị trí chi tiết trong player_eligible_positions |
+| `2000020033` | Luke O'Nien | Sunderland AFC | 73 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/luke-o-nien/215700) | [SofaScore](https://www.sofascore.com/football/player/luke-onien/365812) |  |
+| `2000020051` | Romaine Mundle | Sunderland AFC | 72 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/romaine-mundle/268903) | [SofaScore](https://www.sofascore.com/football/player/romaine-mundle/1094440) | Mở lại & nối membership Sunderland từ 2026-08-22 |
+| `2000030260` | Timur Tuterov | Sunderland AFC | 63 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/timur-tutierov/74904) | [SofaScore](https://www.sofascore.com/football/player/timur-tuterov/1432254) | EA hiển thị Timur Tutierov; ngày sinh 2005-06-11 & Sunderland khớp |
+| `2000020035` | Trai Hume | Sunderland AFC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/trai-hume/266400) | [SofaScore](https://www.sofascore.com/football/player/trai-hume/989034) |  |
+| `2000030264` | Luca Gunter | Tottenham Hotspur FC | 62 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/luca-gunter/1187493) | ước tính PremierHub: MAX(56, min OVR EA của Tottenham Hotspur FC = 62 [Callum Olusesi, Jun'ai Byfield]) = 62; chưa có vị trí chi tiết |
+| `2000030105` | Luca Williams-Barnett | Tottenham Hotspur FC | 62 | `true` | — | [SofaScore](https://www.sofascore.com/football/player/luca-williams-barnett/1471591) | ước tính PremierHub: MAX(56, min OVR EA của Tottenham Hotspur FC = 62 [Callum Olusesi, Jun'ai Byfield]) = 62 |
+| `2000030101` | Mathys Tel | Tottenham Hotspur FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mathys-tel/268421) | [SofaScore](https://www.sofascore.com/football/player/mathys-tel/1048888) |  |
+| `2000030019` | Richarlison | Tottenham Hotspur FC | 78 | `false` | [EA FC 27](https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/richarlison/231943) | [SofaScore](https://www.sofascore.com/football/player/richarlison/840217) | Mở lại membership Tottenham từ 2026-08-22 |
