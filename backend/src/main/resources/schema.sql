@@ -383,3 +383,19 @@ CREATE TABLE IF NOT EXISTS fpl_provisional_unmapped (
     FOREIGN KEY (fixture_id) REFERENCES fixtures(id),
     FOREIGN KEY (club_id) REFERENCES clubs(id)
 );
+
+-- Privacy-preserving daily visitor and pageview counters (Vietnam calendar day; UTC first_seen_at).
+CREATE TABLE IF NOT EXISTS site_visitors_daily (
+    stat_day DATE NOT NULL,
+    visitor_hash CHAR(64) NOT NULL,
+    first_seen_at TIMESTAMP(6) NOT NULL,
+    views INTEGER NOT NULL,
+    PRIMARY KEY (stat_day, visitor_hash)
+);
+
+CREATE TABLE IF NOT EXISTS site_page_views_daily (
+    stat_day DATE NOT NULL,
+    page_key VARCHAR(32) NOT NULL,
+    views INTEGER NOT NULL,
+    PRIMARY KEY (stat_day, page_key)
+);

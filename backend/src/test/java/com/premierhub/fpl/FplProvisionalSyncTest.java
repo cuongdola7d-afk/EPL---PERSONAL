@@ -566,9 +566,11 @@ class FplProvisionalSyncTest {
 
     @Test
     void regressionFplCollectorProducesIdenticalGw11CsvsAfterRefactor() throws Exception {
-        // Seed all 9 finished GW11 fixtures present in real backend/data/gw11-2026/fpl/fixture-map.csv
+        // Use a fixed golden snapshot in src/test/resources matching backend/data/gw11-2026/fpl/raw/
+        // so ongoing GW11 data updates never break this regression test.
+        Path goldenDir = Path.of("src/test/resources/fpl/gw11-regression");
         Set<Integer> gw11Fixtures = new LinkedHashSet<>();
-        List<String> mapLines = Files.readAllLines(REAL_GW11_DIR.resolve("fixture-map.csv"), StandardCharsets.UTF_8);
+        List<String> mapLines = Files.readAllLines(goldenDir.resolve("fixture-map.csv"), StandardCharsets.UTF_8);
         for (int i = 1; i < mapLines.size(); i++) {
             String line = mapLines.get(i).trim();
             if (!line.isEmpty()) {
@@ -585,17 +587,17 @@ class FplProvisionalSyncTest {
         assertEquals(0, result.unmappedCount());
 
         // Basic match stats CSV must be byte-for-byte identical
-        String expectedBasic = Files.readString(REAL_GW11_DIR.resolve("fpl-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8)
+        String expectedBasic = Files.readString(goldenDir.resolve("fpl-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").trim();
         String actualBasic = Files.readString(outDir.resolve("fpl-match-stats-2026-GW11.csv"), StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").trim();
         assertEquals(expectedBasic, actualBasic, "fpl-match-stats-2026-GW11.csv must match exactly");
 
         // Extra stats CSV must match identically on all columns except fetched_at for the 8 Batch-2 fixtures
-        // whose raw JSON matches backend/data/gw11-2026/fpl/raw/ (Chelsea-Leeds 1000560642 in the saved CSV
+        // whose raw JSON matches backend/data/gw11-2026/fpl/raw/ (Chelsea-Leeds 1000560642 in the golden CSV
         // kept its earlier Batch-1 snapshot before FPL revised Opta xG/xGC).
         List<String> expectedExtra = stripLastColumn(
-                Files.readAllLines(REAL_GW11_DIR.resolve("fpl-extra-stats-2026-GW11.csv"), StandardCharsets.UTF_8))
+                Files.readAllLines(goldenDir.resolve("fpl-extra-stats-2026-GW11.csv"), StandardCharsets.UTF_8))
                 .stream().filter(l -> !l.startsWith("2026,1000560642,")).toList();
         List<String> actualExtra = stripLastColumn(
                 Files.readAllLines(outDir.resolve("fpl-extra-stats-2026-GW11.csv"), StandardCharsets.UTF_8))
@@ -603,7 +605,7 @@ class FplProvisionalSyncTest {
         assertEquals(expectedExtra, actualExtra, "fpl-extra-stats-2026-GW11.csv (excluding fetched_at and Batch-1 1000560642) must match exactly");
 
         // Fixture map CSV must match identically
-        String expectedMap = Files.readString(REAL_GW11_DIR.resolve("fixture-map.csv"), StandardCharsets.UTF_8)
+        String expectedMap = Files.readString(goldenDir.resolve("fixture-map.csv"), StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").trim();
         String actualMap = Files.readString(outDir.resolve("fixture-map.csv"), StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").trim();

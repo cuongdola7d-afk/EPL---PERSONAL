@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import ClubPage from './components/ClubPage.jsx'
 import PlayerPage from './components/PlayerPage.jsx'
 import MatchPage from './components/MatchPage.jsx'
@@ -9,10 +10,12 @@ import ClubDetailPage from './components/ClubDetailPage.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import MinigamePage from './components/MinigamePage.jsx'
 import LiveTestPage from './components/LiveTestPage.jsx'
+import AdminPage from './components/AdminPage.jsx'
 import { parseMinigameRoute } from './minigame/playerGuess.js'
 import { parseClubRoute, clubDetailHash } from './utils/clubRoute.js'
 import { parsePlayerDetailHash, parsePlayerListHash, playerDetailHash, playerListHash } from './utils/playerRoute.js'
 import { parseMatchRoute, matchListHash } from './utils/matchRoute.js'
+import { resolvePageKey, sendPageview } from './utils/analytics.js'
 import './App.css'
 import './DarkSite.css'
 import './components/StandingsBands.css'
@@ -55,7 +58,12 @@ function isLiveTestHash(hash) {
   return hash === '#live-test' || hash.startsWith('#live-test?')
 }
 
+function isAdminHash(hash) {
+  return hash === '#/admin' || hash === '#admin' || hash.startsWith('#/admin?') || hash.startsWith('#admin?')
+}
+
 function pageFromHash(hash) {
+  if (isAdminHash(hash)) return 'admin'
   const name = hash.slice(1)
   if (parseMinigameRoute(hash)) return 'minigame'
   if (parsePlayerDetailHash(hash) || parsePlayerListHash(hash)) return 'players'
@@ -99,16 +107,25 @@ function App() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  const current = PAGES[page]
+  const current = page === 'admin'
+    ? { label: 'Quản trị', component: AdminPage, fullPage: true, hasSeasons: false }
+    : PAGES[page]
   const CurrentPage = current.component
 
   useEffect(() => {
     document.title = `${liveTest ? 'Kiểm tra đường truyền SSE' : playerDetail ? 'Hồ sơ cầu thủ' : clubRoute ? 'Chi tiết câu lạc bộ' : page === 'clubs' ? 'Trang chủ' : current.label} | prismaXI`
   }, [current.label, playerDetail, clubRoute, page, liveTest])
 
+  const analyticsPageKey = resolvePageKey({ page, playerDetail, clubRoute, matchRoute, liveTest })
+  const routeStamp = `${analyticsPageKey}:${playerDetail?.playerId ?? ''}:${clubRoute?.clubId ?? ''}:${matchRoute?.matchId ?? ''}`
+  useEffect(() => {
+    if (session.loading || session.account?.role === 'ADMIN' || !analyticsPageKey) return
+    sendPageview(analyticsPageKey)
+  }, [routeStamp, analyticsPageKey, session.loading, session.account?.role])
+
   return (
     <div className={`app-shell${page === 'clubs' ? ' club-home-shell' : page === 'standings' ? ' standings-shell' : ''}`} data-home-theme={homeTheme}>
-      <SiteHeader pages={PAGES} page={page} season={season} theme={homeTheme}
+      <SiteHeader pages={PAGES} page={page} season={season} theme={homeTheme} account={session.account}
         onThemeChange={setHomeTheme} onSessionChange={setSession} onSeasonChange={next => {
           setSeason(next)
           if (clubRoute) window.location.hash = clubDetailHash(clubRoute.clubId, { ...clubRoute, season: next })
@@ -146,8 +163,8 @@ function App() {
           playerDetail ? <PlayerDetailPage key={`${playerDetail.playerId}-${playerDetail.season}`}
           theme={homeTheme} playerId={playerDetail.playerId} season={playerDetail.season} backHash={playerDetail.backHash} /> :
           clubRoute ? <ClubDetailPage key={`${clubRoute.clubId}-${season}`} route={clubRoute} season={season} /> :
-          <CurrentPage theme={homeTheme} key={['fantasy', 'minigame'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
-            {...(['fantasy', 'minigame'].includes(page) ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
+          <CurrentPage theme={homeTheme} key={['fantasy', 'minigame', 'admin'].includes(page) ? `${page}:${session.loading}:${session.account?.id ?? 'guest'}` : current.hasSeasons ? `${page}-${season}` : page}
+            {...(['fantasy', 'minigame', 'admin'].includes(page) ? { account: session.account, authLoading: session.loading, authError: session.error } : {})}
             {...(page === 'minigame' ? { route: minigameRoute } : {})}
             {...(current.hasSeasons ? { season } : {})}
             {...(page === 'clubs' ? { homeState, onHomeStateChange: setHomeState } : {})}
@@ -163,6 +180,7 @@ function App() {
               <a key={name} href={`#${name}`}>{item.navLabel}</a>)}</nav></>}
         </div>
       </footer>
+      <Analytics />
     </div>
   )
 }

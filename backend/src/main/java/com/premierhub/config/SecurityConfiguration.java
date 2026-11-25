@@ -3,6 +3,8 @@ package com.premierhub.config;
 import com.premierhub.accounts.GoogleOAuthSecurity;
 import com.premierhub.accounts.AuthProxyFilter;
 import com.premierhub.accounts.AuthProxySettings;
+import com.premierhub.analytics.AccountActivityFilter;
+import com.premierhub.analytics.AccountActivityService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -43,14 +46,17 @@ public class SecurityConfiguration {
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     SecurityFilterChain apiSecurity(HttpSecurity http, HttpSessionCsrfTokenRepository tokens, SecurityContextRepository contexts,
                                        SessionAuthenticationStrategy sessions, ObjectProvider<GoogleOAuthSecurity> google,
-                                       ObjectProvider<AuthProxySettings> proxy) throws Exception {
+                                       ObjectProvider<AuthProxySettings> proxy,
+                                       ObjectProvider<AccountActivityService> activityService) throws Exception {
         var proxySettings = proxy.getIfAvailable();
         if (proxySettings != null) http.addFilterBefore(new AuthProxyFilter(proxySettings), SecurityContextHolderFilter.class);
+        var activity = activityService.getIfAvailable();
+        if (activity != null) http.addFilterAfter(new AccountActivityFilter(activity), AuthorizationFilter.class);
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.csrfTokenRepository(tokens)
-                        // This existing endpoint only reads football data; it does not save a user's team.
-                        .ignoringRequestMatchers("/api/fantasy/2026/validate"))
+                        // Public read/beacon endpoints that perform no authenticated user state mutation.
+                        .ignoringRequestMatchers("/api/fantasy/2026/validate", "/api/analytics/pageview"))
                 .securityContext(context -> context.securityContextRepository(contexts))
                 .sessionManagement(session -> session.sessionAuthenticationStrategy(sessions))
                 .requestCache(cache -> cache.disable())
@@ -58,6 +64,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/auth/csrf", "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/google/status", "/api/auth/google/start", "/api/auth/google/authorize/google", "/api/auth/google/callback").permitAll()
                         .requestMatchers("/api/auth/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/fantasy/2026/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/fantasy/2026/me/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/minigame/2026/player-guess/info", "/api/minigame/2026/player-guess/leaderboard").permitAll()
@@ -65,7 +72,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/fantasy/2026/gameweeks", "/api/fantasy/2026/gameweeks/*", "/api/fantasy/2026/gameweeks/*/players", "/api/fantasy/2026/leaderboard").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/clubs/**", "/api/players/**", "/api/matches/**", "/api/standings/**", "/api/fantasy/2026/team-of-week", "/api/fantasy/2024/team-of-week", "/api/live/stream", "/api/live/test-stream", "/api/live/matches", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/fantasy/2026/validate", "/api/fantasy/2024/validate").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/fantasy/2026/validate", "/api/fantasy/2024/validate", "/api/analytics/pageview").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().denyAll())
                 .exceptionHandling(errors -> errors

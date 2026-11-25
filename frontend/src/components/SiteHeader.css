@@ -23,7 +23,7 @@
 .app-shell .site-header .brand-accent { color: var(--cx-accent); }
 .app-shell .site-header .site-nav { flex: 1; min-width: 0; width: auto; margin-inline: 4px; display: flex; align-items: center; justify-content: flex-start; gap: 4px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
 .app-shell .site-header .site-nav::-webkit-scrollbar { display: none; }
-.app-shell .site-header .nav-link { flex: none; min-height: 38px; padding: 8px 13px; border: 1px solid transparent; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--cx-muted); text-decoration: none; }
+.app-shell .site-header .nav-link { flex: none; min-height: 38px; padding: 8px 11px; border: 1px solid transparent; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--cx-muted); text-decoration: none; }
 .app-shell .site-header .nav-link:is(:hover, .active) { color: var(--cx-text); background: var(--cx-chip); border-color: var(--cx-accent); }
 .app-shell .site-header .cx-header-controls { display: flex; flex: none; align-items: center; gap: 8px; }
 .app-shell .site-header .cx-season { position: relative; }

@@ -44,3 +44,19 @@ CREATE TABLE IF NOT EXISTS SPRING_SESSION_ATTRIBUTES (
     CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK FOREIGN KEY (SESSION_PRIMARY_ID)
         REFERENCES SPRING_SESSION(PRIMARY_ID) ON DELETE CASCADE
 );
+
+-- Non-loginable system actor used by scheduled Fantasy automation for audit trails.
+INSERT INTO accounts (email, display_name, password_hash, role, created_at)
+SELECT 'system@prismaxi.invalid', 'Hệ thống', NULL, 'ADMIN', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE email = 'system@prismaxi.invalid');
+
+-- Daily active account presence (Vietnam calendar day; UTC timestamps).
+CREATE TABLE IF NOT EXISTS account_activity_days (
+    account_id BIGINT NOT NULL,
+    stat_day DATE NOT NULL,
+    first_seen_at TIMESTAMP(6) NOT NULL,
+    last_seen_at TIMESTAMP(6) NOT NULL,
+    CONSTRAINT account_activity_days_pk PRIMARY KEY (account_id, stat_day),
+    CONSTRAINT account_activity_days_account_fk FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS account_activity_days_day_idx ON account_activity_days (stat_day);
