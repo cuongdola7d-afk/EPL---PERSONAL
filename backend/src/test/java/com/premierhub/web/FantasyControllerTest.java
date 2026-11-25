@@ -25,7 +25,7 @@ class FantasyControllerTest {
 
     @Test
     void ignoresForgedOvrAndPositionsAndReturnsSlotSpecificDatabaseErrors() throws Exception {
-        when(queries.players(2026, null, null, FantasyLineupService.AS_OF)).thenReturn(List.of(
+        when(queries.players(2026, null, null, FantasyLineupService.defaultAsOf())).thenReturn(List.of(
                 new PlayerResponse(1, "Luke Shaw", 1, "MU", "DEFENDER", null, null,
                         null, null, null, null, null, null, "LB", List.of("LB"), "VERIFIED")));
         mvc.perform(post("/api/fantasy/2026/validate").contentType("application/json")

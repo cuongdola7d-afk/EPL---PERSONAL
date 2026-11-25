@@ -1,6 +1,6 @@
 import { buildApiUrl, fetchApiJson, fetchApiList } from './request.js'
 import { isValidPlayer } from './players.js'
-import { FANTASY_AS_OF } from '../fantasy/lineup.js'
+import { todayVietnamDate } from '../fantasy/lineup.js'
 
 export function isValidFantasyPlayer(player) {
   return isValidPlayer(player) && Number.isInteger(player.id) && player.id > 0 &&
@@ -10,7 +10,7 @@ export function isValidFantasyPlayer(player) {
     ['VERIFIED', 'MISSING'].includes(player.positionStatus)
 }
 
-export async function fetchFantasyPlayers(signal, gameweek = null, rosterAsOf = null) {
+export async function fetchFantasyPlayers(signal, gameweek = null, rosterAsOf = null, now = new Date()) {
   if (gameweek !== null) {
     const data = await fetchApiJson(`/api/fantasy/2026/gameweeks/${gameweek}/players`, signal)
     if (data?.season !== 2026 || data.gameweek !== gameweek || !rosterAsOf || data.rosterAsOf !== rosterAsOf ||
@@ -18,8 +18,8 @@ export async function fetchFantasyPlayers(signal, gameweek = null, rosterAsOf = 
       throw new Error('Mốc roster của GW không khớp. Tải lại trạng thái vòng trước khi chọn đội.')
     return data.players
   }
-  // Fixed reference belongs only to the guest practice builder.
-  return fetchApiList(`/api/players?season=2026&asOf=${FANTASY_AS_OF}`, signal,
+  const asOf = rosterAsOf || todayVietnamDate(now)
+  return fetchApiList(`/api/players?season=2026&asOf=${asOf}`, signal,
     isValidFantasyPlayer, 'cầu thủ Fantasy')
 }
 

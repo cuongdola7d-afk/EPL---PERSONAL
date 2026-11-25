@@ -160,7 +160,7 @@ export default function FantasyGameweek({
   const canStart = Boolean(next?.scheduleComplete && next.candidateDeadlineUtc && !loading && !error &&
     remainingMilliseconds(next.candidateDeadlineUtc, data.serverTimeUtc, data.receivedAt, tick) > 0)
   useEffect(() => {
-    onSelectionChange?.(selected ?? 6, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null, view?.status ?? null, view?.deadlineUtc ?? null)
+    onSelectionChange?.(selected ?? 6, Boolean(view?.canEdit && !expired && !loading && !error), view?.rosterAsOf ?? null, view?.status ?? null, view?.deadlineUtc ?? null, !loading)
   }, [selected, view?.canEdit, view?.rosterAsOf, view?.status, view?.deadlineUtc, expired, loading, error, onSelectionChange])
   useEffect(() => {
     if (!onOpenGameweekChange) return

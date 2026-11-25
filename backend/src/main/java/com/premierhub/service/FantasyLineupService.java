@@ -5,6 +5,7 @@ import com.premierhub.web.dto.FantasyValidationResponse;
 import com.premierhub.web.dto.FantasyValidationResponse.Issue;
 import com.premierhub.web.dto.PlayerResponse;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +19,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class FantasyLineupService {
     public static final int MAX_OVR = 910;
-    public static final LocalDate AS_OF = LocalDate.of(2026, 10, 2);
+    public static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    public static LocalDate defaultAsOf() {
+        return LocalDate.now(VIETNAM_ZONE);
+    }
     // Rows and keys mirror frontend/src/fantasy/lineup.js. Side-specific CB/CM
     // labels are normalized here; these are permissions, not broad groups.
     private static final Map<String, List<List<String>>> FORMATIONS = Map.of(
@@ -58,8 +63,8 @@ public class FantasyLineupService {
 
     // The same roster read supplies validation and the submission snapshot.
     public Inspection inspect(FantasyLineupRequest request, boolean complete) {
-        // Legacy guest builder only. Multiplayer always passes the stored GW date.
-        return inspect(request, complete, AS_OF);
+        // Guest fallback when no configured gameweek is supplied; multiplayer always passes the stored GW date.
+        return inspect(request, complete, defaultAsOf());
     }
 
     public Inspection inspect(FantasyLineupRequest request, boolean complete, LocalDate asOf) {

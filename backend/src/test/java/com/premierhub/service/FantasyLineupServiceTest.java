@@ -119,4 +119,17 @@ class FantasyLineupServiceTest {
         hasCode("SLOT", check("4-2-1-3"));
         hasCode("COUNT", check("4-2-1-3"));
     }
+
+    @Test
+    void guestDefaultAsOfIncludesPostOctoberJoinersAndExcludesClosedMemberships() {
+        // Player 7 (LB) joins after the legacy 2026-10-02 date (like Lewis-Potter on 2026-10-10)
+        jdbc.update("DELETE FROM manual_player_memberships WHERE player_id=7");
+        jdbc.update("INSERT INTO manual_player_memberships (league_id, season_year, player_id, club_id, start_date) VALUES (39, 2026, 7, 3, '2026-10-10')");
+        assertTrue(check("4-2-1-3").valid(), "Post-Oct-02 open membership must be eligible under defaultAsOf()");
+
+        // Player 8 (CB) closes on today's VN date (like Cisse closing on 2026-11-25)
+        jdbc.update("UPDATE manual_player_memberships SET end_date=? WHERE player_id=8",
+                java.sql.Date.valueOf(FantasyLineupService.defaultAsOf()));
+        hasCode("ROSTER", check("4-2-1-3"));
+    }
 }

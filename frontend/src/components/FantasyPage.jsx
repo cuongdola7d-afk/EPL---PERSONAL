@@ -40,18 +40,21 @@ function FantasyPage({ account = null, authLoading = false, authError = '', them
   const [contestStatus, setContestStatus] = useState(null)
   const [contestDeadline, setContestDeadline] = useState(null)
   const [rosterAsOf, setRosterAsOf] = useState(null)
+  const [gameweekReady, setGameweekReady] = useState(false)
   const [openGameweek, setOpenGameweek] = useState(null)
   const [requestedGameweek, setRequestedGameweek] = useState(null)
   const [requestedLeaderboardScope, setRequestedLeaderboardScope] = useState(null)
   const requestPlayers = useCallback((signal) => {
-    if (authLoading || account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
-    return fetchFantasyPlayers(signal, account ? contestGameweek : null, account ? rosterAsOf : null)
-  }, [account?.id, authLoading, contestGameweek, rosterAsOf])
+    if (authLoading || !gameweekReady) return Promise.resolve([])
+    if (account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
+    const useGameweekRoster = Boolean(contestGameweek && rosterAsOf)
+    return fetchFantasyPlayers(signal, useGameweekRoster ? contestGameweek : null, useGameweekRoster ? rosterAsOf : null)
+  }, [account?.id, authLoading, gameweekReady, contestGameweek, rosterAsOf])
   const { data: rosterPlayers, status, error, reload } = useApiList(requestPlayers)
   const [lineup, setLineup] = useState(() => account || authLoading ? emptyLineup() : readSavedLineup())
   const entry = useFantasyEntry(account, contestGameweek, setLineup)
-  const contestSelection = useCallback((gw, open, asOf, status, deadline) => {
-    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status); setContestDeadline(deadline)
+  const contestSelection = useCallback((gw, open, asOf, status, deadline, ready = true) => {
+    setContestGameweek(gw); setContestOpen(open); setRosterAsOf(asOf); setContestStatus(status); setContestDeadline(deadline); setGameweekReady(Boolean(ready))
   }, [])
   const lockedSubmission = account && entry.ready && !contestOpen && entry.data?.submitted
   const snapshotPlayers = lockedSubmission ? lockedSubmission.players.map(player => ({

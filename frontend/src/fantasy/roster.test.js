@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fetchFantasyPlayers, checkFantasyLineup } from '../api/fantasy.js'
 import { fetchGameweeks } from '../api/gameweeks.js'
+import { todayVietnamDate } from './lineup.js'
 
 test('two multiplayer GWs fetch their server rosters and validate in the same GW', async t => {
   const original = global.fetch; t.after(() => { global.fetch = original })
@@ -21,6 +22,39 @@ test('two multiplayer GWs fetch their server rosters and validate in the same GW
     '/api/fantasy/2026/validate?gameweek=7',
   ])
   assert.ok(calls.every(([url]) => !url.includes('2026-10-02')))
+})
+
+test('guest mode uses configured GW roster endpoint or Vietnam current date, never hardcoded 2026-10-02', async t => {
+  const original = global.fetch; t.after(() => { global.fetch = original })
+  const calls = []
+  const lewisPotter = {
+    id: 2000030002, name: 'Keane Lewis-Potter', clubId: 1000000402, club: 'Brentford FC',
+    position: 'DEFENDER', goals: 4, assists: 1, fc27Overall: 77,
+    primaryPosition: 'LB', eligiblePositions: ['LB', 'CAM', 'LM'], positionStatus: 'VERIFIED',
+  }
+  global.fetch = async url => {
+    calls.push(url)
+    if (url.includes('/gameweeks/12/players')) {
+      return new Response(JSON.stringify({
+        season: 2026, gameweek: 12, rosterAsOf: '2026-11-25', players: [lewisPotter],
+      }))
+    }
+    return new Response(JSON.stringify([lewisPotter]))
+  }
+  // Configured GW12 -> reuses public GW roster endpoint
+  const gwPlayers = await fetchFantasyPlayers(null, 12, '2026-11-25')
+  assert.equal(gwPlayers.length, 1)
+  assert.equal(gwPlayers[0].name, 'Keane Lewis-Potter')
+  // Unconfigured fallback -> uses Vietnam local date (2026-11-25T18:00:00Z == 2026-11-26 01:00 VN)
+  const fallbackPlayers = await fetchFantasyPlayers(null, null, null, new Date('2026-11-25T18:00:00Z'))
+  assert.equal(fallbackPlayers.length, 1)
+  assert.deepEqual(calls, [
+    '/api/fantasy/2026/gameweeks/12/players',
+    '/api/players?season=2026&asOf=2026-11-26',
+  ])
+  assert.equal(todayVietnamDate(new Date('2026-11-25T16:59:59Z')), '2026-11-25')
+  assert.equal(todayVietnamDate(new Date('2026-11-25T17:00:00Z')), '2026-11-26')
+  assert.ok(calls.every(url => !url.includes('2026-10-02')))
 })
 
 test('roster from a stale or different gameweek cannot be applied to the selector', async t => {

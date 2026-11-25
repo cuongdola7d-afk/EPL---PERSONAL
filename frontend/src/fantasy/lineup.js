@@ -1,6 +1,13 @@
 export const FANTASY_STORAGE_KEY = 'premierhub:fantasy:2026:lineup'
-export const FANTASY_AS_OF = '2026-10-02'
 export const MAX_OVR = 910
+
+export function todayVietnamDate(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now)
+  const part = type => parts.find(item => item.type === type)?.value
+  return `${part('year')}-${part('month')}-${part('day')}`
+}
 // OVR 72 của Dowman là mức ước tính do người dùng chọn; không phải rating EA đã xác minh.
 export const ESTIMATED_OVR_PLAYER_IDS = new Set([2000001025])
 
