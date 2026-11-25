@@ -58,6 +58,7 @@ export default function FantasyRules({ gameweek, deadlineUtc }) {
         <section aria-labelledby="fantasy-rules-save"><h3 id="fantasy-rules-save">Lưu đội và deadline</h3>
           <p className="fantasy-rules-deadline">{deadlineUtc ? <>Hạn của GW{gameweek}: <strong>{formatDeadline(deadlineUtc)}</strong> · Giờ Việt Nam</> : 'Deadline của Gameweek đang chọn chưa được công bố hoặc chưa tải được.'}</p>
           <ul>
+            <li>Hạn chốt đội hình là <strong>30 phút trước trận đầu tiên của vòng</strong> (giờ Việt Nam). Nếu trận đầu đổi giờ, hạn chốt tự đổi theo.</li>
             <li>Cần đăng nhập để lưu đội tham gia.</li>
             <li>Có thể thay đổi và bấm “Lưu đội hình” nhiều lần trước deadline.</li>
             <li>Đội được lưu thành công gần nhất là đội tham gia của Gameweek.</li>

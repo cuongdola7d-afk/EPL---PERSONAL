@@ -20,12 +20,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Periodically automates official Fantasy GW6-GW38 transitions by invoking the exact existing
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FantasyAutomation {
     private static final Logger log = LoggerFactory.getLogger(FantasyAutomation.class);
     private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter VN_SHIFT_FORMAT = DateTimeFormatter.ofPattern("dd/MM HH:mm").withZone(VIETNAM);
     private static final int MIN_OFFICIAL_GW = 6;
     private static final int MAX_OFFICIAL_GW = 38;
 
@@ -119,13 +123,15 @@ public class FantasyAutomation {
 
             List<Integer> opened = new ArrayList<>();
             List<Integer> published = new ArrayList<>();
+            List<Integer> shifted = new ArrayList<>();
             try {
+                tryAutoShiftOpenGameweeks(systemId, shifted);
                 tryAutoOpenNextGameweek(systemId, opened);
                 tryAutoPublishReadyGameweeks(systemId, published);
                 consecutiveFailures = 0;
                 lastFailureAt = null;
                 return new RunReport(dryRun ? Outcome.DRY_RUN : Outcome.COMPLETED,
-                        List.copyOf(opened), List.copyOf(published));
+                        List.copyOf(opened), List.copyOf(published), List.copyOf(shifted));
             } catch (Exception ex) {
                 recordFailure(now, ex);
                 return RunReport.skipped(Outcome.FAILED);
@@ -133,6 +139,99 @@ public class FantasyAutomation {
         } finally {
             running.set(false);
         }
+    }
+
+    private void tryAutoShiftOpenGameweeks(long systemId, List<Integer> shifted) {
+        GameweekService.Overview overview = gameweekService.overview();
+        Instant now = overview.serverTimeUtc();
+        List<GameweekService.View> openRounds = overview.gameweeks().stream()
+                .filter(v -> v.gameweek() >= MIN_OFFICIAL_GW && v.gameweek() <= MAX_OFFICIAL_GW)
+                .filter(v -> v.configured() && v.status() == GameweekService.Status.OPEN)
+                .toList();
+        if (openRounds.isEmpty()) {
+            return;
+        }
+
+        Map<Integer, List<GameweekRepository.Fixture>> fixturesByGw = gameweekRepository.fixtures().stream()
+                .collect(Collectors.groupingBy(GameweekRepository.Fixture::gameweek));
+
+        for (GameweekService.View view : openRounds) {
+            int gw = view.gameweek();
+            Optional<GameweekRepository.Configuration> savedOpt = gameweekRepository.find(gw);
+            if (savedOpt.isEmpty()) {
+                continue;
+            }
+            GameweekRepository.Configuration saved = savedOpt.get();
+            if (!"OPEN".equals(saved.workflowStatus()) || !now.isBefore(saved.deadlineUtc())) {
+                continue;
+            }
+
+            List<GameweekRepository.Fixture> gwFixtures = fixturesByGw.getOrDefault(gw, List.of());
+            GameweekRepository.Fixture currentFirst = GameweekService.earliestScheduledFixture(gwFixtures);
+            if (currentFirst == null || currentFirst.kickoffUtc() == null) {
+                continue;
+            }
+
+            // Only act when the earliest fixture or its kickoff actually changed; never overwrite
+            // manual admin adjustments while the first fixture remains unchanged.
+            if (currentFirst.id() == saved.firstFixtureId()
+                    && currentFirst.kickoffUtc().equals(saved.firstKickoffUtc())) {
+                continue;
+            }
+
+            Instant candidateDeadline = GameweekService.calculateDeadline(currentFirst.kickoffUtc());
+            boolean lockedImmediately = !candidateDeadline.isAfter(now);
+            Instant newDeadline;
+            if (lockedImmediately) {
+                // Lock immediately at now, and never place deadline after the first kickoff.
+                newDeadline = currentFirst.kickoffUtc().isBefore(now) ? currentFirst.kickoffUtc() : now;
+            } else {
+                newDeadline = candidateDeadline;
+            }
+
+            String reason = buildAutoShiftReason(currentFirst, saved.firstKickoffUtc(), lockedImmediately);
+            if (dryRun) {
+                if (lockedImmediately) {
+                    log.warn("Fantasy automation [dry-run]: Sẽ dời deadline GW{} và khóa ngay "
+                                    + "(deadline mới {} đã qua, đặt {}, trận đầu={} #{}, lý do='{}')",
+                            gw, candidateDeadline, newDeadline,
+                            currentFirst.homeClub() + " – " + currentFirst.awayClub(), currentFirst.id(), reason);
+                } else {
+                    log.info("Fantasy automation [dry-run]: Sẽ dời deadline GW{} ({} → {}, trận đầu={} #{}, lý do='{}')",
+                            gw, saved.deadlineUtc(), newDeadline,
+                            currentFirst.homeClub() + " – " + currentFirst.awayClub(), currentFirst.id(), reason);
+                }
+                shifted.add(gw);
+                continue;
+            }
+
+            Optional<GameweekRepository.AutoShiftResult> updated = gameweekRepository.shiftDeadlineForFirstFixture(
+                    gw, currentFirst, newDeadline, now, systemId, reason);
+            if (updated.isPresent()) {
+                GameweekRepository.AutoShiftResult res = updated.get();
+                if (lockedImmediately) {
+                    log.warn("Fantasy automation: trận đầu GW{} đưa sớm lên khiến deadline mới ({}) đã qua; "
+                                    + "đã khóa ngay tại {} (rev={}, lý do='{}')",
+                            gw, candidateDeadline, res.newDeadlineUtc(), res.revision(), reason);
+                } else {
+                    log.info("Fantasy automation: Đã dời deadline GW{} ({} → {}, rev={}, lý do='{}')",
+                            gw, res.oldDeadlineUtc(), res.newDeadlineUtc(), res.revision(), reason);
+                }
+                shifted.add(gw);
+            }
+        }
+    }
+
+    static String buildAutoShiftReason(GameweekRepository.Fixture currentFirst, Instant oldFirstKickoff,
+                                       boolean lockedImmediately) {
+        String matchName = currentFirst.homeClub() + " – " + currentFirst.awayClub();
+        String oldVn = oldFirstKickoff == null ? "?" : VN_SHIFT_FORMAT.format(oldFirstKickoff);
+        String newVn = VN_SHIFT_FORMAT.format(currentFirst.kickoffUtc());
+        String base = "Tự động dời theo giờ trận đầu: " + matchName + " " + oldVn + " → " + newVn;
+        if (lockedImmediately) {
+            base += " (đã quá hạn mới, khóa ngay)";
+        }
+        return base.length() <= 500 ? base : base.substring(0, 500);
     }
 
     private void tryAutoOpenNextGameweek(long systemId, List<Integer> opened) {
@@ -282,9 +381,10 @@ public class FantasyAutomation {
         FAILED
     }
 
-    public record RunReport(Outcome outcome, List<Integer> openedGameweeks, List<Integer> publishedGameweeks) {
+    public record RunReport(Outcome outcome, List<Integer> openedGameweeks, List<Integer> publishedGameweeks,
+                            List<Integer> shiftedGameweeks) {
         static RunReport skipped(Outcome outcome) {
-            return new RunReport(outcome, List.of(), List.of());
+            return new RunReport(outcome, List.of(), List.of(), List.of());
         }
     }
 

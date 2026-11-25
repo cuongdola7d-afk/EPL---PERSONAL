@@ -1,5 +1,6 @@
 package com.premierhub.fantasy;
 
+import com.premierhub.accounts.SystemAccount;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import tools.jackson.databind.ObjectMapper;
@@ -92,12 +93,37 @@ public class FantasyResultRepository {
                 SELECT r.account_id,a.display_name,SUM(r.total_points) AS total_points,COUNT(*) AS gameweeks_played
                 FROM fantasy_team_results r JOIN accounts a ON a.id=r.account_id
                 JOIN fantasy_gameweeks g ON g.season=r.season AND g.gameweek=r.gameweek
-                WHERE r.season=2026 AND g.workflow_status='PUBLISHED' AND g.results_published_at IS NOT NULL
+                WHERE r.season=2026 AND g.gameweek>=6 AND g.workflow_status='PUBLISHED' AND g.results_published_at IS NOT NULL
+                  AND a.email<>?
                   AND r.version=(SELECT MAX(p.version) FROM fantasy_result_publications p
                                  WHERE p.season=r.season AND p.gameweek=r.gameweek)
                 """+(gameweek==null ? "" : " AND r.gameweek=?")+" GROUP BY r.account_id,a.display_name ORDER BY total_points DESC,r.account_id LIMIT 200",
                 (r,n)->new Standing(r.getLong("account_id"),r.getString("display_name"),r.getBigDecimal("total_points"),r.getInt("gameweeks_played")),
-                gameweek==null ? new Object[0] : new Object[]{gameweek});
+                gameweek==null ? new Object[]{SystemAccount.EMAIL} : new Object[]{SystemAccount.EMAIL, gameweek});
+    }
+    public List<Standing> standingsUpTo(int maxGameweek) {
+        return jdbc.query("""
+                SELECT r.account_id,a.display_name,SUM(r.total_points) AS total_points,COUNT(*) AS gameweeks_played
+                FROM fantasy_team_results r JOIN accounts a ON a.id=r.account_id
+                JOIN fantasy_gameweeks g ON g.season=r.season AND g.gameweek=r.gameweek
+                WHERE r.season=2026 AND g.gameweek>=6 AND g.gameweek<=?
+                  AND g.workflow_status='PUBLISHED' AND g.results_published_at IS NOT NULL
+                  AND a.email<>?
+                  AND r.version=(SELECT MAX(p.version) FROM fantasy_result_publications p
+                                 WHERE p.season=r.season AND p.gameweek=r.gameweek)
+                GROUP BY r.account_id,a.display_name ORDER BY total_points DESC,r.account_id LIMIT 200
+                """,
+                (r,n)->new Standing(r.getLong("account_id"),r.getString("display_name"),r.getBigDecimal("total_points"),r.getInt("gameweeks_played")),
+                maxGameweek, SystemAccount.EMAIL);
+    }
+    public List<Integer> publishedGameweeksDesc() {
+        return jdbc.queryForList("""
+                SELECT g.gameweek FROM fantasy_gameweeks g
+                WHERE g.season=2026 AND g.gameweek>=6 AND g.workflow_status='PUBLISHED'
+                  AND g.results_published_at IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM fantasy_result_publications p WHERE p.season=g.season AND p.gameweek=g.gameweek)
+                ORDER BY g.gameweek DESC
+                """, Integer.class);
     }
     public int publishedGameweeks() {
         return jdbc.queryForObject("""

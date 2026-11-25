@@ -30,6 +30,27 @@ export function formatDeadline(value) {
   return `${part('day')}/${part('month')}/${part('year')} · ${part('hour')}:${part('minute')}`
 }
 
+export function formatVietnamDateTimeInput(value) {
+  if (!value) return ''
+  const parsed = Date.parse(value)
+  if (!Number.isFinite(parsed)) return ''
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(parsed))
+  const part = type => parts.find(p => p.type === type)?.value
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
+
+export function parseVietnamDateTimeToUtc(localInput) {
+  if (typeof localInput !== 'string') return null
+  const trimmed = localInput.trim()
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(trimmed)) return null
+  const withSeconds = trimmed.length === 16 ? `${trimmed}:00` : trimmed
+  const ms = Date.parse(`${withSeconds}+07:00`)
+  if (!Number.isFinite(ms)) return null
+  return new Date(ms).toISOString().replace('.000Z', 'Z')
+}
+
 // performance.now is monotonic; changing the browser wall clock cannot unlock a GW.
 export function remainingMilliseconds(deadlineUtc, serverTimeUtc, receivedAt, monotonicNow) {
   return Math.max(0, Date.parse(deadlineUtc) - Date.parse(serverTimeUtc) - Math.max(0, monotonicNow - receivedAt))

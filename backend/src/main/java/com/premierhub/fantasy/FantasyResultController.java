@@ -1,9 +1,11 @@
 package com.premierhub.fantasy;
 
 import com.premierhub.accounts.AccountService;
+import com.premierhub.accounts.SystemAccount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,6 +23,15 @@ public class FantasyResultController {
     public ResponseEntity<?> readiness(@PathVariable int gameweek) { return noStore(results.readiness(gameweek)); }
     @GetMapping("/leaderboard")
     public ResponseEntity<?> leaderboard(@RequestParam(required=false) Integer gameweek) { return noStore(results.leaderboard(gameweek)); }
+    @GetMapping("/latest-result-summary")
+    public ResponseEntity<?> latestResultSummary(Authentication auth) {
+        Long accountId=null;
+        if(auth!=null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)
+                && !SystemAccount.isSystemEmail(auth.getName())) {
+            accountId=accounts.current(auth.getName()).id();
+        }
+        return noStore(results.latestResultSummary(accountId));
+    }
     @PostMapping("/admin/gameweeks/{gameweek}/publish-results")
     public ResponseEntity<?> publish(@PathVariable int gameweek,@Valid @RequestBody PublicationRequest body,Authentication auth) {
         return noStore(results.publish(gameweek,body.expectedVersion(),accounts.current(auth.getName()).id(),body.reason(),false));

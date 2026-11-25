@@ -1,5 +1,12 @@
 # Bước 2 — Gameweek và deadline Fantasy 2026/27
 
+## Cập nhật luật deadline — 25/11/2026
+
+- **Luật mới:** `GameweekService.calculateDeadline(kickoffUtc)` tính bằng `kickoffUtc.minus(DEADLINE_BEFORE_FIRST_KICKOFF)` với `DEADLINE_BEFORE_FIRST_KICKOFF = Duration.ofMinutes(30)` (30 phút trước giờ bóng lăn trận sớm nhất của vòng; giữa deadline và giờ đá có 30 phút trạng thái `LOCKED`).
+- **Tự động dời theo lịch trận đầu:** `FantasyAutomation` kiểm tra các vòng đang `OPEN` mỗi lượt chạy; nếu trận sớm nhất (bỏ qua `POSTPONED`/`CANCELLED` và trận không có giờ UTC) đổi `first_fixture_id` hoặc `first_kickoff_utc` so với snapshot đã lưu, job gọi `GameweekRepository.shiftDeadlineForFirstFixture(...)` trong một transaction để cập nhật `first_fixture_id`, `first_kickoff_utc`, `deadline_utc`, tăng `revision` và ghi audit `fantasy_deadline_changes` dưới tài khoản "Hệ thống". Nếu admin chỉnh tay deadline mà trận đầu không đổi thì job không ghi đè; nếu trận đầu đưa sớm lên làm deadline mới ở quá khứ thì đặt deadline = `now` (khóa ngay, không bao giờ sau giờ đá trận đầu) và log `WARN`.
+- **Quản trị trên UI:** khối Vòng thi có nút **Điều chỉnh deadline** (chỉ hiện với `ADMIN` khi vòng đang `OPEN`) gọi thẳng `POST /api/fantasy/2026/admin/gameweeks/{gameweek}/adjust-deadline`.
+- Các mục checkpoint tháng 10/2026 bên dưới giữ nguyên như lịch sử dưới luật cũ (`00:00` ngày trước trận đầu).
+
 ## Vận hành production — 26/10/2026
 
 Theo yêu cầu riêng của người dùng đã mở **GW9**, bỏ qua cuộc thi GW8 chưa mở. API công khai xác nhận recommendedGameweek=9, OPEN/canEdit=true, deadline **30/10/2026 00:00 Việt Nam**, rosterAsOf **26/10/2026**, revision 1; GW8 configured=false. Trận đầu Chelsea–Manchester United 31/10/2026 19:30 Việt Nam. Đã backup, dùng service hiện có, giữ đội/deadline/kết quả các vòng cũ; không công bố điểm hoặc deploy. Chi tiết [checkpoint GW9](../backend/data/gw9-2026/sources.md). Các checkpoint triển khai trước đây bên dưới là lịch sử.

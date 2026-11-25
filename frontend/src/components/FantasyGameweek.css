@@ -11,4 +11,11 @@
 .fantasy-gameweek p { margin-bottom: 0; overflow-wrap: anywhere; }
 .fantasy-gameweek-admin { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--f-line); }
 .fantasy-gameweek-admin button { margin: 10px 0 0; border-color: var(--f-accent); color: var(--f-accent); font-weight: 700; }
+.fantasy-gameweek-adjust-form { margin-top: 12px; display: grid; gap: 10px; max-width: 520px; }
+.fantasy-gameweek-adjust-form label { display: grid; gap: 6px; }
+.fantasy-gameweek-adjust-form input { padding: 8px 12px; border: 1px solid var(--f-line); border-radius: 12px; background: var(--f-subtle); color: var(--f-text); font: inherit; font-size: .86rem; width: 100%; box-sizing: border-box; }
+.fantasy-gameweek-adjust-preview { margin: 0; font-size: .78rem; color: var(--f-muted); }
+.fantasy-gameweek-adjust-preview code { font-size: .76rem; }
+.fantasy-gameweek-adjust-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.fantasy-gameweek-adjust-actions .fantasy-gameweek-adjust-cancel { border-color: var(--f-line); color: var(--f-muted); font-weight: 600; }
 @media (max-width: 560px) { .fantasy-gameweek { padding: 14px; }.fantasy-gameweek-details { flex-direction: column; gap: 12px; } }

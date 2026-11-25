@@ -32,6 +32,11 @@ public class ApiCorsConfiguration implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST")
                 .allowedHeaders("Accept", "Content-Type", "X-CSRF-TOKEN", "X-PrismaXI-Account-ID")
                 .allowCredentials(true);
+        registry.addMapping("/api/fantasy/2026/latest-result-summary")
+                .allowedOrigins(allowedOrigins.toArray(String[]::new))
+                .allowedMethods("GET")
+                .allowedHeaders("Accept")
+                .allowCredentials(true);
         registry.addMapping("/api/fantasy/2026/me/**")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("GET", "POST")

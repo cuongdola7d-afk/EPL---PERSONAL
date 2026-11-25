@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -21,6 +22,7 @@ import static com.premierhub.fantasy.GameweekRepository.*;
 @Service
 public class GameweekService {
     private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
+    public static final Duration DEADLINE_BEFORE_FIRST_KICKOFF = Duration.ofMinutes(30);
     public enum Status { OPEN, LOCKED, AWAITING_RESULTS, PUBLISHED }
     public record View(int season, int gameweek, String mode, boolean configured,
                        Instant deadlineUtc, Instant deadlinePublishedAt, Instant candidateDeadlineUtc,
@@ -36,7 +38,15 @@ public class GameweekService {
     }
 
     public static Instant calculateDeadline(Instant kickoffUtc) {
-        return kickoffUtc.atZone(VIETNAM).toLocalDate().minusDays(1).atStartOfDay(VIETNAM).toInstant();
+        return kickoffUtc.minus(DEADLINE_BEFORE_FIRST_KICKOFF);
+    }
+
+    public static Fixture earliestScheduledFixture(List<Fixture> fixtures) {
+        return fixtures.stream()
+                .filter(f -> f.kickoffUtc() != null)
+                .filter(f -> !"POSTPONED".equalsIgnoreCase(f.status()) && !"CANCELLED".equalsIgnoreCase(f.status()))
+                .min(Comparator.comparing(Fixture::kickoffUtc).thenComparingInt(Fixture::id))
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)
@@ -61,10 +71,9 @@ public class GameweekService {
     }
 
     private View view(int gw, List<Fixture> fixtures, Configuration configuration, List<Change> changes, Instant now) {
-        Fixture first = fixtures.stream().filter(f -> f.kickoffUtc() != null)
-                .min(Comparator.comparing(Fixture::kickoffUtc).thenComparingInt(Fixture::id)).orElse(null);
+        Fixture first = earliestScheduledFixture(fixtures);
         // Every fixture needs its actual timestamp, including postponed fixtures, before initial publication.
-        boolean complete = fixtures.size() == 10 && fixtures.stream().allMatch(f -> f.kickoffUtc() != null);
+        boolean complete = fixtures.size() == 10 && fixtures.stream().allMatch(f -> f.kickoffUtc() != null) && first != null;
         Status status = configuration == null ? null : effectiveStatus(configuration, fixtures, now);
         return new View(2026, gw, gw <= 5 ? "REPLAY" : "OFFICIAL", configuration != null,
                 configuration == null ? null : configuration.deadlineUtc(),

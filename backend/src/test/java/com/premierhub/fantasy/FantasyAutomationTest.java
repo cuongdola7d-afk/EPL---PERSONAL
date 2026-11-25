@@ -259,4 +259,160 @@ class FantasyAutomationTest {
         assertEquals(FantasyAutomation.Outcome.BACKOFF, automation.runIfDue().outcome());
         Mockito.verify(gameweekService, times(1)).overview();
     }
+
+    @Test
+    void autoShiftsOpenGameweekWhenFirstFixtureMovesLaterAndAuditsAsSystem() {
+        Instant oldKickoff = Instant.parse("2026-11-27T20:00:00Z");
+        Instant oldDeadline = Instant.parse("2026-11-27T19:30:00Z");
+        Instant newKickoff = Instant.parse("2026-11-28T12:30:00Z");
+        Instant expectedNewDeadline = Instant.parse("2026-11-28T12:00:00Z");
+
+        when(gameweekService.overview()).thenReturn(overviewWith(
+                configuredGw(12, GameweekService.Status.OPEN)
+        ));
+        when(gameweekRepository.find(12)).thenReturn(Optional.of(new GameweekRepository.Configuration(
+                12, oldDeadline, NOW.minus(Duration.ofDays(1)), 1000560658, oldKickoff,
+                "OPEN", null, 1, LocalDate.of(2026, 11, 24))));
+        var shiftedFixture = new GameweekRepository.Fixture(
+                1000560658, 12, newKickoff, "SCHEDULED", "Arsenal FC", "Chelsea FC");
+        var postponedEarlier = new GameweekRepository.Fixture(
+                1000560659, 12, oldKickoff.minus(Duration.ofHours(2)), "POSTPONED", "Fulham FC", "Everton FC");
+        when(gameweekRepository.fixtures()).thenReturn(List.of(postponedEarlier, shiftedFixture));
+        when(gameweekRepository.shiftDeadlineForFirstFixture(
+                eq(12), eq(shiftedFixture), eq(expectedNewDeadline), eq(NOW), eq(99L), contains("Arsenal FC – Chelsea FC")))
+                .thenReturn(Optional.of(new GameweekRepository.AutoShiftResult(
+                        12, 2, oldDeadline, expectedNewDeadline, 1000560658, newKickoff)));
+
+        var automation = new FantasyAutomation(
+                gameweekService, gameweekRepository, resultService, accountRepository,
+                clock, true, false, 10, 60);
+
+        var report = automation.runIfDue();
+
+        assertEquals(FantasyAutomation.Outcome.COMPLETED, report.outcome());
+        assertEquals(List.of(12), report.shiftedGameweeks());
+        verify(gameweekRepository).shiftDeadlineForFirstFixture(
+                eq(12), eq(shiftedFixture), eq(expectedNewDeadline), eq(NOW), eq(99L),
+                argThat(reason -> reason.startsWith("Tự động dời theo giờ trận đầu: Arsenal FC – Chelsea FC")));
+    }
+
+    @Test
+    void autoShiftsWhenAnotherFixtureBecomesEarlier() {
+        Instant oldKickoff = Instant.parse("2026-11-28T15:00:00Z");
+        Instant oldDeadline = Instant.parse("2026-11-28T14:30:00Z");
+        Instant earlierKickoff = Instant.parse("2026-11-27T20:00:00Z");
+        Instant expectedNewDeadline = Instant.parse("2026-11-27T19:30:00Z");
+
+        when(gameweekService.overview()).thenReturn(overviewWith(
+                configuredGw(12, GameweekService.Status.OPEN)
+        ));
+        when(gameweekRepository.find(12)).thenReturn(Optional.of(new GameweekRepository.Configuration(
+                12, oldDeadline, NOW.minus(Duration.ofDays(1)), 1000560660, oldKickoff,
+                "OPEN", null, 1, LocalDate.of(2026, 11, 24))));
+        var newFirst = new GameweekRepository.Fixture(
+                1000560658, 12, earlierKickoff, "SCHEDULED", "Brentford FC", "Everton FC");
+        var oldFirst = new GameweekRepository.Fixture(
+                1000560660, 12, oldKickoff, "SCHEDULED", "Arsenal FC", "Chelsea FC");
+        when(gameweekRepository.fixtures()).thenReturn(List.of(oldFirst, newFirst));
+        when(gameweekRepository.shiftDeadlineForFirstFixture(
+                eq(12), eq(newFirst), eq(expectedNewDeadline), eq(NOW), eq(99L), anyString()))
+                .thenReturn(Optional.of(new GameweekRepository.AutoShiftResult(
+                        12, 2, oldDeadline, expectedNewDeadline, 1000560658, earlierKickoff)));
+
+        var automation = new FantasyAutomation(
+                gameweekService, gameweekRepository, resultService, accountRepository,
+                clock, true, false, 10, 60);
+
+        var report = automation.runIfDue();
+
+        assertEquals(List.of(12), report.shiftedGameweeks());
+        verify(gameweekRepository).shiftDeadlineForFirstFixture(
+                eq(12), eq(newFirst), eq(expectedNewDeadline), eq(NOW), eq(99L), anyString());
+    }
+
+    @Test
+    void doesNotOverwriteManualAdminDeadlineWhenFirstFixtureUnchanged() {
+        Instant kickoff = Instant.parse("2026-11-27T20:00:00Z");
+        Instant manualDeadline = Instant.parse("2026-11-27T18:00:00Z"); // Admin manually set 2h before kickoff
+
+        when(gameweekService.overview()).thenReturn(overviewWith(
+                configuredGw(12, GameweekService.Status.OPEN)
+        ));
+        when(gameweekRepository.find(12)).thenReturn(Optional.of(new GameweekRepository.Configuration(
+                12, manualDeadline, NOW.minus(Duration.ofDays(1)), 1000560658, kickoff,
+                "OPEN", null, 2, LocalDate.of(2026, 11, 24))));
+        var sameFirst = new GameweekRepository.Fixture(
+                1000560658, 12, kickoff, "SCHEDULED", "Arsenal FC", "Chelsea FC");
+        when(gameweekRepository.fixtures()).thenReturn(List.of(sameFirst));
+
+        var automation = new FantasyAutomation(
+                gameweekService, gameweekRepository, resultService, accountRepository,
+                clock, true, false, 10, 60);
+
+        var report = automation.runIfDue();
+
+        assertEquals(List.of(), report.shiftedGameweeks());
+        verify(gameweekRepository, never()).shiftDeadlineForFirstFixture(
+                anyInt(), any(), any(), any(), anyLong(), anyString());
+    }
+
+    @Test
+    void locksImmediatelyWhenMovedUpFirstFixtureProducesPastDeadline() {
+        Instant oldKickoff = Instant.parse("2026-11-27T20:00:00Z");
+        Instant oldDeadline = Instant.parse("2026-11-27T19:30:00Z");
+        // Moved up to 15 minutes from NOW -> candidate deadline (NOW - 15m) is in the past -> lock immediately at NOW.
+        Instant movedUpKickoff = NOW.plus(Duration.ofMinutes(15));
+
+        when(gameweekService.overview()).thenReturn(overviewWith(
+                configuredGw(12, GameweekService.Status.OPEN)
+        ));
+        when(gameweekRepository.find(12)).thenReturn(Optional.of(new GameweekRepository.Configuration(
+                12, oldDeadline, NOW.minus(Duration.ofDays(1)), 1000560658, oldKickoff,
+                "OPEN", null, 1, LocalDate.of(2026, 11, 24))));
+        var movedUp = new GameweekRepository.Fixture(
+                1000560658, 12, movedUpKickoff, "SCHEDULED", "Arsenal FC", "Chelsea FC");
+        when(gameweekRepository.fixtures()).thenReturn(List.of(movedUp));
+        when(gameweekRepository.shiftDeadlineForFirstFixture(
+                eq(12), eq(movedUp), eq(NOW), eq(NOW), eq(99L), contains("khóa ngay")))
+                .thenReturn(Optional.of(new GameweekRepository.AutoShiftResult(
+                        12, 2, oldDeadline, NOW, 1000560658, movedUpKickoff)));
+
+        var automation = new FantasyAutomation(
+                gameweekService, gameweekRepository, resultService, accountRepository,
+                clock, true, false, 10, 60);
+
+        var report = automation.runIfDue();
+
+        assertEquals(List.of(12), report.shiftedGameweeks());
+        verify(gameweekRepository).shiftDeadlineForFirstFixture(
+                eq(12), eq(movedUp), eq(NOW), eq(NOW), eq(99L), contains("khóa ngay"));
+    }
+
+    @Test
+    void dryRunLogsShiftWithoutWritingToRepository() {
+        Instant oldKickoff = Instant.parse("2026-11-27T20:00:00Z");
+        Instant oldDeadline = Instant.parse("2026-11-27T19:30:00Z");
+        Instant newKickoff = Instant.parse("2026-11-28T12:30:00Z");
+
+        when(gameweekService.overview()).thenReturn(overviewWith(
+                configuredGw(12, GameweekService.Status.OPEN)
+        ));
+        when(gameweekRepository.find(12)).thenReturn(Optional.of(new GameweekRepository.Configuration(
+                12, oldDeadline, NOW.minus(Duration.ofDays(1)), 1000560658, oldKickoff,
+                "OPEN", null, 1, LocalDate.of(2026, 11, 24))));
+        var shiftedFixture = new GameweekRepository.Fixture(
+                1000560658, 12, newKickoff, "SCHEDULED", "Arsenal FC", "Chelsea FC");
+        when(gameweekRepository.fixtures()).thenReturn(List.of(shiftedFixture));
+
+        var automation = new FantasyAutomation(
+                gameweekService, gameweekRepository, resultService, accountRepository,
+                clock, true, true, 10, 60);
+
+        var report = automation.runIfDue();
+
+        assertEquals(FantasyAutomation.Outcome.DRY_RUN, report.outcome());
+        assertEquals(List.of(12), report.shiftedGameweeks());
+        verify(gameweekRepository, never()).shiftDeadlineForFirstFixture(
+                anyInt(), any(), any(), any(), anyLong(), anyString());
+    }
 }

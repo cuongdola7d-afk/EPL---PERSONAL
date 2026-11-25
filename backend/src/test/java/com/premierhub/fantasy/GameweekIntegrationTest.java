@@ -33,7 +33,7 @@ class GameweekIntegrationTest {
     @MockitoSpyBean GameweekRepository repository;
     @MockitoBean(name = "fantasyGameweekClock") Clock clock;
     private static final Instant FIRST = Instant.parse("2026-10-10T11:30:00Z");
-    private static final Instant DEADLINE = Instant.parse("2026-10-08T17:00:00Z");
+    private static final Instant DEADLINE = FIRST.minus(GameweekService.DEADLINE_BEFORE_FIRST_KICKOFF);
 
     @BeforeEach void setup() {
         jdbc.update("DELETE FROM fantasy_deadline_changes");
@@ -61,14 +61,20 @@ class GameweekIntegrationTest {
     private void at(Instant value) { when(clock.instant()).thenReturn(value); }
     private void publish() { service.publishDeadline(6, 91, "Công bố deadline thử local"); }
 
-    @Test void usesVietnamCalendarRatherThanTwentyFourHoursBeforeKickoff() {
+    @Test void calculatesDeadlineThirtyMinutesBeforeFirstKickoffIncludingMidnightRollover() {
+        assertEquals(Instant.parse("2026-10-10T11:00:00Z"), GameweekService.calculateDeadline(FIRST));
         assertEquals(DEADLINE, GameweekService.calculateDeadline(FIRST));
-        assertEquals("2026-10-09T00:00+07:00[Asia/Ho_Chi_Minh]", DEADLINE.atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toString());
-        // Friday UTC evening is Saturday in Vietnam; the previous local date is Friday.
-        assertEquals(DEADLINE, GameweekService.calculateDeadline(Instant.parse("2026-10-09T19:00:00Z")));
-        assertEquals(Instant.parse("2026-10-07T17:00:00Z"),
-                GameweekService.calculateDeadline(Instant.parse("2026-10-09T10:00:00Z")));
-        assertNotEquals(FIRST.minusSeconds(86400), DEADLINE);
+        // 00:15 Vietnam time (17:15 UTC prev day) -> 23:45 previous day Vietnam time (16:45 UTC).
+        Instant kickoffAfterVnMidnight = Instant.parse("2026-10-09T17:15:00Z");
+        Instant deadlineBeforeVnMidnight = GameweekService.calculateDeadline(kickoffAfterVnMidnight);
+        assertEquals(Instant.parse("2026-10-09T16:45:00Z"), deadlineBeforeVnMidnight);
+        assertEquals("2026-10-09T23:45+07:00[Asia/Ho_Chi_Minh]",
+                deadlineBeforeVnMidnight.atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toString());
+        // GW12 fixture 1000560658: 2026-11-27T20:00:00Z (Sat 28/11 03:00 VN) -> 19:30Z (Sat 28/11 02:30 VN).
+        Instant gw12Deadline = GameweekService.calculateDeadline(Instant.parse("2026-11-27T20:00:00Z"));
+        assertEquals(Instant.parse("2026-11-27T19:30:00Z"), gw12Deadline);
+        assertEquals("2026-11-28T02:30+07:00[Asia/Ho_Chi_Minh]",
+                gw12Deadline.atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toString());
     }
 
     @Test void locksBeforeAtAndAfterDeadlineWithoutUpdatingStoredOpenRow() {
@@ -111,15 +117,41 @@ class GameweekIntegrationTest {
         assertThrows(ResponseStatusException.class, () -> service.requireOpen(6));
     }
 
-    @Test void scheduleChangeAfterPublicationDoesNotMoveDeadline() {
+    @Test void scheduleChangeAfterPublicationDoesNotMoveDeadlineWithoutAutomation() {
         publish();
         jdbc.update("UPDATE football_data_fixtures SET kickoff_utc='2026-10-17T11:30:00Z'");
         var info = service.info(6);
         assertEquals(DEADLINE, info.deadlineUtc());
-        assertEquals(Instant.parse("2026-10-15T17:00:00Z"), info.candidateDeadlineUtc());
+        assertEquals(Instant.parse("2026-10-17T11:00:00Z"), info.candidateDeadlineUtc());
         assertEquals(1, info.revision());
         assertEquals(1, info.deadlineChanges().size());
         assertThrows(ResponseStatusException.class, this::publish);
+    }
+
+    @Test void shiftDeadlineForFirstFixtureUpdatesSnapshotAndAuditInOneTransaction() {
+        publish();
+        Instant shiftedKickoff = Instant.parse("2026-10-11T14:00:00Z");
+        Instant shiftedDeadline = GameweekService.calculateDeadline(shiftedKickoff);
+        var updatedFirst = new GameweekRepository.Fixture(901, 6, shiftedKickoff, "SCHEDULED", "Test Home", "Test Away");
+
+        var shifted = repository.shiftDeadlineForFirstFixture(
+                6, updatedFirst, shiftedDeadline, clock.instant(), 91L,
+                "Tự động dời theo giờ trận đầu: Test Home – Test Away 10/10 18:30 → 11/10 21:00");
+        assertTrue(shifted.isPresent());
+        assertEquals(2, shifted.get().revision());
+        assertEquals(shiftedDeadline, shifted.get().newDeadlineUtc());
+
+        var stored = repository.find(6).orElseThrow();
+        assertEquals(901, stored.firstFixtureId());
+        assertEquals(shiftedKickoff, stored.firstKickoffUtc());
+        assertEquals(shiftedDeadline, stored.deadlineUtc());
+        assertEquals(2, stored.revision());
+
+        // Calling again with unchanged first fixture returns empty and does not touch revision/audit.
+        var noop = repository.shiftDeadlineForFirstFixture(
+                6, updatedFirst, shiftedDeadline.minusSeconds(600), clock.instant(), 91L, "Không đổi trận đầu");
+        assertTrue(noop.isEmpty());
+        assertEquals(2, repository.find(6).orElseThrow().revision());
     }
 
     @Test void adminAdjustmentIsAuditedVersionedAndCannotReopenLockedRound() {
@@ -183,10 +215,10 @@ class GameweekIntegrationTest {
                 .contentType("application/json").content("{\"reason\":\"Bắt đầu GW7 theo lịch\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OPEN"))
-                .andExpect(jsonPath("$.deadlineUtc").value("2026-10-15T17:00:00Z"));
+                .andExpect(jsonPath("$.deadlineUtc").value("2026-10-17T11:00:00Z"));
         assertEquals(7, service.overview().recommendedGameweek());
         assertEquals(GameweekService.Status.LOCKED, service.info(6).status());
-        at(Instant.parse("2026-10-15T17:00:00Z"));
+        at(Instant.parse("2026-10-17T11:00:00Z"));
         assertEquals(7, service.overview().recommendedGameweek());
         assertEquals(GameweekService.Status.LOCKED, service.info(7).status());
     }

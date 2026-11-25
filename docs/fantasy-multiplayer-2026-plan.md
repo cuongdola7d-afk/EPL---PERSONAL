@@ -43,8 +43,8 @@ Trạng thái vận hành hiện tại: auth, quản lý GW, rosterAsOf, lưu đ
 1. Đăng ký/đăng nhập bằng email–mật khẩu và Google. Bản đầu không yêu cầu email xác thực trước khi chơi.
 2. Mỗi tài khoản có đúng một đội dự thi hiện hành và một sơ đồ cho mỗi GW, cập nhật bằng **Lưu đội hình**. API nháp cũ giữ tương thích, không phải bước người chơi phải thực hiện trước lưu đội.
 3. Đủ 11 cầu thủ khác nhau, đúng eligiblePositions, tối đa 3 người/CLB, tổng OVR không quá 910 (quyết định 06/10/2026; đã đồng bộ backend/MySQL production qua migration được cho phép riêng). Giữ các sơ đồ Fantasy đang có.
-4. Hạn chốt là **00:00 giờ Việt Nam của ngày liền trước ngày trận đầu tiên của GW diễn ra**. Lưu thời điểm trong database bằng UTC.
-5. Hạn đã công bố giữ cố định nếu lịch trận thay đổi; chỉ quản trị viên được điều chỉnh, có thông báo.
+4. Hạn chốt là **30 phút trước giờ bóng lăn trận đầu tiên của GW** (`GameweekService.DEADLINE_BEFORE_FIRST_KICKOFF = Duration.ofMinutes(30)`, cập nhật 25/11/2026; trước đó là 00:00 giờ Việt Nam của ngày liền trước). Lưu thời điểm trong database bằng UTC.
+5. Khi vòng đang `OPEN` mà trận đầu tiên đổi giờ (hoãn, dời lịch hoặc có trận khác sớm hơn), `FantasyAutomation` tự dời deadline và ghi lịch sử audit dưới tài khoản "Hệ thống"; chỉnh tay của quản trị viên không bị ghi đè khi giờ trận đầu không đổi.
 6. Trước hạn người chơi chỉnh đội trên sân rồi bấm **Lưu đội hình**. Mỗi lần lưu đủ 11 người hợp lệ cập nhật đội dự thi; đội đã lưu gần nhất vẫn có hiệu lực cho tới khi lưu mới thành công. Chỉnh mà chưa lưu không thay đội dự thi. Giao diện không yêu cầu thêm một thao tác chốt riêng.
 7. Sau hạn backend từ chối thay đổi, sân vẫn giữ đội đã lưu và thông báo chờ kết quả/công bố. Không lưu đội hợp lệ đúng hạn thì không tham gia GW; không tự lấy đội vòng trước.
 8. Trước hạn chỉ xem đội mình. Sau hạn có thể xem đội đã chốt của người khác; không lộ nháp qua API.
@@ -54,7 +54,7 @@ Trạng thái vận hành hiện tại: auth, quản lý GW, rosterAsOf, lưu đ
 12. Có BXH từng GW và BXH mùa cộng các GW đã công bố. Bằng điểm thì đồng hạng; người chơi bỏ lỡ vòng không được cộng điểm vòng đó.
 13. GW1–GW5 dùng thử nghiệm/Replay. Không cho tham gia cuộc thi chính thức của vòng đã biết kết quả.
 
-Deadline tính từ ngày của kickoff đầu tiên sau khi chuyển UTC sang `Asia/Ho_Chi_Minh`, lùi một ngày lịch rồi lấy 00:00 Việt Nam, cuối cùng chuyển về UTC để lưu. Không nhầm với 00:00 ngày có trận hoặc “24 giờ trước kickoff”. Ví dụ minh họa: ngày Việt Nam của trận đầu là 05/10 thì hạn là 04/10 lúc 00:00 Việt Nam, tức 03/10 lúc 17:00 UTC; đây **không phải** deadline GW6 đã xác minh. Điều kiện chốt phải là thời gian server trước deadline; tại deadline và sau đó phải từ chối.
+Deadline tính bằng `kickoffUtc.minus(Duration.ofMinutes(30))` (lưu UTC, hiển thị theo `Asia/Ho_Chi_Minh`, tự xử lý đổi ngày qua nửa đêm — ví dụ trận 00:15 Việt Nam thì hạn là 23:45 ngày hôm trước). Trước 25/11/2026 dùng mốc 00:00 Việt Nam của ngày liền trước. Điều kiện chốt phải là thời gian server trước deadline; tại deadline và sau đó phải từ chối (30 phút trước trận đầu ở trạng thái `LOCKED`).
 
 Không thay rating/fantasy_points NULL của thống kê nguồn thành 0 để chấm cuộc thi. Điểm cuộc thi 0 của người đã được xác nhận không được chấm là kết quả được lưu riêng; rating còn chờ vẫn chưa có điểm xác định. Schema thống kê hiện có participation_status và rating NULL nhưng chưa có trạng thái riêng phân biệt mọi trường hợp PLAYED không có rating; bước 4 phải giải quyết điểm này bằng xác nhận rõ, không suy luận từ NULL.
 

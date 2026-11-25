@@ -6,6 +6,9 @@ export const publishGameweek = (gameweek, signal) => fantasyAdminRequest(gamewee
   reason: `Bắt đầu GW${gameweek} mùa 2026/27 với deadline theo lịch.`,
 }, signal)
 
+export const adjustGameweekDeadline = (gameweek, body, signal) => fantasyAdminRequest(
+  gameweek, 'adjust-deadline', body, signal)
+
 const timestamp = value => typeof value === 'string' && value.includes('T') && Number.isFinite(Date.parse(value))
 export async function fetchGameweeks(signal) {
   const data = await fetchApiJson('/api/fantasy/2026/gameweeks', signal)

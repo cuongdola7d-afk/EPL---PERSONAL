@@ -3,12 +3,15 @@ import { fetchFantasyLeaderboard } from '../api/fantasyLeaderboard.js'
 import { formatPoints } from '../fantasy/results.js'
 import './FantasyLeaderboard.css'
 
-export default function FantasyLeaderboard({ gameweek, account }) {
+export default function FantasyLeaderboard({ gameweek, account, requestedScope = null }) {
   const [scope, setScope] = useState('gameweek')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
+  useEffect(() => {
+    if (requestedScope?.scope) setScope(requestedScope.scope)
+  }, [requestedScope?.nonce, requestedScope?.scope])
   useEffect(() => {
     const controller = new AbortController()
     setData(null); setError(''); setLoading(true)

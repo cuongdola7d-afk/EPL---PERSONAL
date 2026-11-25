@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Instant;
@@ -28,6 +29,12 @@ public class FantasyResultService {
     public record Mine(long accountId,int season,int gameweek,String status,Integer version,Instant publishedAt,TeamScore result) {}
     public record Ranked(int rank,long accountId,String displayName,BigDecimal totalPoints,int gameweeksPlayed) {}
     public record Leaderboard(int season,Integer gameweek,String status,Integer version,int publishedGameweeks,List<Ranked> players) {}
+    public record Leader(String displayName,BigDecimal points) {}
+    public record TopPlayer(String name,String club,BigDecimal points) {}
+    public record MyResultSummary(BigDecimal points,int rank,int participants,TopPlayer topPlayer,
+                                  Integer seasonRank,Integer seasonRankChange) {}
+    public record LatestResultSummary(Integer gameweek,Integer version,Instant publishedAt,int participants,
+                                      BigDecimal averagePoints,Leader leader,MyResultSummary me) {}
     private record Source(Fixture fixture,List<Stat> stats,List<Unrated> unrated,List<Lineup> lineups,List<Role> roles) {}
     private record Submitted(Participant participant,List<FantasyEntryRepository.Snapshot> players) {}
     private record Plan(Readiness readiness,String hash,List<Participant> participants,Map<Long,TeamScore> scores) {}
@@ -235,13 +242,88 @@ public class FantasyResultService {
                 && "PUBLISHED".equals(configuration.get().workflowStatus()) && configuration.get().resultsPublishedAt()!=null && publication.isPresent();
         int publishedWeeks=gw==null ? repository.publishedGameweeks() : published?1:0;
         if(!published) return new Leaderboard(2026,gw,"AWAITING_RESULTS",null,publishedWeeks,List.of());
-        var ranked=new ArrayList<Ranked>();BigDecimal previous=null;int rank=0;
-        for(var standing:repository.standings(gw)) {
+        var ranked=rankStandings(repository.standings(gw));
+        return new Leaderboard(2026,gw,"PUBLISHED",publication.map(Publication::version).orElse(null),publishedWeeks,ranked);
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public LatestResultSummary latestResultSummary(Long accountId) {
+        List<Integer> publishedGws=repository.publishedGameweeksDesc();
+        if(publishedGws.isEmpty()) {
+            return new LatestResultSummary(null,null,null,0,null,null,null);
+        }
+        int latestGw=publishedGws.getFirst();
+        var publication=repository.latest(latestGw).orElse(null);
+        if(publication==null) {
+            return new LatestResultSummary(null,null,null,0,null,null,null);
+        }
+
+        List<Ranked> gwRanked=rankStandings(repository.standings(latestGw));
+        int participants=gwRanked.size();
+        BigDecimal averagePoints=participants==0 ? null : gwRanked.stream()
+                .map(Ranked::totalPoints)
+                .reduce(BigDecimal.ZERO,BigDecimal::add)
+                .divide(BigDecimal.valueOf(participants),1,RoundingMode.HALF_UP);
+        Leader leader=participants==0 ? null : new Leader(gwRanked.getFirst().displayName(),gwRanked.getFirst().totalPoints());
+
+        MyResultSummary me=null;
+        if(accountId!=null) {
+            var myEntry=gwRanked.stream().filter(r->r.accountId()==accountId).findFirst().orElse(null);
+            if(myEntry!=null) {
+                TopPlayer topPlayer=repository.team(accountId,latestGw,publication.version())
+                        .map(FantasyResultService::pickTopPlayer)
+                        .orElse(null);
+                List<Ranked> currentSeason=rankStandings(repository.standingsUpTo(latestGw));
+                Integer seasonRank=currentSeason.stream()
+                        .filter(r->r.accountId()==accountId)
+                        .map(Ranked::rank)
+                        .findFirst()
+                        .orElse(null);
+                Integer seasonRankChange=null;
+                if(seasonRank!=null && publishedGws.size()>1) {
+                    int prevGw=publishedGws.get(1);
+                    List<Ranked> prevSeason=rankStandings(repository.standingsUpTo(prevGw));
+                    Integer prevRank=prevSeason.stream()
+                            .filter(r->r.accountId()==accountId)
+                            .map(Ranked::rank)
+                            .findFirst()
+                            .orElse(null);
+                    if(prevRank!=null) {
+                        seasonRankChange=prevRank-seasonRank;
+                    }
+                }
+                me=new MyResultSummary(myEntry.totalPoints(),myEntry.rank(),participants,topPlayer,seasonRank,seasonRankChange);
+            }
+        }
+        return new LatestResultSummary(latestGw,publication.version(),publication.publishedAt(),
+                participants,averagePoints,leader,me);
+    }
+
+    private static List<Ranked> rankStandings(List<Standing> standings) {
+        var ranked=new ArrayList<Ranked>();
+        BigDecimal previous=null;
+        int rank=0;
+        for(var standing:standings) {
             if(previous==null || previous.compareTo(standing.totalPoints())!=0) rank=ranked.size()+1;
             ranked.add(new Ranked(rank,standing.accountId(),standing.displayName(),standing.totalPoints(),standing.gameweeksPlayed()));
             previous=standing.totalPoints();
         }
-        return new Leaderboard(2026,gw,"PUBLISHED",publication.map(Publication::version).orElse(null),publishedWeeks,List.copyOf(ranked));
+        return List.copyOf(ranked);
+    }
+
+    private static TopPlayer pickTopPlayer(TeamScore score) {
+        if(score==null || score.players()==null || score.players().isEmpty()) return null;
+        PlayerScore best=null;
+        var ordered=score.players().stream()
+                .sorted(Comparator.comparing(PlayerScore::slotKey,Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        for(var p:ordered) {
+            if(p.points()==null) continue;
+            if(best==null || p.points().compareTo(best.points())>0) {
+                best=p;
+            }
+        }
+        return best==null ? null : new TopPlayer(best.name(),best.club(),best.points());
     }
     static void official(int gw) {
         if(gw<6 || gw>38) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Chỉ tính cuộc thi chính thức GW6–38 mùa 2026/27.");

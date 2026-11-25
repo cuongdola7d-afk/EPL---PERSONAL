@@ -8,6 +8,7 @@ import PlayerAvatar, { clubColor, ratingTier } from './FantasyPlayerAvatar.jsx'
 import Pitch from './FantasyPitch.jsx'
 import TeamOfWeek from './TeamOfWeek.jsx'
 import FantasyGameweek from './FantasyGameweek.jsx'
+import FantasyLatestResultCard from './FantasyLatestResultCard.jsx'
 import FantasyResults from './FantasyResults.jsx'
 import FantasyLeaderboard from './FantasyLeaderboard.jsx'
 import FantasyRules from './FantasyRules.jsx'
@@ -39,6 +40,9 @@ function FantasyPage({ account = null, authLoading = false, authError = '', them
   const [contestStatus, setContestStatus] = useState(null)
   const [contestDeadline, setContestDeadline] = useState(null)
   const [rosterAsOf, setRosterAsOf] = useState(null)
+  const [openGameweek, setOpenGameweek] = useState(null)
+  const [requestedGameweek, setRequestedGameweek] = useState(null)
+  const [requestedLeaderboardScope, setRequestedLeaderboardScope] = useState(null)
   const requestPlayers = useCallback((signal) => {
     if (authLoading || account && (!contestGameweek || !rosterAsOf)) return Promise.resolve([])
     return fetchFantasyPlayers(signal, account ? contestGameweek : null, account ? rosterAsOf : null)
@@ -140,6 +144,31 @@ function FantasyPage({ account = null, authLoading = false, authError = '', them
     setMessage('')
   }
 
+  const handleViewLatestTeamAndScore = useCallback(gw => {
+    setRequestedGameweek(prev => ({ gameweek: gw, nonce: (prev?.nonce ?? 0) + 1 }))
+    setView('user')
+    setActiveKey(null)
+    requestAnimationFrame(() => {
+      const target = document.getElementById('fantasy-lineup-builder')
+      target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
+    })
+  }, [])
+
+  const handleViewLatestLeaderboard = useCallback(gw => {
+    setRequestedGameweek(prev => ({ gameweek: gw, nonce: (prev?.nonce ?? 0) + 1 }))
+    setRequestedLeaderboardScope(prev => ({ scope: 'gameweek', nonce: (prev?.nonce ?? 0) + 1 }))
+    setView('leaderboard')
+    setActiveKey(null)
+    requestAnimationFrame(() => {
+      const target = document.getElementById('fantasy-tab-leaderboard')
+      target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
+    })
+  }, [])
+
+  const handleOpenLogin = useCallback(() => {
+    window.dispatchEvent(new Event('prismaxi-open-account'))
+  }, [])
+
   return <section className="fantasy-page" id="directory" aria-labelledby="fantasy-heading" data-theme={theme}>
     <div className="fantasy-wrap">
       <header className="fantasy-head fantasy-hero">
@@ -156,7 +185,21 @@ function FantasyPage({ account = null, authLoading = false, authError = '', them
           }}>Tạo đội hình<ArrowIcon diagonal /></button>
         </div>
       </header>
-      <FantasyGameweek account={account} onSelectionChange={contestSelection} />
+      <FantasyLatestResultCard
+        account={account}
+        authLoading={authLoading}
+        viewingGameweek={contestGameweek}
+        openGameweek={openGameweek}
+        onViewTeamAndScore={handleViewLatestTeamAndScore}
+        onViewLeaderboard={handleViewLatestLeaderboard}
+        onOpenLogin={handleOpenLogin}
+      />
+      <FantasyGameweek
+        account={account}
+        onSelectionChange={contestSelection}
+        requestedGameweek={requestedGameweek}
+        onOpenGameweekChange={setOpenGameweek}
+      />
       <div className="fantasy-feature-tabs" role="tablist" aria-label="Đội hình Fantasy">
         {VIEWS.map(([key, label], index) => <button key={key} type="button" role="tab"
           id={`fantasy-tab-${key}`} aria-controls={`fantasy-panel-${key}`} aria-selected={view === key} tabIndex={view === key ? 0 : -1}
@@ -170,7 +213,7 @@ function FantasyPage({ account = null, authLoading = false, authError = '', them
       {view === 'team' && <div id="fantasy-panel-team" role="tabpanel" aria-labelledby="fantasy-tab-team">
         <TeamOfWeek selection={teamWeekSelection} onGameweekChange={selectTeamWeek} /></div>}
       {view === 'leaderboard' && <div id="fantasy-panel-leaderboard" role="tabpanel" aria-labelledby="fantasy-tab-leaderboard">
-        <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} /></div>}
+        <FantasyLeaderboard gameweek={contestGameweek ?? 6} account={account} requestedScope={requestedLeaderboardScope} /></div>}
       <div id="fantasy-panel-user" role="tabpanel" aria-labelledby="fantasy-tab-user" hidden={view !== 'user'}>
       <div className="fantasy-builder-head" id="fantasy-lineup-builder" tabIndex={-1}>
         <h2>Chọn đội hình</h2><FantasyRules gameweek={contestGameweek} deadlineUtc={contestDeadline} />

@@ -2,6 +2,7 @@ package com.premierhub.fantasy;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -88,6 +89,40 @@ public class GameweekRepository {
     public void adjust(int gameweek, Instant deadline, int revision, Instant now) {
         jdbc.update("UPDATE fantasy_gameweeks SET deadline_utc=?,revision=?,updated_at=? WHERE season=2026 AND gameweek=?",
                 timestamp(deadline), revision, timestamp(now), gameweek);
+    }
+
+    public record AutoShiftResult(int gameweek, int revision, Instant oldDeadlineUtc, Instant newDeadlineUtc,
+                                  int newFirstFixtureId, Instant newFirstKickoffUtc) { }
+
+    /**
+     * Atomically updates an OPEN gameweek's first fixture snapshot and deadline when the earliest
+     * fixture or its kickoff changed, recording an audit row in {@code fantasy_deadline_changes}.
+     * Never modifies a locked round or overwrites a manual adjustment when the first fixture did not change.
+     */
+    @Transactional
+    public Optional<AutoShiftResult> shiftDeadlineForFirstFixture(
+            int gameweek, Fixture first, Instant newDeadline, Instant now, long actorId, String reason) {
+        Optional<Configuration> locked = lock(gameweek);
+        if (locked.isEmpty()) {
+            return Optional.empty();
+        }
+        Configuration config = locked.get();
+        if (!"OPEN".equals(config.workflowStatus()) || !now.isBefore(config.deadlineUtc())) {
+            return Optional.empty();
+        }
+        if (first.id() == config.firstFixtureId() && first.kickoffUtc().equals(config.firstKickoffUtc())) {
+            return Optional.empty();
+        }
+        int nextRevision = config.revision() + 1;
+        jdbc.update("""
+                UPDATE fantasy_gameweeks
+                SET first_fixture_id=?, first_kickoff_utc=?, deadline_utc=?, revision=?, updated_at=?
+                WHERE season=2026 AND gameweek=?
+                """, first.id(), timestamp(first.kickoffUtc()), timestamp(newDeadline),
+                nextRevision, timestamp(now), gameweek);
+        audit(gameweek, nextRevision, config.deadlineUtc(), newDeadline, now, actorId, reason);
+        return Optional.of(new AutoShiftResult(
+                gameweek, nextRevision, config.deadlineUtc(), newDeadline, first.id(), first.kickoffUtc()));
     }
 
     public void audit(int gameweek, int revision, Instant oldDeadline, Instant deadline,
