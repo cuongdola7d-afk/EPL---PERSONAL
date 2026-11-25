@@ -80,6 +80,7 @@ Checkpoint và dữ liệu nằm ngoài `docs/`:
 
 | Tài liệu | Trạng thái và cách dùng |
 | --- | --- |
+| [backup-and-restore.md](backup-and-restore.md) | Hiện hành (25/11/2026): quy trình chuẩn dùng `backup-aiven.ps1`, `h2-from-latest-backup.ps1`, khi nào bắt buộc backup và hướng dẫn khôi phục an toàn |
 | [auth-release-2026.md](auth-release-2026.md) | Hỗn hợp, vẫn dùng: session/CSRF, proxy cùng origin, env/migration/checklist; host Railway và SHA trong checkpoint cũ là tài liệu lịch sử (Railway đã xóa ngày 21/11/2026; production là Render + Aiven) |
 | [auth-production-2026-10-04.md](auth-production-2026-10-04.md) | Lịch sử kiểm chứng auth/cookie/proxy; hữu ích để truy vết và thiết kế smoke mới, không phải runtime SHA hiện tại |
 | [auth-performance-2026-10-04.md](auth-performance-2026-10-04.md) | Lịch sử đo trên Railway (Railway đã xóa ngày 21/11/2026; production là Render + Aiven); không áp dụng số đo/serverless setting đó cho Render, xem hướng dẫn latency riêng |

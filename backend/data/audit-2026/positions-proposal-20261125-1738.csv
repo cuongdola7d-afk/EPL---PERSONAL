@@ -1,0 +1,37 @@
+player_id,name,club,fpl_element_type,current_group,starts_by_position,proposed_specific_position,proposed_eligible_positions,confidence,note
+2000020028,Abdoul Ouattara,Ipswich Town FC,DEF,MIDFIELDER,RB:4;RW:1;RWB:1,RB,RB|RW,HIGH,Quy doi ma hop le: RWB->RB; 6 lan da chinh GW6-11 (5/6 o RB); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (RB|RW); khong tu doi nhom
+2000030060,Alejandro Garnacho,Aston Villa FC,MID,FORWARD,,CAM,CAM,LOW,0 lan da chinh GW6-11; suy tu thay nguoi cung phut (GW9 thay John McGinn(CAM)) va FPL=MID; MAU THUAN current_group=FORWARD vs de xuat CAM; khong tu doi nhom
+2000030062,Alysson,Aston Villa FC,MID,FORWARD,RW:5,RW,RW,HIGH,5 lan da chinh GW6-11 (5/5 o RW)
+2000016002,Anan Khalaili,Crystal Palace FC,DEF,MIDFIELDER,RWB:2;RB:1;RM:1,RB,RB|RM,HIGH,Quy doi ma hop le: RWB->RB; 4 lan da chinh GW6-11 (3/4 o RB); Da ca o nhom khac (DEFENDER) so voi current_group=MIDFIELDER; giu nguyen nhom
+2000030070,Anthony Elanga,Newcastle United FC,MID,FORWARD,RW:1,RW,RW,MEDIUM,1 lan da chinh GW6-11 (1/1 o RW)
+2000020092,Beto,Everton FC,FWD,FORWARD,,ST,ST,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=FWD & current_group=FORWARD; can xac nhan them
+2000020069,Brenden Aaronson,Leeds United FC,MID,FORWARD,CAM:1,CAM,CAM,MEDIUM,1 lan da chinh GW6-11 (1/1 o CAM); MAU THUAN current_group=FORWARD vs vi tri da thuc te (CAM); khong tu doi nhom
+2000020093,Brennan Johnson,Everton FC,MID,FORWARD,RW:2,RW,RW,MEDIUM,2 lan da chinh GW6-11 (2/2 o RW)
+2000020012,Cody Drameh,Hull City AFC,DEF,DEFENDER,,CB,CB,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=DEF & current_group=DEFENDER; can xac nhan them
+2000020024,Daizen Maeda,Ipswich Town FC,MID,FORWARD,RW:2;CAM:1;LW:1,RW,RW|CAM|LW,MEDIUM,4 lan da chinh GW6-11 (2/4 o RW); Da ca o nhom khac (MIDFIELDER) so voi current_group=FORWARD; giu nguyen nhom
+2000020068,Ethan Ampadu,Leeds United FC,MID,DEFENDER,CM:6,CM,CM,HIGH,6 lan da chinh GW6-11 (6/6 o CM); MAU THUAN current_group=DEFENDER vs vi tri da thuc te (CM); khong tu doi nhom
+2000020107,Evann Guessand,Crystal Palace FC,MID,FORWARD,,LW,LW|ST,LOW,0 lan da chinh GW6-11; suy tu thay nguoi cung phut (GW11 thay Yéremy Pino(LW); GW11 thay Jørgen Strand Larsen(ST)) va FPL=MID
+2000030044,Georginio Rutter,Brighton & Hove Albion FC,FWD,MIDFIELDER,ST:1,ST,ST,MEDIUM,1 lan da chinh GW6-11 (1/1 o ST); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (ST); khong tu doi nhom
+2000030076,Jacob Murphy,Newcastle United FC,MID,FORWARD,RW:3;RM:1,RW,RW|RM,HIGH,4 lan da chinh GW6-11 (3/4 o RW); Da ca o nhom khac (MIDFIELDER) so voi current_group=FORWARD; giu nguyen nhom
+2000020065,Jayden Bogle,Leeds United FC,DEF,MIDFIELDER,RWB:5;RM:1,RB,RB|RM,HIGH,Quy doi ma hop le: RWB->RB; 6 lan da chinh GW6-11 (5/6 o RB); Da ca o nhom khac (DEFENDER) so voi current_group=MIDFIELDER; giu nguyen nhom
+2000030114,Juanlu Sánchez,AFC Bournemouth,DEF,MIDFIELDER,,LW,LW|RB,LOW,0 lan da chinh GW6-11; suy tu thay nguoi cung phut (GW6 thay Marcus Tavernier(LW); GW6 thay Adam Smith(RB)) va FPL=DEF; MAU THUAN current_group=MIDFIELDER vs de xuat LW; khong tu doi nhom
+2000030002,Keane Lewis-Potter,Brentford FC,MID,DEFENDER,LB:4;CAM:1;LM:1,LB,LB|CAM|LM,HIGH,6 lan da chinh GW6-11 (4/6 o LB); Da ca o nhom khac (MIDFIELDER) so voi current_group=DEFENDER; giu nguyen nhom
+2000020013,Liam Millar,Hull City AFC,MID,MIDFIELDER,,CM,CM,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=MID & current_group=MIDFIELDER; can xac nhan them
+2000030105,Luca Williams-Barnett,Tottenham Hotspur FC,MID,FORWARD,LW:1,LW,LW,MEDIUM,1 lan da chinh GW6-11 (1/1 o LW)
+2000020033,Luke O'Nien,Sunderland AFC,DEF,MIDFIELDER,CB:4,CB,CB,HIGH,4 lan da chinh GW6-11 (4/4 o CB); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (CB); khong tu doi nhom
+2000005021,Mahdi Nicoll-Jazuli,Chelsea FC,MID,MIDFIELDER,,CM,CM,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=MID & current_group=MIDFIELDER; can xac nhan them
+2000030101,Mathys Tel,Tottenham Hotspur FC,MID,FORWARD,LW:2;ST:1,LW,LW|ST,HIGH,3 lan da chinh GW6-11 (2/3 o LW)
+2000030021,Mikey Moore,Tottenham Hotspur FC,MID,FORWARD,,CM,CM,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=MID & current_group=FORWARD; can xac nhan them; MAU THUAN current_group=FORWARD vs de xuat CM; khong tu doi nhom
+2000030135,Nick Woltemade,Newcastle United FC,FWD,FORWARD,,ST,ST,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=FWD & current_group=FORWARD; can xac nhan them
+2000020071,Noah Okafor,Leeds United FC,MID,FORWARD,CAM:3,CAM,CAM,HIGH,3 lan da chinh GW6-11 (3/3 o CAM); MAU THUAN current_group=FORWARD vs vi tri da thuc te (CAM); khong tu doi nhom
+2000020060,Ola Aina,Nottingham Forest FC,DEF,MIDFIELDER,CB:1;RWB:1,CB,CB|RB,MEDIUM,Quy doi ma hop le: RWB->RB; 2 lan da chinh GW6-11 (1/2 o CB); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (CB|RB); khong tu doi nhom
+2000030019,Richarlison,Tottenham Hotspur FC,FWD,FORWARD,,ST,ST,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=FWD & current_group=FORWARD; can xac nhan them
+2000030144,Robert Sánchez,Chelsea FC,GK,GOALKEEPER,,GK,GK,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=GK & current_group=GOALKEEPER; can xac nhan them
+2000020051,Romaine Mundle,Sunderland AFC,MID,FORWARD,,CM,CM,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=MID & current_group=FORWARD; can xac nhan them; MAU THUAN current_group=FORWARD vs de xuat CM; khong tu doi nhom
+2000030260,Timur Tuterov,Sunderland AFC,MID,FORWARD,ST:1,ST,ST,MEDIUM,1 lan da chinh GW6-11 (1/1 o ST)
+2000020035,Trai Hume,Sunderland AFC,DEF,MIDFIELDER,RB:3;RW:3,RB,RB|RW,MEDIUM,6 lan da chinh GW6-11 (3/6 o RB); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (RB|RW); khong tu doi nhom
+2000020103,Tyrick Mitchell,Crystal Palace FC,DEF,MIDFIELDER,LWB:4;LB:1;LM:1,LB,LB|LM,HIGH,Quy doi ma hop le: LWB->LB; 6 lan da chinh GW6-11 (5/6 o LB); Da ca o nhom khac (DEFENDER) so voi current_group=MIDFIELDER; giu nguyen nhom
+2000020087,Tyrique George,Everton FC,MID,FORWARD,LW:4,LW,LW,HIGH,4 lan da chinh GW6-11 (4/4 o LW)
+2000020105,Yéremy Pino,Crystal Palace FC,MID,FORWARD,CAM:5;LW:1,CAM,CAM|LW,HIGH,6 lan da chinh GW6-11 (5/6 o CAM); Da ca o nhom khac (MIDFIELDER) so voi current_group=FORWARD; giu nguyen nhom
+2000030053,Zadok Yohanna,Brighton & Hove Albion FC,MID,FORWARD,,CM,CM,LOW,0 lan da chinh GW6-11 (chi ra san GW1-5 hoac khong khop phut thay); de xuat tam theo FPL=MID & current_group=FORWARD; can xac nhan them; MAU THUAN current_group=FORWARD vs de xuat CM; khong tu doi nhom
+2000020116,Óscar Mingueza,Crystal Palace FC,DEF,MIDFIELDER,RWB:2,RB,RB,MEDIUM,Quy doi ma hop le: RWB->RB; 2 lan da chinh GW6-11 (2/2 o RB); MAU THUAN current_group=MIDFIELDER vs vi tri da thuc te (RB); khong tu doi nhom

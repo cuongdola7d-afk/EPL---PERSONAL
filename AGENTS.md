@@ -86,6 +86,9 @@ Tài liệu Hỗn hợp có cả checkpoint cũ và hướng dẫn còn dùng; �
 
 ## Quy trình Gameweek cố định cho PrismaXI
 
+- Quyết định thường trực ngày 25/11/2026:
+  - Khi cần backup Aiven: **chỉ chạy** `backend/scripts/backup-aiven.ps1`. Khi cần H2 thử nghiệm: **chỉ chạy** `backend/scripts/h2-from-latest-backup.ps1`. **Không** tự viết script backup hoặc dựng H2 mới. Xem [docs/backup-and-restore.md](docs/backup-and-restore.md).
+  - Nếu prompt ghi "người dùng đã backup lúc …" thì không backup lại.
 - Quyết định thường trực ngày 23/11/2026 & 24/11/2026:
   - **Chỉ nhập trận khi FPL đã chốt (`finished=true`):** trước khi nhập, luôn kiểm tra `fixtures/?event=N`. Trận nào mới `finished_provisional` thì **không nhập**, báo lại cho người dùng và chờ (trong lúc chờ, web đã có số liệu tạm từ job `FplProvisionalSync`). Luôn ghi trạng thái FPL lúc lấy vào `sources.md` và báo cáo.
   - **H2 thử nghiệm:** trước mỗi đợt nhập, phải tạo lại bản H2 local **từ dump Aiven mới nhất** (không dùng lại file H2 cũ) và chạy thử thành công 2 lượt trước khi ghi production.
