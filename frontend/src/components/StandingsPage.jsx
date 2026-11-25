@@ -1,19 +1,22 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchStandings } from '../api/standings.js'
 import { fetchPlayers } from '../api/players.js'
 import { fetchClubs, fetchClubStatistics } from '../api/clubs.js'
 import { fetchMatches } from '../api/matches.js'
 import { useApiList } from '../hooks/useApiList.js'
+import { useLiveScores } from '../hooks/useLiveScores.js'
 import { clubDetailHash } from '../utils/clubRoute.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
 import { standingBand, ratingClass } from '../utils/clubView.js'
 import { recentClubForm, playerLeaders, mergePlayerRatings } from '../utils/standingsView.js'
+import { applyLiveToStandings } from '../utils/standingsLive.js'
 import { clubVisual } from '../utils/matchView.js'
 import { getInitials } from '../utils/initials.js'
 import { SEASONS } from '../utils/seasons.js'
 import './StandingsPage.css'
 
 const RESULTS = { W: 'Thắng', D: 'Hòa', L: 'Thua' }
+const LIVE_MINUTE_TICK_MS = 30000
 
 function DataState({ state, emptyMessage }) {
   if (state.status === 'loading') return <div className="st-loading" role="status" aria-label="Đang tải dữ liệu">
@@ -25,37 +28,107 @@ function DataState({ state, emptyMessage }) {
 }
 
 function ClubsTable({ season }) {
+  const isCurrentSeason = season === 2026
   const request = useCallback(signal => fetchStandings(signal, season), [season])
   const state = useApiList(request)
-  const requestMatches = useCallback(signal => fetchMatches({ season, status: 'FINISHED' }, signal), [season])
+  const requestMatches = useCallback(
+    signal => fetchMatches(isCurrentSeason ? { season } : { season, status: 'FINISHED' }, signal),
+    [season, isCurrentSeason]
+  )
   const matches = useApiList(requestMatches)
+  const { liveByFixture } = useLiveScores(isCurrentSeason)
+  const hasLiveEntries = isCurrentSeason && Object.keys(liveByFixture).length > 0
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!hasLiveEntries) return undefined
+    setNowMs(Date.now())
+    const timer = setInterval(() => setNowMs(Date.now()), LIVE_MINUTE_TICK_MS)
+    return () => clearInterval(timer)
+  }, [hasLiveEntries])
+
+  const displayRows = useMemo(() => {
+    if (!state.data.length) return []
+    if (!isCurrentSeason || matches.status !== 'success') {
+      return state.data.map(row => ({
+        ...row,
+        officialPosition: row.position,
+        livePosition: row.position,
+        rankDelta: 0,
+        isLive: false,
+        liveChip: null,
+        pointsDelta: null,
+        provisionalFormResult: null,
+      }))
+    }
+    return applyLiveToStandings(state.data, matches.data, liveByFixture, { nowMs })
+  }, [state.data, isCurrentSeason, matches.status, matches.data, liveByFixture, nowMs])
+
   return <>
     <div className="st-panel-heading"><div><h2>Bảng xếp hạng câu lạc bộ</h2><p>Premier League {SEASONS[season]}</p></div>
       <button className="st-refresh" type="button" disabled={state.status === 'loading' || matches.status === 'loading'}
         onClick={() => { state.reload(); matches.reload() }}>Làm mới</button></div>
     <DataState state={state} emptyMessage="Bảng xếp hạng sẽ có khi dữ liệu mùa giải được cập nhật." />
-    {state.status === 'success' && state.data.length > 0 && <>
+    {state.status === 'success' && displayRows.length > 0 && <>
       <div className="st-table-wrap"><table className="st-table"><caption className="sr-only">Bảng xếp hạng Premier League {SEASONS[season]}</caption>
         <thead><tr><th scope="col" className="st-left">#</th><th scope="col" className="st-left">Đội</th><th scope="col">Trận</th>
           <th scope="col" className="st-hide-small" title="Thắng">T</th><th scope="col" className="st-hide-small" title="Hòa">H</th><th scope="col" className="st-hide-small" title="Thua">B</th>
-          <th scope="col" className="st-hide-small" title="Bàn thắng : bàn thua">BT:BB</th><th scope="col">Hiệu số</th><th scope="col" className="st-center">5 trận gần nhất</th><th scope="col">Điểm</th></tr></thead>
-        <tbody>{state.data.map(row => {
+          <th scope="col" className="st-hide-small" title="Bàn thắng : bàn thua">BT:BB</th>
+          <th scope="col"><span className="st-gd-full">Hiệu số</span><span className="st-gd-short">HS</span></th>
+          <th scope="col" className="st-center st-col-form">5 trận gần nhất</th><th scope="col">Điểm</th></tr></thead>
+        <tbody>{displayRows.map(row => {
           const visual = clubVisual(row.clubName)
-          const form = recentClubForm(matches.data, row.clubId)
-          return <tr key={row.clubId} className={standingBand(row.position, season, state.data.length)}>
-            <td className="st-rank">{row.position}</td><th scope="row" className="st-left"><a className="st-team" href={clubDetailHash(row.clubId, { season })}>
-              <span className="st-crest" style={{ background: visual.color }} aria-hidden="true">{visual.code}</span>
-              <span className="st-team-name">{row.clubName}</span><abbr className="st-team-code" title={row.clubName}>{visual.code}</abbr></a></th>
-            <td>{row.played}</td><td className="st-hide-small">{row.won}</td><td className="st-hide-small">{row.drawn}</td><td className="st-hide-small">{row.lost}</td>
-            <td className="st-hide-small">{row.goalsFor}:{row.goalsAgainst}</td><td>{row.goalDifference > 0 ? '+' : ''}{row.goalDifference}</td>
-            <td className="st-center"><span className="st-form">{matches.status === 'success' && form.length ? form.map(({ match, result }) =>
-              <span className={`st-result st-result-${result}`} key={match.id} title={`GW${match.matchweek}: ${RESULTS[result]}`} aria-label={`Vòng ${match.matchweek}: ${RESULTS[result]}`}>{result}</span>) :
-              <span title={matches.status === 'loading' ? 'Đang tải phong độ' : 'Chưa có dữ liệu phong độ'}>—</span>}</span></td><td className="st-points">{row.points}</td>
+          const officialForm = matches.status === 'success' ? recentClubForm(matches.data, row.clubId) : []
+          const visibleOfficialForm = row.isLive && row.provisionalFormResult ? officialForm.slice(-4) : officialForm
+          const bandClass = standingBand(row.position, season, displayRows.length)
+          const rowClass = [bandClass, row.isLive ? 'st-row-live' : ''].filter(Boolean).join(' ')
+          const chip = row.liveChip
+          const chipTone = chip ? (chip.result === 'W' ? 'w' : chip.result === 'L' ? 'l' : 'd') : ''
+          return <tr key={row.clubId} className={rowClass}>
+            <td className="st-rank">
+              <span>{row.position}</span>
+              {row.rankDelta > 0 && <span className="st-move st-move-up" aria-label={`Tăng ${row.rankDelta} bậc`}>▲{row.rankDelta}</span>}
+              {row.rankDelta < 0 && <span className="st-move st-move-down" aria-label={`Giảm ${-row.rankDelta} bậc`}>▼{-row.rankDelta}</span>}
+            </td>
+            <th scope="row" className="st-left">
+              <div className="st-team-cell">
+                <a className="st-team" href={clubDetailHash(row.clubId, { season })}>
+                  <span className="st-crest" style={{ background: visual.color }} aria-hidden="true">{visual.code}</span>
+                  <span className="st-team-name">{row.clubName}</span>
+                  <abbr className="st-team-code" title={row.clubName}>{visual.code}</abbr>
+                </a>
+                {chip && <span className={`st-live-chip st-live-chip-${chipTone}`}>
+                  {chip.homeCode} {chip.homeScore}–{chip.awayScore} {chip.awayCode}
+                  {chip.minuteLabel && <em>{chip.minuteLabel}</em>}
+                </span>}
+              </div>
+            </th>
+            <td>{row.played}</td>
+            <td className="st-hide-small">{row.won}</td>
+            <td className="st-hide-small">{row.drawn}</td>
+            <td className="st-hide-small">{row.lost}</td>
+            <td className="st-hide-small">{row.goalsFor}:{row.goalsAgainst}</td>
+            <td>{row.goalDifference > 0 ? '+' : ''}{row.goalDifference}</td>
+            <td className="st-center st-col-form">
+              <span className="st-form">
+                {matches.status === 'success' && (visibleOfficialForm.length > 0 || (row.isLive && row.provisionalFormResult)) ? <>
+                  {visibleOfficialForm.map(({ match, result }) =>
+                    <span className={`st-result st-result-${result}`} key={match.id} title={`GW${match.matchweek}: ${RESULTS[result]}`} aria-label={`Vòng ${match.matchweek}: ${RESULTS[result]}`}>{result}</span>)}
+                  {row.isLive && row.provisionalFormResult &&
+                    <span className={`st-result st-result-ghost st-result-${row.provisionalFormResult}`} title={`Tạm tính: ${RESULTS[row.provisionalFormResult]}`} aria-label={`Đang đá tạm tính: ${RESULTS[row.provisionalFormResult]}`}>{row.provisionalFormResult}</span>}
+                </> : <span title={matches.status === 'loading' ? 'Đang tải phong độ' : 'Chưa có dữ liệu phong độ'}>—</span>}
+              </span>
+            </td>
+            <td className="st-points">
+              <span className="st-pts-val">
+                {row.points}
+                {row.isLive && row.pointsDelta != null &&
+                  <small className={`st-pts-add${row.pointsDelta === 0 ? ' st-pts-add-zero' : ''}`}>+{row.pointsDelta}</small>}
+              </span>
+            </td>
           </tr>
         })}</tbody></table></div>
       {matches.status === 'error' && <p className="st-note" role="alert">Không tải được phong độ. <button type="button" onClick={matches.reload}>Thử lại</button></p>}
-      <div className="st-legend">{season === 2026 && <><span><i className="st-zone-blue" />Vị trí 1–5</span><span><i className="st-zone-orange" />Vị trí 6–7</span><span><i className="st-zone-red" />3 đội cuối</span></>}
-        <span><b className="st-result st-result-W">W</b><b className="st-result st-result-D">D</b><b className="st-result st-result-L">L</b>Thắng, hòa, thua (cũ đến mới)</span></div>
     </>}
   </>
 }
