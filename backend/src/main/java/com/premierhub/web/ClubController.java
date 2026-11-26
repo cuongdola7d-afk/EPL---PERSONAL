@@ -1,7 +1,9 @@
 package com.premierhub.web;
 
+import com.premierhub.service.ClubOverviewService;
 import com.premierhub.service.FootballQueries;
 import com.premierhub.service.ClubStatisticsService;
+import com.premierhub.web.dto.ClubOverviewResponse;
 import com.premierhub.web.dto.ClubStatisticsResponse;
 import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.error.ResourceNotFoundException;
@@ -20,10 +22,12 @@ import java.util.List;
 public class ClubController {
     private final FootballQueries service;
     private final ClubStatisticsService statistics;
+    private final ClubOverviewService overview;
 
-    public ClubController(FootballQueries service, ClubStatisticsService statistics) {
+    public ClubController(FootballQueries service, ClubStatisticsService statistics, ClubOverviewService overview) {
         this.service = service;
         this.statistics = statistics;
+        this.overview = overview;
     }
 
     @GetMapping
@@ -51,5 +55,13 @@ public class ClubController {
         service.club(id, season)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found: " + id));
         return statistics.statistics(id, season);
+    }
+
+    @GetMapping("/{id}/overview")
+    public ClubOverviewResponse getOverview(@PathVariable @Positive int id,
+                                            @RequestParam(defaultValue = "2026") int season) {
+        service.club(id, season)
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found: " + id));
+        return overview.overview(id, season);
     }
 }

@@ -1,4 +1,16 @@
-import { compareMatchSchedule, matchDayKey } from './matchTime.js'
+import { compareMatchSchedule, matchDayKey, matchDayLabel, matchKickoffParts } from './matchTime.js'
+
+const SHORT_WEEKDAY = {
+  'Chủ nhật': 'CN',
+  'Thứ Hai': 'T2',
+  'Thứ Ba': 'T3',
+  'Thứ Tư': 'T4',
+  'Thứ Năm': 'T5',
+  'Thứ Sáu': 'T6',
+  'Thứ Bảy': 'T7',
+}
+
+const RESULT_TEXT = { W: 'Thắng', D: 'Hòa', L: 'Thua' }
 
 export const FOOT_LABEL = { LEFT: 'Chân trái', RIGHT: 'Chân phải', BOTH: 'Hai chân' }
 export const valueLabel = value => value == null ? '—' : String(value)
@@ -36,4 +48,55 @@ export function clubRanking(roster, statistics, metric) {
     const stats = byId.get(player.id)
     return stats && stats[field] != null && stats.appearances > 0 ? [{ player, stats, value: stats[field] }] : []
   }).sort((a,b) => b.value-a.value || a.player.name.localeCompare(b.player.name))
+}
+
+export function formatFormTooltip(match, clubId, season = 2026) {
+  if (!match) return null
+  const isHome = match.homeClubId === clubId
+  const venue = isHome ? 'Nhà' : 'Khách'
+  const header = `GW${match.matchweek} · ${venue}`
+  const hasScore = match.homeGoals != null && match.awayGoals != null
+  const scoreline = hasScore
+    ? `${match.homeClub} ${match.homeGoals}–${match.awayGoals} ${match.awayClub}`
+    : `${match.homeClub} vs ${match.awayClub}`
+
+  let timeLabel
+  if (season === 2026) {
+    const parts = matchKickoffParts(match, season)
+    const spaceIdx = parts.weekdayDate.lastIndexOf(' ')
+    const weekdayFull = spaceIdx > 0 ? parts.weekdayDate.slice(0, spaceIdx) : ''
+    const shortWd = SHORT_WEEKDAY[weekdayFull] ?? weekdayFull
+    const datePart = parts.shortDate && shortWd ? `${shortWd} ${parts.shortDate}` : parts.weekdayDate
+    timeLabel = parts.time ? `${datePart} · ${parts.time} giờ VN` : datePart
+  } else {
+    timeLabel = matchDayLabel(match, season)
+  }
+
+  const result = clubMatchResult(match, clubId)
+  const resultPrefix = RESULT_TEXT[result] ?? 'Chưa có tỉ số'
+  return {
+    result,
+    header,
+    scoreline,
+    timeLabel,
+    ariaLabel: `${resultPrefix} · ${header} · ${scoreline} · ${timeLabel}`,
+  }
+}
+
+export function clampTooltipPosition({
+  anchorCenterX,
+  containerLeft,
+  tooltipWidth,
+  viewportWidth,
+  margin = 12,
+}) {
+  const half = tooltipWidth / 2
+  const idealViewportLeft = containerLeft + anchorCenterX - half
+  const minViewportLeft = margin
+  const maxViewportLeft = Math.max(margin, viewportWidth - margin - tooltipWidth)
+  const clampedViewportLeft = Math.min(Math.max(idealViewportLeft, minViewportLeft), maxViewportLeft)
+  const left = clampedViewportLeft - containerLeft
+  const rawArrow = containerLeft + anchorCenterX - clampedViewportLeft
+  const arrowLeft = Math.min(Math.max(rawArrow, 14), Math.max(14, tooltipWidth - 14))
+  return { left, arrowLeft }
 }

@@ -1,5 +1,6 @@
 package com.premierhub.config;
 
+import com.premierhub.service.ClubOverviewService;
 import com.premierhub.service.FootballQueries;
 import com.premierhub.service.ClubStatisticsService;
 import com.premierhub.web.ClubController;
@@ -33,6 +34,9 @@ class ApiCorsConfigurationTest {
 
     @MockitoBean
     private ClubStatisticsService statistics;
+
+    @MockitoBean
+    private ClubOverviewService overview;
 
     @Test
     void allowsConfiguredProductionOriginWithoutChangingSuccessfulApiResponse() throws Exception {

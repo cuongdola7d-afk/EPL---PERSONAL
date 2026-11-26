@@ -1,9 +1,9 @@
-const TABS = new Set(['standings', 'matches', 'players', 'stats'])
+const TABS = new Set(['overview', 'standings', 'matches', 'players', 'stats'])
 
-export function clubDetailHash(id, { season = 2026, tab = 'standings', matches = 'done',
+export function clubDetailHash(id, { season = 2026, tab = 'overview', matches = 'done',
                                    players = 'squad', metric = 'rating', count = 5 } = {}) {
   const params = new URLSearchParams({ season: String(season) })
-  if (tab !== 'standings') params.set('tab', tab)
+  if (tab !== 'overview') params.set('tab', tab)
   if (matches !== 'done') params.set('matches', matches)
   if (players !== 'squad') params.set('players', players)
   if (metric !== 'rating') params.set('metric', metric)
@@ -16,7 +16,7 @@ export function parseClubRoute(hash) {
   if (!match || !Number.isSafeInteger(Number(match[1]))) return null
   const params = new URLSearchParams(match[2] ?? '')
   const route = { clubId: Number(match[1]), season: Number(params.get('season') ?? 2026),
-    tab: params.get('tab') ?? 'standings', matches: params.get('matches') ?? 'done',
+    tab: params.get('tab') ?? 'overview', matches: params.get('matches') ?? 'done',
     players: params.get('players') ?? 'squad', metric: params.get('metric') ?? 'rating',
     count: Number(params.get('count') ?? 5) }
   if (![2024, 2026].includes(route.season) || !TABS.has(route.tab) ||

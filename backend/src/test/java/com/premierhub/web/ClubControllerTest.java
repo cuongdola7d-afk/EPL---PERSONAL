@@ -1,7 +1,9 @@
 package com.premierhub.web;
 
+import com.premierhub.service.ClubOverviewService;
 import com.premierhub.service.FootballQueries;
 import com.premierhub.service.ClubStatisticsService;
+import com.premierhub.web.dto.ClubOverviewResponse;
 import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.dto.ClubStatisticsResponse;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,9 @@ class ClubControllerTest {
 
     @MockitoBean
     private ClubStatisticsService statistics;
+
+    @MockitoBean
+    private ClubOverviewService overview;
 
     @Test
     void detailIncludesCurrentVerifiedClubInformation() throws Exception {
@@ -87,6 +92,22 @@ class ClubControllerTest {
         when(service.club(999, 2026)).thenReturn(Optional.empty());
         expectError(mockMvc.perform(get("/api/clubs/999/statistics")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/clubs/999/statistics");
+    }
+
+    @Test
+    void overviewReturnsPublicOverviewAndRequiresClubInSeason() throws Exception {
+        when(service.club(1, 2026)).thenReturn(Optional.of(arsenal));
+        when(overview.overview(1, 2026)).thenReturn(new ClubOverviewResponse(
+                1, 2026, "4-2-3-1",
+                List.of(new ClubOverviewResponse.FormationCount("4-2-3-1", 4)),
+                6, List.of(), List.of(), List.of(), List.of()));
+        mockMvc.perform(get("/api/clubs/1/overview").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.formation").value("4-2-3-1"))
+                .andExpect(jsonPath("$.lineupMatches").value(6));
+        when(service.club(999, 2026)).thenReturn(Optional.empty());
+        expectError(mockMvc.perform(get("/api/clubs/999/overview")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/clubs/999/overview");
     }
 
     @Test

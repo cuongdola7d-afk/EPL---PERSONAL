@@ -26,6 +26,29 @@ export async function fetchClubStatistics(id, season, signal) {
   return stats
 }
 
+export async function fetchClubOverview(id, season, signal) {
+  const data = await fetchApiJson(`/api/clubs/${id}/overview?season=${season}`, signal, 'Chưa có tổng quan câu lạc bộ.')
+  const validLeader = row => row && Number.isInteger(row.rank) && Number.isInteger(row.playerId) &&
+    typeof row.name === 'string' && Number.isInteger(row.appearances) &&
+    typeof row.value === 'number' && Number.isFinite(row.value)
+  const validXi = player => player && Number.isInteger(player.playerId) &&
+    typeof player.name === 'string' && typeof player.shortName === 'string' &&
+    typeof player.position === 'string' && Number.isInteger(player.rowIndex) &&
+    Number.isInteger(player.slotIndex) && typeof player.x === 'number' &&
+    typeof player.y === 'number' && Number.isInteger(player.startsAtPosition)
+  if (!data || data.clubId !== id || data.season !== season ||
+      (data.formation !== null && typeof data.formation !== 'string') ||
+      !Number.isInteger(data.lineupMatches) ||
+      !Array.isArray(data.formationCounts) ||
+      !Array.isArray(data.xi) || !data.xi.every(validXi) ||
+      !Array.isArray(data.topScorers) || !data.topScorers.every(validLeader) ||
+      !Array.isArray(data.topAssists) || !data.topAssists.every(validLeader) ||
+      !Array.isArray(data.topRatings) || !data.topRatings.every(validLeader)) {
+    throw new Error('Dữ liệu tổng quan câu lạc bộ không đúng định dạng.')
+  }
+  return data
+}
+
 export async function fetchClubs(keyword, signal, season = 2024) {
   const params = new URLSearchParams({ season })
   if (keyword) params.set('keyword', keyword)
