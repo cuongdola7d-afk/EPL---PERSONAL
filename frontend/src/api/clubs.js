@@ -15,12 +15,17 @@ export async function fetchClub(id, season, signal) {
 
 export async function fetchClubStatistics(id, season, signal) {
   const stats = await fetchApiJson(`/api/clubs/${id}/statistics?season=${season}`, signal, 'Chưa có thống kê câu lạc bộ.')
-  const number = value => value === null || typeof value === 'number' && Number.isFinite(value)
+  const number = value => value === null || (typeof value === 'number' && Number.isFinite(value))
+  const optionalNumber = value => value === undefined || number(value)
   if (!stats || stats.clubId !== id || stats.season !== season || !number(stats.averageRating) ||
       !Number.isInteger(stats.ratedAppearances) || !Number.isInteger(stats.recordedMatches) ||
       !Array.isArray(stats.players) || !stats.players.every(player => Number.isInteger(player.playerId) &&
         Number.isInteger(player.appearances) && Number.isInteger(player.ratedAppearances) &&
-        number(player.goals) && number(player.assists) && number(player.averageRating))) {
+        number(player.goals) && number(player.assists) && number(player.averageRating) &&
+        optionalNumber(player.minutes) && optionalNumber(player.cleanSheets) &&
+        optionalNumber(player.saves) && optionalNumber(player.goalsConceded) &&
+        optionalNumber(player.tackles) && optionalNumber(player.clearancesBlocksInterceptions) &&
+        optionalNumber(player.recoveries) && optionalNumber(player.expectedGoals))) {
     throw new Error('Dữ liệu thống kê câu lạc bộ không đúng định dạng.')
   }
   return stats

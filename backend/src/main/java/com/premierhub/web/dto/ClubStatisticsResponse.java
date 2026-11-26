@@ -6,5 +6,9 @@ public record ClubStatisticsResponse(int clubId, int season, Double averageRatin
                                      int ratedAppearances, int recordedMatches,
                                      List<PlayerStatistics> players) {
     public record PlayerStatistics(int playerId, int appearances, Integer goals,
-                                   Integer assists, Double averageRating, int ratedAppearances) { }
+                                   Integer assists, Double averageRating, int ratedAppearances,
+                                   Integer minutes, Integer cleanSheets, Integer saves,
+                                   Integer goalsConceded, Integer tackles,
+                                   Integer clearancesBlocksInterceptions, Integer recoveries,
+                                   Double expectedGoals) { }
 }

@@ -7,14 +7,27 @@ import { useApiList } from '../hooks/useApiList.js'
 import { useApiResource } from '../hooks/useApiResource.js'
 import { clubDetailHash } from '../utils/clubRoute.js'
 import {
+  calculateAge,
   clampTooltipPosition,
   clubMatches,
   clubMatchResult,
-  clubRanking,
-  FOOT_LABEL,
+  clubPerspectiveScore,
+  clubShortName,
   formatFormTooltip,
+  formatShortKickoffDate,
+  formatSquadStat,
+  groupMatchesByVietnamMonth,
+  isSquadColumnLeader,
+  ovrTier,
+  playerPositionChips,
   ratingClass,
+  sortSquadRows,
+  SQUAD_POSITION_GROUPS,
+  squadColumnLeaders,
+  squadColumnsForGroup,
+  squadRatingBand,
   standingBand,
+  stripClubSuffix,
   valueLabel,
 } from '../utils/clubView.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
@@ -30,10 +43,7 @@ import './ClubDetailPage.css'
 const dateLabel = value => value ? new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
 }).format(new Date(`${value}T00:00:00Z`)) : '—'
-const groups = [['GOALKEEPER', 'Thủ môn', 'GK'], ['DEFENDER', 'Hậu vệ', 'DEF'],
-  ['MIDFIELDER', 'Tiền vệ', 'MID'], ['FORWARD', 'Tiền đạo', 'FWD']]
 const resultLabel = { W: 'Thắng', D: 'Hòa', L: 'Thua' }
-const pendingLabel = { SCHEDULED: 'Chưa diễn ra', LIVE: 'Đang diễn ra', POSTPONED: 'Hoãn', SUSPENDED: 'Tạm dừng' }
 
 function DataState({ status, error, reload, empty, title }) {
   if (status === 'loading') return <div className="cd-loading" role="status" aria-label={`Đang tải ${title}`}>
@@ -57,48 +67,117 @@ function FeaturedMatch({ label, match, season, fromHash }) {
   </a> : <div className="cd-match-box"><div className="cd-box-label">{label}</div><p className="cd-muted">Chưa có dữ liệu</p></div>
 }
 
-function Position({ player }) {
-  const group = groups.find(([code]) => code === player.position)
-  return <span className={`cd-position cd-position-${player.position}`}>{player.primaryPosition ?? group?.[2] ?? 'Chưa xác định'}</span>
-}
+function SquadTables({ players, stats, statsResource, season, fromHash }) {
+  const today = vietnamToday()
+  const hasStats = season === 2026
+  const statsById = new Map((stats?.players ?? []).map(row => [row.playerId, row]))
+  const knownCodes = new Set(SQUAD_POSITION_GROUPS.map(group => group.code))
+  const sections = [
+    ...SQUAD_POSITION_GROUPS,
+    ...(players.some(player => !knownCodes.has(player.position))
+      ? [{ code: 'UNKNOWN', label: 'Chưa xác định', fallbackTag: '?' }]
+      : []),
+  ]
 
-function PlayerRows({ players, season, fromHash }) {
-  const known = new Set(groups.map(([code]) => code))
-  const sections = [...groups, ...players.some(player => !known.has(player.position)) ? [['UNKNOWN','Chưa xác định','?']] : []]
-  return <><div className="cd-player-row cd-player-columns" aria-hidden="true"><span>Cầu thủ</span><span>Quốc tịch</span><span>Chiều cao</span><span>Ngày sinh</span><span>Chân thuận</span><span>OVR</span></div>
-    {sections.map(([code,label]) => {
-      const members = players.filter(player => code === 'UNKNOWN' ? !known.has(player.position) : player.position === code)
-      if (!members.length) return null
-      return <section className="cd-player-group" key={code}><h3>{label}<span>{members.length}</span></h3>
-        {members.map(player => <a key={player.id} className="cd-player-row" href={playerDetailHash(player.id,season,fromHash)} aria-label={`Xem hồ sơ ${player.name}`}>
-          <div className="cd-player-who"><span className="cd-avatar" aria-hidden="true">{getInitials(player.name)}</span><div><strong>{player.name}</strong><Position player={player} />
-            <small className="cd-foot-mobile">Chân thuận: {FOOT_LABEL[player.preferredFoot] ?? 'Chưa có dữ liệu'}</small></div></div>
-          <span className="cd-profile-cell" data-label="Quốc tịch">{player.nationality ?? '—'}</span>
-          <span className="cd-profile-cell" data-label="Chiều cao">{player.heightCm == null ? '—' : `${player.heightCm} cm`}</span>
-          <span className="cd-profile-cell" data-label="Ngày sinh">{dateLabel(player.birthDate)}</span>
-          <span className="cd-profile-cell" data-label="Chân thuận">{FOOT_LABEL[player.preferredFoot] ?? '—'}</span>
-          <span className={`cd-ovr cd-ovr-${player.fc27Overall == null ? 'na' : player.fc27Overall >= 85 ? 'gold' : player.fc27Overall >= 78 ? 'green' : player.fc27Overall >= 70 ? 'blue' : 'silver'}`}>{valueLabel(player.fc27Overall)}</span>
-        </a>)}
-      </section>
-    })}</>
-}
+  return (
+    <>
+      {hasStats && statsResource.status === 'error' && (
+        <DataState status="error" error={statsResource.error} reload={statsResource.reload} empty={false} title="thống kê cầu thủ" />
+      )}
+      {sections.map(group => {
+        const members = players.filter(player =>
+          group.code === 'UNKNOWN' ? !knownCodes.has(player.position) : player.position === group.code,
+        )
+        if (!members.length) return null
+        const columns = hasStats ? squadColumnsForGroup(group.code) : []
+        const rows = sortSquadRows(
+          members.map(player => {
+            const rowStats = hasStats ? (statsById.get(player.id) ?? null) : null
+            const played = Boolean(rowStats && rowStats.appearances > 0)
+            return { player, stats: rowStats, played }
+          }),
+          hasStats,
+        )
+        const leaders = hasStats ? squadColumnLeaders(rows, columns, 270) : {}
 
-function Ranking({ players, stats, state, update, season, fromHash }) {
-  const ranked = clubRanking(players,stats,state.metric)
-  const highest = ranked[0]?.value ?? 0
-  return <><div className="cd-chips" role="group" aria-label="Xếp hạng cầu thủ">
-    {[['rating','Điểm đánh giá'],['goals','Bàn thắng'],['assists','Kiến tạo']].map(([key,label]) => <button type="button" key={key}
-      aria-pressed={state.metric === key} onClick={() => update({metric:key,count:5})}>{label}</button>)}</div>
-    {!ranked.length && <DataState status="success" empty title="chỉ số cầu thủ cho mục này" />}
-    {ranked.slice(0,state.count).map(({player,stats:row,value},index) => <a className="cd-ranking-row" key={player.id} href={playerDetailHash(player.id,season,fromHash)}>
-      <span className="cd-ranking-number">{index+1}</span><span className="cd-avatar" aria-hidden="true">{getInitials(player.name)}</span>
-      <div><strong>{player.name}</strong><Position player={player} />
-        {state.metric === 'rating' ? <small>{row.ratedAppearances} lượt được chấm</small> : <div className="cd-ranking-bar"><i style={{width:`${highest ? value/highest*100 : 0}%`}} /></div>}</div>
-      <b className={state.metric === 'rating' ? `cd-rating cd-rating-${ratingClass(value)}` : 'cd-ranking-value'}>{state.metric === 'rating' ? value.toFixed(1) : value}</b>
-    </a>)}
-    {ranked.length > state.count && <button className="cd-more" type="button" onClick={() => update({count:state.count+5})}>Xem thêm {Math.min(5,ranked.length-state.count)} cầu thủ</button>}
-    <p className="cd-note">Chỉ số tính trong những trận đã nhập khi cầu thủ thi đấu cho CLB này. Chỉ hiển thị người thuộc roster hiện hành; trường thiếu không được tính thành 0.</p>
-  </>
+        return (
+          <section
+            className={hasStats ? 'cd-sq' : 'cd-sq cd-sq-basic'}
+            key={group.code}
+            aria-label={group.label}
+          >
+            <div className="cd-sqh">
+              <span className="cd-sqh-gt">
+                {group.label}
+                <span>{rows.length}</span>
+              </span>
+              <span className="cd-sqh-ovr">OVR</span>
+              {hasStats && columns.map((col, idx) => (
+                <span key={col.key} className={`cd-col-${idx + 1}`}>{col.label}</span>
+              ))}
+              {hasStats && <span className="cd-col-rt">Điểm TB</span>}
+            </div>
+            {rows.map(row => {
+              const { player, stats: rowStats, played } = row
+              const age = calculateAge(player.birthDate, today)
+              const metaParts = [player.nationality, age != null ? `${age} tuổi` : null].filter(Boolean)
+              const chips = playerPositionChips(player, 2)
+              const ratingBand = played ? squadRatingBand(rowStats?.averageRating) : null
+              const isIdle = hasStats && !played
+
+              return (
+                <a
+                  key={player.id}
+                  className={isIdle ? 'cd-pr cd-pr-idle' : 'cd-pr'}
+                  href={playerDetailHash(player.id, season, fromHash)}
+                  aria-label={`Xem hồ sơ ${player.name}`}
+                >
+                  <span
+                    className={player.shirtNumber != null ? 'cd-pr-no' : 'cd-pr-no cd-pr-no-init'}
+                    aria-hidden="true"
+                  >
+                    {player.shirtNumber != null ? player.shirtNumber : getInitials(player.name)}
+                  </span>
+                  <span className="cd-pr-nm">
+                    <b>{player.name}</b>
+                    {(metaParts.length > 0 || chips.length > 0) && (
+                      <span className="cd-pr-meta">
+                        {metaParts.length > 0 && <small>{metaParts.join(' · ')}</small>}
+                        {chips.map(code => <em key={code}>{code}</em>)}
+                      </span>
+                    )}
+                  </span>
+                  <span className={`cd-ovr cd-ovr-${ovrTier(player.fc27Overall)}`}>
+                    {valueLabel(player.fc27Overall)}
+                  </span>
+                  {hasStats && columns.map((col, idx) => {
+                    const isTop = isSquadColumnLeader(row, col, leaders, 270)
+                    return (
+                      <span
+                        key={col.key}
+                        className={`cd-pr-c cd-col-${idx + 1}${isTop ? ' cd-pr-top' : ''}`}
+                      >
+                        {played ? formatSquadStat(rowStats?.[col.key], col.format) : '–'}
+                      </span>
+                    )
+                  })}
+                  {hasStats && (
+                    <span className="cd-pr-c cd-col-rt">
+                      {played && rowStats?.averageRating != null ? (
+                        <span className={`cd-rb cd-rb-${ratingBand}`}>
+                          {rowStats.averageRating.toFixed(2)}
+                        </span>
+                      ) : '–'}
+                    </span>
+                  )}
+                </a>
+              )
+            })}
+          </section>
+        )
+      })}
+    </>
+  )
 }
 
 function Statistics({ standing, resource, done, clubId }) {
@@ -356,6 +435,190 @@ function OverviewTab({ resource, season, clubColor, fromHash }) {
   )
 }
 
+function UpcomingCard({ match, clubId, season, fromHash, isFirst }) {
+  const { date, time } = formatShortKickoffDate(match, season)
+  const isHomeOwn = match.homeClubId === clubId
+  const isAwayOwn = match.awayClubId === clubId
+  const isLive = match.status === 'LIVE'
+  const statusText = isLive
+    ? 'Đang diễn ra'
+    : match.status === 'POSTPONED'
+      ? 'Hoãn'
+      : match.status === 'SUSPENDED'
+        ? 'Tạm dừng'
+        : null
+  const primaryTime = statusText ?? time ?? (season === 2026 ? 'Chưa rõ giờ' : date)
+  const secondaryMeta = statusText || time || season === 2026
+    ? `${date ? `${date} · ` : ''}GW${match.matchweek}`
+    : `GW${match.matchweek}`
+
+  return (
+    <a
+      className={`cd-nx${isFirst ? ' cd-nx-first' : ''}`}
+      href={matchDetailHash(match.id, { season, week: match.matchweek }, fromHash)}
+    >
+      <div className="cd-nx-top">
+        <b className={isLive ? 'cd-nx-live' : statusText ? 'cd-nx-status' : undefined}>{primaryTime}</b>
+        <span>{secondaryMeta}</span>
+      </div>
+      <div className="cd-nx-vs">
+        <span className={`cd-tm cd-tm-h${isHomeOwn ? ' cd-tm-me' : ''}`}>
+          <span className="cd-tm-n">{stripClubSuffix(match.homeClub)}</span>
+          <span className="cd-tm-s">{clubShortName(match.homeClub)}</span>
+          <HomeCrest name={match.homeClub} />
+        </span>
+        <i aria-hidden="true">vs</i>
+        <span className={`cd-tm cd-tm-a${isAwayOwn ? ' cd-tm-me' : ''}`}>
+          <HomeCrest name={match.awayClub} />
+          <span className="cd-tm-n">{stripClubSuffix(match.awayClub)}</span>
+          <span className="cd-tm-s">{clubShortName(match.awayClub)}</span>
+        </span>
+      </div>
+    </a>
+  )
+}
+
+function MatchRow({ match, clubId, season, fromHash, upcoming = false }) {
+  const isHome = match.homeClubId === clubId
+  const opponent = isHome ? match.awayClub : match.homeClub
+  const { date, time } = formatShortKickoffDate(match, season)
+
+  if (upcoming) {
+    const isLive = match.status === 'LIVE'
+    const statusLabel = isLive
+      ? 'Đang diễn ra'
+      : match.status === 'POSTPONED'
+        ? 'Hoãn'
+        : match.status === 'SUSPENDED'
+          ? 'Tạm dừng'
+          : null
+    return (
+      <a
+        className="cd-rw cd-rw-up"
+        href={matchDetailHash(match.id, { season, week: match.matchweek }, fromHash)}
+      >
+        <span className="cd-rw-gw">GW{match.matchweek}</span>
+        <span className="cd-rw-dt">
+          <b>{date}</b>
+          {time ?? ''}
+        </span>
+        <span className="cd-rw-op">
+          <HomeCrest name={opponent} />
+          <span className="cd-rw-n">{stripClubSuffix(opponent)}</span>
+          <span className="cd-rw-n cd-rw-s">{clubShortName(opponent)}</span>
+          <span className="cd-rw-tag">{isHome ? 'Nhà' : 'Khách'}</span>
+        </span>
+        <span className="cd-rw-sc">{isLive ? 'Đang đá' : (time ?? 'vs')}</span>
+        {statusLabel ? (
+          <span className={`cd-rp ${isLive ? 'cd-rp-live' : 'cd-rp-D'}`}>{statusLabel}</span>
+        ) : (
+          <span className="cd-rp-empty" aria-hidden="true" />
+        )}
+      </a>
+    )
+  }
+
+  const result = clubMatchResult(match, clubId)
+  const score = clubPerspectiveScore(match, clubId) ?? '—'
+  return (
+    <a
+      className={`cd-rw cd-rw-${result ?? 'unknown'}`}
+      href={matchDetailHash(match.id, { season, week: match.matchweek }, fromHash)}
+    >
+      <span className="cd-rw-gw">GW{match.matchweek}</span>
+      <span className="cd-rw-dt">
+        <b>{date}</b>
+        {time ?? ''}
+      </span>
+      <span className="cd-rw-op">
+        <HomeCrest name={opponent} />
+        <span className="cd-rw-n">{stripClubSuffix(opponent)}</span>
+        <span className="cd-rw-n cd-rw-s">{clubShortName(opponent)}</span>
+        <span className="cd-rw-tag">{isHome ? 'Nhà' : 'Khách'}</span>
+      </span>
+      <span className="cd-rw-sc">{score}</span>
+      <span className={`cd-rp cd-rp-${result ?? 'unknown'}`}>{resultLabel[result] ?? '—'}</span>
+    </a>
+  )
+}
+
+function MatchesTab({ matchesResource, done, pending, clubId, season, expanded, onToggleExpanded, fromHash }) {
+  const isEmpty = matchesResource.status === 'success' && done.length === 0 && pending.length === 0
+  const monthGroups = groupMatchesByVietnamMonth(done, season)
+  const topUpcoming = pending.slice(0, 3)
+  const extraUpcoming = expanded ? pending.slice(3) : []
+
+  return (
+    <>
+      <DataState {...matchesResource} empty={isEmpty} title="trận đấu" />
+      {matchesResource.status === 'success' && !isEmpty && (
+        <>
+          {pending.length > 0 && (
+            <section className="cd-matches-upcoming" aria-label="Trận sắp tới">
+              <div className="cd-mh">Sắp tới</div>
+              <div className="cd-next">
+                {topUpcoming.map((match, idx) => (
+                  <UpcomingCard
+                    key={match.id}
+                    match={match}
+                    clubId={clubId}
+                    season={season}
+                    fromHash={fromHash}
+                    isFirst={idx === 0}
+                  />
+                ))}
+              </div>
+              {extraUpcoming.length > 0 && (
+                <div className="cd-up-more">
+                  {extraUpcoming.map(match => (
+                    <MatchRow
+                      key={match.id}
+                      match={match}
+                      clubId={clubId}
+                      season={season}
+                      fromHash={fromHash}
+                      upcoming
+                    />
+                  ))}
+                </div>
+              )}
+              {pending.length > 3 && (
+                <button
+                  type="button"
+                  className="cd-more-link"
+                  onClick={() => onToggleExpanded(!expanded)}
+                >
+                  {expanded ? 'Thu gọn ‹' : `Xem tất cả ${pending.length} trận sắp tới ›`}
+                </button>
+              )}
+            </section>
+          )}
+
+          {done.length > 0 && (
+            <section className="cd-matches-past" aria-label="Trận đã đá">
+              <div className={`cd-mh${pending.length > 0 ? ' cd-mh-past' : ''}`}>Đã đá</div>
+              {monthGroups.map(group => (
+                <div key={group.key} className="cd-month-group">
+                  <div className="cd-mh">{group.label}</div>
+                  {group.matches.map(match => (
+                    <MatchRow
+                      key={match.id}
+                      match={match}
+                      clubId={clubId}
+                      season={season}
+                      fromHash={fromHash}
+                    />
+                  ))}
+                </div>
+              ))}
+            </section>
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
 export default function ClubDetailPage({ route, season }) {
   const requestClub=useCallback(signal=>fetchClub(route.clubId,season,signal),[route.clubId,season])
   const club=useApiResource(requestClub)
@@ -377,7 +640,8 @@ export default function ClubDetailPage({ route, season }) {
   const fromHash=clubDetailHash(route.clubId,{...route,season})
   const standing=standings.data.find(row=>row.clubId === route.clubId)
   const {done,soon,pending}=clubMatches(matches.data,route.clubId,vietnamToday(),season)
-  const matchList=route.matches === 'done' ? done : pending
+  const playedPlayerIds=new Set((stats.data?.players ?? []).filter(row=>row.appearances > 0).map(row=>row.playerId))
+  const playedCount=players.data.filter(player=>playedPlayerIds.has(player.id)).length
   const tabs=[['overview','Tổng quan'],['standings','Bảng xếp hạng'],['matches','Trận đấu'],['players','Cầu thủ'],['stats','Thống kê']]
   const visual=clubVisual(club.data?.name ?? '')
 
@@ -403,8 +667,9 @@ export default function ClubDetailPage({ route, season }) {
         <OverviewTab resource={overview} season={season} clubColor={visual.color} fromHash={fromHash} />
       ) : (
       <div className="cd-card cd-panel" role="tabpanel" id={`cd-panel-${route.tab}`} aria-labelledby={`cd-tab-${route.tab}`}>
-        <div className="cd-panel-heading"><div><h2>{tabs.find(([key])=>key===route.tab)?.[1]}</h2><p>Premier League · {SEASONS[season]}{route.tab === 'players' && players.status === 'success' ? ` · ${players.data.length} cầu thủ` : ''}</p></div>
-          {route.tab === 'players' && <div className="cd-segment" role="group" aria-label="Chế độ danh sách cầu thủ">{[['squad','Đội hình'],['top','Top cầu thủ']].map(([key,label])=><button key={key} type="button" aria-pressed={route.players===key} onClick={()=>update({players:key})}>{label}</button>)}</div>}
+        <div className="cd-panel-heading"><div><h2>{tabs.find(([key])=>key===route.tab)?.[1]}</h2><p>{route.tab === 'matches' && matches.status === 'success'
+          ? `${done.length} trận đã đá${pending.length > 0 ? ` · ${pending.length} trận còn lại` : ''}${season === 2026 ? ' · giờ Việt Nam' : ''}`
+          : `Premier League · ${SEASONS[season]}${route.tab === 'players' && players.status === 'success' ? ` · ${players.data.length} cầu thủ${season === 2026 && stats.status === 'success' ? ` · ${playedCount} người đã ra sân` : ''}` : ''}`}</p></div>
         </div>
         {route.tab === 'standings' && <><DataState {...standings} empty={!standings.data.length} title="bảng xếp hạng" />
           {standings.status === 'success' && standings.data.length>0 && <><div className="cd-table-wrap"><table className="cd-table"><thead><tr><th scope="col">#</th><th scope="col">Đội</th>
@@ -415,14 +680,22 @@ export default function ClubDetailPage({ route, season }) {
               <td>{row.goalDifference>0?'+':''}{row.goalDifference}</td><td>{row.points}</td></tr>)}</tbody></table></div>
             {season===2026 && <div className="cd-standing-legend"><span><i className="rank-champions" />1–5 · C1</span><span><i className="rank-europa" />6–7 · C2</span><span><i className="rank-relegation" />18–20 · Xuống hạng</span></div>}</>}
         </>}
-        {route.tab === 'matches' && <><div className="cd-chips" role="group" aria-label="Lọc trận đấu">{[['done','Đã kết thúc',done.length],['soon','Sắp diễn ra',pending.length]].map(([key,label,count])=><button type="button" key={key} aria-pressed={route.matches===key} onClick={()=>update({matches:key})}>{label}<span>{count}</span></button>)}</div>
-          <DataState {...matches} empty={!matchList.length} title="trận đấu cho mục này" />
-          {matches.status==='success' && matchList.map(match=><a className="cd-match-card" key={match.id} href={matchDetailHash(match.id,{season,week:match.matchweek},fromHash)}>
-            <div className="cd-match-meta"><span><b>GW{match.matchweek}</b> <MatchKickoff match={match} season={season} legacyLabel={season === 2024 ? dateLabel(match.date) : undefined} /></span><span className={`cd-result cd-result-${clubMatchResult(match,route.clubId) ?? 'unknown'}`}>{resultLabel[clubMatchResult(match,route.clubId)] ?? pendingLabel[match.status] ?? 'Chưa rõ'}</span></div><MatchTeams match={match} /></a>)}
-        </>}
+        {route.tab === 'matches' && (
+          <MatchesTab
+            matchesResource={matches}
+            done={done}
+            pending={pending}
+            clubId={route.clubId}
+            season={season}
+            expanded={route.matches === 'soon'}
+            onToggleExpanded={next => update({ matches: next ? 'soon' : 'done' })}
+            fromHash={fromHash}
+          />
+        )}
         {route.tab === 'players' && <><DataState {...players} empty={!players.data.length} title="cầu thủ" />
-          {players.status==='success' && (route.players==='squad' ? <PlayerRows players={players.data} season={season} fromHash={fromHash} /> : <>
-            <DataState {...stats} title="thống kê cầu thủ" />{stats.status==='success' && <Ranking players={players.data} stats={stats.data} state={route} update={update} season={season} fromHash={fromHash} />}</>)}
+          {players.status==='success' && players.data.length > 0 && (
+            <SquadTables players={players.data} stats={stats.data} statsResource={stats} season={season} fromHash={fromHash} />
+          )}
         </>}
         {route.tab === 'stats' && <><DataState {...standings} title="chỉ số BXH" /><DataState {...matches} title="kết quả trận đấu" />
           <Statistics standing={standing} resource={stats} done={done} clubId={route.clubId} /></>}
