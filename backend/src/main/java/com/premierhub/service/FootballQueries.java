@@ -276,6 +276,14 @@ public class FootballQueries {
         }).toList();
     }
 
+    private static final List<String> POSITION_ORDER = List.of(
+            "GK", "LB", "CB", "RB", "CM", "CAM", "LM", "RM", "LW", "ST", "RW");
+
+    private static int positionOrderRank(String code) {
+        int index = POSITION_ORDER.indexOf(code);
+        return index >= 0 ? index : POSITION_ORDER.size();
+    }
+
     private Map<Integer, PositionSet> positionSets() {
         Map<Integer, PositionSet> sets = new HashMap<>();
         jdbc.query("""
@@ -286,9 +294,6 @@ public class FootballQueries {
                  AND eligible.season_year=profile.season_year
                  AND eligible.player_id=profile.player_id
                 WHERE profile.league_id=? AND profile.season_year=?
-                ORDER BY profile.player_id,
-                  CASE WHEN eligible.position_code=profile.primary_position THEN 0 ELSE 1 END,
-                  eligible.position_code
                 """, (RowCallbackHandler) rs -> {
                     String primary = rs.getString("primary_position");
                     PositionSet set = sets.computeIfAbsent(rs.getInt("player_id"),
@@ -296,6 +301,12 @@ public class FootballQueries {
                     String code = rs.getString("position_code");
                     if (code != null) set.eligible().add(code);
                 }, LEAGUE_ID, 2026);
+        for (PositionSet set : sets.values()) {
+            set.eligible().sort(java.util.Comparator
+                    .comparingInt((String code) -> code.equals(set.primary()) ? 0 : 1)
+                    .thenComparingInt(FootballQueries::positionOrderRank)
+                    .thenComparing(java.util.Comparator.naturalOrder()));
+        }
         return sets;
     }
 

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchAdminOverview } from '../api/admin.js'
+import { fetchAdminDataHealth, fetchAdminOverview } from '../api/admin.js'
+import {
+  DATA_HEALTH_META,
+  formatDataHealthCells,
+  initialOpenCheckKeys,
+  summarizeDataHealth,
+} from '../utils/adminDataHealth.js'
 import { PAGE_LABELS } from '../utils/analytics.js'
 import './AdminPage.css'
 
@@ -181,9 +187,133 @@ function TrafficChart({ series }) {
   )
 }
 
+function DataHealthSection({ state, onRetry }) {
+  const [openKeys, setOpenKeys] = useState({})
+
+  useEffect(() => {
+    if (state.data?.checks) {
+      setOpenKeys(initialOpenCheckKeys(state.data.checks))
+    }
+  }, [state.data])
+
+  const toggleRow = key => {
+    setOpenKeys(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const summary = state.data ? summarizeDataHealth(state.data) : null
+
+  return (
+    <>
+      <h2 className="adm-section-title">Sức khỏe dữ liệu</h2>
+      <section className="adm-card adm-dh-card" aria-label="Sức khỏe dữ liệu">
+        <div className="adm-dh-top">
+          <div>
+            <h3>Kiểm tra dữ liệu mùa 2026</h3>
+            <small>
+              Tự kiểm tra khi mở trang
+              {state.data?.checkedAtUtc ? ` · lần cuối ${formatTimeVn(state.data.checkedAtUtc)}` : ''}
+            </small>
+          </div>
+          {summary && (
+            <span className={`adm-dh-sum ${summary.status === 'OK' ? 'ok' : 'warn'}`}>
+              {summary.label}
+            </span>
+          )}
+        </div>
+
+        {state.loading && !state.data && (
+          <div className="adm-empty" role="status">
+            Đang kiểm tra sức khỏe dữ liệu mùa 2026…
+          </div>
+        )}
+
+        {state.error && (
+          <div className="adm-dh-error" role="alert">
+            <p>{state.error}</p>
+            <button type="button" className="adm-retry" onClick={onRetry}>
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {state.data && (
+          <>
+            {(state.data.checks ?? []).map(check => {
+              const meta = DATA_HEALTH_META[check.key] ?? {
+                title: check.key,
+                subtitle: '',
+                columns: [],
+              }
+              const isWarn = check.count > 0 || check.status === 'WARN'
+              const isOpen = Boolean(openKeys[check.key])
+              const items = Array.isArray(check.items) ? check.items : []
+              return (
+                <div key={check.key} className={`adm-dh-row${isOpen ? ' open' : ''}`}>
+                  <button
+                    type="button"
+                    className="adm-dh-rh"
+                    aria-expanded={isOpen}
+                    onClick={() => toggleRow(check.key)}
+                  >
+                    <span className={`adm-dh-ic ${isWarn ? 'warn' : 'ok'}`} aria-hidden="true">
+                      {isWarn ? '!' : '✓'}
+                    </span>
+                    <span className="adm-dh-label">
+                      <b>{meta.title}</b>
+                      <span>{meta.subtitle}</span>
+                    </span>
+                    <span className="adm-dh-cnt">{check.count}</span>
+                    <span className="adm-dh-chev" aria-hidden="true">›</span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="adm-dh-list">
+                      {items.length === 0 ? (
+                        <div className="adm-dh-list-empty">Không có dữ liệu bất thường.</div>
+                      ) : (
+                        <div className="adm-dh-table-wrap">
+                          <table className="adm-dh-table">
+                            <thead>
+                              <tr>
+                                {meta.columns.map(col => (
+                                  <th key={col}>{col}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {items.map((item, idx) => {
+                                const cells = formatDataHealthCells(check.key, item)
+                                return (
+                                  <tr key={`${check.key}-${item.playerId ?? item.fplElementId ?? idx}-${idx}`}>
+                                    {cells.map((cell, cellIdx) => (
+                                      <td key={cellIdx}>{cell}</td>
+                                    ))}
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            <p className="adm-dh-why">
+              Chỉ đọc. Danh sách tối đa 20 dòng mỗi mục. Không hiện email.
+            </p>
+          </>
+        )}
+      </section>
+    </>
+  )
+}
+
 export default function AdminPage({ theme = 'dark', account, authLoading }) {
   const [range, setRange] = useState(30)
   const [state, setState] = useState({ loading: true, error: '', data: null })
+  const [healthState, setHealthState] = useState({ loading: true, error: '', data: null })
 
   const load = useCallback((selectedRange, signal) => {
     setState(prev => ({ ...prev, loading: true, error: '' }))
@@ -192,6 +322,20 @@ export default function AdminPage({ theme = 'dark', account, authLoading }) {
       .catch(error => {
         if (error.name === 'AbortError') return
         setState({ loading: false, error: error.message || 'Không tải được dữ liệu quản trị.', data: null })
+      })
+  }, [])
+
+  const loadHealth = useCallback(signal => {
+    setHealthState(prev => ({ ...prev, loading: true, error: '' }))
+    fetchAdminDataHealth(signal)
+      .then(data => setHealthState({ loading: false, error: '', data }))
+      .catch(error => {
+        if (error.name === 'AbortError') return
+        setHealthState({
+          loading: false,
+          error: error.message || 'Không tải được kiểm tra sức khỏe dữ liệu.',
+          data: null,
+        })
       })
   }, [])
 
@@ -205,6 +349,17 @@ export default function AdminPage({ theme = 'dark', account, authLoading }) {
     load(range, controller.signal)
     return () => controller.abort()
   }, [account?.id, account?.role, authLoading, range, load])
+
+  useEffect(() => {
+    if (authLoading) return
+    if (account?.role !== 'ADMIN') {
+      setHealthState({ loading: false, error: '', data: null })
+      return
+    }
+    const controller = new AbortController()
+    loadHealth(controller.signal)
+    return () => controller.abort()
+  }, [account?.id, account?.role, authLoading, loadHealth])
 
   if (authLoading) {
     return (
@@ -485,6 +640,8 @@ export default function AdminPage({ theme = 'dark', account, authLoading }) {
             </div>
           </>
         )}
+
+        <DataHealthSection state={healthState} onRetry={() => loadHealth()} />
       </div>
     </div>
   )

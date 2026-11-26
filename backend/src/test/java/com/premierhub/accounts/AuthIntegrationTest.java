@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AuthIntegrationTest {
     @Value("${local.server.port}") int port;
     @Autowired JdbcTemplate jdbc;
+    @Autowired AuthRateLimiter rateLimiter;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private static final AtomicInteger ids = new AtomicInteger();
     private static final String PASSWORD = "Test-password-2026";
@@ -39,6 +40,7 @@ class AuthIntegrationTest {
     private String email;
 
     @BeforeEach void setup() {
+        rateLimiter.resetForTest();
         cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         client = HttpClient.newBuilder().cookieHandler(cookies).build();
         email = "account" + ids.incrementAndGet() + "@example.com";
@@ -157,5 +159,15 @@ class AuthIntegrationTest {
         assertEquals("https://frontend.example", allowed.headers().firstValue("access-control-allow-origin").orElseThrow());
         var denied = client.send(request.setHeader("Origin", "https://untrusted.example").build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(403, denied.statusCode());
+    }
+
+    @Test void enforcesRegistrationRateLimitAfterThreshold() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            assertEquals(201, register("limit-" + i + "-" + email, PASSWORD).statusCode());
+        }
+        var limited = register("limit-over-" + email, PASSWORD);
+        assertEquals(429, limited.statusCode());
+        assertEquals("AUTH_RATE_LIMITED", json(limited).path("code").asText());
+        assertTrue(limited.headers().firstValue("Retry-After").isPresent());
     }
 }

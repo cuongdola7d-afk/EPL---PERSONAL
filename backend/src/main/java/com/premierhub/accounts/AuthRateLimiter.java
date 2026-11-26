@@ -110,4 +110,7 @@ public class AuthRateLimiter {
     }
 
     synchronized int bucketCount() { return buckets.size(); }
+
+    /** Package-private reset for isolated integration tests; never exposed in production APIs. */
+    synchronized void resetForTest() { buckets.clear(); }
 }

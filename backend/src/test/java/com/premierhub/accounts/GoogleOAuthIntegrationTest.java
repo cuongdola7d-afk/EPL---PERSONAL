@@ -42,6 +42,7 @@ class GoogleOAuthIntegrationTest {
     static final LocalOidcProvider provider = new LocalOidcProvider();
     @Value("${local.server.port}") int port;
     @Autowired JdbcTemplate jdbc;
+    @Autowired AuthRateLimiter rateLimiter;
     @MockitoSpyBean GoogleAccountService accounts;
     CookieManager cookies;
     HttpClient client;
@@ -66,6 +67,7 @@ class GoogleOAuthIntegrationTest {
     }
 
     @BeforeEach void setup() {
+        rateLimiter.resetForTest();
         cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         client = HttpClient.newBuilder().cookieHandler(cookies).build();
         subject = UUID.randomUUID().toString(); email = subject + "@example.com";

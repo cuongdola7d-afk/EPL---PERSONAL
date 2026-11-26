@@ -61,6 +61,17 @@ public class FantasyLineupService {
         return Map.copyOf(slots);
     }
 
+    public static boolean hasValidOverall(PlayerResponse player) {
+        return player != null && player.fc27Overall() != null
+                && player.fc27Overall() >= 1 && player.fc27Overall() <= 99;
+    }
+
+    public static boolean hasValidPosition(PlayerResponse player) {
+        return player != null && player.primaryPosition() != null
+                && player.eligiblePositions() != null
+                && player.eligiblePositions().contains(player.primaryPosition());
+    }
+
     // The same roster read supplies validation and the submission snapshot.
     public Inspection inspect(FantasyLineupRequest request, boolean complete) {
         // Guest fallback when no configured gameweek is supplied; multiplayer always passes the stored GW date.
@@ -105,13 +116,12 @@ public class FantasyLineupService {
                 continue;
             }
             String label = "Ô " + key + " (" + slots.getOrDefault(key, "?") + "), " + player.name() + ": ";
-            if (player.fc27Overall() == null || player.fc27Overall() < 1 || player.fc27Overall() > 99) {
+            if (!hasValidOverall(player)) {
                 issues.add(new Issue("OVR_MISSING", key, id, label + "chưa có OVR hợp lệ."));
             } else {
                 total += player.fc27Overall();
             }
-            if (player.primaryPosition() == null || player.eligiblePositions() == null
-                    || !player.eligiblePositions().contains(player.primaryPosition())) {
+            if (!hasValidPosition(player)) {
                 issues.add(new Issue("POSITION_MISSING", key, id, label + "chưa có vị trí hợp lệ."));
             } else if (slots.containsKey(key) && !player.eligiblePositions().contains(slots.get(key))) {
                 issues.add(new Issue("POSITION", key, id, label + "không được chơi vị trí " + slots.get(key) + "."));

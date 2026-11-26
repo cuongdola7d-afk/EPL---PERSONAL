@@ -13,9 +13,11 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final AdminOverviewService overviewService;
+    private final AdminDataHealthService dataHealthService;
 
-    public AdminController(AdminOverviewService overviewService) {
+    public AdminController(AdminOverviewService overviewService, AdminDataHealthService dataHealthService) {
         this.overviewService = overviewService;
+        this.dataHealthService = dataHealthService;
     }
 
     @GetMapping("/overview")
@@ -28,5 +30,12 @@ public class AdminController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .body(overviewService.overview(range));
+    }
+
+    @GetMapping("/data-health")
+    public ResponseEntity<AdminDataHealthService.DataHealth> dataHealth() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(dataHealthService.check());
     }
 }
