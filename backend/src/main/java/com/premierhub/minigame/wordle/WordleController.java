@@ -54,7 +54,11 @@ public class WordleController {
                                            @RequestBody(required = false) GuessRequest body) {
         String letters = body == null ? null : body.letters();
         LocalDate date = body == null ? null : body.date();
-        return noStore(service.submitGuess(owner(auth, expected), letters, date));
+        var timed = service.submitGuessTimed(owner(auth, expected), letters, date);
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-store")
+                .header("Server-Timing", timed.serverTiming())
+                .body(timed.view());
     }
 
     @PostMapping("/today/hint")

@@ -554,5 +554,59 @@ class WordleIntegrationTest {
         assertEquals("HHHHHHH", g6.guesses().get(5).feedback());
         assertNotNull(g6.answer());
         assertEquals("Virgil van Dijk", g6.answer().name());
+        assertNotNull(g6.stats());
+        assertEquals(1, g6.stats().played());
+        assertEquals(1, g6.stats().wins());
+        assertEquals(1, g6.stats().distribution().get(5));
+    }
+
+    @Test
+    void postGuessesEmitsServerTimingSkipsStatsWhilePlayingAndComputesStatsOnFinish() throws Exception {
+        forceOnlyAnswer(1);
+
+        var playingRes = mvc.perform(post(API + "/today/guesses")
+                        .with(user("a@example.test").roles("USER")).with(csrf())
+                        .header("X-PrismaXI-Account-ID", "101")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"letters\":\"HAALAND\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PLAYING"))
+                .andExpect(jsonPath("$.stats").value(org.hamcrest.Matchers.nullValue()))
+                .andReturn().getResponse();
+        String playingTiming = playingRes.getHeader("Server-Timing");
+        assertNotNull(playingTiming);
+        for (String metric : List.of("game;dur=", "dict;dur=", "guesses;dur=", "insert;dur=",
+                "update;dur=", "stats;dur=", "view;dur=", "total;dur=")) {
+            assertTrue(playingTiming.contains(metric), "Missing Server-Timing metric " + metric + " in: " + playingTiming);
+        }
+        assertTrue(playingTiming.contains("stats;dur=0.00"), "Expected stats skipped while PLAYING: " + playingTiming);
+
+        // Finishing guess computes full stats and still emits Server-Timing
+        var winRes = mvc.perform(post(API + "/today/guesses")
+                        .with(user("a@example.test").roles("USER")).with(csrf())
+                        .header("X-PrismaXI-Account-ID", "101")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"letters\":\"VANDIJK\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("WON"))
+                .andExpect(jsonPath("$.stats.played").value(1))
+                .andExpect(jsonPath("$.stats.wins").value(1))
+                .andExpect(jsonPath("$.stats.winPercentage").value(100))
+                .andExpect(jsonPath("$.stats.currentStreak").value(1))
+                .andExpect(jsonPath("$.stats.maxStreak").value(1))
+                .andExpect(jsonPath("$.stats.distribution[1]").value(1))
+                .andReturn().getResponse();
+        String winTiming = winRes.getHeader("Server-Timing");
+        assertNotNull(winTiming);
+        assertTrue(winTiming.contains("total;dur="));
+
+        // /stats endpoint still returns the exact same aggregated stats
+        mvc.perform(get(API + "/stats")
+                        .with(user("a@example.test").roles("USER"))
+                        .header("X-PrismaXI-Account-ID", "101"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.played").value(1))
+                .andExpect(jsonPath("$.wins").value(1))
+                .andExpect(jsonPath("$.distribution[1]").value(1));
     }
 }

@@ -1,7 +1,57 @@
 export const WORDLE_MAX_TURNS = 6
 export const WORDLE_HINT_UNLOCK_TURNS = 4
 export const WORDLE_MIN_LENGTH = 4
+export const TELEX_DELETE_HOLD_MS = 150
 export const TELEX_BURST_MS = 25
+export const WORDLE_FLIP_DURATION_MS = 360
+export const WORDLE_FLIP_TOTAL_MS = 650
+export const WORDLE_DEBUG_MAX_ENTRIES = 500
+
+export function wordleFlipDelayMs(tileIndex, guessLength) {
+  if (!Number.isFinite(tileIndex) || tileIndex <= 0 || !Number.isFinite(guessLength) || guessLength <= 1) {
+    return 0
+  }
+  const budget = Math.max(0, WORDLE_FLIP_TOTAL_MS - WORDLE_FLIP_DURATION_MS)
+  const step = Math.min(80, Math.floor(budget / (guessLength - 1)))
+  return tileIndex * step
+}
+
+export function isWordleDebugEnabled(hash = '', search = '', storage = null) {
+  const hasDebugParam = query => {
+    if (typeof query !== 'string' || !query) return false
+    const idx = query.indexOf('?')
+    const raw = idx >= 0 ? query.slice(idx + 1) : query
+    if (!raw) return false
+    return new URLSearchParams(raw).get('debug') === '1'
+  }
+  if (hasDebugParam(hash) || hasDebugParam(search)) return true
+  try {
+    return storage?.getItem?.('wdDebug') === '1'
+  } catch {
+    return false
+  }
+}
+
+export function createWordleDebugLog(maxEntries = WORDLE_DEBUG_MAX_ENTRIES) {
+  const limit = Math.max(1, maxEntries)
+  const buffer = []
+  return {
+    push(entry) {
+      if (!entry || typeof entry !== 'object') return
+      if (buffer.length >= limit) buffer.shift()
+      buffer.push(entry)
+    },
+    entries() {
+      return buffer.slice()
+    },
+    toJson() {
+      return JSON.stringify(buffer, null, 2)
+    },
+    clear() {
+      buffer.length = 0
+    },
+  }
+}
 
 const FEEDBACK_STATE = { H: 'hit', N: 'near', M: 'miss' }
 const STATE_RANK = { miss: 1, near: 2, hit: 3 }
@@ -285,12 +335,29 @@ export function decodeTelexBurst({ raw = '', shadow = '' }, { deletes = 0, inser
     if (/^\s+$/.test(T)) {
       return { raw, shadow, uncertain: false }
     }
-    if (T.length === 1) {
+    const insOnlyChars = Array.from(T)
+    if (insOnlyChars.length === 1) {
       if (/^[A-Za-z]$/.test(T)) {
         return { raw: clamp(raw + T.toUpperCase()), shadow: nextShadow, uncertain: false }
       }
-      // Standalone W key in Telex inserts Ư/ư or Ơ/ơ with no delete.
       const info = analyzeViChar(T)
+      // Safety net: 1 accented char inserted without a Backspace whose base letter matches
+      // the last letter in raw (or shadow) -> treat as k=1 transform of that letter.
+      if (info.base && (info.tone || info.shape)) {
+        const lastShadowChar = shadowChars.length > 0 ? shadowChars[shadowChars.length - 1] : ''
+        const lastShadowBase = analyzeViChar(lastShadowChar).base
+        if ((raw.length > 0 && raw[raw.length - 1] === info.base) || lastShadowBase === info.base) {
+          const beforeChar = lastShadowBase === info.base ? lastShadowChar : info.base
+          const key = inferSwallowedKey(beforeChar, T)
+          if (key) {
+            const replacedShadow = lastShadowBase === info.base
+              ? shadowChars.slice(0, shadowChars.length - 1).join('') + T
+              : nextShadow
+            return { raw: clamp(raw + key), shadow: replacedShadow, uncertain: false }
+          }
+        }
+      }
+      // Standalone W key in Telex inserts Ư/ư or Ơ/ơ with no delete.
       if (info.shape === 'HORN' && !info.tone && (info.base === 'U' || info.base === 'O')) {
         return { raw: clamp(raw + 'W'), shadow: nextShadow, uncertain: false }
       }
@@ -350,11 +417,19 @@ export function decodeTelexBurst({ raw = '', shadow = '' }, { deletes = 0, inser
 }
 
 /**
- * Coalesces delete/insert input operations occurring within windowMs (~25ms)
- * into single bursts for decodeTelexBurst. A delete arriving after an insert
- * flushes the preceding insert first so fast typing never merges separate keypresses.
+ * Coalesces delete/insert input operations from Vietnamese Telex IMEs (Unikey / EVKey):
+ * - Plain inserts (deletes === 0) flush immediately so normal typing has zero latency.
+ * - Deletes are held up to deleteHoldMs (default 150ms) so slower Unikey delete->insert
+ *   pairs (e.g. 60-100ms apart) still merge into a single { deletes, insert } burst.
+ * - Once an insert follows pending deletes, a short insertCoalesceMs (default 25ms) window
+ *   groups multi-character replacements (e.g. "án", "ar") before flushing.
+ * - flush() synchronously resolves any held Backspace (called before Enter / submit).
  */
-export function createTelexBurstQueue({ onFlush, windowMs = TELEX_BURST_MS } = {}) {
+export function createTelexBurstQueue({
+  onFlush,
+  deleteHoldMs = TELEX_DELETE_HOLD_MS,
+  insertCoalesceMs = TELEX_BURST_MS,
+} = {}) {
   let pending = { deletes: 0, insert: '' }
   let timer = null
 
@@ -373,22 +448,29 @@ export function createTelexBurstQueue({ onFlush, windowMs = TELEX_BURST_MS } = {
     onFlush?.(burst)
   }
 
-  function schedule() {
+  function schedule(delayMs) {
     clearTimer()
-    timer = setTimeout(flush, windowMs)
+    timer = setTimeout(flush, delayMs)
   }
 
   return {
     pushDelete(count = 1) {
       if (pending.insert.length > 0) flush()
       pending.deletes += count
-      schedule()
+      schedule(deleteHoldMs)
     },
     pushInsert(text) {
       if (!text) return
-      if (pending.deletes === 0 && pending.insert.length > 0) flush()
+      if (pending.deletes === 0) {
+        if (pending.insert.length > 0) flush()
+        onFlush?.({ deletes: 0, insert: text })
+        return
+      }
       pending.insert += text
-      schedule()
+      schedule(insertCoalesceMs)
+    },
+    hasPending() {
+      return pending.deletes > 0 || pending.insert.length > 0
     },
     flush,
     reset() {

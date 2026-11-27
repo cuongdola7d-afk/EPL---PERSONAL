@@ -43,7 +43,9 @@ public class WordleService {
 
     private final WordleRepository repository;
     private final Clock clock;
+    private final Map<LocalDate, Puzzle> puzzleCache = new ConcurrentHashMap<>();
     private final Map<String, Map<String, DictionaryItem>> dictionaryCache = new ConcurrentHashMap<>();
+    private final Map<String, AnswerView> answerDetailsCache = new ConcurrentHashMap<>();
 
     public WordleService(WordleRepository repository, @Qualifier("wordleClock") Clock clock) {
         this.repository = repository;
@@ -54,7 +56,13 @@ public class WordleService {
     public InfoView info() {
         Instant now = clock.instant();
         LocalDate today = today(now);
-        Puzzle existing = repository.findPuzzleByDate(today).orElse(null);
+        Puzzle existing = puzzleCache.get(today);
+        if (existing == null) {
+            existing = repository.findPuzzleByDate(today).orElse(null);
+            if (existing != null) {
+                cachePuzzle(existing);
+            }
+        }
         return new InfoView(
                 true,
                 existing == null ? null : existing.puzzleNumber(),
@@ -71,29 +79,36 @@ public class WordleService {
         Instant now = clock.instant();
         LocalDate today = today(now);
         Puzzle puzzle = ensureDailyPuzzle(today, now);
-        repository.lockAccount(accountId);
-        Game game = repository.findGame(accountId, puzzle.id(), true)
-                .orElseGet(() -> createGame(accountId, puzzle.id(), now));
-        return toView(puzzle, game, now);
+        Game game = findOrCreateGame(accountId, puzzle.id(), now);
+        List<GuessView> guessViews = toGuessViews(repository.guesses(game.id(), puzzle.puzzleDate()));
+        return toView(puzzle, game, now, guessViews, true);
     }
+
+    public record TimedGuessResult(TodayView view, String serverTiming) { }
 
     @Transactional
     public TodayView submitGuess(long accountId, String rawLetters) {
-        return submitGuess(accountId, rawLetters, null);
+        return submitGuessTimed(accountId, rawLetters, null).view();
     }
 
     @Transactional
     public TodayView submitGuess(long accountId, String rawLetters, LocalDate expectedDate) {
+        return submitGuessTimed(accountId, rawLetters, expectedDate).view();
+    }
+
+    @Transactional
+    public TimedGuessResult submitGuessTimed(long accountId, String rawLetters, LocalDate expectedDate) {
+        long tTotalStart = System.nanoTime();
         Instant now = clock.instant();
         LocalDate today = today(now);
         if (expectedDate != null && !expectedDate.equals(today)) {
             throw failure(HttpStatus.CONFLICT, "GAME_FINISHED");
         }
+        long tGameStart = System.nanoTime();
         Puzzle puzzle = ensureDailyPuzzle(today, now);
-        repository.lockAccount(accountId);
-        Game game = repository.findGame(accountId, puzzle.id(), true)
-                .orElseGet(() -> createGame(accountId, puzzle.id(), now));
-        return applyGuess(puzzle, game, rawLetters, now);
+        Game game = findOrCreateGame(accountId, puzzle.id(), now);
+        long gameNs = System.nanoTime() - tGameStart;
+        return applyGuessTimed(puzzle, game, rawLetters, now, tTotalStart, gameNs);
     }
 
     /**
@@ -127,9 +142,7 @@ public class WordleService {
             throw failure(HttpStatus.CONFLICT, "GAME_FINISHED");
         }
         Puzzle puzzle = ensureDailyPuzzle(today, now);
-        repository.lockAccount(accountId);
-        Game game = repository.findGame(accountId, puzzle.id(), true)
-                .orElseGet(() -> createGame(accountId, puzzle.id(), now));
+        Game game = findOrCreateGame(accountId, puzzle.id(), now);
         if (game.status() != Status.PLAYING) {
             throw failure(HttpStatus.CONFLICT, "GAME_FINISHED");
         }
@@ -140,11 +153,11 @@ public class WordleService {
         if (existing.size() < WordleData.HINT_UNLOCK_TURNS) {
             throw failure(HttpStatusCode.valueOf(422), "HINT_LOCKED");
         }
+        Instant actionTime = requireSameDay(today);
         Game updated = new Game(game.id(), game.accountId(), game.puzzleId(),
                 game.status(), true, game.startedAt(), game.finishedAt());
         repository.updateGame(updated);
-        requireSameDay(today);
-        return toView(puzzle, updated, clock.instant());
+        return toView(puzzle, updated, actionTime, toGuessViews(existing), false);
     }
 
     @Transactional
@@ -164,10 +177,17 @@ public class WordleService {
     }
 
     void evictDictionaryCache() {
+        puzzleCache.clear();
         dictionaryCache.clear();
+        answerDetailsCache.clear();
     }
 
     private TodayView applyGuess(Puzzle puzzle, Game game, String rawLetters, Instant now) {
+        return applyGuessTimed(puzzle, game, rawLetters, now, System.nanoTime(), 0L).view();
+    }
+
+    private TimedGuessResult applyGuessTimed(Puzzle puzzle, Game game, String rawLetters, Instant now,
+                                             long tTotalStart, long gameNs) {
         LocalDate today = today(now);
         if (game.status() != Status.PLAYING || !puzzle.puzzleDate().equals(today)) {
             throw failure(HttpStatus.CONFLICT, "GAME_FINISHED");
@@ -187,13 +207,17 @@ public class WordleService {
             throw failure(HttpStatusCode.valueOf(422), "TOO_LONG");
         }
 
+        long tDictStart = System.nanoTime();
         Map<String, DictionaryItem> dict = loadDictionary(puzzle);
         DictionaryItem matched = dict.get(normalized);
+        long dictNs = System.nanoTime() - tDictStart;
         if (matched == null) {
             throw failure(HttpStatusCode.valueOf(422), "NOT_A_PLAYER");
         }
 
+        long tGuessesStart = System.nanoTime();
         List<GuessRow> existing = repository.guesses(game.id(), puzzle.puzzleDate());
+        long guessesNs = System.nanoTime() - tGuessesStart;
         if (existing.stream().anyMatch(g -> g.letters().equals(normalized))) {
             throw failure(HttpStatusCode.valueOf(422), "ALREADY_GUESSED");
         }
@@ -207,28 +231,91 @@ public class WordleService {
         String feedback = WordleScorer.score(normalized, puzzle.answerLetters());
         int turn = existing.size() + 1;
 
+        long tInsertStart = System.nanoTime();
         Instant actionTime = requireSameDay(today);
         repository.insertGuess(game.id(), turn, guessedWord, normalized, playerId, feedback, actionTime);
+        long insertNs = System.nanoTime() - tInsertStart;
 
         Status nextStatus = isAnswer ? Status.WON : (turn >= WordleData.MAX_TURNS ? Status.LOST : Status.PLAYING);
         Game updated = game;
+        long updateNs = 0L;
         if (nextStatus != Status.PLAYING) {
+            long tUpdateStart = System.nanoTime();
             updated = new Game(game.id(), game.accountId(), game.puzzleId(),
                     nextStatus, game.hintUsed(), game.startedAt(), actionTime);
             repository.updateGame(updated);
+            updateNs = System.nanoTime() - tUpdateStart;
         }
-        requireSameDay(today);
-        return toView(puzzle, updated, actionTime);
+
+        long tViewStart = System.nanoTime();
+        boolean finished = updated.status() != Status.PLAYING;
+        AnswerView answerDetails = (finished || updated.hintUsed())
+                ? loadAnswerDetails(puzzle)
+                : null;
+        String newPlayerName = isAnswer && answerDetails != null ? answerDetails.name() : matched.name();
+        String newClub = isAnswer && answerDetails != null ? answerDetails.club() : matched.club();
+
+        List<GuessView> guessViews = new ArrayList<>(existing.size() + 1);
+        for (GuessRow g : existing) {
+            guessViews.add(new GuessView(g.turn(), g.word(), g.letters(), g.feedback(), g.playerName(), g.club()));
+        }
+        guessViews.add(new GuessView(turn, guessedWord, normalized, feedback, newPlayerName, newClub));
+
+        String hintClub = updated.hintUsed() && answerDetails != null ? answerDetails.club() : null;
+        AnswerView answer = finished ? answerDetails : null;
+        long statsNs = 0L;
+        StatsView stats = null;
+        if (finished) {
+            long tStatsStart = System.nanoTime();
+            stats = WordleStatsCalculator.compute(repository.outcomes(updated.accountId()), puzzle.puzzleDate());
+            statsNs = System.nanoTime() - tStatsStart;
+        }
+        TodayView view = new TodayView(
+                puzzle.puzzleNumber(),
+                puzzle.puzzleDate(),
+                puzzle.answerLetters().length(),
+                WordleNames.wordShape(puzzle.answerWord()),
+                actionTime,
+                nextDay(puzzle.puzzleDate()),
+                updated.status(),
+                updated.hintUsed(),
+                hintClub,
+                List.copyOf(guessViews),
+                answer,
+                stats
+        );
+        long viewNs = (System.nanoTime() - tViewStart) - statsNs;
+        long totalNs = System.nanoTime() - tTotalStart;
+        String timing = formatServerTiming(gameNs, dictNs, guessesNs, insertNs, updateNs, statsNs, viewNs, totalNs);
+        return new TimedGuessResult(view, timing);
+    }
+
+    private static String formatServerTiming(long gameNs, long dictNs, long guessesNs, long insertNs,
+                                             long updateNs, long statsNs, long viewNs, long totalNs) {
+        return String.format(Locale.ROOT,
+                "game;dur=%.2f, dict;dur=%.2f, guesses;dur=%.2f, insert;dur=%.2f, update;dur=%.2f, stats;dur=%.2f, view;dur=%.2f, total;dur=%.2f",
+                nsToMs(gameNs), nsToMs(dictNs), nsToMs(guessesNs), nsToMs(insertNs),
+                nsToMs(updateNs), nsToMs(statsNs), nsToMs(viewNs), nsToMs(totalNs));
+    }
+
+    private static double nsToMs(long ns) {
+        return Math.max(0L, ns) / 1_000_000.0;
     }
 
     private Puzzle ensureDailyPuzzle(LocalDate date, Instant now) {
+        Puzzle cached = puzzleCache.get(date);
+        if (cached != null) {
+            return cached;
+        }
         var existing = repository.findPuzzleByDate(date);
         if (existing.isPresent()) {
+            cachePuzzle(existing.get());
             return existing.get();
         }
         Cycle cycle = repository.lockCycle();
         existing = repository.findPuzzleByDate(date);
         if (existing.isPresent()) {
+            cachePuzzle(existing.get());
             return existing.get();
         }
         List<Candidate> eligible = repository.candidates(date).stream()
@@ -265,7 +352,46 @@ public class WordleService {
         );
         repository.insertPuzzle(created);
         repository.saveCycle(new Cycle(cycleNumber, List.copyOf(remaining), answerPlayerId));
+        cachePuzzle(created);
         return created;
+    }
+
+    private void cachePuzzle(Puzzle puzzle) {
+        if (puzzleCache.size() >= 4) {
+            puzzleCache.clear();
+        }
+        puzzleCache.put(puzzle.puzzleDate(), puzzle);
+    }
+
+    private Game findOrCreateGame(long accountId, String puzzleId, Instant now) {
+        var existing = repository.findGame(accountId, puzzleId, true);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        repository.lockAccount(accountId);
+        return repository.findGame(accountId, puzzleId, true)
+                .orElseGet(() -> createGame(accountId, puzzleId, now));
+    }
+
+    private AnswerView loadAnswerDetails(Puzzle puzzle) {
+        AnswerView cached = answerDetailsCache.get(puzzle.id());
+        if (cached != null) {
+            return cached;
+        }
+        AnswerView loaded = repository.answerDetails(puzzle).orElse(null);
+        if (loaded != null) {
+            if (answerDetailsCache.size() >= 4) {
+                answerDetailsCache.clear();
+            }
+            answerDetailsCache.put(puzzle.id(), loaded);
+        }
+        return loaded;
+    }
+
+    private static List<GuessView> toGuessViews(List<GuessRow> rows) {
+        return rows.stream()
+                .map(g -> new GuessView(g.turn(), g.word(), g.letters(), g.feedback(), g.playerName(), g.club()))
+                .toList();
     }
 
     private Game createGame(long accountId, String puzzleId, Instant now) {
@@ -319,17 +445,16 @@ public class WordleService {
         return incoming.playerId() < current.playerId();
     }
 
-    private TodayView toView(Puzzle puzzle, Game game, Instant now) {
-        List<GuessView> guesses = repository.guesses(game.id(), puzzle.puzzleDate()).stream()
-                .map(g -> new GuessView(g.turn(), g.word(), g.letters(), g.feedback(), g.playerName(), g.club()))
-                .toList();
+    private TodayView toView(Puzzle puzzle, Game game, Instant now, List<GuessView> guesses, boolean includeStats) {
         boolean finished = game.status() != Status.PLAYING;
         AnswerView answerDetails = (finished || game.hintUsed())
-                ? repository.answerDetails(puzzle).orElse(null)
+                ? loadAnswerDetails(puzzle)
                 : null;
         String hintClub = game.hintUsed() && answerDetails != null ? answerDetails.club() : null;
         AnswerView answer = finished ? answerDetails : null;
-        StatsView stats = WordleStatsCalculator.compute(repository.outcomes(game.accountId()), puzzle.puzzleDate());
+        StatsView stats = includeStats
+                ? WordleStatsCalculator.compute(repository.outcomes(game.accountId()), puzzle.puzzleDate())
+                : null;
         return new TodayView(
                 puzzle.puzzleNumber(),
                 puzzle.puzzleDate(),

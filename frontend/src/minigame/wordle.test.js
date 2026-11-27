@@ -1,20 +1,29 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  TELEX_DELETE_HOLD_MS,
+  WORDLE_DEBUG_MAX_ENTRIES,
+  WORDLE_FLIP_DURATION_MS,
+  WORDLE_FLIP_TOTAL_MS,
   buildRowWordGroups,
   buildShareText,
   createTelexBurstQueue,
+  createWordleDebugLog,
   decodeTelexBurst,
   filterWordleSuggestions,
   formatWordleDateLabel,
   highlightWordPrefix,
+  isWordleDebugEnabled,
   keyboardKeyStates,
   resolveWordleAccess,
+  wordleFlipDelayMs,
   wordleHubSummary,
   wordleToastMessage,
   wordShape,
 } from './wordle.js'
+import { parseMinigameRoute } from './playerGuess.js'
 import {
+  clearWordleCsrfCache,
   fetchWordleDictionary,
   fetchWordleInfo,
   fetchWordleStats,
@@ -247,6 +256,14 @@ test('API validators verify TodayView, DictionaryEntry, and StatsView contracts'
   // hintUsed=false must not leak hintClub
   assert.equal(isValidWordleToday(sampleToday({ hintUsed: false, hintClub: 'Liverpool' })), false)
 
+  // PLAYING may omit stats (null) on POST responses, while WON/LOST must include valid stats
+  assert.equal(isValidWordleToday(sampleToday({ stats: null })), true)
+  assert.equal(isValidWordleToday(sampleToday({
+    status: 'WON',
+    stats: null,
+    answer: { playerId: 1, name: 'Virgil van Dijk', clubId: 1, club: 'Liverpool', shirtNumber: 4, position: 'CB', nationality: 'Netherlands', age: 35, overall: 88, word: 'VAN DIJK' },
+  })), false)
+
   assert.equal(isValidWordleDictionary([
     { letters: 'VANDIJK', word: 'VAN DIJK', name: 'Virgil van Dijk', club: 'Liverpool' },
   ]), true)
@@ -259,6 +276,7 @@ test('API validators verify TodayView, DictionaryEntry, and StatsView contracts'
 })
 
 test('Wordle API client sends account header, CSRF token on POST, and preserves 404/domain error codes', async () => {
+  clearWordleCsrfCache()
   await withFetch(async (url, options) => {
     assert.equal(url, '/api/minigame/2026/wordle/today')
     assert.equal(options.credentials, 'include')
@@ -269,6 +287,7 @@ test('Wordle API client sends account header, CSRF token on POST, and preserves 
     assert.equal(today.puzzleNumber, 12)
   })
 
+  clearWordleCsrfCache()
   await withFetch(async (url, options) => {
     if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'tok-1' })
     assert.equal(url, '/api/minigame/2026/wordle/today/guesses')
@@ -284,14 +303,16 @@ test('Wordle API client sends account header, CSRF token on POST, and preserves 
     )
   })
 
+  clearWordleCsrfCache()
   await withFetch(async (url, options) => {
     if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'tok-2' })
     assert.equal(url, '/api/minigame/2026/wordle/today/hint')
     assert.equal(options.method, 'POST')
-    return json(sampleToday({ hintUsed: true, hintClub: 'Liverpool' }))
+    return json(sampleToday({ hintUsed: true, hintClub: 'Liverpool', stats: null }))
   }, async () => {
     const res = await revealWordleHint(42, { date: '2026-11-27' })
     assert.equal(res.hintClub, 'Liverpool')
+    assert.equal(res.stats, null)
   })
 
   await withFetch(async url => {
@@ -474,31 +495,182 @@ test('decodeTelexBurst decodes Unikey Telex sequences for AA, AAA, HAALAND, DIJK
   )
 })
 
-test('createTelexBurstQueue keeps real Backspace separate from inserts more than 25ms later, and groups rapid delete+insert', async () => {
+test('createTelexBurstQueue keeps real Backspace separate after 150ms hold, flushes plain inserts immediately, and groups rapid delete+insert', async () => {
   const flushed = []
-  const queue = createTelexBurstQueue({ onFlush: b => flushed.push(b), windowMs: 25 })
+  const queue = createTelexBurstQueue({ onFlush: b => flushed.push(b) })
 
-  // Real Backspace, wait 45ms (>25ms), then insert 'A' -> two separate bursts
-  queue.pushDelete(1)
-  await new Promise(r => setTimeout(r, 45))
-  queue.pushInsert('A')
-  await new Promise(r => setTimeout(r, 45))
-  assert.deepEqual(flushed, [{ deletes: 1, insert: '' }, { deletes: 0, insert: 'A' }])
-
-  // Rapid Telex replacement (V -> A -> N -> ⌫⌫ÁN) inside <10ms -> deletes+insert grouped into 1 burst
-  flushed.length = 0
+  // Plain inserts flush immediately without waiting for timer
   queue.pushInsert('V')
   queue.pushInsert('A')
   queue.pushInsert('N')
+  assert.deepEqual(flushed, [
+    { deletes: 0, insert: 'V' },
+    { deletes: 0, insert: 'A' },
+    { deletes: 0, insert: 'N' },
+  ])
+
+  // Rapid Telex replacement (⌫⌫ + Á + N) groups into 1 burst
+  flushed.length = 0
   queue.pushDelete(1)
   queue.pushDelete(1)
   queue.pushInsert('Á')
   queue.pushInsert('N')
   await new Promise(r => setTimeout(r, 45))
-  assert.deepEqual(flushed, [
-    { deletes: 0, insert: 'V' },
-    { deletes: 0, insert: 'A' },
-    { deletes: 0, insert: 'N' },
-    { deletes: 2, insert: 'ÁN' },
-  ])
+  assert.deepEqual(flushed, [{ deletes: 2, insert: 'ÁN' }])
+
+  // Real Backspace held TELEX_DELETE_HOLD_MS (150ms), wait >150ms, then insert 'A' -> 2 separate bursts
+  flushed.length = 0
+  queue.pushDelete(1)
+  assert.equal(flushed.length, 0)
+  await new Promise(r => setTimeout(r, TELEX_DELETE_HOLD_MS + 40))
+  queue.pushInsert('A')
+  assert.deepEqual(flushed, [{ deletes: 1, insert: '' }, { deletes: 0, insert: 'A' }])
+})
+
+test('decodeTelexBurst safety net decodes k=0 single accented char matching last raw letter', () => {
+  assert.equal(runTelexBursts([{ insert: 'A' }, { insert: 'ả' }]).raw, 'AR')
+  assert.equal(runTelexBursts([{ insert: 'H' }, { insert: 'A' }, { insert: 'â' }]).raw, 'HAA')
+  assert.equal(runTelexBursts([{ insert: 'D' }, { insert: 'đ' }]).raw, 'DD')
+  assert.equal(runTelexBursts([{ insert: 'D' }, { insert: 'I' }, { insert: 'ị' }, { insert: 'K' }]).raw, 'DIJK')
+})
+
+test('createTelexBurstQueue + decodeTelexBurst handle all real-delay Unikey Telex sequences, real Backspaces, and Enter flush', async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms))
+  async function simulate(steps, maxLength = 11) {
+    let state = { raw: '', shadow: '', uncertain: false }
+    const queue = createTelexBurstQueue({
+      onFlush: burst => {
+        state = decodeTelexBurst(state, burst, maxLength)
+      },
+    })
+    for (const step of steps) {
+      if (step.wait) await wait(step.wait)
+      if (step.del) queue.pushDelete(step.del)
+      if (step.ins) queue.pushInsert(step.ins)
+      if (step.enter) {
+        queue.flush()
+        return state
+      }
+    }
+    await wait(TELEX_DELETE_HOLD_MS + 60)
+    return state
+  }
+
+  // 1. A · (60ms) ⌫ · (60ms) "ả" -> AR
+  assert.equal((await simulate([{ ins: 'a' }, { wait: 60, del: 1 }, { wait: 60, ins: 'ả' }])).raw, 'AR')
+  // 2. A · ⌫ · "ả" · rồi ⌫ · "ar" (Unikey undo on 2nd R) -> ARR
+  assert.equal((await simulate([{ ins: 'a' }, { del: 1 }, { ins: 'ả' }, { wait: 40, del: 1 }, { ins: 'ar' }])).raw, 'ARR')
+  // 3. D I · (80ms) ⌫ · (40ms) "ị" · K -> DIJK
+  assert.equal((await simulate([{ ins: 'd' }, { ins: 'i' }, { wait: 80, del: 1 }, { wait: 40, ins: 'ị' }, { wait: 40, ins: 'k' }])).raw, 'DIJK')
+  // 4. V A N · (70ms) ⌫⌫ · (70ms) "án" -> VANS
+  assert.equal((await simulate([{ ins: 'v' }, { ins: 'a' }, { ins: 'n' }, { wait: 70, del: 1 }, { del: 1 }, { wait: 70, ins: 'án' }])).raw, 'VANS')
+  // 5. H A · (100ms) ⌫ · (50ms) "â" · L A N D -> HAALAND
+  assert.equal((await simulate([
+    { ins: 'h' }, { ins: 'a' }, { wait: 100, del: 1 }, { wait: 50, ins: 'â' },
+    { wait: 40, ins: 'l' }, { ins: 'a' }, { ins: 'n' }, { ins: 'd' },
+  ])).raw, 'HAALAND')
+  // 6. D · (90ms) ⌫ · (30ms) "đ" -> DD
+  assert.equal((await simulate([{ ins: 'd' }, { wait: 90, del: 1 }, { wait: 30, ins: 'đ' }])).raw, 'DD')
+  // 7. Backspace thật: S A · ⌫ · (300ms) · I -> SI
+  assert.equal((await simulate([{ ins: 's' }, { ins: 'a' }, { del: 1 }, { wait: 300, ins: 'i' }])).raw, 'SI')
+  // 8. Backspace thật 2 lần liên tiếp, cách nhau 200ms -> xóa đúng 2 chữ
+  assert.equal((await simulate([{ ins: 's' }, { ins: 'a' }, { ins: 'l' }, { del: 1 }, { wait: 200, del: 1 }])).raw, 'S')
+  // 9. Bấm Enter khi đang giữ một Backspace -> cụm được xử lý trước khi gửi
+  assert.equal((await simulate([{ ins: 's' }, { ins: 'a' }, { ins: 'l' }, { del: 1 }, { wait: 20, enter: true }])).raw, 'SA')
+})
+
+test('Wordle API caches CSRF across POSTs and retries exactly once on 403', async () => {
+  clearWordleCsrfCache()
+  let csrfCalls = 0
+  let guessCalls = 0
+  let failNext403 = 0
+
+  await withFetch(async (url, options) => {
+    if (url === '/api/auth/csrf') {
+      csrfCalls += 1
+      return json({ headerName: 'X-CSRF-TOKEN', token: `tok-${csrfCalls}` })
+    }
+    if (url === '/api/minigame/2026/wordle/today/guesses') {
+      guessCalls += 1
+      if (failNext403 > 0) {
+        failNext403 -= 1
+        return json({ code: 'CSRF_INVALID', message: 'Forbidden' }, 403)
+      }
+      return json(sampleToday({ stats: null }))
+    }
+    return json({ code: 'NOT_FOUND' }, 404)
+  }, async () => {
+    // 1st POST fetches CSRF once
+    await submitWordleGuess(42, 'SALAH', { date: '2026-11-27' })
+    assert.equal(csrfCalls, 1)
+    assert.equal(guessCalls, 1)
+
+    // 2nd POST reuses cached CSRF -> still 1 CSRF call
+    await submitWordleGuess(42, 'BARCOLA', { date: '2026-11-27' })
+    assert.equal(csrfCalls, 1)
+    assert.equal(guessCalls, 2)
+
+    // 3rd POST hits 403 once -> refreshes CSRF once and retries once -> succeeds
+    failNext403 = 1
+    await submitWordleGuess(42, 'ISAK', { date: '2026-11-27' })
+    assert.equal(csrfCalls, 2)
+    assert.equal(guessCalls, 4)
+
+    // 4th POST hits persistent 403 -> retries at most once (2 POSTs, 1 CSRF refresh) and rejects 403
+    failNext403 = 5
+    await assert.rejects(
+      submitWordleGuess(42, 'SAKA', { date: '2026-11-27' }),
+      err => err.status === 403
+    )
+    assert.equal(csrfCalls, 3)
+    assert.equal(guessCalls, 6)
+  })
+})
+
+test('wordleFlipDelayMs completes row flip within 0.6-0.7s for all guess lengths 4..11', () => {
+  assert.equal(WORDLE_FLIP_DURATION_MS, 360)
+  assert.equal(WORDLE_FLIP_TOTAL_MS, 650)
+  for (const len of [4, 5, 7, 10, 11]) {
+    assert.equal(wordleFlipDelayMs(0, len), 0)
+    const lastFinish = wordleFlipDelayMs(len - 1, len) + WORDLE_FLIP_DURATION_MS
+    assert.ok(lastFinish >= 600 && lastFinish <= 700, `len=${len} finished at ${lastFinish}ms`)
+  }
+})
+
+test('debug mode activates only via ?debug=1 or localStorage.wdDebug=1, supports hash route, and caps log at 500 entries', () => {
+  assert.deepEqual(parseMinigameRoute('#minigame/wordle?debug=1'), { game: 'WORDLE', mode: null })
+  assert.equal(isWordleDebugEnabled('#minigame/wordle', '', { getItem: () => null }), false)
+  assert.equal(isWordleDebugEnabled('#minigame/wordle?debug=1', '', { getItem: () => null }), true)
+  assert.equal(isWordleDebugEnabled('#minigame/wordle', '?debug=1', { getItem: () => null }), true)
+  assert.equal(isWordleDebugEnabled('#minigame/wordle', '', { getItem: k => (k === 'wdDebug' ? '1' : null) }), true)
+
+  const log = createWordleDebugLog(WORDLE_DEBUG_MAX_ENTRIES)
+  for (let i = 0; i < 520; i += 1) log.push({ t: i, event: 'keydown', key: 'a' })
+  assert.equal(log.entries().length, 500)
+  assert.equal(log.entries()[0].t, 20)
+  assert.equal(log.entries()[499].t, 519)
+})
+
+test('typing I, S, A via both insertText and compositionend produces suggestions containing ISAK', () => {
+  const dict = [
+    { letters: 'ISAK', word: 'ISAK', name: 'Alexander Isak', club: 'Liverpool FC' },
+    { letters: 'SALAH', word: 'SALAH', name: 'Mohamed Salah', club: 'Liverpool FC' },
+    { letters: 'VANDIJK', word: 'VAN DIJK', name: 'Virgil van Dijk', club: 'Liverpool FC' },
+  ]
+  for (const mode of ['insertText', 'compositionend']) {
+    let state = { raw: '', shadow: '', uncertain: false }
+    const queue = createTelexBurstQueue({
+      onFlush: burst => {
+        state = decodeTelexBurst(state, burst, 7)
+      },
+    })
+    for (const ch of ['I', 'S', 'A']) {
+      // Both insertText and compositionend feed burstQueue.pushInsert(data)
+      queue.pushInsert(ch)
+    }
+    queue.flush()
+    assert.equal(state.raw, 'ISA', `mode=${mode}`)
+    const sugs = filterWordleSuggestions(dict, state.raw, [], 5, 7)
+    assert.ok(sugs.some(entry => entry.letters === 'ISAK'), `mode=${mode} must suggest ISAK`)
+  }
 })

@@ -183,11 +183,12 @@ public class WordleRepository {
 
     public List<GameOutcome> outcomes(long accountId) {
         return jdbc.query("""
-                SELECT p.puzzle_date, g.status,
-                       (SELECT COUNT(*) FROM wordle_guesses gu WHERE gu.game_id=g.id) AS turns_used
+                SELECT p.puzzle_date, g.status, COUNT(gu.turn) AS turns_used
                 FROM wordle_games g
                 JOIN wordle_puzzles p ON p.id=g.puzzle_id
-                WHERE g.account_id=?
+                LEFT JOIN wordle_guesses gu ON gu.game_id=g.id AND g.status='WON'
+                WHERE g.account_id=? AND g.status IN ('WON', 'LOST')
+                GROUP BY g.id, p.puzzle_date, g.status
                 ORDER BY p.puzzle_date
                 """, (rs, row) -> new GameOutcome(
                 date(rs, "puzzle_date"),

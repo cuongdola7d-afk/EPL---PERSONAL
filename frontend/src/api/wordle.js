@@ -81,7 +81,7 @@ export function isValidWordleToday(data) {
     data.guesses.length <= 6 &&
     data.guesses.every((guess, index) => guess.turn === index + 1 && isValidWordleGuess(guess, data.length)) &&
     (terminal ? isValidWordleAnswer(data.answer) : data.answer === null) &&
-    isValidWordleStats(data.stats)
+    (terminal ? isValidWordleStats(data.stats) : (data.stats === null || isValidWordleStats(data.stats)))
 }
 
 export function isValidWordleDictionary(entries) {
@@ -117,27 +117,41 @@ function malformed(uncertain = false) {
   throw new WordleError('Dữ liệu Wordle không đúng định dạng. Vui lòng tải lại.', { uncertain })
 }
 
-async function request(path, { accountId, body, signal, omitCredentials = false } = {}) {
+let cachedCsrf = null
+
+export function clearWordleCsrfCache() {
+  cachedCsrf = null
+}
+
+async function fetchCsrfToken(signal, { forceRefresh = false } = {}) {
+  if (!forceRefresh && cachedCsrf) return cachedCsrf
+  let csrfResponse, csrf
+  try {
+    csrfResponse = await fetch('/api/auth/csrf', { credentials: 'include', cache: 'no-store', signal })
+  } catch (failure) {
+    if (failure.name === 'AbortError') throw failure
+    throw new WordleError('Không kết nối được để xác nhận phiên. Vui lòng thử lại.')
+  }
+  if (!csrfResponse.ok) {
+    cachedCsrf = null
+    if ([401, 403].includes(csrfResponse.status)) refreshSession()
+    throw new WordleError('Không xác nhận được phiên đăng nhập. Vui lòng thử lại.', { status: csrfResponse.status })
+  }
+  try { csrf = await csrfResponse.json() }
+  catch { throw new WordleError('Không nhận được mã xác nhận phiên. Vui lòng thử lại.') }
+  if (!text(csrf?.headerName) || !text(csrf.token)) {
+    throw new WordleError('Không nhận được mã xác nhận phiên. Vui lòng thử lại.')
+  }
+  cachedCsrf = { headerName: csrf.headerName, token: csrf.token }
+  return cachedCsrf
+}
+
+async function request(path, { accountId, body, signal, omitCredentials = false, _retriedCsrf = false } = {}) {
   const headers = { Accept: 'application/json' }
   if (accountId != null) headers['X-PrismaXI-Account-ID'] = String(accountId)
 
   if (body !== undefined) {
-    let csrfResponse, csrf
-    try {
-      csrfResponse = await fetch('/api/auth/csrf', { credentials: 'include', cache: 'no-store', signal })
-    } catch (failure) {
-      if (failure.name === 'AbortError') throw failure
-      throw new WordleError('Không kết nối được để xác nhận phiên. Vui lòng thử lại.')
-    }
-    if (!csrfResponse.ok) {
-      if ([401, 403].includes(csrfResponse.status)) refreshSession()
-      throw new WordleError('Không xác nhận được phiên đăng nhập. Vui lòng thử lại.', { status: csrfResponse.status })
-    }
-    try { csrf = await csrfResponse.json() }
-    catch { throw new WordleError('Không nhận được mã xác nhận phiên. Vui lòng thử lại.') }
-    if (!text(csrf?.headerName) || !text(csrf.token)) {
-      throw new WordleError('Không nhận được mã xác nhận phiên. Vui lòng thử lại.')
-    }
+    const csrf = await fetchCsrfToken(signal, { forceRefresh: _retriedCsrf })
     headers[csrf.headerName] = csrf.token
     headers['Content-Type'] = 'application/json'
   }
@@ -161,9 +175,17 @@ async function request(path, { accountId, body, signal, omitCredentials = false 
     )
   }
 
+  if (body !== undefined && response.status === 403 && !_retriedCsrf) {
+    cachedCsrf = null
+    return request(path, { accountId, body, signal, omitCredentials, _retriedCsrf: true })
+  }
+
   try { data = await response.json() }
   catch {
-    if (!omitCredentials && [401, 403].includes(response.status)) refreshSession()
+    if (!omitCredentials && [401, 403].includes(response.status)) {
+      cachedCsrf = null
+      refreshSession()
+    }
     if (response.status === 404) {
       throw new WordleError('Wordle cầu thủ chưa được bật trên máy chủ này.', { status: 404, code: 'NOT_FOUND' })
     }
@@ -178,7 +200,10 @@ async function request(path, { accountId, body, signal, omitCredentials = false 
   }
 
   if (!response.ok) {
-    if (!omitCredentials && ([401, 403].includes(response.status) || data.code === 'SESSION_CHANGED')) refreshSession()
+    if (!omitCredentials && ([401, 403].includes(response.status) || data.code === 'SESSION_CHANGED')) {
+      cachedCsrf = null
+      refreshSession()
+    }
     throw new WordleError(
       MESSAGES[data.code] ||
         (response.status === 404 ? 'Wordle cầu thủ chưa được bật trên máy chủ này.' : data.message) ||
@@ -198,7 +223,7 @@ export async function fetchWordleInfo(signal) {
 
 export async function fetchWordleToday(accountId, signal) {
   const data = await request('/today', { accountId, signal })
-  if (!isValidWordleToday(data)) malformed()
+  if (!isValidWordleToday(data) || !isValidWordleStats(data.stats)) malformed()
   return data
 }
 

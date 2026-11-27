@@ -110,11 +110,33 @@
 }
 
 .wd-meta {
+  position: relative;
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   margin: 0 0 12px;
   flex-wrap: wrap;
+}
+
+.wd-debug-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--mg-line);
+  background: var(--wd-chip);
+  color: var(--mg-mute);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wd-debug-btn:hover {
+  color: var(--mg-text);
+  border-color: var(--mg-accent);
 }
 
 .wd-pill {
@@ -205,13 +227,24 @@
 }
 
 .wd-tile.wd-flip {
-  animation: wd-flip 0.45s ease both;
+  animation: wd-flip 0.36s ease both;
 }
 
 @keyframes wd-flip {
   0% { transform: rotateX(0); }
   50% { transform: rotateX(90deg); }
   100% { transform: rotateX(0); }
+}
+
+.wd-row.wd-submitting .wd-tile.wd-f {
+  border-color: var(--mg-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mg-accent) 26%, transparent);
+  animation: wd-submitting-pulse 0.7s ease-in-out infinite;
+}
+
+@keyframes wd-submitting-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.62; }
 }
 
 .wd-who {
