@@ -485,4 +485,18 @@ class WordleIntegrationTest {
         mvc.perform(get(API + "/today"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void rejectsMalformedOverrideWordWhenReadingCandidatesAndAppliesValidOverride() {
+        jdbc.update("INSERT INTO wordle_name_overrides VALUES (1, 'VAN  DIJK', 'bad double space')");
+        service.evictDictionaryCache();
+        assertThrows(IllegalStateException.class, () -> repository.candidates(LocalDate.of(2026, 11, 27)));
+
+        jdbc.update("UPDATE wordle_name_overrides SET word = 'ALISSON' WHERE player_id = 1");
+        service.evictDictionaryCache();
+        forceOnlyAnswer(1);
+        var dict = service.dictionary();
+        assertTrue(dict.stream().anyMatch(e -> "ALISSON".equals(e.word()) && "ALISSON".equals(e.letters())));
+        assertTrue(dict.stream().noneMatch(e -> "VANDIJK".equals(e.letters())));
+    }
 }

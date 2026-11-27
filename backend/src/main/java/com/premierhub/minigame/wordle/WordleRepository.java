@@ -84,9 +84,20 @@ public class WordleRepository {
                 rs.getObject("fc27_overall", Integer.class),
                 rs.getString("primary_position"),
                 rs.getString("broad_position"),
-                rs.getString("override_word"),
+                validatedOverride(rs.getInt("id"), rs.getString("override_word")),
                 rs.getInt("membership_count")
         ), date, date, date, date);
+    }
+
+    private static String validatedOverride(int playerId, String overrideWord) {
+        if (overrideWord == null) {
+            return null;
+        }
+        if (!WordleNames.isValidOverrideWord(overrideWord)) {
+            throw new IllegalStateException(
+                    "Invalid wordle_name_overrides.word for player_id=" + playerId + ": '" + overrideWord + "'");
+        }
+        return overrideWord;
     }
 
     public Optional<Puzzle> findPuzzleByDate(LocalDate date) {

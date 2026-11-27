@@ -2,8 +2,11 @@ package com.premierhub.minigame.wordle;
 
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public final class WordleNames {
+    private static final Pattern OVERRIDE_PATTERN = Pattern.compile("^[A-Z]+( [A-Z]+)*$");
+
     public record NormalizedName(String word, String letters) { }
 
     private WordleNames() { }
@@ -25,18 +28,26 @@ public final class WordleNames {
     }
 
     /**
-     * Normalizes an explicit override word (already stripped/chosen by reviewers,
-     * so the first token is kept).
+     * Validates that a curated override word consists solely of ASCII A-Z words
+     * separated by at most a single space (no leading/trailing/double spaces or accents).
+     */
+    public static boolean isValidOverrideWord(String overrideWord) {
+        return overrideWord != null && OVERRIDE_PATTERN.matcher(overrideWord).matches();
+    }
+
+    /**
+     * Parses an explicit override word after enforcing the strict A-Z + single-space format.
      */
     public static NormalizedName normalizeOverride(String overrideWord) {
-        if (overrideWord == null || overrideWord.isBlank()) {
-            return new NormalizedName("", "");
+        if (!isValidOverrideWord(overrideWord)) {
+            throw new IllegalArgumentException(
+                    "Invalid wordle_name_overrides.word (expected A-Z with single spaces): " + overrideWord);
         }
-        return cleanWord(overrideWord);
+        return new NormalizedName(overrideWord, overrideWord.replace(" ", ""));
     }
 
     public static NormalizedName resolve(String fullName, String overrideWord) {
-        if (overrideWord != null && !overrideWord.isBlank()) {
+        if (overrideWord != null) {
             return normalizeOverride(overrideWord);
         }
         return normalize(fullName);

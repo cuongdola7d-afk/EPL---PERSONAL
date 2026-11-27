@@ -32,14 +32,28 @@ class WordleNamesTest {
     }
 
     @Test
-    void resolvePrefersOverrideWordWithoutDroppingFirstToken() {
+    void resolvePrefersValidOverrideWordAndRejectsInvalidOverrideFormats() {
         assertEquals(new NormalizedName("ALISSON", "ALISSON"),
                 WordleNames.resolve("Alisson Becker", "ALISSON"));
-        assertEquals(new NormalizedName("BRUNO GUIMARAES", "BRUNOGUIMARAES"),
-                WordleNames.resolve("Bruno Guimarães", "Bruno Guimarães"));
+        assertEquals(new NormalizedName("VAN HECKE", "VANHECKE"),
+                WordleNames.resolve("Jan Paul van Hecke", "VAN HECKE"));
+        assertEquals(new NormalizedName("JOAO PEDRO", "JOAOPEDRO"),
+                WordleNames.resolve("Joao Pedro", "JOAO PEDRO"));
         assertEquals(new NormalizedName("BECKER", "BECKER"),
                 WordleNames.resolve("Alisson Becker", null));
-        assertEquals(new NormalizedName("BECKER", "BECKER"),
-                WordleNames.resolve("Alisson Becker", "   "));
+
+        assertTrue(WordleNames.isValidOverrideWord("ALISSON"));
+        assertTrue(WordleNames.isValidOverrideWord("VAN HECKE"));
+        assertTrue(WordleNames.isValidOverrideWord("DE LA CRUZ"));
+
+        for (String invalid : new String[] {
+                "", "   ", "alisson", "Alisson", "VAN  HECKE", " ALISSON", "ALISSON ",
+                "VAN-HECKE", "JOÃO PEDRO", "ALISSON1", "O'REILLY"
+        }) {
+            assertFalse(WordleNames.isValidOverrideWord(invalid), "Expected invalid: " + invalid);
+            assertThrows(IllegalArgumentException.class,
+                    () -> WordleNames.resolve("Alisson Becker", invalid),
+                    "Expected rejection for: " + invalid);
+        }
     }
 }

@@ -14,7 +14,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030109,James Hill,AFC Bournemouth,78,HILL,4,true
 2000030114,Juanlu Sánchez,AFC Bournemouth,76,SANCHEZ,7,true
 51051,Julian Araujo,AFC Bournemouth,74,ARAUJO,6,false
-2000030154,Julio Soler Barreto,AFC Bournemouth,68,SOLER BARRETO,12,false
+2000030154,Julio Soler Barreto,AFC Bournemouth,68,SOLER,5,false
 2000030156,Junior Kroupi,AFC Bournemouth,80,KROUPI,6,true
 2000030039,Justin Kluivert,AFC Bournemouth,79,KLUIVERT,8,true
 2000030037,Lewis Cook,AFC Bournemouth,78,COOK,4,true
@@ -35,11 +35,11 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000001023,Declan Rice,Arsenal FC,88,RICE,4,true
 2000001009,Eberechi Eze,Arsenal FC,84,EZE,3,false
 2000001013,Ezri Konsa,Arsenal FC,84,KONSA,5,true
-2000001006,Gabriel Magalhaes,Arsenal FC,89,MAGALHAES,9,true
+2000001006,Gabriel Magalhaes,Arsenal FC,89,GABRIEL,7,true
 2000001019,Illan Meslier,Arsenal FC,71,MESLIER,7,false
 2000001010,Jurrien Timber,Arsenal FC,84,TIMBER,6,true
 2000001018,Kai Havertz,Arsenal FC,81,HAVERTZ,7,true
-2000001011,Kepa Arrizabalaga,Arsenal FC,78,ARRIZABALAGA,12,false
+2000001011,Kepa Arrizabalaga,Arsenal FC,78,KEPA,4,true
 2000001008,Martin Odegaard,Arsenal FC,86,ODEGAARD,8,true
 2000001021,Martin Zubimendi,Arsenal FC,84,ZUBIMENDI,9,true
 2000001025,Max Dowman,Arsenal FC,72,DOWMAN,6,false
@@ -65,7 +65,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030151,James Wright,Aston Villa FC,61,WRIGHT,6,false
 2000030146,Johan Manzambi,Aston Villa FC,80,MANZAMBI,8,true
 2000030059,John McGinn,Aston Villa FC,83,MCGINN,6,true
-2000030057,João Gomes,Aston Villa FC,78,GOMES,5,true
+2000030057,João Gomes,Aston Villa FC,78,JOAO GOMES,9,true
 2000030067,Lamare Bogarde,Aston Villa FC,74,BOGARDE,7,false
 2000030149,Leon Goretzka,Aston Villa FC,78,GORETZKA,8,true
 2000030069,Marco Bizot,Aston Villa FC,77,BIZOT,5,true
@@ -86,12 +86,12 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030007,Callum Wilson,Brentford FC,76,WILSON,6,true
 2000030001,Caoimhin Kelleher,Brentford FC,80,KELLEHER,8,true
 2000030012,Dango Ouattara,Brentford FC,79,OUATTARA,8,true
-2000030163,El Hadji Malick Diouf,Brentford FC,78,HADJI MALICK DIOUF,16,false
+2000030163,El Hadji Malick Diouf,Brentford FC,78,DIOUF,5,true
 2000030166,Ellery Balcombe,Brentford FC,63,BALCOMBE,8,false
 153066,Fabio Carvalho,Brentford FC,74,CARVALHO,8,false
-2000030164,Gustavo Nunes Fernandes Gomes,Brentford FC,67,NUNES FERNANDES GOMES,19,false
+2000030164,Gustavo Nunes Fernandes Gomes,Brentford FC,67,NUNES,5,false
 2000030096,Hákon Rafn Valdimarsson,Brentford FC,69,RAFN VALDIMARSSON,16,false
-2000030006,Igor Thiago,Brentford FC,82,THIAGO,6,true
+2000030006,Igor Thiago,Brentford FC,82,IGOR THIAGO,10,true
 2000030010,Jaidon Anthony,Brentford FC,76,ANTHONY,7,true
 2000030099,Jannik Schuster,Brentford FC,67,SCHUSTER,8,false
 2000030161,Josh Dasilva,Brentford FC,71,DASILVA,7,false
@@ -122,7 +122,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030041,Jack Hinshelwood,Brighton & Hove Albion FC,77,HINSHELWOOD,11,true
 2000030173,Jaouen Hadjam,Brighton & Hove Albion FC,69,HADJAM,6,false
 2000030118,Jason Steele,Brighton & Hove Albion FC,73,STEELE,6,false
-2000030174,José María Andrés Baixauli,Brighton & Hove Albion FC,69,MARIA ANDRES BAIXAULI,19,false
+2000030174,José María Andrés Baixauli,Brighton & Hove Albion FC,69,CHEMA,5,false
 106835,Kaoru Mitoma,Brighton & Hove Albion FC,81,MITOMA,6,true
 2000030045,Lewis Dunk,Brighton & Hove Albion FC,77,DUNK,4,true
 2000030046,Luka Vušković,Brighton & Hove Albion FC,81,VUSKOVIC,8,true
@@ -148,8 +148,8 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000005015,Emmanuel Emegha,Chelsea FC,78,EMEGHA,6,true
 2000005024,Estevao,Chelsea FC,80,ESTEVAO,7,true
 2000005016,Geovany Quenda,Chelsea FC,76,QUENDA,6,true
-2000005010,Jamie Bynoe-Gittens,Chelsea FC,77,BYNOE GITTENS,12,false
-2000005008,Joao Pedro,Chelsea FC,83,PEDRO,5,true
+2000005010,Jamie Bynoe-Gittens,Chelsea FC,77,GITTENS,7,true
+2000005008,Joao Pedro,Chelsea FC,83,JOAO PEDRO,9,true
 2000005011,Jordan Henderson,Chelsea FC,78,HENDERSON,9,true
 2000005014,Jorrel Hato,Chelsea FC,78,HATO,4,true
 2000005022,Josh Acheampong,Chelsea FC,75,ACHEAMPONG,10,true
@@ -219,7 +219,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000020102,Jean-Philippe Mateta,Crystal Palace FC,81,MATETA,6,true
 2490,Jefferson Lerma,Crystal Palace FC,76,LERMA,5,true
 2000030183,Joél Drakes-Thomas,Crystal Palace FC,62,DRAKES THOMAS,12,false
-2000020106,Jørgen Strand Larsen,Crystal Palace FC,77,STRAND LARSEN,12,false
+2000020106,Jørgen Strand Larsen,Crystal Palace FC,77,LARSEN,6,true
 2000030188,Quinten Timber,Crystal Palace FC,79,TIMBER,6,true
 2000030184,Remi Matthews,Crystal Palace FC,63,MATTHEWS,8,false
 2000020108,Takehiro Tomiyasu,Crystal Palace FC,76,TOMIYASU,8,true
@@ -314,7 +314,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 284500,Tim Iroegbunam,Hull City AFC,76,IROEGBUNAM,10,true
 2000030203,Óscar Zambrano,Hull City AFC,70,ZAMBRANO,8,false
 2000020028,Abdoul Ouattara,Ipswich Town FC,73,OUATTARA,8,false
-2000020025,Abdul Fatawu Issahaku,Ipswich Town FC,75,FATAWU ISSAHAKU,14,false
+2000020025,Abdul Fatawu Issahaku,Ipswich Town FC,75,FATAWU,6,true
 2000030213,Alex Palmer,Ipswich Town FC,71,PALMER,6,false
 2000030216,Anis Mehmeti,Ipswich Town FC,72,MEHMETI,7,false
 2000030215,Azor Matusiwa,Ipswich Town FC,75,MATUSIWA,8,true
@@ -327,12 +327,12 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030214,David Button,Ipswich Town FC,62,BUTTON,6,false
 2000011001,Emersonn,Ipswich Town FC,74,EMERSONN,8,false
 2000030218,Exequiel Palacios,Ipswich Town FC,83,PALACIOS,8,true
-2000030217,Florentino Ibrain Morris Luís,Ipswich Town FC,77,IBRAIN MORRIS LUIS,16,false
+2000030217,Florentino Ibrain Morris Luís,Ipswich Town FC,77,FLORENTINO,10,true
 2000020022,Issa Diop,Ipswich Town FC,75,DIOP,4,true
 2000011003,Jack Clarke,Ipswich Town FC,75,CLARKE,6,true
 18397,Jack Taylor,Ipswich Town FC,72,TAYLOR,6,false
 2000020021,Jacob Greaves,Ipswich Town FC,74,GREAVES,7,false
-138931,Jaden Philogene-Bidace,Ipswich Town FC,76,PHILOGENE BIDACE,15,false
+138931,Jaden Philogene-Bidace,Ipswich Town FC,76,PHILOGENE,9,true
 2000011002,Julio Enciso,Ipswich Town FC,78,ENCISO,6,true
 2000020026,Kasey McAteer,Ipswich Town FC,71,MCATEER,7,false
 2000020019,Kjell Scherpen,Ipswich Town FC,76,SCHERPEN,8,true
@@ -360,7 +360,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030226,Jean-Mattéo Bahoya,Leeds United FC,76,BAHOYA,6,true
 2000014005,Joe Rodon,Leeds United FC,77,RODON,5,true
 2000020084,Lukas Nmecha,Leeds United FC,76,NMECHA,6,true
-2000030222,Mateo Joseph Fernández-Regatillo,Leeds United FC,72,JOSEPH FERNANDEZ REGATILLO,24,false
+2000030222,Mateo Joseph Fernández-Regatillo,Leeds United FC,72,JOSEPH,6,false
 2000030225,Melvin Bard,Leeds United FC,76,BARD,4,true
 2000030224,Michael Zetterer,Leeds United FC,75,ZETTERER,8,true
 2000020080,Nico Elvedi,Leeds United FC,78,ELVEDI,6,true
@@ -369,7 +369,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000020070,Tarik Muharemović,Leeds United FC,75,MUHAREMOVIC,11,true
 2000003009,Alexander Isak,Liverpool FC,86,ISAK,4,true
 2000003010,Alexis Mac Allister,Liverpool FC,84,MAC ALLISTER,11,true
-2000003001,Alisson Becker,Liverpool FC,87,BECKER,6,true
+2000003001,Alisson Becker,Liverpool FC,87,ALISSON,7,true
 2000003017,Bradley Barcola,Liverpool FC,85,BARCOLA,7,true
 2000003011,Cody Gakpo,Liverpool FC,82,GAKPO,5,true
 180317,Conor Bradley,Liverpool FC,79,BRADLEY,7,true
@@ -490,7 +490,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000020058,Dan Ndoye,Nottingham Forest FC,77,NDOYE,5,true
 2000020095,Daniel Muñoz,Nottingham Forest FC,82,MUNOZ,5,true
 2000020054,Ibrahim Sangaré,Nottingham Forest FC,78,SANGARE,7,true
-2000020056,Igor Jesus,Nottingham Forest FC,77,JESUS,5,true
+2000020056,Igor Jesus,Nottingham Forest FC,77,IGOR JESUS,9,true
 2000020059,Jair,Nottingham Forest FC,75,JAIR,4,true
 2000013001,James McAtee,Nottingham Forest FC,73,MCATEE,6,false
 2000020073,John Victor,Nottingham Forest FC,71,VICTOR,6,false
@@ -548,7 +548,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030018,Dominic Solanke,Tottenham Hotspur FC,79,SOLANKE,7,true
 2000030020,James Maddison,Tottenham Hotspur FC,82,MADDISON,8,true
 2000030248,James Rowswell,Tottenham Hotspur FC,61,ROWSWELL,8,false
-2000030028,Jan Paul van Hecke,Tottenham Hotspur FC,81,PAUL VAN HECKE,12,false
+2000030028,Jan Paul van Hecke,Tottenham Hotspur FC,81,VAN HECKE,8,true
 2000030247,Jun'ai Byfield,Tottenham Hotspur FC,62,BYFIELD,7,false
 2000030264,Luca Gunter,Tottenham Hotspur FC,62,GUNTER,6,false
 2000030105,Luca Williams-Barnett,Tottenham Hotspur FC,62,WILLIAMS BARNETT,15,false
@@ -565,7 +565,7 @@ player_id,full_name,club,fc27_overall,word,length,eligible_answer
 2000030019,Richarlison,Tottenham Hotspur FC,78,RICHARLISON,11,true
 2000030023,Rodrigo Bentancur,Tottenham Hotspur FC,79,BENTANCUR,9,true
 2000030100,Sandro Tonali,Tottenham Hotspur FC,85,TONALI,6,true
-2000030246,Sávio Moreira de Oliveira,Tottenham Hotspur FC,80,MOREIRA DE OLIVEIRA,17,false
+2000030246,Sávio Moreira de Oliveira,Tottenham Hotspur FC,80,SAVINHO,7,true
 19145,Tosin Adarabioyo,Tottenham Hotspur FC,77,ADARABIOYO,10,true
 2000030250,Wilson Odobert,Tottenham Hotspur FC,78,ODOBERT,7,true
 2000030249,Xavi Simons,Tottenham Hotspur FC,81,SIMONS,6,true
