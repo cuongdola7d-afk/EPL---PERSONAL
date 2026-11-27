@@ -1,6 +1,8 @@
 package com.premierhub.minigame.wordle;
 
 import java.text.Normalizer;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,15 @@ public final class WordleNames {
             return normalizeOverride(overrideWord);
         }
         return normalize(fullName);
+    }
+
+    public static List<Integer> wordShape(String word) {
+        if (word == null || word.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(word.trim().split("\\s+"))
+                .map(String::length)
+                .toList();
     }
 
     private static NormalizedName cleanWord(String raw) {

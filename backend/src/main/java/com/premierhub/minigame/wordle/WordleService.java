@@ -60,6 +60,7 @@ public class WordleService {
                 existing == null ? null : existing.puzzleNumber(),
                 today,
                 existing == null ? null : existing.answerLetters().length(),
+                existing == null ? null : WordleNames.wordShape(existing.answerWord()),
                 nextDay(today),
                 now
         );
@@ -172,15 +173,18 @@ public class WordleService {
             throw failure(HttpStatus.CONFLICT, "GAME_FINISHED");
         }
         if (rawLetters == null) {
-            throw failure(HttpStatusCode.valueOf(422), "WRONG_LENGTH");
+            throw failure(HttpStatusCode.valueOf(422), "TOO_SHORT");
         }
         String normalized = rawLetters.trim().toUpperCase(Locale.ROOT);
         if (!normalized.isEmpty() && !normalized.matches("^[A-Z]+$")) {
             throw failure(HttpStatusCode.valueOf(422), "INVALID_CHARACTERS");
         }
-        int expectedLength = puzzle.answerLetters().length();
-        if (normalized.length() != expectedLength) {
-            throw failure(HttpStatusCode.valueOf(422), "WRONG_LENGTH");
+        int maxLength = puzzle.answerLetters().length();
+        if (normalized.length() < WordleData.MIN_ANSWER_LENGTH) {
+            throw failure(HttpStatusCode.valueOf(422), "TOO_SHORT");
+        }
+        if (normalized.length() > maxLength) {
+            throw failure(HttpStatusCode.valueOf(422), "TOO_LONG");
         }
 
         Map<String, DictionaryItem> dict = loadDictionary(puzzle);
@@ -282,7 +286,8 @@ public class WordleService {
         Map<String, DictionaryItem> bestByLetters = new LinkedHashMap<>();
         for (Candidate c : active) {
             var norm = c.normalized();
-            if (norm.letters().length() != targetLen) {
+            int len = norm.letters().length();
+            if (len < WordleData.MIN_ANSWER_LENGTH || len > targetLen) {
                 continue;
             }
             DictionaryItem candidateItem = new DictionaryItem(
@@ -329,6 +334,7 @@ public class WordleService {
                 puzzle.puzzleNumber(),
                 puzzle.puzzleDate(),
                 puzzle.answerLetters().length(),
+                WordleNames.wordShape(puzzle.answerWord()),
                 now,
                 nextDay(puzzle.puzzleDate()),
                 game.status(),
@@ -362,6 +368,8 @@ public class WordleService {
 
     public static String message(String code) {
         return switch (code) {
+            case "TOO_SHORT" -> "Cần ít nhất 4 chữ cái.";
+            case "TOO_LONG" -> "Tên quá dài so với đáp án hôm nay.";
             case "WRONG_LENGTH" -> "Số chữ cái không khớp với đáp án hôm nay.";
             case "INVALID_CHARACTERS" -> "Chỉ được nhập chữ cái không dấu A–Z.";
             case "NOT_A_PLAYER" -> "Không có cầu thủ Premier League nào có tên như vậy.";

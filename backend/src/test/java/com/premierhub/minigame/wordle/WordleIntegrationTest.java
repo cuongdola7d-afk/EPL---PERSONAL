@@ -94,7 +94,8 @@ class WordleIntegrationTest {
         // 8: Dominic Solanke (OVR 70, LOW OVR -> dictionary ONLY) -> SOLANKE
         // 9: Eddie Nketiah (OVR 69, LOW OVR -> dictionary ONLY) -> NKETIAH
         // 10: Duplicate surname "Junior Barcola" (OVR 62, shares BARCOLA -> higher OVR Bradley Barcola must win!)
-        // 11: Wrong length 5-letter "Daniel Muñoz" (OVR 80) -> MUNOZ (excluded from 7-letter dictionary)
+        // 11: 5-letter "Daniel Muñoz" (OVR 74) -> MUNOZ (included in 4..7 dictionary!)
+        // 12: 8-letter "Martin Odegaard" (OVR 74) -> ODEGAARD (excluded from 4..7 dictionary because length 8 > 7!)
         addPlayer(1, "Virgil van Dijk", 1, "Netherlands", "1991-07-08", 4, 88, "CB");
         addPlayer(2, "Erling Haaland", 2, "Norway", "2000-07-21", 9, 90, "ST");
         addPlayer(3, "Bradley Barcola", 1, "France", "2002-09-02", 29, 85, "LW");
@@ -106,6 +107,7 @@ class WordleIntegrationTest {
         addPlayer(9, "Eddie Nketiah", 3, "England", "1999-05-30", 14, 69, "ST");
         addPlayer(10, "Junior Barcola", 2, "France", "2006-01-01", 40, 62, "LW");
         addPlayer(11, "Daniel Muñoz", 3, "Colombia", "1996-05-26", 12, 74, "RB");
+        addPlayer(12, "Martin Odegaard", 3, "Norway", "1998-12-17", 8, 74, "CAM");
     }
 
     private void addPlayer(int id, String name, int clubId, String nat, String birthDate,
@@ -153,6 +155,9 @@ class WordleIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.puzzleNumber").value(1))
                 .andExpect(jsonPath("$.length").value(7))
+                .andExpect(jsonPath("$.shape[0]").value(3))
+                .andExpect(jsonPath("$.shape[1]").value(4))
+                .andExpect(jsonPath("$.shape.length()").value(2))
                 .andExpect(jsonPath("$.status").value("PLAYING"))
                 .andExpect(jsonPath("$.hintUsed").value(false))
                 .andExpect(jsonPath("$.hintClub").doesNotExist())
@@ -164,7 +169,7 @@ class WordleIntegrationTest {
         assertFalse(todayJson.contains("Liverpool"));
         assertFalse(todayJson.contains("\"answerPlayerId\""));
 
-        // 2. /dictionary has exact-length players including low-OVR, deduplicates BARCOLA to higher OVR, never exposes playerId or answer flags
+        // 2. /dictionary has 4..N players including low-OVR, excludes >N, deduplicates BARCOLA to higher OVR, never exposes playerId or answer flags
         String dictJson = mvc.perform(get(API + "/dictionary")
                         .with(user("a@example.test").roles("USER"))
                         .header("X-PrismaXI-Account-ID", "101"))
@@ -172,19 +177,28 @@ class WordleIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         assertFalse(dictJson.contains("playerId"));
         assertFalse(dictJson.contains("answer"));
-        assertFalse(dictJson.contains("MUNOZ")); // 5 letters excluded
+        assertTrue(dictJson.contains("MUNOZ")); // 5 letters (4..7) included
+        assertFalse(dictJson.contains("ODEGAARD")); // 8 letters (>7) excluded
         assertTrue(dictJson.contains("ESTEVAO")); // low OVR included
         assertTrue(dictJson.contains("Bradley Barcola"));
         assertFalse(dictJson.contains("Junior Barcola")); // lower OVR duplicate omitted
 
-        // 3. Error codes: WRONG_LENGTH, INVALID_CHARACTERS, NOT_A_PLAYER
+        // 3. Error codes: TOO_SHORT (<4), TOO_LONG (>N), INVALID_CHARACTERS, NOT_A_PLAYER
         mvc.perform(post(API + "/today/guesses")
                         .with(user("a@example.test").roles("USER")).with(csrf())
                         .header("X-PrismaXI-Account-ID", "101")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"letters\":\"SHORT\"}"))
+                        .content("{\"letters\":\"ABC\"}"))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.code").value("WRONG_LENGTH"));
+                .andExpect(jsonPath("$.code").value("TOO_SHORT"));
+
+        mvc.perform(post(API + "/today/guesses")
+                        .with(user("a@example.test").roles("USER")).with(csrf())
+                        .header("X-PrismaXI-Account-ID", "101")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"letters\":\"ODEGAARD\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("TOO_LONG"));
 
         mvc.perform(post(API + "/today/guesses")
                         .with(user("a@example.test").roles("USER")).with(csrf())
@@ -198,7 +212,7 @@ class WordleIntegrationTest {
                         .with(user("a@example.test").roles("USER")).with(csrf())
                         .header("X-PrismaXI-Account-ID", "101")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"letters\":\"ZZZZZZZ\"}"))
+                        .content("{\"letters\":\"ZZZZZ\"}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("NOT_A_PLAYER"));
 
@@ -450,6 +464,7 @@ class WordleIntegrationTest {
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.puzzleNumber").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.length").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.shape").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.date").value("2026-11-27"))
                 .andExpect(jsonPath("$.nextAt").isNotEmpty())
                 .andExpect(jsonPath("$.serverTime").isNotEmpty())
@@ -463,13 +478,16 @@ class WordleIntegrationTest {
         assertFalse(bodyBefore.contains("answer"));
         assertFalse(bodyBefore.contains("playerId"));
 
-        // Once today's puzzle exists, /info exposes puzzleNumber and length while still hiding answer details.
+        // Once today's puzzle exists, /info exposes puzzleNumber, length, and shape while still hiding answer details.
         service.today(101);
         String bodyAfter = mvc.perform(get(API + "/info"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.puzzleNumber").value(1))
                 .andExpect(jsonPath("$.length").value(7))
+                .andExpect(jsonPath("$.shape[0]").value(3))
+                .andExpect(jsonPath("$.shape[1]").value(4))
+                .andExpect(jsonPath("$.shape.length()").value(2))
                 .andExpect(jsonPath("$.date").value("2026-11-27"))
                 .andReturn().getResponse().getContentAsString();
 
@@ -498,5 +516,43 @@ class WordleIntegrationTest {
         var dict = service.dictionary();
         assertTrue(dict.stream().anyMatch(e -> "ALISSON".equals(e.word()) && "ALISSON".equals(e.letters())));
         assertTrue(dict.stream().noneMatch(e -> "VANDIJK".equals(e.letters())));
+    }
+
+    @Test
+    void allowsFiveShortGuessesWithoutWinningAndWinsOnTurnSixWithExactAnswer() throws Exception {
+        // Add 4..5 letter players (including SALAH and ISAK from prompt examples + a prefix player VAND)
+        addPlayer(21, "Mohamed Salah", 1, "Egypt", "1992-06-15", 11, 74, "RW");
+        addPlayer(22, "Alexander Isak", 1, "Sweden", "1999-09-21", 14, 74, "ST");
+        addPlayer(23, "Bukayo Saka", 3, "England", "2001-09-05", 7, 74, "RW");
+        addPlayer(24, "Test Vand", 3, "England", "2000-01-01", 99, 74, "CB"); // exact 4-letter prefix of VANDIJK -> HHHH but still PLAYING!
+        forceOnlyAnswer(1); // Virgil van Dijk (VANDIJK, 7 letters)
+
+        var g1 = service.submitGuess(101, "SALAH");
+        assertEquals(Status.PLAYING, g1.status());
+        assertEquals("MHMMM", g1.guesses().get(0).feedback());
+
+        var g2 = service.submitGuess(101, "ISAK");
+        assertEquals(Status.PLAYING, g2.status());
+        assertEquals("NMNN", g2.guesses().get(1).feedback());
+
+        // Even an all-H shorter prefix ("VAND" -> "HHHH") MUST NOT win!
+        var g3 = service.submitGuess(101, "VAND");
+        assertEquals(Status.PLAYING, g3.status());
+        assertEquals("HHHH", g3.guesses().get(2).feedback());
+        assertNull(g3.answer());
+
+        var g4 = service.submitGuess(101, "SAKA");
+        assertEquals(Status.PLAYING, g4.status());
+        var g5 = service.submitGuess(101, "MUNOZ");
+        assertEquals(Status.PLAYING, g5.status());
+        assertEquals(5, g5.guesses().size());
+
+        // Turn 6: exact answer wins!
+        var g6 = service.submitGuess(101, "VANDIJK");
+        assertEquals(Status.WON, g6.status());
+        assertEquals(6, g6.guesses().size());
+        assertEquals("HHHHHHH", g6.guesses().get(5).feedback());
+        assertNotNull(g6.answer());
+        assertEquals("Virgil van Dijk", g6.answer().name());
     }
 }

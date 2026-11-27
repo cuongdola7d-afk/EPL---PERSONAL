@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   buildRowWordGroups,
   buildShareText,
+  createTelexBurstQueue,
+  decodeTelexBurst,
   filterWordleSuggestions,
   formatWordleDateLabel,
   highlightWordPrefix,
@@ -19,6 +21,7 @@ import {
   fetchWordleToday,
   isValidWordleDictionary,
   isValidWordleInfo,
+  isValidWordleShape,
   isValidWordleStats,
   isValidWordleToday,
   revealWordleHint,
@@ -45,6 +48,7 @@ function sampleToday(overrides = {}) {
     puzzleNumber: 12,
     date: '2026-11-27',
     length: 7,
+    shape: [3, 4],
     serverTime,
     nextAt,
     status: 'PLAYING',
@@ -75,24 +79,42 @@ async function withFetch(mock, run) {
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
 
-test('wordShape and buildRowWordGroups preserve multi-word and single-word tile shapes', () => {
+test('wordShape and buildRowWordGroups lay out every row by answer shape including short guesses', () => {
   assert.deepEqual(wordShape('VAN DIJK'), [3, 4])
   assert.deepEqual(wordShape('BARCOLA'), [7])
-  assert.deepEqual(wordShape('DE LA CRUZ'), [2, 2, 4])
+  assert.deepEqual(wordShape('VAN DEN BERG'), [3, 3, 4])
 
-  const multi = buildRowWordGroups({ word: 'VAN DIJK', letters: 'VANDIJK', feedback: 'HHHHHHH', length: 7 })
-  assert.equal(multi.length, 2)
-  assert.deepEqual(multi[0].map(t => [t.letter, t.state, t.index]), [
-    ['V', 'hit', 0], ['A', 'hit', 1], ['N', 'hit', 2],
+  // Single-word guess BARCOLA laid into [3, 4] answer shape -> BAR | COLA
+  const fullInMulti = buildRowWordGroups({ shape: [3, 4], letters: 'BARCOLA', feedback: 'MHMMMMM', length: 7 })
+  assert.equal(fullInMulti.length, 2)
+  assert.deepEqual(fullInMulti[0].map(t => [t.letter, t.state, t.index]), [
+    ['B', 'miss', 0], ['A', 'hit', 1], ['R', 'miss', 2],
   ])
-  assert.deepEqual(multi[1].map(t => [t.letter, t.state, t.index]), [
-    ['D', 'hit', 3], ['I', 'hit', 4], ['J', 'hit', 5], ['K', 'hit', 6],
+  assert.deepEqual(fullInMulti[1].map(t => [t.letter, t.state, t.index]), [
+    ['C', 'miss', 3], ['O', 'miss', 4], ['L', 'miss', 5], ['A', 'miss', 6],
   ])
 
-  const active = buildRowWordGroups({ letters: 'VAN', length: 7 })
-  assert.equal(active.length, 1)
-  assert.equal(active[0].length, 7)
-  assert.deepEqual(active[0].map(t => t.state), ['filled', 'filled', 'filled', 'empty', 'empty', 'empty', 'empty'])
+  // Active row on [3, 4] answer shape keeps 3 + 4 structure immediately
+  const active = buildRowWordGroups({ shape: [3, 4], letters: 'BARC', length: 7 })
+  assert.equal(active.length, 2)
+  assert.deepEqual(active[0].map(t => [t.letter, t.state]), [['B', 'filled'], ['A', 'filled'], ['R', 'filled']])
+  assert.deepEqual(active[1].map(t => [t.letter, t.state]), [['C', 'filled'], ['', 'empty'], ['', 'empty'], ['', 'empty']])
+
+  // Short guess SALAH (5) on [3, 4] answer shape -> SAL | AH + 2 dashed pad tiles
+  const shortInMulti = buildRowWordGroups({ shape: [3, 4], letters: 'SALAH', feedback: 'MHMMM', length: 7 })
+  assert.equal(shortInMulti.length, 2)
+  assert.deepEqual(shortInMulti[0].map(t => [t.letter, t.state]), [
+    ['S', 'miss'], ['A', 'hit'], ['L', 'miss'],
+  ])
+  assert.deepEqual(shortInMulti[1].map(t => [t.letter, t.state]), [
+    ['A', 'miss'], ['H', 'miss'], ['', 'pad'], ['', 'pad'],
+  ])
+
+  // Short guess ISAK (4) on 3-word [3, 3, 4] answer shape -> ISA | K__ | ____
+  const shortInThreeWord = buildRowWordGroups({ shape: [3, 3, 4], letters: 'ISAK', feedback: 'NMNN', length: 10 })
+  assert.deepEqual(shortInThreeWord.map(g => g.length), [3, 3, 4])
+  assert.deepEqual(shortInThreeWord[1].map(t => [t.letter, t.state]), [['K', 'near'], ['', 'pad'], ['', 'pad']])
+  assert.deepEqual(shortInThreeWord[2].map(t => t.state), ['pad', 'pad', 'pad', 'pad'])
 })
 
 test('highlightWordPrefix handles spaces across multi-word names', () => {
@@ -121,6 +143,20 @@ test('filterWordleSuggestions excludes guessed names, sorts A-Z, and caps at 5',
   assert.equal(results[0].matched, 'B')
   assert.equal(results[0].rest, 'ALEBAA')
   assert.deepEqual(filterWordleSuggestions(dict, '', [], 5, 7), [])
+
+  // Length filtering 4..N: keeps 4..7, excludes 3 (<4) and 8 (>7)
+  const mixed = [
+    { letters: 'EZE', word: 'EZE', name: 'Eberechi Eze', club: 'Arsenal' },
+    { letters: 'SALA', word: 'SALA', name: 'Test Sala', club: 'Club A' },
+    { letters: 'SALAH', word: 'SALAH', name: 'Mohamed Salah', club: 'Liverpool' },
+    { letters: 'SALIBA', word: 'SALIBA', name: 'William Saliba', club: 'Arsenal' },
+    { letters: 'SOLANKE', word: 'SOLANKE', name: 'Dominic Solanke', club: 'Tottenham' },
+    { letters: 'SCHNEIDE', word: 'SCHNEIDE', name: 'Too Long', club: 'Club B' },
+  ]
+  assert.deepEqual(
+    filterWordleSuggestions(mixed, 'S', [], 5, 7).map(item => item.letters),
+    ['SALA', 'SALAH', 'SALIBA', 'SOLANKE']
+  )
 })
 
 test('keyboardKeyStates keeps best state per letter (hit > near > miss)', () => {
@@ -136,32 +172,39 @@ test('keyboardKeyStates keeps best state per letter (hit > near > miss)', () => 
   assert.equal(states.V, 'hit')
 })
 
-test('buildShareText preserves multi-word spaces, omits player names, and prints X/6 on loss', () => {
+test('buildShareText groups each row by answer shape, omits padding tiles and player names, and prints X/6 on loss', () => {
   const winText = buildShareText({
     puzzleNumber: 12,
     status: 'WON',
+    shape: [3, 4],
     guesses: [
+      { word: 'SALAH', letters: 'SALAH', feedback: 'MHMMM', playerName: 'Mohamed Salah', club: 'Liverpool' },
       { word: 'BARCOLA', letters: 'BARCOLA', feedback: 'MNMMMMN', playerName: 'Bradley Barcola', club: 'Liverpool' },
       { word: 'VAN DIJK', letters: 'VANDIJK', feedback: 'HHHHHHH', playerName: 'Virgil van Dijk', club: 'Liverpool' },
     ],
   })
-  assert.equal(winText, 'PrismaXI Wordle #12 2/6\n⬛🟨⬛⬛⬛⬛🟨\n🟩🟩🟩 🟩🟩🟩🟩')
+  assert.equal(winText, 'PrismaXI Wordle #12 3/6\n⬛🟩⬛ ⬛⬛\n⬛🟨⬛ ⬛⬛⬛🟨\n🟩🟩🟩 🟩🟩🟩🟩')
   assert.equal(winText.includes('DIJK'), false)
   assert.equal(winText.includes('Barcola'), false)
 
   const lossText = buildShareText({
     puzzleNumber: 12,
     status: 'LOST',
+    shape: [3, 4],
     guesses: [
+      { word: 'SALAH', letters: 'SALAH', feedback: 'MHMMM', playerName: 'Mohamed Salah', club: 'Liverpool' },
+      { word: 'ISAK', letters: 'ISAK', feedback: 'NMNN', playerName: 'Alexander Isak', club: 'Liverpool' },
       { word: 'VAN BERG', letters: 'VANBERG', feedback: 'HHHMMMM', playerName: 'Test', club: 'Club' },
     ],
   })
-  assert.equal(lossText, 'PrismaXI Wordle #12 X/6\n🟩🟩🟩 ⬛⬛⬛⬛')
+  assert.equal(lossText, 'PrismaXI Wordle #12 X/6\n⬛🟩⬛ ⬛⬛\n🟨⬛🟨 🟨\n🟩🟩🟩 ⬛⬛⬛⬛')
 })
 
 test('formatWordleDateLabel, wordleToastMessage, and wordleHubSummary format Vietnam labels accurately', () => {
   assert.equal(formatWordleDateLabel('2026-11-27'), 'T6 27/11')
   assert.equal(formatWordleDateLabel('2026-11-29'), 'CN 29/11')
+  assert.equal(wordleToastMessage('TOO_SHORT', 7), 'Cần ít nhất 4 chữ cái')
+  assert.equal(wordleToastMessage('TOO_LONG', 7), 'Tối đa 7 chữ cái')
   assert.equal(wordleToastMessage('WRONG_LENGTH', 7), 'Cần đủ 7 chữ cái')
   assert.equal(wordleToastMessage('NOT_A_PLAYER', 7), 'Không có cầu thủ Premier League nào tên như vậy')
   assert.equal(wordleToastMessage('ALREADY_GUESSED', 7), 'Bạn đã đoán tên này rồi')
@@ -175,6 +218,20 @@ test('formatWordleDateLabel, wordleToastMessage, and wordleHubSummary format Vie
 
 test('API validators verify TodayView, DictionaryEntry, and StatsView contracts', () => {
   assert.equal(isValidWordleToday(sampleToday()), true)
+  // Short guess (4..N letters with matching feedback length) is valid
+  assert.equal(isValidWordleToday(sampleToday({
+    guesses: [
+      { turn: 1, word: 'SALAH', letters: 'SALAH', feedback: 'MHMMM', playerName: 'Mohamed Salah', club: 'Liverpool' },
+      { turn: 2, word: 'ISAK', letters: 'ISAK', feedback: 'NMNN', playerName: 'Alexander Isak', club: 'Liverpool' },
+    ],
+  })), true)
+  // Shorter than 4 letters or mismatched feedback length is rejected
+  assert.equal(isValidWordleToday(sampleToday({
+    guesses: [{ turn: 1, word: 'EZE', letters: 'EZE', feedback: 'MMM', playerName: 'Eberechi Eze', club: 'Arsenal' }],
+  })), false)
+  assert.equal(isValidWordleToday(sampleToday({
+    guesses: [{ turn: 1, word: 'SALAH', letters: 'SALAH', feedback: 'MHMMMMM', playerName: 'Mohamed Salah', club: 'Liverpool' }],
+  })), false)
   // PLAYING must not leak answer
   assert.equal(isValidWordleToday(sampleToday({
     answer: { playerId: 1, name: 'Virgil van Dijk', clubId: 1, club: 'Liverpool', shirtNumber: 4, position: 'CB', nationality: 'Netherlands', age: 35, overall: 88, word: 'VAN DIJK' },
@@ -284,18 +341,22 @@ test('resolveWordleAccess handles all 4 combinations of auth x feature flag plus
   })
 })
 
-test('fetchWordleInfo is public (omits credentials/account header), validates nullable puzzle fields, and surfaces 404', async () => {
+test('fetchWordleInfo is public (omits credentials/account header), validates nullable puzzle/shape fields, and surfaces 404', async () => {
   const infoNullPuzzle = {
     enabled: true,
     puzzleNumber: null,
     date: '2026-11-27',
     length: null,
+    shape: null,
     nextAt,
     serverTime,
   }
-  const infoWithPuzzle = { ...infoNullPuzzle, puzzleNumber: 12, length: 7 }
+  const infoWithPuzzle = { ...infoNullPuzzle, puzzleNumber: 12, length: 7, shape: [3, 4] }
+  assert.equal(isValidWordleShape([3, 4], 7), true)
+  assert.equal(isValidWordleShape([3, 3], 7), false)
   assert.equal(isValidWordleInfo(infoNullPuzzle), true)
   assert.equal(isValidWordleInfo(infoWithPuzzle), true)
+  assert.equal(isValidWordleInfo({ ...infoWithPuzzle, shape: [3, 3] }), false)
   assert.equal(isValidWordleInfo({ ...infoNullPuzzle, enabled: false }), false)
   assert.equal(isValidWordleInfo({ ...infoNullPuzzle, length: 2 }), false)
 
@@ -309,9 +370,135 @@ test('fetchWordleInfo is public (omits credentials/account header), validates nu
     assert.equal(info.enabled, true)
     assert.equal(info.puzzleNumber, null)
     assert.equal(info.length, null)
+    assert.equal(info.shape, null)
   })
 
   await withFetch(async () => json({ code: 'NOT_FOUND', message: 'Not found' }, 404), async () => {
     await assert.rejects(fetchWordleInfo(), err => err.status === 404)
   })
+})
+
+function runTelexBursts(bursts, maxLength = 11) {
+  let state = { raw: '', shadow: '', uncertain: false }
+  for (const burst of bursts) {
+    state = decodeTelexBurst(state, burst, maxLength)
+  }
+  return state
+}
+
+test('decodeTelexBurst decodes Unikey Telex sequences for AA, AAA, HAALAND, DIJK, VANS, DD, WIRTZ, and real Backspace', () => {
+  // AA: A · ⌫ + Â
+  assert.equal(runTelexBursts([{ insert: 'A' }, { deletes: 1, insert: 'Â' }]).raw, 'AA')
+  // AAA: A · ⌫ + Â · ⌫ + AA
+  assert.equal(runTelexBursts([{ insert: 'A' }, { deletes: 1, insert: 'Â' }, { deletes: 1, insert: 'AA' }]).raw, 'AAA')
+  // HAALAND: H · A · ⌫ + Â · L · A · N · D
+  assert.equal(
+    runTelexBursts([
+      { insert: 'H' }, { insert: 'A' }, { deletes: 1, insert: 'Â' },
+      { insert: 'L' }, { insert: 'A' }, { insert: 'N' }, { insert: 'D' },
+    ]).raw,
+    'HAALAND'
+  )
+  // DIJK: D · I · ⌫ + Ị · K
+  assert.equal(
+    runTelexBursts([{ insert: 'D' }, { insert: 'I' }, { deletes: 1, insert: 'Ị' }, { insert: 'K' }]).raw,
+    'DIJK'
+  )
+  // VANS: V · A · N · ⌫⌫ + ÁN
+  assert.equal(
+    runTelexBursts([{ insert: 'V' }, { insert: 'A' }, { insert: 'N' }, { deletes: 2, insert: 'ÁN' }]).raw,
+    'VANS'
+  )
+  // DD: D · ⌫ + Đ
+  assert.equal(runTelexBursts([{ insert: 'D' }, { deletes: 1, insert: 'Đ' }]).raw, 'DD')
+  // WIRTZ (tone strip on Z): Ư · I · ⌫⌫ + ỬI · T · ⌫⌫⌫ + ƯIT
+  assert.equal(
+    runTelexBursts([
+      { insert: 'ư' }, { insert: 'i' }, { deletes: 2, insert: 'ửi' },
+      { insert: 't' }, { deletes: 3, insert: 'ưit' },
+    ]).raw,
+    'WIRTZ'
+  )
+  // WIRTZ (Unikey auto-restore on T + Z): Ư · I · ⌫⌫ + ỬI · ⌫⌫ + WIRT · Z
+  assert.equal(
+    runTelexBursts([
+      { insert: 'ư' }, { insert: 'i' }, { deletes: 2, insert: 'ửi' },
+      { deletes: 2, insert: 'wirt' }, { insert: 'z' },
+    ]).raw,
+    'WIRTZ'
+  )
+  // WIRTZ (tone strip on T + Z): Ư · I · ⌫ + Ỉ · ⌫⌫ + ƯIT · Z
+  assert.equal(
+    runTelexBursts([
+      { insert: 'Ư' }, { insert: 'I' }, { deletes: 1, insert: 'Ỉ' },
+      { deletes: 2, insert: 'ƯIT' }, { insert: 'Z' },
+    ]).raw,
+    'WIRTZ'
+  )
+  // MACALLISTER (S adds sắc on I, R replaces/adds hỏi on E)
+  assert.equal(
+    runTelexBursts([
+      { insert: 'm' }, { insert: 'a' }, { insert: 'c' }, { insert: 'a' }, { insert: 'l' }, { insert: 'l' },
+      { insert: 'i' }, { deletes: 1, insert: 'í' }, { insert: 't' }, { insert: 'e' }, { deletes: 1, insert: 'ẻ' },
+    ]).raw,
+    'MACALLISTER'
+  )
+  // GUIMARAES (R adds hỏi -> ả, A adds circumflex -> ẩ, E, S replaces hỏi with sắc -> ấe)
+  assert.equal(
+    runTelexBursts([
+      { insert: 'g' }, { insert: 'u' }, { insert: 'i' }, { insert: 'm' }, { insert: 'a' },
+      { deletes: 1, insert: 'ả' }, { deletes: 1, insert: 'ẩ' }, { insert: 'e' }, { deletes: 2, insert: 'ấe' },
+    ]).raw,
+    'GUIMARAES'
+  )
+  // Fast typist coalescing: L arrives within 25ms of Â in HAALAND ({ deletes: 1, insert: 'âl' })
+  assert.equal(
+    runTelexBursts([
+      { insert: 'h' }, { insert: 'a' }, { deletes: 1, insert: 'âl' },
+      { insert: 'a' }, { insert: 'n' }, { insert: 'd' },
+    ]).raw,
+    'HAALAND'
+  )
+  // Spacebar auto-restore does not append extra letter or raise warning
+  const afterSpace = runTelexBursts([
+    { insert: 'h' }, { insert: 'a' }, { deletes: 1, insert: 'â' },
+    { insert: 'l' }, { insert: 'a' }, { insert: 'n' }, { insert: 'd' },
+    { deletes: 6, insert: 'haaland ' },
+  ])
+  assert.equal(afterSpace.raw, 'HAALAND')
+  assert.equal(afterSpace.uncertain, false)
+  // Real Backspace deletes exactly 1 letter
+  assert.equal(
+    runTelexBursts([{ insert: 'S' }, { insert: 'A' }, { deletes: 1, insert: '' }, { insert: 'I' }]).raw,
+    'SI'
+  )
+})
+
+test('createTelexBurstQueue keeps real Backspace separate from inserts more than 25ms later, and groups rapid delete+insert', async () => {
+  const flushed = []
+  const queue = createTelexBurstQueue({ onFlush: b => flushed.push(b), windowMs: 25 })
+
+  // Real Backspace, wait 45ms (>25ms), then insert 'A' -> two separate bursts
+  queue.pushDelete(1)
+  await new Promise(r => setTimeout(r, 45))
+  queue.pushInsert('A')
+  await new Promise(r => setTimeout(r, 45))
+  assert.deepEqual(flushed, [{ deletes: 1, insert: '' }, { deletes: 0, insert: 'A' }])
+
+  // Rapid Telex replacement (V -> A -> N -> ⌫⌫ÁN) inside <10ms -> deletes+insert grouped into 1 burst
+  flushed.length = 0
+  queue.pushInsert('V')
+  queue.pushInsert('A')
+  queue.pushInsert('N')
+  queue.pushDelete(1)
+  queue.pushDelete(1)
+  queue.pushInsert('Á')
+  queue.pushInsert('N')
+  await new Promise(r => setTimeout(r, 45))
+  assert.deepEqual(flushed, [
+    { deletes: 0, insert: 'V' },
+    { deletes: 0, insert: 'A' },
+    { deletes: 0, insert: 'N' },
+    { deletes: 2, insert: 'ÁN' },
+  ])
 })

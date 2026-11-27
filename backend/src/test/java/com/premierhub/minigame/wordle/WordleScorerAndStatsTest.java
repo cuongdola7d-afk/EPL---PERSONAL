@@ -32,6 +32,20 @@ class WordleScorerAndStatsTest {
     }
 
     @Test
+    void scoresShorterGuessesUsingAllRemainingAnswerPositions() {
+        // Prompt examples against VANDIJK (7 letters)
+        assertEquals("MHMMM", WordleScorer.score("SALAH", "VANDIJK"));
+        assertEquals("NMNN", WordleScorer.score("ISAK", "VANDIJK"));
+        // Repeated letter at positions >= L in answer (both K's at indices 5 & 6)
+        assertEquals("NNMM", WordleScorer.score("KKXX", "VANDIKK"));
+        assertEquals("NNMM", WordleScorer.score("KKKX", "VANDIKK"));
+        // Exact hit at index 0 plus two repeated K's at positions >= L
+        assertEquals("HNNM", WordleScorer.score("KKKX", "KANDIKK"));
+        // Guess longer than answer must be rejected
+        assertThrows(IllegalArgumentException.class, () -> WordleScorer.score("ODEGAARD", "VANDIJK"));
+    }
+
+    @Test
     void computesPersonalStatsStreaksAndIgnoresUnfinishedPlayingGames() {
         LocalDate d1 = LocalDate.of(2026, 11, 20);
         LocalDate d2 = LocalDate.of(2026, 11, 21);

@@ -47,11 +47,66 @@
 }
 
 .wd-card {
+  position: relative;
   background: var(--mg-card);
   border: 1px solid var(--mg-line);
   border-radius: 22px;
   padding: 16px 18px 18px;
   box-shadow: var(--mg-shadow);
+}
+
+.wd-ime-input {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.wd-ime {
+  margin: 10px auto 0;
+  max-width: 520px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wd-near) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wd-near) 50%, transparent);
+  font-size: 0.8rem;
+  display: flex;
+  gap: 4px 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.wd-ime b {
+  width: 100%;
+}
+
+.wd-ime span {
+  flex: 1;
+  min-width: 200px;
+  color: var(--mg-mute);
+}
+
+.wd-ime kbd {
+  font: inherit;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--wd-chip);
+  color: var(--mg-text);
+}
+
+.wd-ime button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--wd-chip);
+  font-weight: 700;
+  font-size: 0.78rem;
 }
 
 .wd-meta {
@@ -141,6 +196,12 @@
 
 .wd-tile.wd-miss {
   background: var(--wd-miss);
+}
+
+.wd-tile.wd-pad {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.35;
 }
 
 .wd-tile.wd-flip {
@@ -602,7 +663,7 @@
 
 @media (max-width: 520px) {
   .wd-board {
-    --wd-tile-size: clamp(24px, calc((100vw - 74px - (var(--wd-len, 7) - 1) * 4px) / var(--wd-len, 7)), 39px);
+    --wd-tile-size: clamp(22px, calc((100vw - 74px - (var(--wd-len, 7) - 1) * 4px - var(--wd-gaps, 0) * 10px) / var(--wd-len, 7)), 39px);
   }
   .wd-tile {
     font-size: clamp(0.92rem, calc(var(--wd-tile-size) * 0.45), 1.15rem);

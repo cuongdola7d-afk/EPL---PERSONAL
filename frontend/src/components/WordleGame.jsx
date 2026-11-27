@@ -11,6 +11,8 @@ import {
   WORDLE_MAX_TURNS,
   buildRowWordGroups,
   buildShareText,
+  createTelexBurstQueue,
+  decodeTelexBurst,
   filterWordleSuggestions,
   formatWordleDateLabel,
   keyboardKeyStates,
@@ -82,7 +84,7 @@ function WordleRulesSheet({ onClose }) {
   return (
     <Sheet title="Cách chơi" onClose={onClose}>
       <div className="wd-sheet-body">
-        <p>Đoán <b>tên cầu thủ</b> Premier League 2026/27 trong 6 lượt. Mỗi lượt phải là tên của một cầu thủ có thật, đủ số chữ cái.</p>
+        <p>Đoán <b>tên cầu thủ</b> Premier League 2026/27 trong 6 lượt. Mỗi lượt phải là tên của một cầu thủ có thật.</p>
         <div className="wd-ex" aria-hidden="true">
           <span className="wd-tile wd-hit">S</span>
           <span className="wd-tile wd-miss">A</span>
@@ -94,9 +96,10 @@ function WordleRulesSheet({ onClose }) {
           <li><b className="wd-c-hit">Xanh</b>: đúng chữ, đúng chỗ.</li>
           <li><b className="wd-c-near">Vàng</b>: có chữ này nhưng sai chỗ.</li>
           <li><b>Xám</b>: không có chữ này.</li>
+          <li>Được đoán tên <b>từ 4 chữ cái tới đúng độ dài đáp án</b>. Tên ngắn hơn xếp từ ô đầu tiên bên trái, các ô thừa để trống. Muốn thắng phải đoán đúng tên đủ độ dài.</li>
+          <li>Lưới chia ô theo đúng hình dạng của đáp án ngay từ đầu: đáp án 2 từ thì mọi hàng đều có khoảng trống giữa 2 từ. Tên bạn đoán được điền lần lượt vào các ô.</li>
           <li>Tên dùng <b>họ</b> của cầu thủ. Tên nhiều từ giữ nguyên các từ: MAC ALLISTER, VAN DIJK.</li>
           <li>Dấu và ký tự đặc biệt đổi thành chữ thường: Ødegaard → ODEGAARD, Muñoz → MUNOZ.</li>
-          <li>Ô chữ của mỗi lượt giữ đúng hình dạng tên bạn đoán. Đáp án nhiều từ vẫn đoán được bằng tên một từ, miễn là cùng tổng số chữ cái.</li>
           <li>Khi gõ, bên dưới hiện các tên cầu thủ khớp với chữ đã gõ. Bấm vào một tên để điền nhanh.</li>
           <li>Sau lượt 4 được mở 1 gợi ý: CLB của cầu thủ.</li>
           <li>Không tính điểm. Chỉ lưu thống kê của riêng bạn: số ván, % thắng, chuỗi ngày.</li>
@@ -156,11 +159,60 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   const [flipRow, setFlipRow] = useState(-1)
   const [toast, setToast] = useState({ message: '', open: false })
   const [sheet, setSheet] = useState(null)
+  const [imeBannerOpen, setImeBannerOpen] = useState(false)
 
   const curRowRef = useRef(null)
+  const imeInputRef = useRef(null)
+  const rawRef = useRef('')
+  const shadowRef = useRef('')
+  const imeWarnedRef = useRef(false)
+  const burstQueueRef = useRef(null)
+  const dataRef = useRef(null)
+  const finishedRef = useRef(false)
+  const busyRef = useRef(false)
   const toastTimerRef = useRef(null)
   const shakeTimerRef = useRef(null)
   const flipTimerRef = useRef(null)
+
+  const isCoarsePointer = () =>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches
+
+  const syncHiddenInputSentinel = useCallback(() => {
+    const el = imeInputRef.current
+    if (!el) return
+    el.value = ' '
+    try { el.setSelectionRange(1, 1) } catch {}
+  }, [])
+
+  const resetShadow = useCallback(() => {
+    burstQueueRef.current?.reset()
+    shadowRef.current = ''
+    syncHiddenInputSentinel()
+  }, [syncHiddenInputSentinel])
+
+  const focusDesktopInput = useCallback(() => {
+    if (isCoarsePointer() || sheet || finishedRef.current || !dataRef.current) return
+    const el = imeInputRef.current
+    if (!el) return
+    syncHiddenInputSentinel()
+    if (document.activeElement !== el) {
+      try { el.focus({ preventScroll: true }) } catch { el.focus() }
+    }
+  }, [sheet, syncHiddenInputSentinel])
+
+  const setRawInput = useCallback((nextRaw, openSuggestions) => {
+    rawRef.current = nextRaw
+    setInput(nextRaw)
+    if (openSuggestions !== undefined) setSugOpen(openSuggestions)
+  }, [])
+
+  const triggerImeWarning = useCallback(() => {
+    if (imeWarnedRef.current) return
+    imeWarnedRef.current = true
+    setImeBannerOpen(true)
+  }, [])
 
   const showToast = useCallback(message => {
     clearTimeout(toastTimerRef.current)
@@ -233,6 +285,39 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   }, [account?.id, routeAction, reloadTick])
 
   const finished = !!data && data.status !== 'PLAYING'
+  dataRef.current = data
+  finishedRef.current = finished
+  busyRef.current = busy
+
+  // Initialize Telex burst queue once and flush on unmount.
+  useEffect(() => {
+    burstQueueRef.current = createTelexBurstQueue({
+      onFlush: burst => {
+        const currentData = dataRef.current
+        if (!currentData || finishedRef.current || busyRef.current) return
+        const decoded = decodeTelexBurst(
+          { raw: rawRef.current, shadow: shadowRef.current },
+          burst,
+          currentData.length
+        )
+        shadowRef.current = decoded.shadow
+        rawRef.current = decoded.raw
+        setInput(decoded.raw)
+        setSugOpen(decoded.raw.length > 0)
+        if (decoded.uncertain) triggerImeWarning()
+        syncHiddenInputSentinel()
+      },
+    })
+    return () => burstQueueRef.current?.reset()
+  }, [syncHiddenInputSentinel, triggerImeWarning])
+
+  // Keep desktop hidden input focused when playing (never focus on touch/mobile devices).
+  useEffect(() => {
+    if (routeAction === 'play' && data && !finished && !sheet) {
+      focusDesktopInput()
+    }
+  }, [data, finished, focusDesktopInput, routeAction, sheet])
+
   const guessedLetters = useMemo(() => (data?.guesses ?? []).map(g => g.letters), [data?.guesses])
   const keyStates = useMemo(() => keyboardKeyStates(data?.guesses ?? []), [data?.guesses])
   const suggestions = useMemo(
@@ -255,21 +340,24 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   }, [sugOpen])
 
   const handleMidnightRollover = useCallback(() => {
-    setInput('')
-    setSugOpen(false)
+    resetShadow()
+    setRawInput('', false)
     setFlipRow(-1)
     setReloadTick(v => v + 1)
-  }, [])
+  }, [resetShadow, setRawInput])
 
   const submitCurrentGuess = useCallback(async () => {
+    burstQueueRef.current?.flush()
+    const currentInput = rawRef.current
     if (!account?.id || !data || finished || busy) return
     setSugOpen(false)
     setBusy(true)
     try {
-      const next = await submitWordleGuess(account.id, input, { date: data.date })
+      const next = await submitWordleGuess(account.id, currentInput, { date: data.date })
       const submittedIndex = next.guesses.length - 1
       setData(next)
-      setInput('')
+      resetShadow()
+      setRawInput('', false)
       setFlipRow(submittedIndex)
       clearTimeout(flipTimerRef.current)
       flipTimerRef.current = setTimeout(() => setFlipRow(-1), 950)
@@ -278,7 +366,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
         window.location.hash = '#minigame'
         return
       }
-      if (['WRONG_LENGTH', 'NOT_A_PLAYER', 'ALREADY_GUESSED', 'INVALID_CHARACTERS'].includes(failure.code)) {
+      if (['TOO_SHORT', 'TOO_LONG', 'WRONG_LENGTH', 'NOT_A_PLAYER', 'ALREADY_GUESSED', 'INVALID_CHARACTERS'].includes(failure.code)) {
         showToast(wordleToastMessage(failure.code, data.length, failure.message))
         triggerShake()
       } else if (failure.code === 'GAME_FINISHED') {
@@ -289,17 +377,16 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
       }
     } finally {
       setBusy(false)
+      if (!isCoarsePointer()) requestAnimationFrame(() => focusDesktopInput())
     }
-  }, [account?.id, busy, data, finished, input, showToast, triggerShake])
+  }, [account?.id, busy, data, finished, focusDesktopInput, resetShadow, setRawInput, showToast, triggerShake])
 
-  const handleKey = useCallback(key => {
+  const handleVirtualKey = useCallback(key => {
     if (!data || finished || busy) return
+    resetShadow()
     if (key === 'Backspace') {
-      setInput(prev => {
-        const next = prev.slice(0, -1)
-        setSugOpen(next.length > 0)
-        return next
-      })
+      const next = rawRef.current.slice(0, -1)
+      setRawInput(next, next.length > 0)
       return
     }
     if (key === 'Enter') {
@@ -307,30 +394,112 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
       return
     }
     if (/^[A-Z]$/.test(key)) {
-      setInput(prev => {
-        if (prev.length >= data.length) return prev
-        setSugOpen(true)
-        return prev + key
-      })
+      if (rawRef.current.length >= data.length) return
+      setRawInput(rawRef.current + key, true)
     }
-  }, [busy, data, finished, submitCurrentGuess])
+  }, [busy, data, finished, resetShadow, setRawInput, submitCurrentGuess])
 
-  // Physical keyboard support (A-Z, Enter, Backspace); ignore shortcuts & open modals/inputs.
+  // Attach beforeinput/input listeners to desktop hidden <input> so Unikey/EVKey Telex bursts are decoded.
+  useEffect(() => {
+    const el = imeInputRef.current
+    if (!el || !data || finished || sheet) return undefined
+
+    const logDevEvent = (phase, inputType, evData) => {
+      if (!import.meta.env.DEV) return
+      const entry = { t: Math.round(performance.now() * 10) / 10, phase, inputType, data: evData ?? null }
+      window.__wdTelexLog = window.__wdTelexLog || []
+      window.__wdTelexLog.push(entry)
+    }
+
+    const onBeforeInput = event => {
+      if (busyRef.current || finishedRef.current) {
+        event.preventDefault()
+        return
+      }
+      const { inputType, data: evData } = event
+      logDevEvent('beforeinput', inputType, evData)
+      if (inputType === 'deleteContentBackward') {
+        event.preventDefault()
+        burstQueueRef.current?.pushDelete(1)
+        return
+      }
+      if ((inputType === 'insertText' || inputType === 'insertFromPaste') && evData) {
+        event.preventDefault()
+        burstQueueRef.current?.pushInsert(evData)
+        return
+      }
+      if (inputType === 'insertCompositionText') {
+        logDevEvent('composition', inputType, evData)
+      }
+    }
+
+    const onCompositionEnd = event => {
+      if (busyRef.current || finishedRef.current) return
+      if (event.data) {
+        logDevEvent('compositionend', 'compositionend', event.data)
+        burstQueueRef.current?.pushInsert(event.data)
+      }
+      syncHiddenInputSentinel()
+    }
+
+    const onInputFallback = () => {
+      // Keep hidden input clean if an unusual IME bypassed cancelable beforeinput.
+      if (el.value !== ' ' && !eventIsComposingRef.current) {
+        syncHiddenInputSentinel()
+      }
+    }
+
+    const eventIsComposingRef = { current: false }
+    const onCompStart = () => { eventIsComposingRef.current = true }
+    const onCompEndWrap = ev => { eventIsComposingRef.current = false; onCompositionEnd(ev) }
+
+    el.addEventListener('beforeinput', onBeforeInput)
+    el.addEventListener('compositionstart', onCompStart)
+    el.addEventListener('compositionend', onCompEndWrap)
+    el.addEventListener('input', onInputFallback)
+    return () => {
+      el.removeEventListener('beforeinput', onBeforeInput)
+      el.removeEventListener('compositionstart', onCompStart)
+      el.removeEventListener('compositionend', onCompEndWrap)
+      el.removeEventListener('input', onInputFallback)
+    }
+  }, [data, finished, sheet, syncHiddenInputSentinel])
+
+  // Global keydown on desktop: only handles Enter/Escape or redirects focus to the hidden <input> if unfocused.
   useEffect(() => {
     const onKeyDown = event => {
       if (!data || finished || busy || sheet) return
       if (event.ctrlKey || event.metaKey || event.altKey) return
-      const tag = event.target?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable) return
-      const key = event.key.length === 1 ? event.key.toUpperCase() : event.key
-      if (key === 'Enter' || key === 'Backspace' || /^[A-Z]$/.test(key)) {
+      const target = event.target
+      const isHiddenInput = target === imeInputRef.current
+      if (!isHiddenInput) {
+        const tag = target?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
+      }
+      if (event.key === 'Enter' && !event.isComposing) {
         event.preventDefault()
-        handleKey(key)
+        submitCurrentGuess()
+        return
+      }
+      // If user typed while focus was outside the hidden input (e.g. after clicking card/button),
+      // redirect desktop focus or process synthetic non-IME keydown events cleanly.
+      if (!isHiddenInput && !isCoarsePointer()) {
+        if (event.key === 'Backspace') {
+          event.preventDefault()
+          focusDesktopInput()
+          handleVirtualKey('Backspace')
+          return
+        }
+        if (event.key.length === 1 && /^[a-zA-Z]$/.test(event.key)) {
+          event.preventDefault()
+          focusDesktopInput()
+          handleVirtualKey(event.key.toUpperCase())
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [busy, data, finished, handleKey, sheet])
+  }, [busy, data, finished, focusDesktopInput, handleVirtualKey, sheet, submitCurrentGuess])
 
   const handleRevealHint = async () => {
     if (!account?.id || !data || finished || busy || data.hintUsed || data.guesses.length < WORDLE_HINT_UNLOCK_TURNS) return
@@ -351,7 +520,12 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
 
   const handleShare = async () => {
     if (!data || !finished) return
-    const text = buildShareText({ puzzleNumber: data.puzzleNumber, status: data.status, guesses: data.guesses })
+    const text = buildShareText({
+      puzzleNumber: data.puzzleNumber,
+      status: data.status,
+      guesses: data.guesses,
+      shape: data.shape,
+    })
     try {
       await copyToClipboard(text)
       showToast('Đã chép kết quả')
@@ -428,19 +602,43 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
       ) : error && !data ? (
         <ErrorBox message={error} onRetry={() => setReloadTick(v => v + 1)} disabled={loading} />
       ) : data ? (
-        <section className="wd-card" aria-label="Bảng chơi Wordle cầu thủ">
+        <section
+          className="wd-card"
+          aria-label="Bảng chơi Wordle cầu thủ"
+          onClick={event => {
+            if (!event.target.closest('button, a')) focusDesktopInput()
+          }}
+        >
+          <input
+            ref={imeInputRef}
+            type="text"
+            className="wd-ime-input"
+            tabIndex={-1}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            aria-label="Nhập tên cầu thủ"
+            onBlur={resetShadow}
+          />
           <div className="wd-meta">
             <span className="wd-pill">
               {finished ? 'Đã xong' : <>Lượt <b>{currentTurn}</b>/{WORDLE_MAX_TURNS}</>}
             </span>
           </div>
 
-          <div className="wd-board" style={{ '--wd-len': data.length }}>
+          <div
+            className="wd-board"
+            style={{
+              '--wd-len': data.length,
+              '--wd-gaps': Math.max(0, (data.shape?.length ?? 1) - 1),
+            }}
+          >
             {Array.from({ length: WORDLE_MAX_TURNS }, (_, rowIndex) => {
               if (rowIndex < data.guesses.length) {
                 const guess = data.guesses[rowIndex]
                 const groups = buildRowWordGroups({
-                  word: guess.word,
+                  shape: data.shape,
                   letters: guess.letters,
                   feedback: guess.feedback,
                   length: data.length,
@@ -451,15 +649,18 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                     <div className="wd-tiles">
                       {groups.map((tiles, gIdx) => (
                         <div className="wd-word" key={gIdx}>
-                          {tiles.map(tile => (
-                            <span
-                              key={tile.index}
-                              className={`wd-tile wd-${tile.state}${shouldFlip ? ' wd-flip' : ''}`}
-                              style={shouldFlip ? { animationDelay: `${tile.index * 70}ms` } : undefined}
-                            >
-                              {tile.letter}
-                            </span>
-                          ))}
+                          {tiles.map(tile => {
+                            const animateFlip = shouldFlip && tile.state !== 'pad'
+                            return (
+                              <span
+                                key={tile.index}
+                                className={`wd-tile wd-${tile.state}${animateFlip ? ' wd-flip' : ''}`}
+                                style={animateFlip ? { animationDelay: `${tile.index * 70}ms` } : undefined}
+                              >
+                                {tile.letter}
+                              </span>
+                            )
+                          })}
                         </div>
                       ))}
                     </div>
@@ -471,7 +672,11 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
               }
 
               if (rowIndex === data.guesses.length && !finished) {
-                const groups = buildRowWordGroups({ letters: input, length: data.length })
+                const groups = buildRowWordGroups({
+                  shape: data.shape,
+                  letters: input,
+                  length: data.length,
+                })
                 const showSug = sugOpen && input.length > 0 && dictionary !== null
                 return (
                   <div
@@ -504,8 +709,9 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                               aria-selected="false"
                               key={entry.letters}
                               onClick={() => {
-                                setInput(entry.letters)
-                                setSugOpen(false)
+                                resetShadow()
+                                setRawInput(entry.letters, false)
+                                focusDesktopInput()
                               }}
                             >
                               <b>
@@ -517,7 +723,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                           ))
                         ) : (
                           <span className="wd-none">
-                            Không có cầu thủ {data.length} chữ cái nào bắt đầu bằng “{input}”
+                            Không có cầu thủ nào (4–{data.length} chữ) bắt đầu bằng “{input}”
                           </span>
                         )}
                       </div>
@@ -526,7 +732,11 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                 )
               }
 
-              const emptyGroups = buildRowWordGroups({ letters: '', length: data.length })
+              const emptyGroups = buildRowWordGroups({
+                shape: data.shape,
+                letters: '',
+                length: data.length,
+              })
               return (
                 <div className="wd-row" key={rowIndex}>
                   <div className="wd-tiles">
@@ -543,6 +753,16 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
               )
             })}
           </div>
+
+          {imeBannerOpen && (
+            <div className="wd-ime" role="status">
+              <b>⌨️ Phát hiện bộ gõ tiếng Việt</b>
+              <span>
+                Web đã tự đổi lại chữ cho bạn (Â → AA, Ị → IJ…). Nếu thấy sai chữ, bấm ⌫ để sửa, hoặc chuyển Unikey sang gõ tiếng Anh (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> hoặc <kbd>Alt</kbd>+<kbd>Z</kbd>).
+              </span>
+              <button type="button" onClick={() => setImeBannerOpen(false)}>Đã hiểu</button>
+            </div>
+          )}
 
           <div className="wd-hint">
             {data.hintUsed && data.hintClub ? (
@@ -577,7 +797,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                       className={`wd-k${isWide ? ' wd-wide' : ''}${state ? ` wd-${state}` : ''}`}
                       disabled={finished || busy}
                       aria-label={key === 'Enter' ? 'Đoán' : key === 'Backspace' ? 'Xóa chữ' : key}
-                      onClick={() => handleKey(key)}
+                      onClick={() => handleVirtualKey(key)}
                     >
                       {label}
                     </button>

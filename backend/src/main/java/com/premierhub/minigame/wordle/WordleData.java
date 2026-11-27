@@ -134,6 +134,7 @@ public final class WordleData {
             Integer puzzleNumber,
             LocalDate date,
             Integer length,
+            List<Integer> shape,
             Instant nextAt,
             Instant serverTime
     ) { }
@@ -142,6 +143,7 @@ public final class WordleData {
             int puzzleNumber,
             LocalDate date,
             int length,
+            List<Integer> shape,
             Instant serverTime,
             Instant nextAt,
             Status status,

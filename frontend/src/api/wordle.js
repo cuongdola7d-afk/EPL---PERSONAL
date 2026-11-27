@@ -19,15 +19,16 @@ export function isValidWordleStats(stats) {
     stats.distribution.every(count => integer(count, 0))
 }
 
-export function isValidWordleGuess(guess, expectedLength) {
+export function isValidWordleGuess(guess, maxLength) {
   return !!guess && typeof guess === 'object' &&
     integer(guess.turn, 1, 6) &&
     text(guess.word) &&
     lettersOnly(guess.letters) &&
-    guess.letters.length === expectedLength &&
+    guess.letters.length >= 4 &&
+    guess.letters.length <= maxLength &&
     guess.word.replace(/\s+/g, '') === guess.letters &&
     feedbackCode(guess.feedback) &&
-    guess.feedback.length === expectedLength &&
+    guess.feedback.length === guess.letters.length &&
     text(guess.playerName) &&
     text(guess.club)
 }
@@ -46,12 +47,20 @@ export function isValidWordleAnswer(answer) {
     text(answer.word)
 }
 
+export function isValidWordleShape(shape, length) {
+  return Array.isArray(shape) &&
+    shape.length >= 1 &&
+    shape.every(part => integer(part, 1, length)) &&
+    shape.reduce((sum, part) => sum + part, 0) === length
+}
+
 export function isValidWordleInfo(data) {
   return !!data && typeof data === 'object' &&
     data.enabled === true &&
     (data.puzzleNumber === null || integer(data.puzzleNumber, 1)) &&
     isoDate(data.date) &&
     (data.length === null || integer(data.length, 4, 11)) &&
+    (data.length === null ? data.shape === null : isValidWordleShape(data.shape, data.length)) &&
     instant(data.nextAt) &&
     instant(data.serverTime)
 }
@@ -62,6 +71,7 @@ export function isValidWordleToday(data) {
   return integer(data.puzzleNumber, 1) &&
     isoDate(data.date) &&
     integer(data.length, 4, 11) &&
+    isValidWordleShape(data.shape, data.length) &&
     instant(data.serverTime) &&
     instant(data.nextAt) &&
     (terminal || data.status === 'PLAYING') &&
