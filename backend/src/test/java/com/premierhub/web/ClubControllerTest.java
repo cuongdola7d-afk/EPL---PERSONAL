@@ -1,11 +1,14 @@
 package com.premierhub.web;
 
 import com.premierhub.service.ClubOverviewService;
+import com.premierhub.service.ClubSeasonTrendsService;
 import com.premierhub.service.FootballQueries;
 import com.premierhub.service.ClubStatisticsService;
 import com.premierhub.web.dto.ClubOverviewResponse;
 import com.premierhub.web.dto.ClubResponse;
+import com.premierhub.web.dto.ClubSeasonTrendsResponse;
 import com.premierhub.web.dto.ClubStatisticsResponse;
+import com.premierhub.web.error.InvalidFilterException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -35,6 +38,9 @@ class ClubControllerTest {
 
     @MockitoBean
     private ClubOverviewService overview;
+
+    @MockitoBean
+    private ClubSeasonTrendsService seasonTrends;
 
     @Test
     void detailIncludesCurrentVerifiedClubInformation() throws Exception {
@@ -108,6 +114,28 @@ class ClubControllerTest {
         when(service.club(999, 2026)).thenReturn(Optional.empty());
         expectError(mockMvc.perform(get("/api/clubs/999/overview")), HttpStatus.NOT_FOUND,
                 "RESOURCE_NOT_FOUND", "/api/clubs/999/overview");
+    }
+
+    @Test
+    void seasonTrendsReturnsPayloadAndHandlesMissingClubAndUnsupportedSeason() throws Exception {
+        when(service.club(1, 2026)).thenReturn(Optional.of(arsenal));
+        when(seasonTrends.trends(1, 2026)).thenReturn(new ClubSeasonTrendsResponse(
+                1, 2026, List.of(), List.of(), List.of(), List.of(), 1));
+        mockMvc.perform(get("/api/clubs/1/season-trends").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clubId").value(1))
+                .andExpect(jsonPath("$.season").value(2026))
+                .andExpect(jsonPath("$.ownGoalsFor").value(1));
+
+        when(service.club(999, 2026)).thenReturn(Optional.empty());
+        expectError(mockMvc.perform(get("/api/clubs/999/season-trends")), HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND", "/api/clubs/999/season-trends");
+
+        when(service.club(1, 2024)).thenReturn(Optional.of(arsenal));
+        when(seasonTrends.trends(1, 2024))
+                .thenThrow(new InvalidFilterException("Club season trends are available for season 2026 only"));
+        expectError(mockMvc.perform(get("/api/clubs/1/season-trends").param("season", "2024")),
+                HttpStatus.BAD_REQUEST, "INVALID_FILTER", "/api/clubs/1/season-trends");
     }
 
     @Test

@@ -336,7 +336,8 @@ class ClubOverviewServiceTest {
         assertEquals(List.of(3001, 3002), overview.topRatings().stream().map(ClubOverviewResponse.RatingLeaderEntry::playerId).toList());
 
         // Verify public controller endpoint
-        var mvc = MockMvcBuilders.standaloneSetup(new ClubController(queries, statsService, service)).build();
+        var mvc = MockMvcBuilders.standaloneSetup(
+                new ClubController(queries, statsService, service, new ClubSeasonTrendsService(jdbc))).build();
         mvc.perform(get("/api/clubs/" + CLUB_A + "/overview").param("season", "2026"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clubId").value(CLUB_A))

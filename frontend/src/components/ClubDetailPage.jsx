@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { fetchClub, fetchClubOverview, fetchClubStatistics } from '../api/clubs.js'
+import { fetchClub, fetchClubOverview, fetchClubSeasonTrends, fetchClubStatistics } from '../api/clubs.js'
 import { fetchPlayers } from '../api/players.js'
 import { fetchMatches } from '../api/matches.js'
 import { fetchStandings } from '../api/standings.js'
@@ -20,7 +20,6 @@ import {
   isSquadColumnLeader,
   ovrTier,
   playerPositionChips,
-  ratingClass,
   sortSquadRows,
   SQUAD_POSITION_GROUPS,
   squadColumnLeaders,
@@ -37,6 +36,7 @@ import { vietnamToday } from '../utils/homeView.js'
 import { clubVisual } from '../utils/matchView.js'
 import { getInitials } from '../utils/initials.js'
 import { HomeCrest } from './ClubCard.jsx'
+import ClubStatsTab from './ClubStatsTab.jsx'
 import MatchKickoff from './MatchKickoff.jsx'
 import './ClubDetailPage.css'
 
@@ -178,29 +178,6 @@ function SquadTables({ players, stats, statsResource, season, fromHash }) {
       })}
     </>
   )
-}
-
-function Statistics({ standing, resource, done, clubId }) {
-  const stats = resource.data
-  const chart = [...done].reverse().filter(hasMatchScore)
-  const maximum = Math.max(1,...chart.flatMap(match => [match.homeGoals,match.awayGoals]))
-  const metrics = [['Điểm đánh giá TB',stats?.averageRating == null ? '—' : stats.averageRating.toFixed(2)],
-    ['Số trận',valueLabel(standing?.played)], ['Bàn thắng',valueLabel(standing?.goalsFor)], ['Bàn thua',valueLabel(standing?.goalsAgainst)]]
-  return <><div className="cd-metrics">{metrics.map(([label,value],index) => <div className="cd-metric" key={label}><span>{label}</span>
-    <strong className={index === 0 ? `cd-rating cd-rating-${ratingClass(stats?.averageRating)}` : ''}>{value}</strong></div>)}</div>
-    <DataState {...resource} title="điểm đánh giá" />
-    <div className="cd-chart-box"><h3>Bàn thắng và bàn thua từng trận</h3><div className="cd-chart-legend"><span><i />Ghi bàn</span><span><i />Thủng lưới</span></div>
-      {chart.length ? <div className="cd-chart" role="list" aria-label="Bàn thắng và bàn thua theo trận">{chart.map(match => {
-        const home=match.homeClubId === clubId, goals=home?match.homeGoals:match.awayGoals, conceded=home?match.awayGoals:match.homeGoals
-        const opponent=home?match.awayClub:match.homeClub
-        return <div className="cd-chart-group" role="listitem" key={match.id} title={`GW${match.matchweek} · ${opponent}: ${goals} bàn thắng, ${conceded} bàn thua`}>
-          <div className="cd-chart-bar" style={{height:`${Math.max(2,goals/maximum*85)}%`}}><span>{goals}</span></div>
-          <div className="cd-chart-bar cd-chart-against" style={{height:`${Math.max(2,conceded/maximum*85)}%`}}><span>{conceded}</span></div>
-          <small>GW{match.matchweek}<br />{clubVisual(opponent).code}</small>
-        </div>
-      })}</div> : <DataState status="success" empty title="kết quả trận để vẽ biểu đồ" />}
-    </div><p className="cd-note">Bàn thắng/thua lấy từ BXH. {stats ? <>Rating trung bình tính trên {stats.ratedAppearances} lượt được chấm trong {stats.recordedMatches} trận có thống kê; bỏ qua DNP và rating trống.</> : 'Chưa có dữ liệu tổng hợp rating.'}</p>
-  </>
 }
 
 function FormStrip({ matches, clubId, season }) {
@@ -632,6 +609,9 @@ export default function ClubDetailPage({ route, season }) {
   const players=useApiList(requestPlayers)
   const requestStats=useCallback(signal=>season === 2026 ? fetchClubStatistics(route.clubId,season,signal) : Promise.resolve(null),[route.clubId,season])
   const stats=useApiResource(requestStats)
+  const isStatsTab=route.tab === 'stats'
+  const requestTrends=useCallback(signal=>season === 2026 && isStatsTab ? fetchClubSeasonTrends(route.clubId,season,signal) : Promise.resolve(null),[route.clubId,season,isStatsTab])
+  const trends=useApiResource(requestTrends)
   const update=changes=> {
     const hash=clubDetailHash(route.clubId,{...route,...changes,season})
     window.history.replaceState(window.history.state,'',hash)
@@ -698,7 +678,16 @@ export default function ClubDetailPage({ route, season }) {
           )}
         </>}
         {route.tab === 'stats' && <><DataState {...standings} title="chỉ số BXH" /><DataState {...matches} title="kết quả trận đấu" />
-          <Statistics standing={standing} resource={stats} done={done} clubId={route.clubId} /></>}
+          {matches.status === 'success' && (
+            <ClubStatsTab
+              season={season}
+              clubId={route.clubId}
+              standing={standing}
+              doneMatches={done}
+              statsResource={stats}
+              trendsResource={trends}
+            />
+          )}</>}
       </div>
       )}
     </>}

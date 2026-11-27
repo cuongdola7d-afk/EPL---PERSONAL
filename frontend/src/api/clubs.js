@@ -54,6 +54,50 @@ export async function fetchClubOverview(id, season, signal) {
   return data
 }
 
+export function isValidClubSeasonTrends(data, expectedId = null, expectedSeason = null) {
+  const nullableNumber = value => value === null || (typeof value === 'number' && Number.isFinite(value))
+  const validMatch = row => row !== null && typeof row === 'object' &&
+    Number.isInteger(row.fixtureId) &&
+    Number.isInteger(row.matchweek) && row.matchweek >= 1 &&
+    (row.kickoffUtc === null || typeof row.kickoffUtc === 'string') &&
+    typeof row.home === 'boolean' &&
+    Number.isInteger(row.opponentClubId) &&
+    typeof row.opponentName === 'string' &&
+    Number.isInteger(row.goalsFor) && row.goalsFor >= 0 &&
+    Number.isInteger(row.goalsAgainst) && row.goalsAgainst >= 0 &&
+    nullableNumber(row.teamRating) &&
+    nullableNumber(row.xgFor) &&
+    nullableNumber(row.xgAgainst)
+  const validRank = row => row !== null && typeof row === 'object' &&
+    Number.isInteger(row.matchweek) && row.matchweek >= 1 &&
+    Number.isInteger(row.position) && row.position >= 1
+  const validScorer = row => row !== null && typeof row === 'object' &&
+    Number.isInteger(row.playerId) &&
+    typeof row.name === 'string' &&
+    Number.isInteger(row.goals) && row.goals >= 0
+  const validAssister = row => row !== null && typeof row === 'object' &&
+    Number.isInteger(row.playerId) &&
+    typeof row.name === 'string' &&
+    Number.isInteger(row.assists) && row.assists >= 0
+
+  return data !== null && typeof data === 'object' &&
+    Number.isInteger(data.clubId) && (expectedId === null || data.clubId === expectedId) &&
+    Number.isInteger(data.season) && (expectedSeason === null || data.season === expectedSeason) &&
+    Array.isArray(data.matches) && data.matches.every(validMatch) &&
+    Array.isArray(data.rankHistory) && data.rankHistory.every(validRank) &&
+    Array.isArray(data.scorers) && data.scorers.every(validScorer) &&
+    Array.isArray(data.assisters) && data.assisters.every(validAssister) &&
+    Number.isInteger(data.ownGoalsFor) && data.ownGoalsFor >= 0
+}
+
+export async function fetchClubSeasonTrends(id, season, signal) {
+  const data = await fetchApiJson(`/api/clubs/${id}/season-trends?season=${season}`, signal, 'Chưa có thống kê xu hướng mùa giải.')
+  if (!isValidClubSeasonTrends(data, id, season)) {
+    throw new Error('Dữ liệu thống kê xu hướng mùa giải không đúng định dạng.')
+  }
+  return data
+}
+
 export async function fetchClubs(keyword, signal, season = 2024) {
   const params = new URLSearchParams({ season })
   if (keyword) params.set('keyword', keyword)
