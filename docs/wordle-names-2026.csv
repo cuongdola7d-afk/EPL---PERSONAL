@@ -1,0 +1,571 @@
+player_id,full_name,club,fc27_overall,word,length,eligible_answer
+2000030108,Adam Smith,AFC Bournemouth,73,SMITH,5,false
+2000030111,Adrien Truffert,AFC Bournemouth,80,TRUFFERT,8,true
+2000030110,Alex Scott,AFC Bournemouth,81,SCOTT,5,true
+2000030038,Alex Tóth,AFC Bournemouth,73,TOTH,4,false
+2000030155,Amine Adli,AFC Bournemouth,77,ADLI,4,true
+2000030035,António Silva,AFC Bournemouth,77,SILVA,5,true
+2000030113,Bafodé Diakité,AFC Bournemouth,79,DIAKITE,7,true
+2000030034,Ben Gannon-Doak,AFC Bournemouth,71,GANNON DOAK,10,false
+2000030040,Daniel Jebbison,AFC Bournemouth,68,JEBBISON,8,false
+2000030115,David Brooks,AFC Bournemouth,76,BROOKS,6,true
+2000030032,Evanilson,AFC Bournemouth,79,EVANILSON,9,true
+2000030152,Fraser Forster,AFC Bournemouth,71,FORSTER,7,false
+2000030109,James Hill,AFC Bournemouth,78,HILL,4,true
+2000030114,Juanlu Sánchez,AFC Bournemouth,76,SANCHEZ,7,true
+51051,Julian Araujo,AFC Bournemouth,74,ARAUJO,6,false
+2000030154,Julio Soler Barreto,AFC Bournemouth,68,SOLER BARRETO,12,false
+2000030156,Junior Kroupi,AFC Bournemouth,80,KROUPI,6,true
+2000030039,Justin Kluivert,AFC Bournemouth,79,KLUIVERT,8,true
+2000030037,Lewis Cook,AFC Bournemouth,78,COOK,4,true
+2000030031,Marcus Tavernier,AFC Bournemouth,79,TAVERNIER,9,true
+2000030157,Michele Di Gregorio,AFC Bournemouth,80,DI GREGORIO,10,true
+2000030033,Rayan,AFC Bournemouth,79,RAYAN,5,true
+1125,Ryan Christie,AFC Bournemouth,78,CHRISTIE,8,true
+2000030036,Tyler Adams,AFC Bournemouth,79,ADAMS,5,true
+2000030153,Veljko Milosavljevic,AFC Bournemouth,72,MILOSAVLJEVIC,13,false
+2000030116,Álvaro Rodriguez,AFC Bournemouth,75,RODRIGUEZ,9,true
+2000030030,Đorđe Petrović,AFC Bournemouth,79,PETROVIC,8,true
+2000001004,Ben White,Arsenal FC,81,WHITE,5,true
+2000001022,Bruno Guimaraes,Arsenal FC,86,GUIMARAES,9,true
+2000001007,Bukayo Saka,Arsenal FC,87,SAKA,4,true
+2000001014,Christos Tzolis,Arsenal FC,82,TZOLIS,6,true
+2000001003,Cristhian Mosquera,Arsenal FC,78,MOSQUERA,8,true
+2000001001,David Raya,Arsenal FC,88,RAYA,4,true
+2000001023,Declan Rice,Arsenal FC,88,RICE,4,true
+2000001009,Eberechi Eze,Arsenal FC,84,EZE,3,false
+2000001013,Ezri Konsa,Arsenal FC,84,KONSA,5,true
+2000001006,Gabriel Magalhaes,Arsenal FC,89,MAGALHAES,9,true
+2000001019,Illan Meslier,Arsenal FC,71,MESLIER,7,false
+2000001010,Jurrien Timber,Arsenal FC,84,TIMBER,6,true
+2000001018,Kai Havertz,Arsenal FC,81,HAVERTZ,7,true
+2000001011,Kepa Arrizabalaga,Arsenal FC,78,ARRIZABALAGA,12,false
+2000001008,Martin Odegaard,Arsenal FC,86,ODEGAARD,8,true
+2000001021,Martin Zubimendi,Arsenal FC,84,ZUBIMENDI,9,true
+2000001025,Max Dowman,Arsenal FC,72,DOWMAN,6,false
+2000001017,Mikel Merino,Arsenal FC,83,MERINO,6,true
+2000001024,Myles Lewis-Skelly,Arsenal FC,78,LEWIS SKELLY,11,true
+2000001015,Noni Madueke,Arsenal FC,80,MADUEKE,7,true
+2000001005,Piero Hincapie,Arsenal FC,84,HINCAPIE,8,true
+2000001020,Riccardo Calafiori,Arsenal FC,82,CALAFIORI,9,true
+2000001012,Viktor Gyokeres,Arsenal FC,86,GYOKERES,8,true
+2000001002,William Saliba,Arsenal FC,88,SALIBA,6,true
+18846,Aaron Wan-Bissaka,Aston Villa FC,78,WAN BISSAKA,10,true
+2000030060,Alejandro Garnacho,Aston Villa FC,77,GARNACHO,8,true
+2000030062,Alysson,Aston Villa FC,70,ALYSSON,7,false
+162714,Amadou Onana,Aston Villa FC,81,ONANA,5,true
+2000030145,Andrés García,Aston Villa FC,73,GARCIA,6,false
+2000030122,Boubacar Kamara,Aston Villa FC,84,KAMARA,6,true
+2000030126,Bradley Burrowes,Aston Villa FC,65,BURROWES,8,false
+2000030148,Brian Madjo,Aston Villa FC,65,MADJO,5,false
+2000030061,Emiliano Buendía,Aston Villa FC,80,BUENDIA,7,true
+2000030123,George Hemmings,Aston Villa FC,65,HEMMINGS,8,false
+2000030064,Ian Maatsen,Aston Villa FC,79,MAATSEN,7,true
+2000030150,Ibrahim Mbaye,Aston Villa FC,76,MBAYE,5,true
+2000030151,James Wright,Aston Villa FC,61,WRIGHT,6,false
+2000030146,Johan Manzambi,Aston Villa FC,80,MANZAMBI,8,true
+2000030059,John McGinn,Aston Villa FC,83,MCGINN,6,true
+2000030057,João Gomes,Aston Villa FC,78,GOMES,5,true
+2000030067,Lamare Bogarde,Aston Villa FC,74,BOGARDE,7,false
+2000030149,Leon Goretzka,Aston Villa FC,78,GORETZKA,8,true
+2000030069,Marco Bizot,Aston Villa FC,77,BIZOT,5,true
+2000030063,Matteo Ruggeri,Aston Villa FC,78,RUGGERI,7,true
+2000030058,Matty Cash,Aston Villa FC,81,CASH,4,true
+2000030263,Modou Kéba Cissé,Aston Villa FC,68,KEBA CISSE,9,false
+283058,Nicolas Jackson,Aston Villa FC,79,JACKSON,7,true
+2000030066,Pau Torres,Aston Villa FC,81,TORRES,6,true
+2000030068,Ross Barkley,Aston Villa FC,77,BARKLEY,7,true
+2000030147,Tammy Abraham,Aston Villa FC,77,ABRAHAM,7,true
+144729,Taylor Harwood-Bellis,Aston Villa FC,75,HARWOOD BELLIS,13,false
+2000030065,Tyrone Mings,Aston Villa FC,77,MINGS,5,true
+2000030056,Victor Lindelöf,Aston Villa FC,77,LINDELOF,8,true
+2000030124,Zion Suzuki,Aston Villa FC,76,SUZUKI,6,true
+2000030008,Aaron Hickey,Brentford FC,75,HICKEY,6,true
+2000030160,Antoni Milambo,Brentford FC,73,MILAMBO,7,false
+2000030165,Benjamin Fredrick,Brentford FC,63,FREDRICK,8,false
+2000030007,Callum Wilson,Brentford FC,76,WILSON,6,true
+2000030001,Caoimhin Kelleher,Brentford FC,80,KELLEHER,8,true
+2000030012,Dango Ouattara,Brentford FC,79,OUATTARA,8,true
+2000030163,El Hadji Malick Diouf,Brentford FC,78,HADJI MALICK DIOUF,16,false
+2000030166,Ellery Balcombe,Brentford FC,63,BALCOMBE,8,false
+153066,Fabio Carvalho,Brentford FC,74,CARVALHO,8,false
+2000030164,Gustavo Nunes Fernandes Gomes,Brentford FC,67,NUNES FERNANDES GOMES,19,false
+2000030096,Hákon Rafn Valdimarsson,Brentford FC,69,RAFN VALDIMARSSON,16,false
+2000030006,Igor Thiago,Brentford FC,82,THIAGO,6,true
+2000030010,Jaidon Anthony,Brentford FC,76,ANTHONY,7,true
+2000030099,Jannik Schuster,Brentford FC,67,SCHUSTER,8,false
+2000030161,Josh Dasilva,Brentford FC,71,DASILVA,7,false
+2000030162,Kaye Furo,Brentford FC,65,FURO,4,false
+2000030002,Keane Lewis-Potter,Brentford FC,77,LEWIS POTTER,11,true
+2000030094,Kevin Schade,Brentford FC,79,SCHADE,6,true
+2000030159,Kim Ji-soo,Brentford FC,65,JI SOO,5,false
+2000030095,Kristoffer Ajer,Brentford FC,77,AJER,4,true
+2000030005,Mamadou Sangare,Brentford FC,81,SANGARE,7,true
+2000030013,Mathias Jensen,Brentford FC,80,JENSEN,6,true
+2000030004,Michael Kayode,Brentford FC,81,KAYODE,6,true
+2000030009,Mikkel Damsgaard,Brentford FC,80,DAMSGAARD,9,true
+2000030014,Nathan Collins,Brentford FC,79,COLLINS,7,true
+2000030097,Rico Henry,Brentford FC,76,HENRY,5,true
+2000030158,Sepp van den Berg,Brentford FC,78,VAN DEN BERG,10,true
+2000030003,Vitaly Janelt,Brentford FC,78,JANELT,6,true
+2000030011,Yehor Yarmoliuk,Brentford FC,78,YARMOLIUK,9,true
+2000030055,Bart Verbruggen,Brighton & Hove Albion FC,81,VERBRUGGEN,10,true
+2000030051,Charalampos Kostoulas,Brighton & Hove Albion FC,73,KOSTOULAS,9,false
+2000030050,Costinha,Brighton & Hove Albion FC,75,COSTINHA,8,true
+2000030168,Diego Coppola,Brighton & Hove Albion FC,75,COPPOLA,7,true
+2000030043,Diego Gómez,Brighton & Hove Albion FC,78,GOMEZ,5,true
+2000030172,Evan Ferguson,Brighton & Hove Albion FC,74,FERGUSON,8,false
+2000030175,Femi Azeez,Brighton & Hove Albion FC,75,AZEEZ,5,true
+2000030167,Ferdi Kadıoğlu,Brighton & Hove Albion FC,80,KADIOGLU,8,true
+2000030044,Georginio Rutter,Brighton & Hove Albion FC,77,RUTTER,6,true
+2000030052,Ibrahim Osman,Brighton & Hove Albion FC,72,OSMAN,5,false
+2000030041,Jack Hinshelwood,Brighton & Hove Albion FC,77,HINSHELWOOD,11,true
+2000030173,Jaouen Hadjam,Brighton & Hove Albion FC,69,HADJAM,6,false
+2000030118,Jason Steele,Brighton & Hove Albion FC,73,STEELE,6,false
+2000030174,José María Andrés Baixauli,Brighton & Hove Albion FC,69,MARIA ANDRES BAIXAULI,19,false
+106835,Kaoru Mitoma,Brighton & Hove Albion FC,81,MITOMA,6,true
+2000030045,Lewis Dunk,Brighton & Hove Albion FC,77,DUNK,4,true
+2000030046,Luka Vušković,Brighton & Hove Albion FC,81,VUSKOVIC,8,true
+2000030054,Malick Yalcouyé,Brighton & Hove Albion FC,70,YALCOUYE,8,false
+2000030047,Mats Wieffer,Brighton & Hove Albion FC,79,WIEFFER,7,true
+2000030169,Matt O'Riley,Brighton & Hove Albion FC,77,ORILEY,6,true
+2000030042,Maxim De Cuyper,Brighton & Hove Albion FC,78,DE CUYPER,8,true
+2000030120,Michael Svoboda,Brighton & Hove Albion FC,72,SVOBODA,7,false
+2000030170,Nehemiah Oriola,Brighton & Hove Albion FC,60,ORIOLA,6,false
+2000030117,Olivier Boscagli,Brighton & Hove Albion FC,78,BOSCAGLI,8,true
+2000030049,Pascal Groß,Brighton & Hove Albion FC,79,GROSS,5,true
+2000030119,Pascal Struijk,Brighton & Hove Albion FC,76,STRUIJK,7,true
+2000030121,Promise David,Brighton & Hove Albion FC,76,DAVID,5,true
+2000030171,Stefanos Tzimas,Brighton & Hove Albion FC,73,TZIMAS,6,false
+383685,Yankuba Minteh,Brighton & Hove Albion FC,80,MINTEH,6,true
+2000030048,Yasin Ayari,Brighton & Hove Albion FC,79,AYARI,5,true
+2000030176,Younes Ibrahim,Brighton & Hove Albion FC,60,IBRAHIM,7,false
+2000030053,Zadok Yohanna,Brighton & Hove Albion FC,67,YOHANNA,7,false
+2000030178,Aaron Anselmino,Chelsea FC,72,ANSELMINO,9,false
+2000005009,Cole Palmer,Chelsea FC,85,PALMER,6,true
+2000005013,Danny Welbeck,Chelsea FC,80,WELBECK,7,true
+2000005001,Emiliano Martinez,Chelsea FC,85,MARTINEZ,8,true
+2000005015,Emmanuel Emegha,Chelsea FC,78,EMEGHA,6,true
+2000005024,Estevao,Chelsea FC,80,ESTEVAO,7,true
+2000005016,Geovany Quenda,Chelsea FC,76,QUENDA,6,true
+2000005010,Jamie Bynoe-Gittens,Chelsea FC,77,BYNOE GITTENS,12,false
+2000005008,Joao Pedro,Chelsea FC,83,PEDRO,5,true
+2000005011,Jordan Henderson,Chelsea FC,78,HENDERSON,9,true
+2000005014,Jorrel Hato,Chelsea FC,78,HATO,4,true
+2000005022,Josh Acheampong,Chelsea FC,75,ACHEAMPONG,10,true
+2000005006,Levi Colwill,Chelsea FC,80,COLWILL,7,true
+2000005021,Mahdi Nicoll-Jazuli,Chelsea FC,64,NICOLL JAZULI,12,false
+2000005019,Malo Gusto,Chelsea FC,79,GUSTO,5,true
+2000005002,Marco Palestra,Chelsea FC,78,PALESTRA,8,true
+2000005005,Maxence Lacroix,Chelsea FC,82,LACROIX,7,true
+2000005023,Mike Penders,Chelsea FC,78,PENDERS,7,true
+2000005018,Moises Caicedo,Chelsea FC,86,CAICEDO,7,true
+2000005012,Morgan Rogers,Chelsea FC,84,ROGERS,6,true
+2000030262,Olutayo Subuloye,Chelsea FC,64,SUBULOYE,8,false
+2000005007,Pedro Neto,Chelsea FC,81,NETO,4,true
+2000005020,Pep Chavarria,Chelsea FC,79,CHAVARRIA,9,true
+2000005017,Reece James,Chelsea FC,84,JAMES,5,true
+2000005025,Romeo Lavia,Chelsea FC,78,LAVIA,5,true
+2000030177,Shumaira Mheuka,Chelsea FC,66,MHEUKA,6,false
+2000030261,Teddy Sharman-Lowe,Chelsea FC,64,SHARMAN LOWE,11,false
+2000005004,Valentin Barco,Chelsea FC,79,BARCO,5,true
+2000005003,Wesley Fofana,Chelsea FC,79,FOFANA,6,true
+2000002021,Aurele Amenda,Coventry City FC,74,AMENDA,6,false
+2000002012,Ben Wilson,Coventry City FC,68,WILSON,6,false
+2000002003,Bobby Thomas,Coventry City FC,74,THOMAS,6,false
+2000002020,Brandon Thomas-Asante,Coventry City FC,73,THOMAS ASANTE,12,false
+2000002007,Caleb Yirenkyi,Coventry City FC,73,YIRENKYI,8,false
+2000002016,Carl Rushworth,Coventry City FC,76,RUSHWORTH,9,true
+2000002022,Dan Bentley,Coventry City FC,70,BENTLEY,7,false
+2000002008,Ellis Simms,Coventry City FC,71,SIMMS,5,false
+2000002009,Ephron Mason-Clark,Coventry City FC,75,MASON CLARK,10,true
+2000002001,Ethan Pinnock,Coventry City FC,75,PINNOCK,7,true
+2000002014,Frank Onyeka,Coventry City FC,75,ONYEKA,6,true
+2000030180,George Shepherd,Coventry City FC,68,SHEPHERD,8,false
+2000002028,Gustavo Hamer,Coventry City FC,75,HAMER,5,true
+2000030181,Haji Wright,Coventry City FC,74,WRIGHT,6,false
+2000002004,Jack Rudoni,Coventry City FC,75,RUDONI,6,true
+2000002018,Jake Bidwell,Coventry City FC,68,BIDWELL,7,false
+2000002002,Jay Dasilva,Coventry City FC,73,DASILVA,7,false
+2000002019,Joel Latibeaudiere,Coventry City FC,71,LATIBEAUDIERE,13,false
+2000020003,Josh Eccles,Coventry City FC,71,ECCLES,6,false
+2000030179,Kaine Kesler-Hayden,Coventry City FC,72,KESLER HAYDEN,12,false
+2000002015,Loum Tchaouna,Coventry City FC,73,TCHAOUNA,8,false
+17714,Luke Woolfenden,Coventry City FC,72,WOOLFENDEN,10,false
+2000002005,Matt Grimes,Coventry City FC,76,GRIMES,6,true
+2000002024,Milan van Ewijk,Coventry City FC,75,VAN EWIJK,8,true
+2000002029,Sidiki Cherif,Coventry City FC,72,CHERIF,6,false
+2000002011,Stephen Mfuni,Coventry City FC,69,MFUNI,5,false
+2000002013,Taiwo Awoniyi,Coventry City FC,74,AWONIYI,7,false
+2000002006,Tatsuhiro Sakamoto,Coventry City FC,74,SAKAMOTO,8,false
+2000002026,Victor Torp,Coventry City FC,73,TORP,4,false
+2000002027,Yann Gboho,Coventry City FC,77,GBOHO,5,true
+2000020098,Adam Wharton,Crystal Palace FC,82,WHARTON,7,true
+2000016002,Anan Khalaili,Crystal Palace FC,78,KHALAILI,8,true
+2000030182,Axel Disasi,Crystal Palace FC,77,DISASI,6,true
+2000030187,Ben Chilwell,Crystal Palace FC,77,CHILWELL,8,true
+2000020104,Chadi Riad,Crystal Palace FC,74,RIAD,4,false
+3339,Cheick Doucouré,Crystal Palace FC,76,DOUCOURE,8,true
+2000020099,Chris Richards,Crystal Palace FC,80,RICHARDS,8,true
+2000016001,Daichi Kamada,Crystal Palace FC,79,KAMADA,6,true
+2000030189,Darío Osorio,Crystal Palace FC,74,OSORIO,6,false
+2000020100,Dean Henderson,Crystal Palace FC,82,HENDERSON,9,true
+2000020097,Dwight McNeil,Crystal Palace FC,76,MCNEIL,6,true
+2000020101,Eddie Nketiah,Crystal Palace FC,75,NKETIAH,7,true
+2000020107,Evann Guessand,Crystal Palace FC,78,GUESSAND,8,true
+2000030186,Honest Ahanor,Crystal Palace FC,74,AHANOR,6,false
+2218,Ismaïla Sarr,Crystal Palace FC,81,SARR,4,true
+2000020096,Jaydee Canvot,Crystal Palace FC,76,CANVOT,6,true
+2000020102,Jean-Philippe Mateta,Crystal Palace FC,81,MATETA,6,true
+2490,Jefferson Lerma,Crystal Palace FC,76,LERMA,5,true
+2000030183,Joél Drakes-Thomas,Crystal Palace FC,62,DRAKES THOMAS,12,false
+2000020106,Jørgen Strand Larsen,Crystal Palace FC,77,STRAND LARSEN,12,false
+2000030188,Quinten Timber,Crystal Palace FC,79,TIMBER,6,true
+2000030184,Remi Matthews,Crystal Palace FC,63,MATTHEWS,8,false
+2000020108,Takehiro Tomiyasu,Crystal Palace FC,76,TOMIYASU,8,true
+2000020103,Tyrick Mitchell,Crystal Palace FC,79,MITCHELL,8,true
+2000020114,Walter Benítez,Crystal Palace FC,78,BENITEZ,7,true
+2000020117,Will Hughes,Crystal Palace FC,77,HUGHES,6,true
+2000020105,Yéremy Pino,Crystal Palace FC,79,PINO,4,true
+2000030185,Zavier Gozo,Crystal Palace FC,71,GOZO,4,false
+2000020116,Óscar Mingueza,Crystal Palace FC,80,MINGUEZA,8,true
+2000030191,Ainsley Maitland-Niles,Everton FC,77,MAITLAND NILES,13,false
+2000030192,Braiden Graham,Everton FC,60,GRAHAM,6,false
+2000020093,Brennan Johnson,Everton FC,78,JOHNSON,7,true
+2000020094,Carlos Alcaraz,Everton FC,75,ALCARAZ,7,true
+30407,Christian Nørgaard,Everton FC,79,NORGAARD,8,true
+2000015004,Harrison Armstrong,Everton FC,73,ARMSTRONG,9,false
+2000020088,Hayden Hackney,Everton FC,77,HACKNEY,7,true
+2000030029,Jack Grealish,Everton FC,82,GREALISH,8,true
+2000020112,Jake O'Brien,Everton FC,76,OBRIEN,6,true
+2000020091,James Garner,Everton FC,82,GARNER,6,true
+2000020089,James Tarkowski,Everton FC,80,TARKOWSKI,9,true
+2000015005,Jarrad Branthwaite,Everton FC,79,BRANTHWAITE,11,true
+2000020085,Jordan Pickford,Everton FC,85,PICKFORD,8,true
+2000015001,Kiernan Dewsbury-Hall,Everton FC,81,DEWSBURY HALL,12,false
+2000020109,Mark Travers,Everton FC,72,TRAVERS,7,false
+2000020090,Merlin Röhl,Everton FC,74,ROHL,4,false
+2000020111,Michael Keane,Everton FC,76,KEANE,5,true
+2000015002,Thierno Barry,Everton FC,76,BARRY,5,true
+2000030190,Tom King,Everton FC,64,KING,4,false
+2000020113,Tyler Dibling,Everton FC,74,DIBLING,7,false
+2000020087,Tyrique George,Everton FC,72,GEORGE,6,false
+2000020086,Vitaliy Mykolenko,Everton FC,77,MYKOLENKO,9,true
+2000030136,Alex Iwobi,Fulham FC,80,IWOBI,5,true
+2000030086,Antonee Robinson,Fulham FC,80,ROBINSON,8,true
+2000030139,Benjamin Lecomte,Fulham FC,73,LECOMTE,7,false
+2000030138,Bernd Leno,Fulham FC,79,LENO,4,true
+2000030087,Calvin Bassey,Fulham FC,78,BASSEY,6,true
+2000030091,César Palacios,Fulham FC,67,PALACIOS,8,false
+2000030197,David Affengruber,Fulham FC,76,AFFENGRUBER,11,true
+2000030265,Dino Kaiser,Fulham FC,62,KAISER,6,false
+2000030142,Emile Smith Rowe,Fulham FC,77,SMITH ROWE,9,true
+2000030082,Gonzalo García,Fulham FC,75,GARCIA,6,true
+2000030143,Harrison Reed,Fulham FC,72,REED,4,false
+2000030195,Hugo Larsson,Fulham FC,77,LARSSON,7,true
+2729,Joachim Andersen,Fulham FC,79,ANDERSEN,8,true
+2000030193,Jonah Kusi-Asare,Fulham FC,62,KUSI ASARE,9,false
+2000030137,Jorge Cuenca,Fulham FC,76,CUENCA,6,true
+2000030083,Joshua King,Fulham FC,74,KING,4,false
+2000030140,Kenny Tete,Fulham FC,78,TETE,4,true
+2000030090,Kevin,Fulham FC,76,KEVIN,5,true
+2000030194,Macaulay Zepa,Fulham FC,60,ZEPA,4,false
+2000030196,Manuel Ángel Morán Ibáñez,Fulham FC,65,ANGEL MORAN IBANEZ,16,false
+2000030093,Oscar Bobb,Fulham FC,76,BOBB,4,true
+2000030085,Rodrigo Muniz,Fulham FC,76,MUNIZ,5,true
+2000030088,Ryan Sessegnon,Fulham FC,77,SESSEGNON,9,true
+2000030089,Sander Berge,Fulham FC,79,BERGE,5,true
+2000030092,Shea Charles,Fulham FC,73,CHARLES,7,false
+2000030084,Timothy Castagne,Fulham FC,75,CASTAGNE,8,true
+19025,Tom Cairney,Fulham FC,74,CAIRNEY,7,false
+2000030202,Abdülkadir Ömür,Hull City AFC,69,OMUR,4,false
+2000030210,Brooke Norton-Cuffy,Hull City AFC,75,NORTON CUFFY,11,true
+2000030200,Cathal McCarthy,Hull City AFC,60,MCCARTHY,8,false
+2000030199,Charlie Hughes,Hull City AFC,74,HUGHES,6,false
+2000030212,Christos Mouzakitis,Hull City AFC,73,MOUZAKITIS,10,false
+2000020012,Cody Drameh,Hull City AFC,69,DRAMEH,6,false
+2000030204,Darko Gyabi,Hull City AFC,68,GYABI,5,false
+2000020015,Dillon Phillips,Hull City AFC,66,PHILLIPS,8,false
+2000030201,Eliot Matazo,Hull City AFC,70,MATAZO,6,false
+2000020006,Elliot Stroud,Hull City AFC,74,STROUD,6,false
+2000030206,Hidemasa Morita,Hull City AFC,78,MORITA,6,true
+2000030208,Ilyas Ansah,Hull City AFC,73,ANSAH,5,false
+2000030198,Jack Butland,Hull City AFC,75,BUTLAND,7,true
+2000020018,Jens Hjertø-Dahl,Hull City AFC,68,HJERTO DAHL,10,false
+2000030205,Joe Gelhardt,Hull City AFC,73,GELHARDT,8,false
+2000010005,John Egan,Hull City AFC,72,EGAN,4,false
+2000020017,Kieran Dowell,Hull City AFC,68,DOWELL,6,false
+2000010001,Konstantinos Tzolakis,Hull City AFC,79,TZOLAKIS,8,true
+2000020004,Lewie Coyle,Hull City AFC,70,COYLE,5,false
+2000020016,Lucas Gourna-Douath,Hull City AFC,70,GOURNA DOUATH,12,false
+2000020010,Lucas Herrington,Hull City AFC,66,HERRINGTON,10,false
+2000020007,Matt Crooks,Hull City AFC,71,CROOKS,6,false
+2000020014,Matt Targett,Hull City AFC,72,TARGETT,7,false
+2000020009,Mohamed Belloumi,Hull City AFC,73,BELLOUMI,8,false
+2000030207,Mohamed-Ali Cho,Hull City AFC,74,CHO,3,false
+2000010003,Nobel Mendy,Hull City AFC,75,MENDY,5,true
+2000020008,Oli McBurnie,Hull City AFC,75,MCBURNIE,8,true
+2000020011,Paddy McNair,Hull City AFC,72,MCNAIR,6,false
+2000010004,Regan Slater,Hull City AFC,72,SLATER,6,false
+2000030209,Robinio Vaz,Hull City AFC,71,VAZ,3,false
+2000020005,Ryan Giles,Hull City AFC,72,GILES,5,false
+2000010002,Semi Ajayi,Hull City AFC,70,AJAYI,5,false
+2000030211,Sorba Thomas,Hull City AFC,75,THOMAS,6,true
+284500,Tim Iroegbunam,Hull City AFC,76,IROEGBUNAM,10,true
+2000030203,Óscar Zambrano,Hull City AFC,70,ZAMBRANO,8,false
+2000020028,Abdoul Ouattara,Ipswich Town FC,73,OUATTARA,8,false
+2000020025,Abdul Fatawu Issahaku,Ipswich Town FC,75,FATAWU ISSAHAKU,14,false
+2000030213,Alex Palmer,Ipswich Town FC,71,PALMER,6,false
+2000030216,Anis Mehmeti,Ipswich Town FC,72,MEHMETI,7,false
+2000030215,Azor Matusiwa,Ipswich Town FC,75,MATUSIWA,8,true
+2000020044,Christian Walton,Ipswich Town FC,73,WALTON,6,false
+2000020027,Chuba Akpom,Ipswich Town FC,71,AKPOM,5,false
+2000020046,Cédric Kipré,Ipswich Town FC,74,KIPRE,5,false
+2000020024,Daizen Maeda,Ipswich Town FC,78,MAEDA,5,true
+2000020023,Dara O'Shea,Ipswich Town FC,75,OSHEA,5,true
+2000020045,Darnell Furlong,Ipswich Town FC,73,FURLONG,7,false
+2000030214,David Button,Ipswich Town FC,62,BUTTON,6,false
+2000011001,Emersonn,Ipswich Town FC,74,EMERSONN,8,false
+2000030218,Exequiel Palacios,Ipswich Town FC,83,PALACIOS,8,true
+2000030217,Florentino Ibrain Morris Luís,Ipswich Town FC,77,IBRAIN MORRIS LUIS,16,false
+2000020022,Issa Diop,Ipswich Town FC,75,DIOP,4,true
+2000011003,Jack Clarke,Ipswich Town FC,75,CLARKE,6,true
+18397,Jack Taylor,Ipswich Town FC,72,TAYLOR,6,false
+2000020021,Jacob Greaves,Ipswich Town FC,74,GREAVES,7,false
+138931,Jaden Philogene-Bidace,Ipswich Town FC,76,PHILOGENE BIDACE,15,false
+2000011002,Julio Enciso,Ipswich Town FC,78,ENCISO,6,true
+2000020026,Kasey McAteer,Ipswich Town FC,71,MCATEER,7,false
+2000020019,Kjell Scherpen,Ipswich Town FC,76,SCHERPEN,8,true
+2000020020,Leif Davis,Ipswich Town FC,75,DAVIS,5,true
+2000011005,Marcelino Núñez,Ipswich Town FC,73,NUNEZ,5,false
+2000011004,Saša Lukić,Ipswich Town FC,78,LUKIC,5,true
+2000020029,Sindre Walle Egeli,Ipswich Town FC,70,WALLE EGELI,10,false
+2000030219,Zian Flemming,Ipswich Town FC,76,FLEMMING,8,true
+2000030223,Alex Cairns,Leeds United FC,62,CAIRNS,6,false
+2000020081,Alfie Cresswell,Leeds United FC,60,CRESSWELL,9,false
+2000014001,Anton Stach,Leeds United FC,80,STACH,5,true
+2000020082,Ao Tanaka,Leeds United FC,76,TANAKA,6,true
+2000020069,Brenden Aaronson,Leeds United FC,76,AARONSON,8,true
+2000020083,Daniel James,Leeds United FC,75,JAMES,5,true
+2000020067,Dominic Calvert-Lewin,Leeds United FC,79,CALVERT LEWIN,12,false
+2000020068,Ethan Ampadu,Leeds United FC,80,AMPADU,6,true
+2000030220,Gabriel Gudmundsson,Leeds United FC,78,GUDMUNDSSON,11,true
+2000020066,Harry Wilson,Leeds United FC,81,WILSON,6,true
+2000030221,Ilia Gruev,Leeds United FC,75,GRUEV,5,true
+2000014003,Jaka Bijol,Leeds United FC,77,BIJOL,5,true
+2000014004,James Justin,Leeds United FC,76,JUSTIN,6,true
+2000014002,James Trafford,Leeds United FC,79,TRAFFORD,8,true
+2000020065,Jayden Bogle,Leeds United FC,76,BOGLE,5,true
+2000020079,Jayden Lienou,Leeds United FC,60,LIENOU,6,false
+2000030226,Jean-Mattéo Bahoya,Leeds United FC,76,BAHOYA,6,true
+2000014005,Joe Rodon,Leeds United FC,77,RODON,5,true
+2000020084,Lukas Nmecha,Leeds United FC,76,NMECHA,6,true
+2000030222,Mateo Joseph Fernández-Regatillo,Leeds United FC,72,JOSEPH FERNANDEZ REGATILLO,24,false
+2000030225,Melvin Bard,Leeds United FC,76,BARD,4,true
+2000030224,Michael Zetterer,Leeds United FC,75,ZETTERER,8,true
+2000020080,Nico Elvedi,Leeds United FC,78,ELVEDI,6,true
+2000020071,Noah Okafor,Leeds United FC,77,OKAFOR,6,true
+2000020072,Sean Longstaff,Leeds United FC,76,LONGSTAFF,9,true
+2000020070,Tarik Muharemović,Leeds United FC,75,MUHAREMOVIC,11,true
+2000003009,Alexander Isak,Liverpool FC,86,ISAK,4,true
+2000003010,Alexis Mac Allister,Liverpool FC,84,MAC ALLISTER,11,true
+2000003001,Alisson Becker,Liverpool FC,87,BECKER,6,true
+2000003017,Bradley Barcola,Liverpool FC,85,BARCOLA,7,true
+2000003011,Cody Gakpo,Liverpool FC,82,GAKPO,5,true
+180317,Conor Bradley,Liverpool FC,79,BRADLEY,7,true
+2000003008,Dominik Szoboszlai,Liverpool FC,86,SZOBOSZLAI,10,true
+2000030231,Federico Chiesa,Liverpool FC,80,CHIESA,6,true
+2000003007,Florian Wirtz,Liverpool FC,86,WIRTZ,5,true
+2000003016,Freddie Woodman,Liverpool FC,71,WOODMAN,7,false
+2000003015,Giorgi Mamardashvili,Liverpool FC,83,MAMARDASHVILI,13,false
+2000030230,Giovanni Leoni,Liverpool FC,71,LEONI,5,false
+2000030228,Harvey Davies,Liverpool FC,61,DAVIES,6,false
+2000003013,Hugo Ekitike,Liverpool FC,85,EKITIKE,7,true
+2000003022,James McConnell,Liverpool FC,68,MCCONNELL,9,false
+2000003025,Jayden Danns,Liverpool FC,63,DANNS,5,false
+2000003018,Jeremie Frimpong,Liverpool FC,81,FRIMPONG,8,true
+2000003005,Jeremy Jacquet,Liverpool FC,77,JACQUET,7,true
+2000003002,Joe Gomez,Liverpool FC,79,GOMEZ,5,true
+2000003012,Kostas Tsimikas,Liverpool FC,76,TSIMIKAS,8,true
+2000003023,Lewis Koumas,Liverpool FC,69,KOUMAS,6,false
+2000003006,Milos Kerkez,Liverpool FC,81,KERKEZ,6,true
+2000003024,Rio Ngumoha,Liverpool FC,75,NGUMOHA,7,true
+2000003019,Ronald Araujo,Liverpool FC,80,ARAUJO,6,true
+2000003020,Ryan Gravenberch,Liverpool FC,85,GRAVENBERCH,11,true
+2000003021,Trey Nyoni,Liverpool FC,67,NYONI,5,false
+2000003014,Victor Munoz,Liverpool FC,79,MUNOZ,5,true
+2000003004,Virgil van Dijk,Liverpool FC,88,VAN DIJK,7,true
+2000030227,Vitezslav Jaros,Liverpool FC,72,JAROS,5,false
+2000003003,Wataru Endo,Liverpool FC,78,ENDO,4,true
+2000030229,Wellity Lucky,Liverpool FC,61,LUCKY,5,false
+2000004021,Abdukodir Khusanov,Manchester City FC,82,KHUSANOV,8,true
+2000004019,Allan Andrade Elias,Manchester City FC,74,ANDRADE ELIAS,12,false
+2000004020,Antoine Semenyo,Manchester City FC,85,SEMENYO,7,true
+2000004017,Ayyoub Bouaddi,Manchester City FC,80,BOUADDI,7,true
+2000004003,Elliot Anderson,Manchester City FC,84,ANDERSON,8,true
+2000004011,Enzo Fernandez,Manchester City FC,86,FERNANDEZ,9,true
+2000004007,Erling Haaland,Manchester City FC,91,HAALAND,7,true
+2000030232,Floyd Samba,Manchester City FC,64,SAMBA,5,false
+2000004016,Geronimo Rulli,Manchester City FC,80,RULLI,5,true
+2000004001,Gianluigi Donnarumma,Manchester City FC,89,DONNARUMMA,10,true
+2000004005,Iliman Ndiaye,Manchester City FC,82,NDIAYE,6,true
+2000004009,Jeremy Doku,Manchester City FC,84,DOKU,4,true
+2000004014,Josko Gvardiol,Manchester City FC,85,GVARDIOL,8,true
+2000004024,Kaden Braithwaite,Manchester City FC,65,BRAITHWAITE,11,false
+2000004004,Marc Guehi,Manchester City FC,85,GUEHI,5,true
+2000004010,Marcus Bettinelli,Manchester City FC,69,BETTINELLI,10,false
+2000004006,Mateo Kovacic,Manchester City FC,81,KOVACIC,7,true
+2000004015,Matheus Nunes,Manchester City FC,83,NUNES,5,true
+2000004018,Nico O'Reilly,Manchester City FC,83,OREILLY,7,true
+2000004022,Phil Foden,Manchester City FC,84,FODEN,5,true
+2000004012,Rayan Ait-Nouri,Manchester City FC,81,AIT NOURI,8,true
+2000004008,Rayan Cherki,Manchester City FC,86,CHERKI,6,true
+2000004025,Rico Lewis,Manchester City FC,77,LEWIS,5,true
+2000004002,Ruben Dias,Manchester City FC,87,DIAS,4,true
+2000004023,Ryan McAidoo,Manchester City FC,66,MCAIDOO,7,false
+2000004013,Vitor Reis,Manchester City FC,76,REIS,4,true
+2000006015,Amad Diallo,Manchester United FC,79,DIALLO,6,true
+2000006016,Andrey Santos,Manchester United FC,80,SANTOS,6,true
+2000006023,Ayden Heaven,Manchester United FC,75,HEAVEN,6,true
+2000030235,Bendito Mantato,Manchester United FC,62,MANTATO,7,false
+2000006024,Benjamin Sesko,Manchester United FC,82,SESKO,5,true
+2000006008,Bruno Fernandes,Manchester United FC,89,FERNANDES,9,true
+2000006018,Bryan Mbeumo,Manchester United FC,84,MBEUMO,6,true
+2000006019,Carlos Baleba,Manchester United FC,80,BALEBA,6,true
+2000006002,Diogo Dalot,Manchester United FC,78,DALOT,5,true
+2000030233,Harry Amass,Manchester United FC,69,AMASS,5,false
+2000006005,Harry Maguire,Manchester United FC,82,MAGUIRE,7,true
+2000030234,Jack Fletcher,Manchester United FC,63,FLETCHER,8,false
+2000006011,Joshua Zirkzee,Manchester United FC,77,ZIRKZEE,7,true
+2000006012,Karl Darlow,Manchester United FC,76,DARLOW,6,true
+2000006025,Kobbie Mainoo,Manchester United FC,81,MAINOO,6,true
+2000006014,Leny Yoro,Manchester United FC,78,YORO,4,true
+2000006006,Lisandro Martinez,Manchester United FC,82,MARTINEZ,8,true
+2000006021,Luke Shaw,Manchester United FC,79,SHAW,4,true
+2000006022,Manuel Ugarte,Manchester United FC,77,UGARTE,6,true
+2000006009,Marcus Rashford,Manchester United FC,82,RASHFORD,8,true
+2000006007,Mason Mount,Manchester United FC,78,MOUNT,5,true
+2000006010,Matheus Cunha,Manchester United FC,84,CUNHA,5,true
+2000006004,Matthijs de Ligt,Manchester United FC,82,DE LIGT,6,true
+2000006003,Noussair Mazraoui,Manchester United FC,80,MAZRAOUI,8,true
+2000006013,Patrick Dorgu,Manchester United FC,78,DORGU,5,true
+2000006001,Senne Lammens,Manchester United FC,82,LAMMENS,7,true
+2000006026,Shea Lacey,Manchester United FC,65,LACEY,5,false
+2000006020,Tom Heaton,Manchester United FC,67,HEATON,6,false
+2000030236,Tyler Fletcher,Manchester United FC,65,FLETCHER,8,false
+2000006017,Youri Tielemans,Manchester United FC,85,TIELEMANS,9,true
+2000030077,Aladji Bamba,Newcastle United FC,72,BAMBA,5,false
+2000030081,Amar Dedić,Newcastle United FC,76,DEDIC,5,true
+2000030070,Anthony Elanga,Newcastle United FC,79,ELANGA,6,true
+2000030134,Bazoumana Touré,Newcastle United FC,78,TOURE,5,true
+18961,Dan Burn,Newcastle United FC,79,BURN,4,true
+2000030132,Ewen Jaouen,Newcastle United FC,70,JAOUEN,6,false
+2000030075,Fabian Schär,Newcastle United FC,81,SCHAR,5,true
+2000030129,Harvey Barnes,Newcastle United FC,80,BARNES,6,true
+2000030076,Jacob Murphy,Newcastle United FC,79,MURPHY,6,true
+2000030079,Jacob Ramsey,Newcastle United FC,78,RAMSEY,6,true
+2000030071,Joe Willock,Newcastle United FC,76,WILLOCK,7,true
+723,Joelinton,Newcastle United FC,80,JOELINTON,9,true
+2000030243,Kyran Thompson,Newcastle United FC,60,THOMPSON,8,false
+2000030128,Lewis Hall,Newcastle United FC,83,HALL,4,true
+2000030078,Lewis Miley,Newcastle United FC,77,MILEY,5,true
+2000030074,Lukáš Horníček,Newcastle United FC,77,HORNICEK,8,true
+2000030131,Malick Thiaw,Newcastle United FC,81,THIAW,5,true
+2000030237,Mark Gillespie,Newcastle United FC,62,GILLESPIE,9,false
+2000030239,Mason Miley,Newcastle United FC,60,MILEY,5,false
+2000030238,Matias Fernandez-Pardo,Newcastle United FC,78,FERNANDEZ PARDO,14,false
+2000030242,Michael Mills,Newcastle United FC,60,MILLS,5,false
+2000030240,Miodrag Pivas,Newcastle United FC,62,PIVAS,5,false
+18911,Nick Pope,Newcastle United FC,78,POPE,4,true
+2000030106,Nico González,Newcastle United FC,81,GONZALEZ,8,true
+2000030080,Sean Steur,Newcastle United FC,72,STEUR,5,false
+2000030130,Sven Botman,Newcastle United FC,81,BOTMAN,6,true
+2000030241,Vakhtang Salia,Newcastle United FC,60,SALIA,5,false
+158694,Valentino Livramento,Newcastle United FC,81,LIVRAMENTO,10,true
+2000030073,William Osula,Newcastle United FC,75,OSULA,5,true
+2000030072,Yoane Wissa,Newcastle United FC,80,WISSA,5,true
+2000020064,Arnaud Kalimuendo,Nottingham Forest FC,78,KALIMUENDO,10,true
+2000020077,Callum Hudson-Odoi,Nottingham Forest FC,78,HUDSON ODOI,10,true
+2000020061,Chris Wood,Nottingham Forest FC,81,WOOD,4,true
+2000020058,Dan Ndoye,Nottingham Forest FC,77,NDOYE,5,true
+2000020095,Daniel Muñoz,Nottingham Forest FC,82,MUNOZ,5,true
+2000020054,Ibrahim Sangaré,Nottingham Forest FC,78,SANGARE,7,true
+2000020056,Igor Jesus,Nottingham Forest FC,77,JESUS,5,true
+2000020059,Jair,Nottingham Forest FC,75,JAIR,4,true
+2000013001,James McAtee,Nottingham Forest FC,73,MCATEE,6,false
+2000020073,John Victor,Nottingham Forest FC,71,VICTOR,6,false
+161948,Liam Delap,Nottingham Forest FC,77,DELAP,5,true
+2000020062,Luca Netz,Nottingham Forest FC,73,NETZ,4,false
+2000020052,Matz Sels,Nottingham Forest FC,81,SELS,4,true
+2000020055,Morgan Gibbs-White,Nottingham Forest FC,83,GIBBS WHITE,10,true
+2000013002,Murillo,Nottingham Forest FC,82,MURILLO,7,true
+2000020053,Neco Williams,Nottingham Forest FC,80,WILLIAMS,8,true
+2000020076,Nicolás Domínguez,Nottingham Forest FC,78,DOMINGUEZ,9,true
+2000030244,Nicolò Savona,Nottingham Forest FC,75,SAVONA,6,true
+2000020057,Nikola Milenković,Nottingham Forest FC,80,MILENKOVIC,10,true
+2000020060,Ola Aina,Nottingham Forest FC,79,AINA,4,true
+2000030245,Omar Richards,Nottingham Forest FC,71,RICHARDS,8,false
+2000020074,Ousmane Diomande,Nottingham Forest FC,81,DIOMANDE,8,true
+19305,Ryan Yates,Nottingham Forest FC,75,YATES,5,true
+19312,Steven Benda,Nottingham Forest FC,68,BENDA,5,false
+2000020063,Xaver Schlager,Nottingham Forest FC,78,SCHLAGER,8,true
+2000030266,Alan Browne,Sunderland AFC,72,BROWNE,6,false
+2000020038,Brian Brobbey,Sunderland AFC,78,BROBBEY,7,true
+2000020039,Chemsdine Talbi,Sunderland AFC,77,TALBI,5,true
+2000020042,Chris Rigg,Sunderland AFC,74,RIGG,4,false
+2000020032,Daniel Ballard,Sunderland AFC,78,BALLARD,7,true
+2000030252,Dayann Méthalie,Sunderland AFC,75,METHALIE,8,true
+2000020037,Enzo Le Fée,Sunderland AFC,80,LE FEE,5,true
+2000012002,Granit Xhaka,Sunderland AFC,85,XHAKA,5,true
+2000020043,Habib Diarra,Sunderland AFC,77,DIARRA,6,true
+2000020050,Jocelin Ta Bi,Sunderland AFC,69,TA BI,4,false
+2000030255,Juan Angulo,Sunderland AFC,62,ANGULO,6,false
+2000030253,Jules Ahoka,Sunderland AFC,61,AHOKA,5,false
+2000030103,Kevin Danso,Sunderland AFC,79,DANSO,5,true
+2000020033,Luke O'Nien,Sunderland AFC,73,ONIEN,5,false
+2000030254,Malick Fofana,Sunderland AFC,77,FOFANA,6,true
+2000020048,Melker Ellborg,Sunderland AFC,68,ELLBORG,7,false
+2000012001,Nilson Angulo,Sunderland AFC,73,ANGULO,6,false
+2000020036,Noah Sadiki,Sunderland AFC,80,SADIKI,6,true
+2000020049,Nordi Mukiele,Sunderland AFC,81,MUKIELE,7,true
+2000020040,Omar Alderete,Sunderland AFC,81,ALDERETE,8,true
+2000020034,Reinildo Mandava,Sunderland AFC,80,MANDAVA,7,true
+2000020030,Robin Roefs,Sunderland AFC,81,ROEFS,5,true
+2000020051,Romaine Mundle,Sunderland AFC,72,MUNDLE,6,false
+2000020031,Thomas Meunier,Sunderland AFC,78,MEUNIER,7,true
+2000030260,Timur Tuterov,Sunderland AFC,63,TUTEROV,7,false
+2000020035,Trai Hume,Sunderland AFC,78,HUME,4,true
+2000020041,Wilson Isidor,Sunderland AFC,75,ISIDOR,6,true
+2000030027,Andy Robertson,Tottenham Hotspur FC,80,ROBERTSON,9,true
+2000030015,Antonín Kinský,Tottenham Hotspur FC,77,KINSKY,6,true
+2000030017,Archie Gray,Tottenham Hotspur FC,77,GRAY,4,true
+2000030104,Ben Davies,Tottenham Hotspur FC,74,DAVIES,6,false
+156428,Brandon Austin,Tottenham Hotspur FC,67,AUSTIN,6,false
+2000030251,Callum Olusesi,Tottenham Hotspur FC,62,OLUSESI,7,false
+2000030025,Conor Gallagher,Tottenham Hotspur FC,78,GALLAGHER,9,true
+30435,Dejan Kulusevski,Tottenham Hotspur FC,81,KULUSEVSKI,10,true
+2000030016,Destiny Udogie,Tottenham Hotspur FC,79,UDOGIE,6,true
+2000030018,Dominic Solanke,Tottenham Hotspur FC,79,SOLANKE,7,true
+2000030020,James Maddison,Tottenham Hotspur FC,82,MADDISON,8,true
+2000030248,James Rowswell,Tottenham Hotspur FC,61,ROWSWELL,8,false
+2000030028,Jan Paul van Hecke,Tottenham Hotspur FC,81,PAUL VAN HECKE,12,false
+2000030247,Jun'ai Byfield,Tottenham Hotspur FC,62,BYFIELD,7,false
+2000030264,Luca Gunter,Tottenham Hotspur FC,62,GUNTER,6,false
+2000030105,Luca Williams-Barnett,Tottenham Hotspur FC,62,WILLIAMS BARNETT,15,false
+2000030022,Lucas Bergvall,Tottenham Hotspur FC,78,BERGVALL,8,true
+2000030026,Marcos Senesi,Tottenham Hotspur FC,82,SENESI,6,true
+2000030102,Martin Dúbravka,Tottenham Hotspur FC,77,DUBRAVKA,8,true
+2000030024,Mateus Fernandes,Tottenham Hotspur FC,80,FERNANDES,9,true
+2000030101,Mathys Tel,Tottenham Hotspur FC,78,TEL,3,false
+152849,Micky van de Ven,Tottenham Hotspur FC,81,VAN DE VEN,8,true
+15911,Mohammed Kudus,Tottenham Hotspur FC,81,KUDUS,5,true
+63577,Mykhaylo Mudryk,Tottenham Hotspur FC,75,MUDRYK,6,true
+2000030107,Omar Marmoush,Tottenham Hotspur FC,82,MARMOUSH,8,true
+47519,Pedro Porro,Tottenham Hotspur FC,83,PORRO,5,true
+2000030019,Richarlison,Tottenham Hotspur FC,78,RICHARLISON,11,true
+2000030023,Rodrigo Bentancur,Tottenham Hotspur FC,79,BENTANCUR,9,true
+2000030100,Sandro Tonali,Tottenham Hotspur FC,85,TONALI,6,true
+2000030246,Sávio Moreira de Oliveira,Tottenham Hotspur FC,80,MOREIRA DE OLIVEIRA,17,false
+19145,Tosin Adarabioyo,Tottenham Hotspur FC,77,ADARABIOYO,10,true
+2000030250,Wilson Odobert,Tottenham Hotspur FC,78,ODOBERT,7,true
+2000030249,Xavi Simons,Tottenham Hotspur FC,81,SIMONS,6,true

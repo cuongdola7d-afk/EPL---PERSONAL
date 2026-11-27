@@ -69,6 +69,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/fantasy/2026/me/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/minigame/2026/player-guess/info", "/api/minigame/2026/player-guess/leaderboard").permitAll()
                         .requestMatchers("/api/minigame/2026/player-guess/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/minigame/2026/wordle/info").permitAll()
+                        .requestMatchers("/api/minigame/2026/wordle/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/fantasy/2026/gameweeks", "/api/fantasy/2026/gameweeks/*", "/api/fantasy/2026/gameweeks/*/players", "/api/fantasy/2026/leaderboard", "/api/fantasy/2026/latest-result-summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/clubs/**", "/api/players/**", "/api/matches/**", "/api/standings/**", "/api/fantasy/2026/team-of-week", "/api/fantasy/2024/team-of-week", "/api/live/stream", "/api/live/test-stream", "/api/live/matches", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/actuator/health").permitAll()

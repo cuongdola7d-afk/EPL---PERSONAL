@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Instant;
 
 @RestControllerAdvice
@@ -51,6 +53,11 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER",
                 "Missing required parameter: " + exception.getParameterName(), request);
+    }
+
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiErrorResponse> noHandler(Exception exception, HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "Endpoint not found", request);
     }
 
     @ExceptionHandler(AsyncRequestNotUsableException.class)

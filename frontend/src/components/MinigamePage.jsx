@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchGuessHistory, fetchGuessInfo, fetchGuessLeaderboard, fetchGuessPlayers } from '../api/playerGuess.js'
+import { fetchWordleInfo, fetchWordleToday } from '../api/wordle.js'
 import usePlayerGuessGame from '../hooks/usePlayerGuessGame.js'
 import { formatCountdown, gameHash, isFinished, remainingSeconds } from '../minigame/playerGuess.js'
+import { resolveWordleAccess, wordleHubSummary } from '../minigame/wordle.js'
 import { matchesPlayerSearch } from '../utils/playerSort.js'
 import { getInitials } from '../utils/initials.js'
 import HigherLowerGame from './HigherLowerGame.jsx'
+import WordleGame from './WordleGame.jsx'
 import './MinigamePage.css'
 
 const openAccount = () => window.dispatchEvent(new Event('prismaxi-open-account'))
@@ -24,7 +27,7 @@ const ICONS = {
 function Icon({ name, ...props }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{ICONS[name] ?? ICONS.age}</svg>
 }
-function Countdown({ source, onExpire }) {
+export function Countdown({ source, onExpire }) {
   const [elapsed, setElapsed] = useState(0)
   const expire = useRef(onExpire); expire.current = onExpire
   const notified = useRef(null)
@@ -45,7 +48,7 @@ function Countdown({ source, onExpire }) {
   }, [serverTime, deadline])
   return <time className="mg-clock" title="Câu hỏi mới lúc 00:00, giờ Việt Nam">{formatCountdown(remainingSeconds(serverTime, deadline, elapsed))}</time>
 }
-function Sheet({ title, onClose, children }) {
+export function Sheet({ title, onClose, children }) {
   const dialog = useRef(null)
   useEffect(() => {
     const previous = document.activeElement
@@ -74,14 +77,14 @@ function Rules({ onClose }) {
     <p className="mg-example">Ví dụ: 100 điểm → mở gợi ý: 90 → đoán sai: 70 → đoán đúng: nhận 70 điểm.</p>
   </Sheet>
 }
-function ErrorBox({ message, onRetry, disabled, children, retryLabel = 'Thử lại' }) {
+export function ErrorBox({ message, onRetry, disabled, children, retryLabel = 'Thử lại' }) {
   if (!message) return null
   return <div className="mg-error" role="alert"><p>{message}</p>{onRetry && <button className="mg-secondary" disabled={disabled} onClick={onRetry}>{retryLabel}</button>}{children}</div>
 }
-function Loading() {
+export function Loading() {
   return <div className="mg-panel" role="status" aria-label="Đang tải Minigame"><div className="mg-skeleton" /><div className="mg-skeleton" /><span className="sr-only">Đang tải…</span></div>
 }
-function LoginGate({ authLoading, authError }) {
+export function LoginGate({ authLoading, authError }) {
   return <div className="mg-panel mg-empty"><Icon name="club" /><h2>{authLoading ? 'Đang kiểm tra tài khoản…' : 'Đăng nhập để bắt đầu'}</h2>
     <p>{authError || 'Tiến trình được lưu theo tài khoản. Bạn có thể trở lại ván đang chơi trên local.'}</p>
     <button className="mg-primary" disabled={authLoading} onClick={openAccount}>Đăng nhập / Đăng ký</button></div>
@@ -97,18 +100,84 @@ function ModePicker({ account, source, onClose }) {
     </a>)}
   </Sheet>
 }
-function Hub({ account, source, onRefresh, onPick }) {
+function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
   const daily = usePlayerGuessGame(account?.id, 'DAILY')
+  const showWordle = resolveWordleAccess({ infoStatus: wordleInfo.status, account }).showOnHub
+  const [wordle, setWordle] = useState({ data: null, loading: false, error: '' })
+  const [wordleReload, setWordleReload] = useState(0)
+
+  useEffect(() => {
+    if (!showWordle || !account?.id) {
+      setWordle({ data: null, loading: false, error: '' })
+      return undefined
+    }
+    const controller = new AbortController()
+    setWordle(prev => ({ ...prev, loading: true, error: '' }))
+    fetchWordleToday(account.id, controller.signal)
+      .then(data => {
+        if (!controller.signal.aborted) {
+          setWordle({ data, loading: false, error: '' })
+        }
+      })
+      .catch(failure => {
+        if (controller.signal.aborted) return
+        setWordle({ data: null, loading: false, error: failure.message })
+      })
+    return () => controller.abort()
+  }, [account?.id, showWordle, wordleReload])
+
   const game = daily.game
-  const status = !account ? 'Đăng nhập để chơi thử thách hằng ngày.' : daily.loading ? 'Đang kiểm tra tiến trình hôm nay…' :
+  const legacyStatus = !account ? 'Đăng nhập để chơi thử thách hằng ngày.' : daily.loading ? 'Đang kiểm tra tiến trình hôm nay…' :
     isFinished(game) ? `Hôm nay bạn đã chơi xong: ${game.finalScore} điểm. Hẹn gặp lại ngày mai.` : game ? 'Bạn đang chơi dở. Tiếp tục để hoàn thành ván hôm nay.' : 'Mọi người nhận cùng một cầu thủ bí ẩn. Mỗi tài khoản có một ván mỗi ngày.'
+  const compactGuessStatus = !account ? 'Đăng nhập để chơi' : daily.loading ? 'Đang kiểm tra tiến trình hôm nay…' :
+    isFinished(game) ? `Đã xong · ${game.finalScore} điểm` : game ? 'Đang chơi dở' : 'Chưa chơi'
+  const wdSummary = wordleHubSummary(account, wordle, wordleInfo.data)
+  const wordleClock = wordle.data
+    ? { serverTime: wordle.data.serverTime, nextDailyAt: wordle.data.nextAt }
+    : wordleInfo.data
+      ? { serverTime: wordleInfo.data.serverTime, nextDailyAt: wordleInfo.data.nextAt }
+      : null
+  const clockSource = daily.current ?? wordleClock ?? source
+  const handleExpire = () => {
+    daily.refresh()
+    setWordleReload(value => value + 1)
+    onRefresh()
+  }
+
   return <>
     <section className="mg-hero"><svg className="mg-deco" viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><circle cx="100" cy="100" r="80" /><circle cx="100" cy="100" r="46" /><circle cx="100" cy="100" r="6" /><path d="M100 20v160" /></svg>
       <p className="mg-eyebrow">PRISMAXI / PLAY</p><h1>Minigame</h1><p>Chơi vui, thử trí nhớ bóng đá của bạn và leo bảng xếp hạng riêng của từng trò.</p></section>
-    <div className="mg-daily"><span className="mg-mode-icon"><Icon name="age" /></span><div className="mg-daily-copy"><b>Thử thách hôm nay: Đoán cầu thủ</b><span>{status}</span><a href={gameHash('DAILY')}>{game ? 'Xem ván hôm nay' : 'Vào thử thách'} <span aria-hidden="true">→</span></a></div>
-      <div className="mg-daily-clock"><span>Câu hỏi mới sau</span><Countdown source={daily.current ?? source} onExpire={() => { daily.refresh(); onRefresh() }} /></div></div>
+    {showWordle ? (
+      <div className="mg-daily">
+        <div className="mg-today-wrap">
+          <h3>Thử thách hôm nay</h3>
+          <div className="mg-today">
+            <div className="mg-tg">
+              <span className="mg-mode-icon">?</span>
+              <div className="mg-tg-copy">
+                <b>Đoán cầu thủ</b>
+                <span className={isFinished(game) ? 'mg-tg-done' : ''}>{compactGuessStatus}</span>
+              </div>
+              <a href={gameHash('DAILY')}>{game ? 'Xem ván' : 'Vào thử thách'} <span aria-hidden="true">→</span></a>
+            </div>
+            <div className="mg-tg">
+              <span className="mg-mode-icon mg-mode-wd">W</span>
+              <div className="mg-tg-copy">
+                <b>{wdSummary.title}</b>
+                <span className={wdSummary.statusDone ? 'mg-tg-done' : ''}>{wdSummary.statusText}</span>
+              </div>
+              <a href="#minigame/wordle">{wdSummary.actionLabel} <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </div>
+        <div className="mg-daily-clock"><span>Câu hỏi mới sau</span><Countdown source={clockSource} onExpire={handleExpire} /></div>
+      </div>
+    ) : (
+      <div className="mg-daily"><span className="mg-mode-icon"><Icon name="age" /></span><div className="mg-daily-copy"><b>Thử thách hôm nay: Đoán cầu thủ</b><span>{legacyStatus}</span><a href={gameHash('DAILY')}>{game ? 'Xem ván hôm nay' : 'Vào thử thách'} <span aria-hidden="true">→</span></a></div>
+        <div className="mg-daily-clock"><span>Câu hỏi mới sau</span><Countdown source={daily.current ?? source} onExpire={() => { daily.refresh(); onRefresh() }} /></div></div>
+    )}
     <ErrorBox message={daily.error} onRetry={daily.refresh} disabled={daily.loading} retryLabel="Kiểm tra tiến trình" />
-    <h2 className="mg-section-title">Chọn trò chơi</h2><div className="mg-game-grid">
+    <h2 className="mg-section-title">Chọn trò chơi</h2><div className={`mg-game-grid${showWordle ? ' mg-game-grid-4' : ''}`}>
       <article className="mg-game-card">
         <div className="mg-art"><img src="/minigame/guess.svg" alt="" /><span className="mg-badge">Có thử thách hằng ngày</span></div>
         <div className="mg-card-body"><h3>Đoán cầu thủ qua gợi ý</h3><p>Bắt đầu với 100 điểm và ba gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.</p><button className="mg-primary" onClick={onPick}>Chơi ngay <Icon name="arrow" /></button></div>
@@ -117,11 +186,17 @@ function Hub({ account, source, onRefresh, onPick }) {
         <div className="mg-art"><img src="/minigame/higher.svg" alt="" /><span className="mg-badge">Chơi tự do</span></div>
         <div className="mg-card-body"><h3>Cao hay thấp</h3><p>Hai thẻ cầu thủ đặt cạnh nhau. Mỗi lượt là OVR, bàn thắng hoặc kiến tạo: đoán người bên phải cao hơn hay thấp hơn. Đoán đúng liên tiếp để lập kỷ lục.</p><a className="mg-primary" href="#minigame/higher">Chơi ngay <Icon name="arrow" /></a></div>
       </article>
+      {showWordle && (
+        <article className="mg-game-card">
+          <div className="mg-art"><img src="/minigame/wordle.svg" alt="" /><span className="mg-badge mg-badge-new">Mới · hằng ngày</span></div>
+          <div className="mg-card-body"><h3>Wordle cầu thủ</h3><p>Đoán tên một cầu thủ Premier League trong 6 lượt. Ô xanh là đúng chữ đúng chỗ, ô vàng là có chữ nhưng sai chỗ. Mỗi ngày một tên mới.</p><a className="mg-primary" href="#minigame/wordle">Chơi ngay <Icon name="arrow" /></a></div>
+        </article>
+      )}
       <article className="mg-game-card mg-soon">
         <div className="mg-art"><img src="/minigame/lineup.svg" alt="" /><span className="mg-badge">Sắp ra mắt</span></div>
         <div className="mg-card-body"><h3>Đội hình bí ẩn</h3><p>Nhận diện các cầu thủ trong đội hình. Thử trí nhớ của bạn qua những gương mặt quen thuộc.</p><button className="mg-primary" disabled>Sắp ra mắt</button></div>
       </article>
-    </div><p className="mg-footnote">Mỗi trò có bảng xếp hạng riêng. Điểm Minigame độc lập với Fantasy.</p>
+    </div><p className="mg-footnote">{showWordle ? 'Đoán cầu thủ có bảng xếp hạng. Wordle cầu thủ chỉ lưu thống kê của riêng bạn. Điểm Minigame độc lập với Fantasy.' : 'Mỗi trò có bảng xếp hạng riêng. Điểm Minigame độc lập với Fantasy.'}</p>
   </>
 }
 function Leaderboard({ account, revision }) {
@@ -260,23 +335,46 @@ function GamePage({ account, authLoading, authError, mode, source, onRules }) {
 }
 export default function MinigamePage({ account, authLoading, authError, route, theme = 'dark' }) {
   const [info, setInfo] = useState(null), [error, setError] = useState(''), [reload, setReload] = useState(0)
+  const [wordleInfo, setWordleInfo] = useState({ status: 'loading', data: null, error: '' })
+  const [wordleInfoReload, setWordleInfoReload] = useState(0)
   const [sheet, setSheet] = useState(null)
   const isHigher = route?.game === 'HIGHER'
+  const isWordle = route?.game === 'WORDLE'
+  const skipGuessInfo = isHigher || isWordle
   useEffect(() => {
-    if (isHigher) return undefined
+    if (skipGuessInfo) return undefined
     const controller = new AbortController()
     fetchGuessInfo(controller.signal).then(data => { if (!controller.signal.aborted) { setInfo(data); setError('') } })
       .catch(failure => { if (!controller.signal.aborted) setError(failure.message) })
     return () => controller.abort()
-  }, [reload, isHigher])
+  }, [reload, skipGuessInfo])
+  useEffect(() => {
+    if (isHigher) return undefined
+    const controller = new AbortController()
+    setWordleInfo(prev => prev.status === 'enabled' ? prev : { status: 'loading', data: null, error: '' })
+    fetchWordleInfo(controller.signal)
+      .then(data => {
+        if (!controller.signal.aborted) setWordleInfo({ status: 'enabled', data, error: '' })
+      })
+      .catch(failure => {
+        if (controller.signal.aborted) return
+        if (failure.status === 404) {
+          setWordleInfo({ status: 'disabled', data: null, error: '' })
+        } else {
+          setWordleInfo({ status: 'error', data: null, error: failure.message })
+        }
+      })
+    return () => controller.abort()
+  }, [isHigher, reload, wordleInfoReload])
   const mode = route?.mode
   return <div className="minigame-page" data-mg-theme={theme}><div className="mg-wrap">
     <div className="mg-toolbar"><span>PREMIER LEAGUE · 2026/27</span></div>
-    {!isHigher && <ErrorBox message={error} onRetry={() => setReload(value => value + 1)} />}
+    {!skipGuessInfo && <ErrorBox message={error} onRetry={() => setReload(value => value + 1)} />}
     {isHigher ? <HigherLowerGame /> :
-      mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> :
-        <Hub account={account} source={info} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
-    {!isHigher && sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}
-    {!isHigher && sheet === 'rules' && <Rules onClose={() => setSheet(null)} />}
+      isWordle ? <WordleGame account={account} authLoading={authLoading} authError={authError} wordleInfo={wordleInfo} onRetryInfo={() => setWordleInfoReload(value => value + 1)} /> :
+        mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> :
+          <Hub account={account} source={info} wordleInfo={wordleInfo} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
+    {!skipGuessInfo && sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}
+    {!skipGuessInfo && sheet === 'rules' && <Rules onClose={() => setSheet(null)} />}
   </div></div>
 }
