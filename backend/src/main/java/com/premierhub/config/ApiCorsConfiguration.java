@@ -58,6 +58,11 @@ public class ApiCorsConfiguration implements WebMvcConfigurer {
                 .allowedHeaders("Accept", "Content-Type", "X-CSRF-TOKEN")
                 .exposedHeaders("Retry-After")
                 .allowCredentials(true);
+        registry.addMapping("/api/analytics/pageview")
+                .allowedOrigins(allowedOrigins.toArray(String[]::new))
+                .allowedMethods("POST")
+                .allowedHeaders("Accept", "Content-Type")
+                .allowCredentials(true);
         registry.addMapping("/api/fantasy/2026/validate")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("POST")

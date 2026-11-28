@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -31,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.url=jdbc:h2:mem:admin-analytics-int;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
+        "PREMIERHUB_CORS_ALLOWED_ORIGINS=https://premierhub.vercel.app",
         "PREMIERHUB_GOOGLE_CLIENT_ID=",
         "PREMIERHUB_GOOGLE_CLIENT_SECRET=",
         "premierhub.auth-proxy.enabled=false",
@@ -208,5 +210,98 @@ class AdminAnalyticsIntegrationTest {
                 .andExpect(jsonPath("$.fantasy.history[0].gameweek").value(11))
                 .andExpect(jsonPath("$.fantasy.history[0].occurredAtUtc").value("2026-11-24T12:00:00Z"))
                 .andExpect(jsonPath("$.fantasy.history[0].actorType").value("SYSTEM"));
+    }
+
+    @Test
+    void pageviewCorsAllowsConfiguredOriginRecordsGuestSkipsAdminRejectsForeignAndSupportsPreflight() throws Exception {
+        String allowedOrigin = "https://premierhub.vercel.app";
+        String guestVisitorId = UUID.randomUUID().toString();
+
+        // 1. Valid Origin + guest -> 204 + CORS headers + writes 1 row each to site_visitors_daily & site_page_views_daily
+        mvc.perform(post("/api/analytics/pageview")
+                        .header("Origin", allowedOrigin)
+                        .header("User-Agent", "Mozilla/5.0")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"visitorId\":\"" + guestVisitorId + "\",\"page\":\"schedule\"}"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Access-Control-Allow-Origin", allowedOrigin))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_visitors_daily", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_page_views_daily", Integer.class));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT views FROM site_page_views_daily WHERE page_key = 'schedule'", Integer.class));
+
+        // 2. Valid Origin + authenticated ADMIN -> 204 + CORS headers + writes nothing
+        mvc.perform(post("/api/analytics/pageview")
+                        .with(user("admin@example.test").roles("ADMIN"))
+                        .header("Origin", allowedOrigin)
+                        .header("User-Agent", "Mozilla/5.0")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"visitorId\":\"" + UUID.randomUUID() + "\",\"page\":\"admin\"}"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Access-Control-Allow-Origin", allowedOrigin))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_visitors_daily", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_page_views_daily", Integer.class));
+
+        // 3. Foreign Origin -> 403, no CORS allow header, writes nothing
+        mvc.perform(post("/api/analytics/pageview")
+                        .header("Origin", "https://evil.example")
+                        .header("User-Agent", "Mozilla/5.0")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"visitorId\":\"" + UUID.randomUUID() + "\",\"page\":\"home\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_visitors_daily", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM site_page_views_daily", Integer.class));
+
+        // 4. Preflight OPTIONS from valid Origin -> 200 with full CORS headers
+        mvc.perform(options("/api/analytics/pageview")
+                        .header("Origin", allowedOrigin)
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", allowedOrigin))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("POST")))
+                .andExpect(header().string("Access-Control-Allow-Headers", containsString("Content-Type")))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+    }
+
+    @Test
+    void allPublicFrontendPostEndpointsAllowConfiguredOriginWithoutCors403() throws Exception {
+        String allowedOrigin = "https://premierhub.vercel.app";
+
+        // Public POST endpoints called directly by the frontend without CSRF
+        String[][] publicPosts = {
+                {"/api/analytics/pageview", "{\"visitorId\":\"" + UUID.randomUUID() + "\",\"page\":\"home\"}"},
+                {"/api/fantasy/2026/validate", "{\"formation\":\"4-3-3\",\"picks\":{}}"}
+        };
+
+        for (String[] endpoint : publicPosts) {
+            String path = endpoint[0];
+            String payload = endpoint[1];
+
+            mvc.perform(options(path)
+                            .header("Origin", allowedOrigin)
+                            .header("Access-Control-Request-Method", "POST")
+                            .header("Access-Control-Request-Headers", "Content-Type"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Access-Control-Allow-Origin", allowedOrigin))
+                    .andExpect(header().string("Access-Control-Allow-Methods", containsString("POST")));
+
+            int statusCode = mvc.perform(post(path)
+                            .header("Origin", allowedOrigin)
+                            .header("User-Agent", "Mozilla/5.0")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload))
+                    .andExpect(header().string("Access-Control-Allow-Origin", allowedOrigin))
+                    .andReturn()
+                    .getResponse()
+                    .getStatus();
+            assertNotEquals(403, statusCode, "Public POST " + path + " must not be rejected with 403 CORS");
+        }
     }
 }
