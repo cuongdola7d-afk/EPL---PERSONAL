@@ -39,7 +39,11 @@ public class WordleController {
 
     @GetMapping("/info")
     public ResponseEntity<InfoView> info() {
-        return noStore(service.info());
+        var timed = service.infoTimed();
+        return ResponseEntity.ok()
+                .header("Cache-Control", "public, max-age=30")
+                .header("Server-Timing", timed.serverTiming())
+                .body(timed.view());
     }
 
     @GetMapping("/today")

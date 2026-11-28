@@ -455,6 +455,86 @@ export function wordleToastMessage(code, length, fallback = '') {
   }
 }
 
+export const WORDLE_INFO_CACHE_KEY = 'prismaxi_wordle_info_v1'
+
+function defaultStorage() {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
+
+export function readWordleInfoCache(storage = defaultStorage()) {
+  try {
+    const raw = storage?.getItem?.(WORDLE_INFO_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || parsed.enabled !== true) return null
+    if (typeof parsed.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(parsed.date)) return null
+    const puzzleNumber = parsed.puzzleNumber === null ||
+      (Number.isSafeInteger(parsed.puzzleNumber) && parsed.puzzleNumber >= 1)
+      ? parsed.puzzleNumber
+      : null
+    return { enabled: true, puzzleNumber, date: parsed.date }
+  } catch {
+    return null
+  }
+}
+
+export function writeWordleInfoCache(info, storage = defaultStorage()) {
+  if (!info || info.enabled !== true || typeof info.date !== 'string') return
+  try {
+    storage?.setItem?.(WORDLE_INFO_CACHE_KEY, JSON.stringify({
+      enabled: true,
+      puzzleNumber: Number.isSafeInteger(info.puzzleNumber) && info.puzzleNumber >= 1 ? info.puzzleNumber : null,
+      date: info.date,
+    }))
+  } catch {
+    // Ignore blocked/quota-full localStorage.
+  }
+}
+
+export function clearWordleInfoCache(storage = defaultStorage()) {
+  try {
+    storage?.removeItem?.(WORDLE_INFO_CACHE_KEY)
+  } catch {
+    // Ignore blocked localStorage.
+  }
+}
+
+export function resolveWordleHubState({ infoStatus, cachedInfo = null, infoData = null }) {
+  if (infoStatus === 'disabled') {
+    return { mode: 'hidden', data: null }
+  }
+  if (infoStatus === 'enabled') {
+    return { mode: 'card', data: infoData ?? cachedInfo ?? null }
+  }
+  if (infoStatus === 'loading') {
+    if (cachedInfo?.enabled === true) {
+      return { mode: 'card', data: cachedInfo }
+    }
+    return { mode: 'skeleton', data: null }
+  }
+  if (cachedInfo?.enabled === true) {
+    return { mode: 'card', data: cachedInfo }
+  }
+  return { mode: 'hidden', data: null }
+}
+
+export function startHubRequestsParallel({
+  accountId = null,
+  signal,
+  fetchWordleInfoFn,
+  fetchGuessInfoFn,
+  fetchWordleTodayFn,
+}) {
+  const wordleInfoPromise = fetchWordleInfoFn(signal)
+  const guessInfoPromise = fetchGuessInfoFn(signal)
+  const wordleTodayPromise = accountId != null ? fetchWordleTodayFn(accountId, signal) : null
+  return { wordleInfoPromise, guessInfoPromise, wordleTodayPromise }
+}
+
 export function resolveWordleAccess({ infoStatus, account }) {
   if (infoStatus === 'disabled') {
     return { showOnHub: false, routeAction: 'redirect' }
@@ -474,7 +554,7 @@ export function wordleHubSummary(account, state, infoData = null) {
     return { title: defaultTitle, statusText: 'Đăng nhập để chơi', statusDone: false, actionLabel: 'Vào chơi' }
   }
   if (state.loading && !state.data) {
-    return { title: defaultTitle, statusText: 'Đang kiểm tra…', statusDone: false, actionLabel: 'Vào chơi' }
+    return { title: defaultTitle, statusText: 'Đang tải…', statusDone: false, actionLabel: 'Vào chơi' }
   }
   if (!state.data) {
     return { title: defaultTitle, statusText: 'Chưa kiểm tra được tiến trình', statusDone: false, actionLabel: 'Vào chơi' }

@@ -41,29 +41,52 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WordleService {
     public static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
+    private static final long ABSENT_PUZZLE_TTL_SECONDS = 30;
+
     private final WordleRepository repository;
     private final Clock clock;
     private final Map<LocalDate, Puzzle> puzzleCache = new ConcurrentHashMap<>();
     private final Map<String, Map<String, DictionaryItem>> dictionaryCache = new ConcurrentHashMap<>();
     private final Map<String, AnswerView> answerDetailsCache = new ConcurrentHashMap<>();
+    private volatile LocalDate absentPuzzleDate;
+    private volatile Instant absentPuzzleCheckedAt;
 
     public WordleService(WordleRepository repository, @Qualifier("wordleClock") Clock clock) {
         this.repository = repository;
         this.clock = clock;
     }
 
-    @Transactional(readOnly = true)
+    public record TimedInfoResult(InfoView view, String serverTiming) { }
+
     public InfoView info() {
+        return infoTimed().view();
+    }
+
+    public TimedInfoResult infoTimed() {
+        long tStart = System.nanoTime();
         Instant now = clock.instant();
         LocalDate today = today(now);
         Puzzle existing = puzzleCache.get(today);
-        if (existing == null) {
+        boolean cacheHit = false;
+        long dbNs = 0L;
+        if (existing != null) {
+            cacheHit = true;
+        } else if (today.equals(absentPuzzleDate)
+                && absentPuzzleCheckedAt != null
+                && !now.isAfter(absentPuzzleCheckedAt.plusSeconds(ABSENT_PUZZLE_TTL_SECONDS))) {
+            cacheHit = true;
+        } else {
+            long tDbStart = System.nanoTime();
             existing = repository.findPuzzleByDate(today).orElse(null);
+            dbNs = System.nanoTime() - tDbStart;
             if (existing != null) {
                 cachePuzzle(existing);
+            } else {
+                absentPuzzleDate = today;
+                absentPuzzleCheckedAt = now;
             }
         }
-        return new InfoView(
+        InfoView view = new InfoView(
                 true,
                 existing == null ? null : existing.puzzleNumber(),
                 today,
@@ -72,6 +95,11 @@ public class WordleService {
                 nextDay(today),
                 now
         );
+        long totalNs = System.nanoTime() - tStart;
+        String timing = cacheHit
+                ? String.format(Locale.ROOT, "cache;desc=\"hit\", total;dur=%.2f", nsToMs(totalNs))
+                : String.format(Locale.ROOT, "cache;desc=\"miss\", db;dur=%.2f, total;dur=%.2f", nsToMs(dbNs), nsToMs(totalNs));
+        return new TimedInfoResult(view, timing);
     }
 
     @Transactional
@@ -180,6 +208,8 @@ public class WordleService {
         puzzleCache.clear();
         dictionaryCache.clear();
         answerDetailsCache.clear();
+        absentPuzzleDate = null;
+        absentPuzzleCheckedAt = null;
     }
 
     private TodayView applyGuess(Puzzle puzzle, Game game, String rawLetters, Instant now) {
@@ -362,6 +392,10 @@ public class WordleService {
             puzzleCache.clear();
         }
         puzzleCache.put(puzzle.puzzleDate(), puzzle);
+        if (puzzle.puzzleDate().equals(absentPuzzleDate)) {
+            absentPuzzleDate = null;
+            absentPuzzleCheckedAt = null;
+        }
     }
 
     private Game findOrCreateGame(long accountId, String puzzleId, Instant now) {

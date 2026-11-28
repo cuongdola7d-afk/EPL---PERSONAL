@@ -33,3 +33,14 @@
 @media(max-width:1000px){.mg-game-grid.mg-game-grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.mg-game-grid.mg-game-grid-4 .mg-game-card:last-child{grid-column:auto;max-width:none}}
 @media(max-width:720px){.mg-today{grid-template-columns:1fr}}
 @media(max-width:560px){.mg-game-grid.mg-game-grid-4{grid-template-columns:1fr}.mg-today{grid-template-columns:1fr}}
+.mg-skel-fill,.mg-skel-line{background:linear-gradient(90deg,var(--mg-card2),var(--mg-card),var(--mg-card2));background-size:200% 100%;animation:mg-shimmer 1.4s infinite}
+.mg-skel-line{display:block;border-radius:8px;height:12px}
+.mg-tg-skeleton .mg-mode-icon{background:linear-gradient(90deg,var(--mg-card2),var(--mg-card),var(--mg-card2));background-size:200% 100%;animation:mg-shimmer 1.4s infinite}
+.mg-skel-line-title{width:62%;height:14px;margin-bottom:6px}
+.mg-skel-line-sub{width:46%;height:11px}
+.mg-skel-line-cta{width:66px;height:13px;margin-left:auto;flex-shrink:0}
+.mg-game-card-skeleton{border-color:var(--mg-line)!important}
+.mg-skel-card-title{width:70%;height:24px;margin-bottom:14px;border-radius:10px}
+.mg-skel-card-text{width:100%;height:13px;margin-bottom:8px}
+.mg-skel-card-text-short{width:78%;margin-bottom:24px}
+.mg-skel-btn{display:block;margin-top:auto;width:100%;height:44px;border-radius:99px}

@@ -3,7 +3,13 @@ import { fetchGuessHistory, fetchGuessInfo, fetchGuessLeaderboard, fetchGuessPla
 import { fetchWordleInfo, fetchWordleToday } from '../api/wordle.js'
 import usePlayerGuessGame from '../hooks/usePlayerGuessGame.js'
 import { formatCountdown, gameHash, isFinished, remainingSeconds } from '../minigame/playerGuess.js'
-import { resolveWordleAccess, wordleHubSummary } from '../minigame/wordle.js'
+import {
+  clearWordleInfoCache,
+  readWordleInfoCache,
+  resolveWordleHubState,
+  wordleHubSummary,
+  writeWordleInfoCache,
+} from '../minigame/wordle.js'
 import { matchesPlayerSearch } from '../utils/playerSort.js'
 import { getInitials } from '../utils/initials.js'
 import HigherLowerGame from './HigherLowerGame.jsx'
@@ -100,14 +106,20 @@ function ModePicker({ account, source, onClose }) {
     </a>)}
   </Sheet>
 }
-function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
+function Hub({ account, source, wordleInfo, cachedWordleInfo, onRefresh, onPick }) {
   const daily = usePlayerGuessGame(account?.id, 'DAILY')
-  const showWordle = resolveWordleAccess({ infoStatus: wordleInfo.status, account }).showOnHub
-  const [wordle, setWordle] = useState({ data: null, loading: false, error: '' })
+  const wordleHub = resolveWordleHubState({
+    infoStatus: wordleInfo.status,
+    cachedInfo: cachedWordleInfo,
+    infoData: wordleInfo.data,
+  })
+  const showWordleSlot = wordleHub.mode !== 'hidden'
+  const wordleDisabled = wordleInfo.status === 'disabled'
+  const [wordle, setWordle] = useState(() => ({ data: null, loading: Boolean(account?.id) && !wordleDisabled, error: '' }))
   const [wordleReload, setWordleReload] = useState(0)
 
   useEffect(() => {
-    if (!showWordle || !account?.id) {
+    if (!account?.id || wordleDisabled) {
       setWordle({ data: null, loading: false, error: '' })
       return undefined
     }
@@ -121,23 +133,24 @@ function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
       })
       .catch(failure => {
         if (controller.signal.aborted) return
-        setWordle({ data: null, loading: false, error: failure.message })
+        setWordle({ data: null, loading: false, error: failure.status === 404 ? '' : failure.message })
       })
     return () => controller.abort()
-  }, [account?.id, showWordle, wordleReload])
+  }, [account?.id, wordleDisabled, wordleReload])
 
   const game = daily.game
   const legacyStatus = !account ? 'Đăng nhập để chơi thử thách hằng ngày.' : daily.loading ? 'Đang kiểm tra tiến trình hôm nay…' :
     isFinished(game) ? `Hôm nay bạn đã chơi xong: ${game.finalScore} điểm. Hẹn gặp lại ngày mai.` : game ? 'Bạn đang chơi dở. Tiếp tục để hoàn thành ván hôm nay.' : 'Mọi người nhận cùng một cầu thủ bí ẩn. Mỗi tài khoản có một ván mỗi ngày.'
   const compactGuessStatus = !account ? 'Đăng nhập để chơi' : daily.loading ? 'Đang kiểm tra tiến trình hôm nay…' :
     isFinished(game) ? `Đã xong · ${game.finalScore} điểm` : game ? 'Đang chơi dở' : 'Chưa chơi'
-  const wdSummary = wordleHubSummary(account, wordle, wordleInfo.data)
-  const wordleClock = wordle.data
+  const wdSummary = wordleHubSummary(account, wordle, wordleHub.data)
+  const freshWordleClock = wordle.data
     ? { serverTime: wordle.data.serverTime, nextDailyAt: wordle.data.nextAt }
-    : wordleInfo.data
-      ? { serverTime: wordleInfo.data.serverTime, nextDailyAt: wordleInfo.data.nextAt }
-      : null
-  const clockSource = daily.current ?? wordleClock ?? source
+    : null
+  const infoWordleClock = wordleInfo.data
+    ? { serverTime: wordleInfo.data.serverTime, nextDailyAt: wordleInfo.data.nextAt }
+    : null
+  const clockSource = freshWordleClock ?? daily.current ?? source ?? infoWordleClock
   const handleExpire = () => {
     daily.refresh()
     setWordleReload(value => value + 1)
@@ -147,11 +160,30 @@ function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
   return <>
     <section className="mg-hero"><svg className="mg-deco" viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><circle cx="100" cy="100" r="80" /><circle cx="100" cy="100" r="46" /><circle cx="100" cy="100" r="6" /><path d="M100 20v160" /></svg>
       <p className="mg-eyebrow">PRISMAXI / PLAY</p><h1>Minigame</h1><p>Chơi vui, thử trí nhớ bóng đá của bạn và leo bảng xếp hạng riêng của từng trò.</p></section>
-    {showWordle ? (
+    {showWordleSlot ? (
       <div className="mg-daily">
         <div className="mg-today-wrap">
           <h3>Thử thách hôm nay</h3>
           <div className="mg-today">
+            {wordleHub.mode === 'skeleton' ? (
+              <div className="mg-tg mg-tg-skeleton" aria-hidden="true">
+                <span className="mg-mode-icon mg-skel-fill" />
+                <div className="mg-tg-copy">
+                  <span className="mg-skel-line mg-skel-line-title" />
+                  <span className="mg-skel-line mg-skel-line-sub" />
+                </div>
+                <span className="mg-skel-line mg-skel-line-cta" />
+              </div>
+            ) : (
+              <div className="mg-tg">
+                <span className="mg-mode-icon mg-mode-wd">W</span>
+                <div className="mg-tg-copy">
+                  <b>{wdSummary.title}</b>
+                  <span className={wdSummary.statusDone ? 'mg-tg-done' : ''}>{wdSummary.statusText}</span>
+                </div>
+                <a href="#minigame/wordle">{wdSummary.actionLabel} <span aria-hidden="true">→</span></a>
+              </div>
+            )}
             <div className="mg-tg">
               <span className="mg-mode-icon">?</span>
               <div className="mg-tg-copy">
@@ -159,14 +191,6 @@ function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
                 <span className={isFinished(game) ? 'mg-tg-done' : ''}>{compactGuessStatus}</span>
               </div>
               <a href={gameHash('DAILY')}>{game ? 'Xem ván' : 'Vào thử thách'} <span aria-hidden="true">→</span></a>
-            </div>
-            <div className="mg-tg">
-              <span className="mg-mode-icon mg-mode-wd">W</span>
-              <div className="mg-tg-copy">
-                <b>{wdSummary.title}</b>
-                <span className={wdSummary.statusDone ? 'mg-tg-done' : ''}>{wdSummary.statusText}</span>
-              </div>
-              <a href="#minigame/wordle">{wdSummary.actionLabel} <span aria-hidden="true">→</span></a>
             </div>
           </div>
         </div>
@@ -177,7 +201,23 @@ function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
         <div className="mg-daily-clock"><span>Câu hỏi mới sau</span><Countdown source={daily.current ?? source} onExpire={() => { daily.refresh(); onRefresh() }} /></div></div>
     )}
     <ErrorBox message={daily.error} onRetry={daily.refresh} disabled={daily.loading} retryLabel="Kiểm tra tiến trình" />
-    <h2 className="mg-section-title">Chọn trò chơi</h2><div className={`mg-game-grid${showWordle ? ' mg-game-grid-4' : ''}`}>
+    <h2 className="mg-section-title">Chọn trò chơi</h2><div className={`mg-game-grid${showWordleSlot ? ' mg-game-grid-4' : ''}`}>
+      {wordleHub.mode === 'skeleton' ? (
+        <article className="mg-game-card mg-game-card-skeleton" aria-hidden="true">
+          <div className="mg-art mg-skel-fill" />
+          <div className="mg-card-body">
+            <span className="mg-skel-line mg-skel-card-title" />
+            <span className="mg-skel-line mg-skel-card-text" />
+            <span className="mg-skel-line mg-skel-card-text mg-skel-card-text-short" />
+            <span className="mg-skel-btn mg-skel-fill" />
+          </div>
+        </article>
+      ) : wordleHub.mode === 'card' && (
+        <article className="mg-game-card">
+          <div className="mg-art"><img src="/minigame/wordle.svg" alt="" /><span className="mg-badge mg-badge-new">Mới · hằng ngày</span></div>
+          <div className="mg-card-body"><h3>Wordle cầu thủ</h3><p>Đoán tên một cầu thủ Premier League trong 6 lượt. Ô xanh là đúng chữ đúng chỗ, ô vàng là có chữ nhưng sai chỗ. Mỗi ngày một tên mới.</p><a className="mg-primary" href="#minigame/wordle">Chơi ngay <Icon name="arrow" /></a></div>
+        </article>
+      )}
       <article className="mg-game-card">
         <div className="mg-art"><img src="/minigame/guess.svg" alt="" /><span className="mg-badge">Có thử thách hằng ngày</span></div>
         <div className="mg-card-body"><h3>Đoán cầu thủ qua gợi ý</h3><p>Bắt đầu với 100 điểm và ba gợi ý. Mở thêm gợi ý hoặc đoán, càng ít gợi ý bạn càng được nhiều điểm.</p><button className="mg-primary" onClick={onPick}>Chơi ngay <Icon name="arrow" /></button></div>
@@ -186,17 +226,11 @@ function Hub({ account, source, wordleInfo, onRefresh, onPick }) {
         <div className="mg-art"><img src="/minigame/higher.svg" alt="" /><span className="mg-badge">Chơi tự do</span></div>
         <div className="mg-card-body"><h3>Cao hay thấp</h3><p>Hai thẻ cầu thủ đặt cạnh nhau. Mỗi lượt là OVR, bàn thắng hoặc kiến tạo: đoán người bên phải cao hơn hay thấp hơn. Đoán đúng liên tiếp để lập kỷ lục.</p><a className="mg-primary" href="#minigame/higher">Chơi ngay <Icon name="arrow" /></a></div>
       </article>
-      {showWordle && (
-        <article className="mg-game-card">
-          <div className="mg-art"><img src="/minigame/wordle.svg" alt="" /><span className="mg-badge mg-badge-new">Mới · hằng ngày</span></div>
-          <div className="mg-card-body"><h3>Wordle cầu thủ</h3><p>Đoán tên một cầu thủ Premier League trong 6 lượt. Ô xanh là đúng chữ đúng chỗ, ô vàng là có chữ nhưng sai chỗ. Mỗi ngày một tên mới.</p><a className="mg-primary" href="#minigame/wordle">Chơi ngay <Icon name="arrow" /></a></div>
-        </article>
-      )}
       <article className="mg-game-card mg-soon">
         <div className="mg-art"><img src="/minigame/lineup.svg" alt="" /><span className="mg-badge">Sắp ra mắt</span></div>
         <div className="mg-card-body"><h3>Đội hình bí ẩn</h3><p>Nhận diện các cầu thủ trong đội hình. Thử trí nhớ của bạn qua những gương mặt quen thuộc.</p><button className="mg-primary" disabled>Sắp ra mắt</button></div>
       </article>
-    </div><p className="mg-footnote">{showWordle ? 'Đoán cầu thủ có bảng xếp hạng. Wordle cầu thủ chỉ lưu thống kê của riêng bạn. Điểm Minigame độc lập với Fantasy.' : 'Mỗi trò có bảng xếp hạng riêng. Điểm Minigame độc lập với Fantasy.'}</p>
+    </div><p className="mg-footnote">{showWordleSlot ? 'Đoán cầu thủ có bảng xếp hạng. Wordle cầu thủ chỉ lưu thống kê của riêng bạn. Điểm Minigame độc lập với Fantasy.' : 'Mỗi trò có bảng xếp hạng riêng. Điểm Minigame độc lập với Fantasy.'}</p>
   </>
 }
 function Leaderboard({ account, revision }) {
@@ -335,6 +369,7 @@ function GamePage({ account, authLoading, authError, mode, source, onRules }) {
 }
 export default function MinigamePage({ account, authLoading, authError, route, theme = 'dark' }) {
   const [info, setInfo] = useState(null), [error, setError] = useState(''), [reload, setReload] = useState(0)
+  const [cachedWordleInfo, setCachedWordleInfo] = useState(() => readWordleInfoCache())
   const [wordleInfo, setWordleInfo] = useState({ status: 'loading', data: null, error: '' })
   const [wordleInfoReload, setWordleInfoReload] = useState(0)
   const [sheet, setSheet] = useState(null)
@@ -351,14 +386,21 @@ export default function MinigamePage({ account, authLoading, authError, route, t
   useEffect(() => {
     if (isHigher) return undefined
     const controller = new AbortController()
+    const bypassCache = reload > 0 || wordleInfoReload > 0
     setWordleInfo(prev => prev.status === 'enabled' ? prev : { status: 'loading', data: null, error: '' })
-    fetchWordleInfo(controller.signal)
+    fetchWordleInfo(controller.signal, { bypassCache })
       .then(data => {
-        if (!controller.signal.aborted) setWordleInfo({ status: 'enabled', data, error: '' })
+        if (!controller.signal.aborted) {
+          writeWordleInfoCache(data)
+          setCachedWordleInfo({ enabled: true, puzzleNumber: data.puzzleNumber ?? null, date: data.date })
+          setWordleInfo({ status: 'enabled', data, error: '' })
+        }
       })
       .catch(failure => {
         if (controller.signal.aborted) return
         if (failure.status === 404) {
+          clearWordleInfoCache()
+          setCachedWordleInfo(null)
           setWordleInfo({ status: 'disabled', data: null, error: '' })
         } else {
           setWordleInfo({ status: 'error', data: null, error: failure.message })
@@ -373,7 +415,7 @@ export default function MinigamePage({ account, authLoading, authError, route, t
     {isHigher ? <HigherLowerGame /> :
       isWordle ? <WordleGame account={account} authLoading={authLoading} authError={authError} wordleInfo={wordleInfo} onRetryInfo={() => setWordleInfoReload(value => value + 1)} /> :
         mode ? <GamePage key={mode} account={account} authLoading={authLoading} authError={authError} mode={mode} source={info} onRules={() => setSheet('rules')} /> :
-          <Hub account={account} source={info} wordleInfo={wordleInfo} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
+          <Hub account={account} source={info} wordleInfo={wordleInfo} cachedWordleInfo={cachedWordleInfo} onRefresh={() => setReload(value => value + 1)} onPick={() => setSheet('modes')} />}
     {!skipGuessInfo && sheet === 'modes' && <ModePicker account={account} source={info} onClose={() => setSheet(null)} />}
     {!skipGuessInfo && sheet === 'rules' && <Rules onClose={() => setSheet(null)} />}
   </div></div>

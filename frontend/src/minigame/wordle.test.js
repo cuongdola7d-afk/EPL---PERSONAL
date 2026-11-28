@@ -8,8 +8,10 @@ import {
   WORDLE_DEBUG_MAX_ENTRIES,
   WORDLE_FLIP_DURATION_MS,
   WORDLE_FLIP_TOTAL_MS,
+  WORDLE_INFO_CACHE_KEY,
   buildRowWordGroups,
   buildShareText,
+  clearWordleInfoCache,
   createGuessSyncQueue,
   createTelexBurstQueue,
   createWordleDebugLog,
@@ -20,15 +22,20 @@ import {
   highlightWordPrefix,
   isWordleDebugEnabled,
   keyboardKeyStates,
+  readWordleInfoCache,
   resolveWordleAccess,
+  resolveWordleHubState,
   scoreWordleGuess,
+  startHubRequestsParallel,
   validateWordleGuessLocally,
   wordleFlipDelayMs,
   wordleHubSummary,
   wordleToastMessage,
   wordShape,
+  writeWordleInfoCache,
 } from './wordle.js'
 import { parseMinigameRoute } from './playerGuess.js'
+import { fetchGuessInfo } from '../api/playerGuess.js'
 import {
   clearWordleCsrfCache,
   fetchWordleDictionary,
@@ -237,6 +244,7 @@ test('formatWordleDateLabel, wordleToastMessage, and wordleHubSummary format Vie
   assert.equal(wordleToastMessage('ALREADY_GUESSED', 7), 'Bạn đã đoán tên này rồi')
 
   assert.equal(wordleHubSummary(null, { loading: false, data: null }).statusText, 'Đăng nhập để chơi')
+  assert.equal(wordleHubSummary({ id: 1 }, { loading: true, data: null }).statusText, 'Đang tải…')
   assert.equal(wordleHubSummary({ id: 1 }, { loading: false, data: sampleToday({ guesses: [] }) }).statusText, 'Chưa chơi')
   assert.equal(wordleHubSummary({ id: 1 }, { loading: false, data: sampleToday() }).statusText, 'Đang chơi dở · lượt 2/6')
   assert.equal(wordleHubSummary({ id: 1 }, { loading: false, data: sampleToday({ status: 'WON' }) }).statusText, 'Đã đoán ra · 1/6')
@@ -345,6 +353,136 @@ test('Wordle API client sends account header, CSRF token on POST, and preserves 
     const stats = await fetchWordleStats(42)
     assert.equal(stats.winPercentage, 89)
     await assert.rejects(fetchWordleToday(42), err => err.status === 404)
+  })
+})
+
+test('Wordle Hub ordering puts Wordle first in both Today challenge box and game grid', () => {
+  const source = fs.readFileSync(new URL('../components/MinigamePage.jsx', import.meta.url), 'utf8')
+  const todayStart = source.indexOf('<div className="mg-today">')
+  const todayEnd = source.indexOf('<div className="mg-daily-clock">', todayStart)
+  const todayBlock = source.slice(todayStart, todayEnd)
+  const wordleTodayIdx = todayBlock.indexOf('href="#minigame/wordle"')
+  const guessTodayIdx = todayBlock.indexOf("<b>Đoán cầu thủ</b>")
+  assert.ok(wordleTodayIdx > 0 && guessTodayIdx > 0 && wordleTodayIdx < guessTodayIdx,
+    'Wordle must appear before Đoán cầu thủ in Thử thách hôm nay')
+
+  const gridStart = source.indexOf('className={`mg-game-grid')
+  const gridEnd = source.indexOf('<p className="mg-footnote">', gridStart)
+  const gridBlock = source.slice(gridStart, gridEnd)
+  const idxWordle = gridBlock.indexOf('<h3>Wordle cầu thủ</h3>')
+  const idxGuess = gridBlock.indexOf('<h3>Đoán cầu thủ qua gợi ý</h3>')
+  const idxHigher = gridBlock.indexOf('<h3>Cao hay thấp</h3>')
+  const idxLineup = gridBlock.indexOf('<h3>Đội hình bí ẩn</h3>')
+  assert.ok(idxWordle > 0 && idxWordle < idxGuess && idxGuess < idxHigher && idxHigher < idxLineup,
+    'Game grid order must be Wordle → Đoán cầu thủ → Cao hay thấp → Đội hình bí ẩn')
+})
+
+test('Wordle localStorage cache renders card immediately, falls back to skeleton, clears on 404, and tolerates blocked storage', () => {
+  const store = new Map()
+  const memStorage = {
+    getItem: key => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => { store.set(key, String(value)) },
+    removeItem: key => { store.delete(key) },
+  }
+
+  // First visit (no cache) -> skeleton while /info is loading
+  assert.equal(readWordleInfoCache(memStorage), null)
+  assert.deepEqual(resolveWordleHubState({ infoStatus: 'loading', cachedInfo: null }), {
+    mode: 'skeleton',
+    data: null,
+  })
+
+  // Cache saved after /info 200 -> card renders immediately before /info resolves on next visit
+  writeWordleInfoCache({ enabled: true, puzzleNumber: 7, date: '2026-11-28', extra: 'ignored' }, memStorage)
+  const cached = readWordleInfoCache(memStorage)
+  assert.deepEqual(cached, { enabled: true, puzzleNumber: 7, date: '2026-11-28' })
+  assert.deepEqual(resolveWordleHubState({ infoStatus: 'loading', cachedInfo: cached }), {
+    mode: 'card',
+    data: cached,
+  })
+
+  // /info returns 404 -> hide card and clear cache
+  clearWordleInfoCache(memStorage)
+  assert.equal(store.has(WORDLE_INFO_CACHE_KEY), false)
+  assert.deepEqual(resolveWordleHubState({ infoStatus: 'disabled', cachedInfo: cached }), {
+    mode: 'hidden',
+    data: null,
+  })
+
+  // Blocked localStorage throws SecurityError -> never throws, behaves like empty cache
+  const blockedStorage = {
+    getItem() { throw new Error('SecurityError') },
+    setItem() { throw new Error('SecurityError') },
+    removeItem() { throw new Error('SecurityError') },
+  }
+  assert.doesNotThrow(() => writeWordleInfoCache({ enabled: true, puzzleNumber: 7, date: '2026-11-28' }, blockedStorage))
+  assert.equal(readWordleInfoCache(blockedStorage), null)
+  assert.doesNotThrow(() => clearWordleInfoCache(blockedStorage))
+  assert.deepEqual(resolveWordleHubState({ infoStatus: 'loading', cachedInfo: readWordleInfoCache(blockedStorage) }), {
+    mode: 'skeleton',
+    data: null,
+  })
+})
+
+test('Hub launches /wordle/info, /player-guess/info, and /wordle/today in parallel (not sequentially)', async () => {
+  const startedUrls = []
+  const resolvers = new Map()
+  const guessInfoPayload = {
+    season: 2026,
+    timeZone: 'Asia/Ho_Chi_Minh',
+    serverTime,
+    nextDailyAt: nextAt,
+    dailyAvailable: true,
+    startingScore: 100,
+    maxGuesses: 3,
+    initialHints: 3,
+    hintPenalty: 10,
+    wrongGuessPenalty: 20,
+    hints: [],
+  }
+  const wordleInfoPayload = {
+    enabled: true,
+    puzzleNumber: 12,
+    date: '2026-11-27',
+    length: 7,
+    shape: [3, 4],
+    nextAt,
+    serverTime,
+  }
+
+  await withFetch(async url => {
+    startedUrls.push(url)
+    return new Promise(resolve => {
+      resolvers.set(url, () => {
+        if (url.endsWith('/wordle/info')) resolve(json(wordleInfoPayload))
+        else if (url.endsWith('/player-guess/info')) resolve(json(guessInfoPayload))
+        else if (url.endsWith('/wordle/today')) resolve(json(sampleToday()))
+      })
+    })
+  }, async () => {
+    const reqs = startHubRequestsParallel({
+      accountId: 42,
+      fetchWordleInfoFn: fetchWordleInfo,
+      fetchGuessInfoFn: fetchGuessInfo,
+      fetchWordleTodayFn: fetchWordleToday,
+    })
+
+    // All 3 requests must already be in-flight simultaneously BEFORE any single one resolves!
+    assert.deepEqual(startedUrls, [
+      '/api/minigame/2026/wordle/info',
+      '/api/minigame/2026/player-guess/info',
+      '/api/minigame/2026/wordle/today',
+    ])
+
+    for (const resolve of resolvers.values()) resolve()
+    const [wInfo, gInfo, wToday] = await Promise.all([
+      reqs.wordleInfoPromise,
+      reqs.guessInfoPromise,
+      reqs.wordleTodayPromise,
+    ])
+    assert.equal(wInfo.puzzleNumber, 12)
+    assert.equal(gInfo.season, 2026)
+    assert.equal(wToday.puzzleNumber, 12)
   })
 })
 

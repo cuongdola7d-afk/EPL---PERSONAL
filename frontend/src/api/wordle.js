@@ -147,7 +147,7 @@ async function fetchCsrfToken(signal, { forceRefresh = false } = {}) {
   return cachedCsrf
 }
 
-async function request(path, { accountId, body, signal, omitCredentials = false, _retriedCsrf = false } = {}) {
+async function request(path, { accountId, body, signal, omitCredentials = false, useHttpCache = false, _retriedCsrf = false } = {}) {
   const headers = { Accept: 'application/json' }
   if (accountId != null) headers['X-PrismaXI-Account-ID'] = String(accountId)
 
@@ -161,7 +161,7 @@ async function request(path, { accountId, body, signal, omitCredentials = false,
   try {
     response = await fetch(`${BASE}${path}`, {
       credentials: omitCredentials ? 'omit' : 'include',
-      cache: 'no-store',
+      ...(useHttpCache ? {} : { cache: 'no-store' }),
       headers,
       signal,
       ...(body !== undefined ? { method: 'POST', body: JSON.stringify(body) } : {}),
@@ -216,8 +216,8 @@ async function request(path, { accountId, body, signal, omitCredentials = false,
   return data
 }
 
-export async function fetchWordleInfo(signal) {
-  const data = await request('/info', { signal, omitCredentials: true })
+export async function fetchWordleInfo(signal, { bypassCache = false } = {}) {
+  const data = await request('/info', { signal, omitCredentials: true, useHttpCache: !bypassCache })
   if (!isValidWordleInfo(data)) malformed()
   return data
 }

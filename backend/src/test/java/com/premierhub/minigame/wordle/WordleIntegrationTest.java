@@ -31,6 +31,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -465,6 +466,8 @@ class WordleIntegrationTest {
 
         String bodyBefore = mvc.perform(get(API + "/info"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "public, max-age=30"))
+                .andExpect(header().string("Server-Timing", org.hamcrest.Matchers.containsString("cache;desc=\"miss\"")))
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.puzzleNumber").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.length").value(org.hamcrest.Matchers.nullValue()))
@@ -474,6 +477,13 @@ class WordleIntegrationTest {
                 .andExpect(jsonPath("$.serverTime").isNotEmpty())
                 .andReturn().getResponse().getContentAsString();
 
+        // Second /info call before any puzzle exists is served from in-memory absence cache (0 DB queries)
+        mvc.perform(get(API + "/info"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "public, max-age=30"))
+                .andExpect(header().string("Server-Timing", org.hamcrest.Matchers.containsString("cache;desc=\"hit\"")))
+                .andExpect(jsonPath("$.puzzleNumber").value(org.hamcrest.Matchers.nullValue()));
+
         Integer afterCount = jdbc.queryForObject("SELECT COUNT(*) FROM wordle_puzzles", Integer.class);
         assertEquals(beforeCount, afterCount, "/info must not create a puzzle when none exists yet");
         assertFalse(bodyBefore.contains("van Dijk"));
@@ -482,10 +492,12 @@ class WordleIntegrationTest {
         assertFalse(bodyBefore.contains("answer"));
         assertFalse(bodyBefore.contains("playerId"));
 
-        // Once today's puzzle exists, /info exposes puzzleNumber, length, and shape while still hiding answer details.
+        // Once today's puzzle exists, /info exposes puzzleNumber, length, and shape from cache while still hiding answer details.
         service.today(101);
         String bodyAfter = mvc.perform(get(API + "/info"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "public, max-age=30"))
+                .andExpect(header().string("Server-Timing", org.hamcrest.Matchers.containsString("cache;desc=\"hit\"")))
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.puzzleNumber").value(1))
                 .andExpect(jsonPath("$.length").value(7))
