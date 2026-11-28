@@ -184,7 +184,7 @@ function PlayerMatchSheet({ player, club, season, evidenceStatus, isProvisional 
           </a>
           <p className="mx-sh-src">
             {isProvisional
-              ? 'Số liệu tạm: Fantasy Premier League · Chờ xác nhận rating SofaScore'
+              ? 'Số liệu tạm tính · Chờ xác nhận rating sau trận'
               : 'Rating: Sofascore · Chỉ số mở rộng: Fantasy Premier League'}
           </p>
         </div>

@@ -87,8 +87,11 @@ public class FplJsonParser {
             Integer teamAScore = nullableInt(node, "team_a_score", ctx);
             boolean finished = requiredBoolean(node, "finished", ctx);
             boolean finishedProvisional = requiredBoolean(node, "finished_provisional", ctx);
+            boolean started = node.has("started") && node.get("started").isBoolean()
+                    ? node.get("started").booleanValue()
+                    : (finished || finishedProvisional);
             fixtures.add(new FplModels.FplFixture(id, event, kickoff, teamH, teamA,
-                    teamHScore, teamAScore, finished, finishedProvisional));
+                    teamHScore, teamAScore, started, finished, finishedProvisional));
         }
         return List.copyOf(fixtures);
     }

@@ -134,3 +134,62 @@ test('formation slot labels stay consistent while actual and season position met
     assert.deepEqual(data, before)
   }
 })
+
+test('PROVISIONAL lineup places 11 starters and SUB_USED without requiring SUB_UNUSED', () => {
+  const data = sample('4-2-3-1', 'CLUB_DEFAULT')
+  const playedOnly = data.players.slice(0, 12)
+  const provMeta = data.evidence.players.slice(0, 12).map((player) => ({
+    ...player,
+    matchPosition: null,
+    rowIndex: null,
+    slotIndex: null,
+    substitutionInMinute: null,
+    substitutionOutMinute: null,
+  }))
+  const provEvidence = {
+    formation: '4-2-3-1',
+    formationSource: 'CLUB_USUAL',
+    startersStatus: 'PROVISIONAL',
+    players: provMeta,
+  }
+  const result = matchLineup(playedOnly, provEvidence, 'home')
+  assert.equal(result.startersStatus, 'PROVISIONAL')
+  assert.equal(result.formation, '4-2-3-1')
+  assert.equal(result.formationSource, 'CLUB_USUAL')
+  assert.equal(result.positionSource, 'ILLUSTRATION')
+  assert.equal(result.nodes.length, 11)
+  assert.equal(result.starters.length, 11)
+  assert.equal(result.substitutes.length, 1)
+  assert.equal(result.bench.length, 0)
+  assert.equal(result.unknown.length, 0)
+})
+
+test('PENDING_FPL returns waiting status and unassignable PROVISIONAL reports INSUFFICIENT_POSITIONS', () => {
+  const data = sample('4-2-3-1', 'CLUB_DEFAULT')
+  const pending = matchLineup(data.players.slice(0, 10), {
+    formation: '4-2-3-1',
+    formationSource: 'CLUB_USUAL',
+    startersStatus: 'PENDING_FPL',
+    players: data.evidence.players.slice(0, 10),
+  }, 'away')
+  assert.equal(pending.startersStatus, 'PENDING_FPL')
+  assert.equal(pending.nodes.length, 0)
+
+  const badMeta = data.evidence.players.slice(0, 11).map((player) => ({
+    ...player,
+    matchPosition: null,
+    rowIndex: null,
+    slotIndex: null,
+    seasonPosition: 'GK',
+    seasonEligiblePositions: ['GK'],
+  }))
+  const insufficient = matchLineup(data.players.slice(0, 11), {
+    formation: '4-2-3-1',
+    formationSource: 'CLUB_USUAL',
+    startersStatus: 'PROVISIONAL',
+    players: badMeta,
+  }, 'home')
+  assert.equal(insufficient.startersStatus, 'PROVISIONAL')
+  assert.equal(insufficient.positionSource, 'INSUFFICIENT_POSITIONS')
+  assert.equal(insufficient.nodes.length, 0)
+})

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { clubVisual } from '../utils/matchView.js'
-import { formatLiveStatusBadge, resolveMatchDisplay } from '../utils/liveScores.js'
+import { formatDetailLiveStatusBadge, formatLiveStatusBadge, resolveMatchDisplay } from '../utils/liveScores.js'
 import MatchKickoff from './MatchKickoff.jsx'
 
 const LIVE_STATUSES = new Set(['LIVE', 'IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'])
@@ -20,18 +20,19 @@ const LABELS = {
   AWARDED: 'Kết quả xử lý',
 }
 
-export function matchStatusMeta(status, liveState = null, nowMs = Date.now()) {
+export function matchStatusMeta(status, liveState = null, nowMs = Date.now(), { detail = false } = {}) {
   if (liveState?.status === 'LIVE') {
+    const formatter = detail ? formatDetailLiveStatusBadge : formatLiveStatusBadge
     return {
       tone: 'live',
-      label: formatLiveStatusBadge(liveState, nowMs) ?? 'Đang đá',
+      label: formatter(liveState, nowMs) ?? (detail ? 'Trực tiếp' : 'Đang đá'),
       isLive: true,
     }
   }
   if (LIVE_STATUSES.has(status)) {
     return {
       tone: 'live',
-      label: LABELS[status] ?? 'Đang đá',
+      label: detail ? 'Trực tiếp' : (LABELS[status] ?? 'Đang đá'),
       isLive: true,
     }
   }
@@ -68,7 +69,7 @@ export function ClubCrest({ name, large = false }) {
   return <span className={`mx-crest${large ? ' mx-crest-large' : ''}`} style={{ '--mx-club-color': color }} aria-hidden="true">{code}</span>
 }
 
-export function MatchStatus({ status, liveState = null }) {
+export function MatchStatus({ status, liveState = null, detail = false }) {
   const isLiveTicking = liveState?.status === 'LIVE' &&
     Number.isInteger(liveState.minute) &&
     liveState.minute > 0 &&
@@ -87,7 +88,7 @@ export function MatchStatus({ status, liveState = null }) {
     return () => clearInterval(timer)
   }, [isLiveTicking, liveState?.minute, liveState?.updatedAt, liveState?.minuteUpdatedAt])
 
-  const { tone, label, isLive } = matchStatusMeta(status, liveState, nowMs)
+  const { tone, label, isLive } = matchStatusMeta(status, liveState, nowMs, { detail })
   return (
     <span className={`mx-status mx-status-${tone}`}>
       {isLive && <span className="mx-live-dot" aria-hidden="true" />}

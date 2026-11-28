@@ -61,6 +61,9 @@ class LiveScoreServiceTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.premierhub.service.FootballQueries footballQueries;
+
     private MutableClock clock;
     private StubHttpClient stubHttp;
     private FplLiveClient fplClient;
@@ -785,6 +788,164 @@ class LiveScoreServiceTest {
         assertEquals(2, lateState.goals().size());
         assertNull(lateState.goals().get(0).approxMinute());
         assertNull(lateState.goals().get(1).approxMinute());
+    }
+
+    @Test
+    void persistsGoalEventsIdempotentlySurvivesRestartHandlesVarOwnGoalsAndScoreReconciliation() {
+        // Seed players used in Hull (home=1000000322) vs Brighton (away=1000000397)
+        int welbeckId = playerMap.get(136).playerId();
+        int millarId = playerMap.get(287).playerId();
+        jdbc.update("MERGE INTO players (id, name) KEY(id) VALUES (?, ?), (?, ?)",
+                welbeckId, playerMap.get(136).playerName(),
+                millarId, playerMap.get(287).playerName());
+
+        clock.setInstant(Instant.parse("2026-11-22T14:01:00Z"));
+        LiveScoreService service = new LiveScoreService(
+                jdbc, fplClient, streamService, objectMapper, clock, teamMap, playerMap, true, "", List.of());
+
+        // 1. Kickoff 0-0 -> starts tracking
+        stubHttp.enqueueResponse(200, """
+                [{
+                  "id": 106, "event": 11, "kickoff_time": "2026-11-22T14:00:00Z",
+                  "started": true, "finished": false, "finished_provisional": false, "minutes": 1,
+                  "team_h": 11, "team_a": 5, "team_h_score": 0, "team_a_score": 0,
+                  "stats": [
+                    {"identifier": "goals_scored", "h": [], "a": []},
+                    {"identifier": "own_goals", "h": [], "a": []}
+                  ]
+                }]
+                """, Map.of());
+        assertTrue(service.pollOnce());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM match_goal_events WHERE fixture_id = ?", Integer.class, HULL_BHA_DB_ID));
+
+        // 2. Minute 12: Welbeck scores (away)
+        clock.setInstant(Instant.parse("2026-11-22T14:12:00Z"));
+        String at12 = """
+                [{
+                  "id": 106, "event": 11, "kickoff_time": "2026-11-22T14:00:00Z",
+                  "started": true, "finished": false, "finished_provisional": false, "minutes": 12,
+                  "team_h": 11, "team_a": 5, "team_h_score": 0, "team_a_score": 1,
+                  "stats": [
+                    {"identifier": "goals_scored", "h": [], "a": [{"value": 1, "element": 136}]},
+                    {"identifier": "own_goals", "h": [], "a": []}
+                  ]
+                }]
+                """;
+        stubHttp.enqueueResponse(200, at12, Map.of());
+        assertTrue(service.pollOnce());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM match_goal_events WHERE fixture_id = ?", Integer.class, HULL_BHA_DB_ID));
+
+        // 3. Idempotent repeat at minute 13 -> no duplicate row, keeps minute 12
+        clock.setInstant(Instant.parse("2026-11-22T14:13:00Z"));
+        stubHttp.enqueueResponse(200, at12.replace("\"minutes\": 12", "\"minutes\": 13"), Map.of());
+        assertTrue(service.pollOnce());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM match_goal_events WHERE fixture_id = ?", Integer.class, HULL_BHA_DB_ID));
+        assertEquals(12, jdbc.queryForObject("SELECT \"minute\" FROM match_goal_events WHERE fixture_id = ? AND player_id = ?",
+                Integer.class, HULL_BHA_DB_ID, welbeckId));
+
+        // 4. Minute 30: Home player Millar scores OWN GOAL (in "h" -> benefits away club Brighton 1000000397!)
+        //    and Minute 67: Welbeck scores his 2nd goal
+        clock.setInstant(Instant.parse("2026-11-22T14:30:00Z"));
+        stubHttp.enqueueResponse(200, """
+                [{
+                  "id": 106, "event": 11, "kickoff_time": "2026-11-22T14:00:00Z",
+                  "started": true, "finished": false, "finished_provisional": false, "minutes": 30,
+                  "team_h": 11, "team_a": 5, "team_h_score": 0, "team_a_score": 2,
+                  "stats": [
+                    {"identifier": "goals_scored", "h": [], "a": [{"value": 1, "element": 136}]},
+                    {"identifier": "own_goals", "h": [{"value": 1, "element": 287}], "a": []}
+                  ]
+                }]
+                """, Map.of());
+        assertTrue(service.pollOnce());
+
+        clock.setInstant(Instant.parse("2026-11-22T15:22:00Z"));
+        String at67 = """
+                [{
+                  "id": 106, "event": 11, "kickoff_time": "2026-11-22T14:00:00Z",
+                  "started": true, "finished": false, "finished_provisional": false, "minutes": 67,
+                  "team_h": 11, "team_a": 5, "team_h_score": 0, "team_a_score": 3,
+                  "stats": [
+                    {"identifier": "goals_scored", "h": [], "a": [{"value": 2, "element": 136}]},
+                    {"identifier": "own_goals", "h": [{"value": 1, "element": 287}], "a": []}
+                  ]
+                }]
+                """;
+        stubHttp.enqueueResponse(200, at67, Map.of());
+        assertTrue(service.pollOnce());
+
+        MatchGoalEventRepository repo = new MatchGoalEventRepository(jdbc);
+        List<MatchGoalEventRepository.StoredGoalEvent> saved = repo.findByFixture(HULL_BHA_DB_ID);
+        assertEquals(3, saved.size());
+        assertEquals(12, saved.get(0).minute());
+        assertEquals("GOAL", saved.get(0).goalType());
+        assertEquals(1000000397, saved.get(0).clubId());
+        assertEquals(30, saved.get(1).minute());
+        assertEquals("OWN_GOAL", saved.get(1).goalType());
+        assertEquals(1000000397, saved.get(1).clubId(), "Own goal by home player must credit benefiting away club");
+        assertEquals(67, saved.get(2).minute());
+        assertEquals(2, saved.get(2).seq());
+
+        // 5. Simulated backend restart mid-match: brand-new LiveScoreService polls at minute 70 -> keeps 12, 30, 67!
+        clock.setInstant(Instant.parse("2026-11-22T15:25:00Z"));
+        LiveScoreService restarted = new LiveScoreService(
+                jdbc, fplClient, streamService, objectMapper, clock, teamMap, playerMap, true, "", List.of());
+        stubHttp.enqueueResponse(200, at67.replace("\"minutes\": 67", "\"minutes\": 70"), Map.of());
+        assertTrue(restarted.pollOnce());
+
+        LiveMatchState afterRestart = restarted.currentMatches().getFirst();
+        assertEquals(3, afterRestart.goals().size());
+        assertEquals(12, afterRestart.goals().get(0).approxMinute());
+        assertEquals(30, afterRestart.goals().get(1).approxMinute());
+        assertEquals(67, afterRestart.goals().get(2).approxMinute());
+        assertEquals(List.of(12, 30, 67), repo.findByFixture(HULL_BHA_DB_ID).stream()
+                .map(MatchGoalEventRepository.StoredGoalEvent::minute).toList());
+
+        // 6. VAR disallow: Welbeck's 2nd goal (seq=2, minute=67) is revoked -> drops from 2 to 1
+        clock.setInstant(Instant.parse("2026-11-22T15:27:00Z"));
+        stubHttp.enqueueResponse(200, """
+                [{
+                  "id": 106, "event": 11, "kickoff_time": "2026-11-22T14:00:00Z",
+                  "started": true, "finished": false, "finished_provisional": false, "minutes": 72,
+                  "team_h": 11, "team_a": 5, "team_h_score": 0, "team_a_score": 2,
+                  "stats": [
+                    {"identifier": "goals_scored", "h": [], "a": [{"value": 1, "element": 136}]},
+                    {"identifier": "own_goals", "h": [{"value": 1, "element": 287}], "a": []}
+                  ]
+                }]
+                """, Map.of());
+        assertTrue(restarted.pollOnce());
+        List<MatchGoalEventRepository.StoredGoalEvent> afterVar = repo.findByFixture(HULL_BHA_DB_ID);
+        assertEquals(2, afterVar.size());
+        assertEquals(List.of(12, 30), afterVar.stream().map(MatchGoalEventRepository.StoredGoalEvent::minute).toList());
+
+        // 7. Match finishes with matching official score 0-2 -> matchDetail returns goalEvents
+        jdbc.update("UPDATE fixtures SET status = 'FINISHED', home_goals = 0, away_goals = 2 WHERE id = ?", HULL_BHA_DB_ID);
+        var detailMatch = footballQueries.matchDetail(HULL_BHA_DB_ID, 2026).orElseThrow();
+        assertEquals(2, detailMatch.goalEvents().size());
+        assertEquals(12, detailMatch.goalEvents().get(0).minute());
+        assertEquals("GOAL", detailMatch.goalEvents().get(0).goalType());
+        assertEquals(30, detailMatch.goalEvents().get(1).minute());
+        assertEquals("OWN_GOAL", detailMatch.goalEvents().get(1).goalType());
+
+        // 8. Official score mismatch (0-3 vs 2 events) -> falls back to empty goalEvents list
+        jdbc.update("UPDATE fixtures SET home_goals = 0, away_goals = 3 WHERE id = ?", HULL_BHA_DB_ID);
+        var detailMismatch = footballQueries.matchDetail(HULL_BHA_DB_ID, 2026).orElseThrow();
+        assertTrue(detailMismatch.goalEvents().isEmpty(), "Mismatched goalEvents must fall back to legacy scorers");
+
+        // 9. Null-minute event sorts last when score matches
+        jdbc.update("""
+                INSERT INTO match_goal_events (fixture_id, club_id, player_id, "minute", goal_type, source, detected_at, seq)
+                VALUES (?, 1000000397, ?, NULL, 'GOAL', 'FPL_LIVE', TIMESTAMP '2026-11-22 15:30:00', 2)
+                """, HULL_BHA_DB_ID, welbeckId);
+        var detailWithNullMin = footballQueries.matchDetail(HULL_BHA_DB_ID, 2026).orElseThrow();
+        assertEquals(3, detailWithNullMin.goalEvents().size());
+        assertEquals(12, detailWithNullMin.goalEvents().get(0).minute());
+        assertEquals(30, detailWithNullMin.goalEvents().get(1).minute());
+        assertNull(detailWithNullMin.goalEvents().get(2).minute(), "Goal with null minute must sort last");
+
+        // Manual stats must stay completely untouched
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats", Integer.class));
     }
 
     private static final class MutableClock extends Clock {

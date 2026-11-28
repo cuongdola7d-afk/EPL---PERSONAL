@@ -41,6 +41,9 @@ public class FplProvisionalSync {
     private static final Logger log = LoggerFactory.getLogger(FplProvisionalSync.class);
     private static final int LEAGUE = FootballQueries.LEAGUE_ID;
     private static final int SEASON = FplCollectorService.SEASON_YEAR;
+    static final Duration LIVE_WINDOW_MAX_ELAPSED = Duration.ofMinutes(130);
+    static final Duration LIVE_CADENCE = Duration.ofMinutes(2);
+    static final Duration POST_MATCH_CADENCE = Duration.ofMinutes(10);
 
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
@@ -63,6 +66,7 @@ public class FplProvisionalSync {
     private volatile Instant lastFailureAt;
     private volatile int consecutiveFailures;
     private volatile CachedBootstrap cachedBootstrap;
+    private volatile Instant lastSyncedAt;
 
     @Autowired
     public FplProvisionalSync(
@@ -72,7 +76,7 @@ public class FplProvisionalSync {
             FplJsonParser parser,
             FplClient client,
             @Value("${premierhub.fpl.provisional-sync.enabled:false}") boolean enabled,
-            @Value("${premierhub.fpl.provisional-sync.min-elapsed-minutes:100}") long minElapsedMinutes,
+            @Value("${premierhub.fpl.provisional-sync.min-elapsed-minutes:5}") long minElapsedMinutes,
             @Value("${premierhub.fpl.provisional-sync.max-elapsed-hours:72}") long maxElapsedHours,
             @Value("${premierhub.fpl.provisional-sync.bootstrap-cache-hours:6}") long bootstrapCacheHours,
             @Value("${premierhub.fpl.provisional-sync.backoff-initial-minutes:10}") long backoffInitialMinutes,
@@ -179,11 +183,15 @@ public class FplProvisionalSync {
     }
 
     @Scheduled(
-            fixedDelayString = "${premierhub.fpl.provisional-sync.check-interval-ms:600000}",
+            fixedDelayString = "${premierhub.fpl.provisional-sync.check-interval-ms:60000}",
             initialDelayString = "${premierhub.fpl.provisional-sync.initial-delay-ms:30000}"
     )
     public void scheduledTick() {
-        runIfDue();
+        runScheduledTick();
+    }
+
+    public SyncSummary runScheduledTick() {
+        return runInternal(defaultSource, null, null, true);
     }
 
     public SyncSummary runIfDue() {
@@ -198,6 +206,21 @@ public class FplProvisionalSync {
             FplSource source,
             Map<Integer, FplMappingReader.TeamMapping> teamMapOverride,
             Map<Integer, FplMappingReader.PlayerMapping> playerMapOverride) {
+        return runInternal(source, teamMapOverride, playerMapOverride, false);
+    }
+
+    SyncSummary runScheduledTick(
+            FplSource source,
+            Map<Integer, FplMappingReader.TeamMapping> teamMapOverride,
+            Map<Integer, FplMappingReader.PlayerMapping> playerMapOverride) {
+        return runInternal(source, teamMapOverride, playerMapOverride, true);
+    }
+
+    private SyncSummary runInternal(
+            FplSource source,
+            Map<Integer, FplMappingReader.TeamMapping> teamMapOverride,
+            Map<Integer, FplMappingReader.PlayerMapping> playerMapOverride,
+            boolean enforceCadence) {
         if (!enabled || disabledByMappingError) {
             return SyncSummary.of(TickOutcome.DISABLED);
         }
@@ -229,9 +252,17 @@ public class FplProvisionalSync {
                 }
             }
 
-            Map<Integer, Set<Integer>> candidatesByGw = findCandidatesByGameweek(now);
+            CandidateBatch candidateBatch = findCandidateBatch(now);
+            Map<Integer, Set<Integer>> candidatesByGw = candidateBatch.byGameweek();
             if (candidatesByGw.isEmpty()) {
                 return SyncSummary.of(TickOutcome.NO_CANDIDATES);
+            }
+
+            if (enforceCadence && lastSyncedAt != null) {
+                Duration requiredCadence = candidateBatch.hasLiveWindowMatch() ? LIVE_CADENCE : POST_MATCH_CADENCE;
+                if (now.isBefore(lastSyncedAt.plus(requiredCadence))) {
+                    return SyncSummary.of(TickOutcome.NOT_DUE);
+                }
             }
 
             Instant startedAt = clock.instant();
@@ -270,15 +301,18 @@ public class FplProvisionalSync {
                     }
                 }
 
-                long durationMs = Math.max(0L, Duration.between(startedAt, clock.instant()).toMillis());
+                Instant finishedAt = clock.instant();
+                long durationMs = Math.max(0L, Duration.between(startedAt, finishedAt).toMillis());
                 consecutiveFailures = 0;
                 lastFailureAt = null;
+                lastSyncedAt = finishedAt;
 
                 if (fixturesWritten > 0 || skippedScoreMismatch > 0) {
-                    log.info("FPL provisional sync completed: gws={} fixturesWritten={} playerRows={} "
+                    log.info("FPL provisional sync completed: gws={} liveCadence={} fixturesWritten={} playerRows={} "
                                     + "unmapped={} skippedNotFinished={} skippedScoreMismatch={} "
                                     + "elementSummaryCalls={} durationMs={}",
-                            candidatesByGw.keySet(), fixturesWritten, rowsWritten, unmappedWritten,
+                            candidatesByGw.keySet(), candidateBatch.hasLiveWindowMatch(),
+                            fixturesWritten, rowsWritten, unmappedWritten,
                             skippedNotFinished, skippedScoreMismatch, elementSummaryCalls, durationMs);
                 }
                 return new SyncSummary(TickOutcome.SYNCED, fixturesWritten, rowsWritten, unmappedWritten,
@@ -297,6 +331,10 @@ public class FplProvisionalSync {
     }
 
     Map<Integer, Set<Integer>> findCandidatesByGameweek(Instant now) {
+        return findCandidateBatch(now).byGameweek();
+    }
+
+    private CandidateBatch findCandidateBatch(Instant now) {
         List<CandidateRow> rows = jdbc.query("""
                 SELECT f.id, f.gameweek, d.kickoff_utc
                 FROM fixtures f
@@ -318,6 +356,7 @@ public class FplProvisionalSync {
         ), LEAGUE, SEASON);
 
         Map<Integer, Set<Integer>> byGw = new LinkedHashMap<>();
+        boolean hasLiveWindow = false;
         for (CandidateRow row : rows) {
             Instant kickoff = parseKickoff(row.kickoffUtc());
             if (kickoff == null) {
@@ -326,9 +365,12 @@ public class FplProvisionalSync {
             Duration elapsed = Duration.between(kickoff, now);
             if (elapsed.compareTo(minElapsed) >= 0 && elapsed.compareTo(maxElapsed) <= 0) {
                 byGw.computeIfAbsent(row.gameweek(), ignored -> new LinkedHashSet<>()).add(row.fixtureId());
+                if (elapsed.compareTo(LIVE_WINDOW_MAX_ELAPSED) <= 0) {
+                    hasLiveWindow = true;
+                }
             }
         }
-        return byGw;
+        return new CandidateBatch(byGw, hasLiveWindow);
     }
 
     Duration backoffDuration(int failures) {
@@ -485,6 +527,9 @@ public class FplProvisionalSync {
     private record CandidateRow(int fixtureId, int gameweek, String kickoffUtc) {
     }
 
+    private record CandidateBatch(Map<Integer, Set<Integer>> byGameweek, boolean hasLiveWindowMatch) {
+    }
+
     private record CachedBootstrap(FplModels.Bootstrap bootstrap, Instant fetchedAt) {
     }
 
@@ -496,6 +541,7 @@ public class FplProvisionalSync {
         SKIPPED_RUNNING,
         BACKOFF,
         NO_CANDIDATES,
+        NOT_DUE,
         SYNCED,
         FAILED
     }

@@ -3,6 +3,7 @@ package com.premierhub.service;
 import com.premierhub.web.dto.ClubResponse;
 import com.premierhub.web.dto.MatchResponse;
 import com.premierhub.web.dto.MatchDetailResponse;
+import com.premierhub.web.dto.MatchGoalEventResponse;
 import com.premierhub.web.dto.MatchPlayerExtraStatsResponse;
 import com.premierhub.web.dto.MatchPlayerStatResponse;
 import com.premierhub.web.dto.InferredMatchStatsResponse;
@@ -10,7 +11,10 @@ import com.premierhub.web.dto.PlayerResponse;
 import com.premierhub.web.dto.PlayerMatchResponse;
 import com.premierhub.web.dto.StandingResponse;
 import com.premierhub.lineups.MatchLineupQueries;
+import com.premierhub.live.MatchGoalEventRepository;
 import com.premierhub.web.error.InvalidFilterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
@@ -35,10 +39,12 @@ import java.util.Set;
 public class FootballQueries {
     public static final int LEAGUE_ID = 39;
     public static final int DEFAULT_SEASON = 2024;
+    private static final Logger LOG = LoggerFactory.getLogger(FootballQueries.class);
     private final JdbcTemplate jdbc;
     private final MatchScoringService scoring;
     private final FixtureEvidenceService evidence;
     private final MatchLineupQueries lineups;
+    private final MatchGoalEventRepository goalEvents;
 
     public FootballQueries(JdbcTemplate jdbc, MatchScoringService scoring,
                            FixtureEvidenceService evidence) {
@@ -46,6 +52,7 @@ public class FootballQueries {
         this.scoring = scoring;
         this.evidence = evidence;
         this.lineups = new MatchLineupQueries(jdbc);
+        this.goalEvents = new MatchGoalEventRepository(jdbc);
     }
 
     public List<ClubResponse> clubs(int season, String keyword) {
@@ -368,6 +375,7 @@ public class FootballQueries {
     public Optional<MatchDetailResponse> matchDetail(int id, int season) {
         return match(id, season).map(match -> {
             if (season == 2026) {
+                List<MatchGoalEventResponse> matchGoalEvents = matchGoalEventsForDetail(match);
                 Map<Integer, MatchPlayerExtraStatsResponse> extraByPlayer = extraStatsByPlayer(id);
                 List<MatchPlayerStatResponse> players = jdbc.query("""
                         SELECT m.player_id, p.name AS player_name, m.club_id, ps.position,
@@ -393,11 +401,11 @@ public class FootballQueries {
                 if (!players.isEmpty()) {
                     return new MatchDetailResponse(match, home, away, "MANUAL_VERIFIED", null,
                             lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away),
-                            "CONFIRMED", null);
+                            "CONFIRMED", null, matchGoalEvents);
                 }
                 List<ProvisionalDetailRow> provisionalRows = jdbc.query("""
                         SELECT fp.player_id, p.name AS player_name, fp.club_id, ps.position,
-                               fp.minutes, fp.goals, fp.assists, fp.yellow_cards, fp.red_cards,
+                               fp.minutes, fp.starts, fp.goals, fp.assists, fp.yellow_cards, fp.red_cards,
                                fp.saves, fp.goals_conceded, fp.bps, fp.bonus, fp.tackles,
                                fp.clearances_blocks_interceptions, fp.recoveries, fp.defensive_contribution,
                                fp.expected_goals, fp.expected_assists, fp.fetched_at
@@ -413,6 +421,7 @@ public class FootballQueries {
                         ORDER BY fp.club_id, p.name, fp.player_id
                         """, (rs, row) -> new ProvisionalDetailRow(
                         provisionalPlayerStat(rs),
+                        rs.getObject("starts", Integer.class) == null ? 0 : rs.getInt("starts"),
                         rs.getTimestamp("fetched_at").toInstant()
                 ), id, LEAGUE_ID, season);
                 if (!provisionalRows.isEmpty()) {
@@ -423,12 +432,30 @@ public class FootballQueries {
                             .max(Instant::compareTo).orElse(null);
                     var provHome = provPlayers.stream().filter(player -> player.clubId() == match.homeClubId()).toList();
                     var provAway = provPlayers.stream().filter(player -> player.clubId() == match.awayClubId()).toList();
+                    var homeLineupInputs = provisionalRows.stream()
+                            .filter(row -> row.stat().clubId() == match.homeClubId())
+                            .map(row -> new MatchLineupQueries.ProvisionalPlayerInput(
+                                    row.stat().playerId(),
+                                    row.stat().minutes() == null ? 0 : row.stat().minutes(),
+                                    row.starts(),
+                                    row.stat().position()))
+                            .toList();
+                    var awayLineupInputs = provisionalRows.stream()
+                            .filter(row -> row.stat().clubId() == match.awayClubId())
+                            .map(row -> new MatchLineupQueries.ProvisionalPlayerInput(
+                                    row.stat().playerId(),
+                                    row.stat().minutes() == null ? 0 : row.stat().minutes(),
+                                    row.starts(),
+                                    row.stat().position()))
+                            .toList();
                     return new MatchDetailResponse(match, provHome, provAway, "PROVISIONAL_FPL", null,
-                            null, null, "PROVISIONAL_FPL", latestFetchedAt);
+                            lineups.buildProvisional(match.homeClubId(), homeLineupInputs),
+                            lineups.buildProvisional(match.awayClubId(), awayLineupInputs),
+                            "PROVISIONAL_FPL", latestFetchedAt, matchGoalEvents);
                 }
                 return new MatchDetailResponse(match, home, away, "MISSING", null,
                         lineups.read(id, match.homeClubId(), home), lineups.read(id, match.awayClubId(), away),
-                        "NONE", null);
+                        "NONE", null, matchGoalEvents);
             }
             List<MatchPlayerStatResponse> rawPlayers = jdbc.query("""
                     SELECT s.player_id, p.name AS player_name, s.club_id, s.position,
@@ -579,7 +606,46 @@ public class FootballQueries {
         );
     }
 
-    private record ProvisionalDetailRow(MatchPlayerStatResponse stat, Instant fetchedAt) {
+    private List<MatchGoalEventResponse> matchGoalEventsForDetail(MatchResponse match) {
+        List<MatchGoalEventRepository.StoredGoalEvent> stored;
+        try {
+            stored = goalEvents.findByFixture(match.id());
+        } catch (RuntimeException ignored) {
+            return List.of();
+        }
+        if (stored.isEmpty()) {
+            return List.of();
+        }
+        if (match.homeGoals() != null && match.awayGoals() != null) {
+            int homeCount = 0;
+            int awayCount = 0;
+            int otherCount = 0;
+            for (MatchGoalEventRepository.StoredGoalEvent e : stored) {
+                if (e.clubId() == match.homeClubId()) {
+                    homeCount++;
+                } else if (e.clubId() == match.awayClubId()) {
+                    awayCount++;
+                } else {
+                    otherCount++;
+                }
+            }
+            if (otherCount > 0 || homeCount != match.homeGoals() || awayCount != match.awayGoals()) {
+                LOG.warn("Goal events mismatch for fixture {} (goalEvents={}-{}, other={}, official={}-{}); falling back to legacy scorers",
+                        match.id(), homeCount, awayCount, otherCount, match.homeGoals(), match.awayGoals());
+                return List.of();
+            }
+        }
+        return stored.stream()
+                .map(e -> new MatchGoalEventResponse(
+                        e.playerId(),
+                        e.playerName() == null ? "Không rõ" : e.playerName(),
+                        e.clubId(),
+                        e.minute(),
+                        e.goalType()))
+                .toList();
+    }
+
+    private record ProvisionalDetailRow(MatchPlayerStatResponse stat, int starts, Instant fetchedAt) {
     }
 
     private static String shortPosition(String position) {

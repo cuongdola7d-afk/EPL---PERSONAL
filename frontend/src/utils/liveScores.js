@@ -94,6 +94,113 @@ export function formatLiveStatusBadge(liveState, nowMs = Date.now(), prevDisplay
   return null
 }
 
+export function formatDetailLiveStatusBadge(liveState, nowMs = Date.now(), prevDisplayMinute = null) {
+  if (!liveState || typeof liveState !== 'object') return null
+  if (liveState.status === 'LIVE') {
+    const minuteLabel = formatLiveMinuteLabel(liveState, nowMs, prevDisplayMinute)
+    return minuteLabel ? `Trực tiếp ${minuteLabel}` : 'Trực tiếp'
+  }
+  if (liveState.status === 'FT') {
+    return 'Kết thúc'
+  }
+  if (liveState.status === 'PRE') {
+    return 'Sắp đá'
+  }
+  return null
+}
+
+export function buildMatchGoalGroups(goalEvents, match, formatName = (name) => name) {
+  if (!Array.isArray(goalEvents) || goalEvents.length === 0 || !match) return null
+  const homeClubId = match.homeClubId
+  const awayClubId = match.awayClubId
+  let homeCount = 0
+  let awayCount = 0
+  for (const event of goalEvents) {
+    if (!event || typeof event !== 'object') return null
+    if (event.clubId === homeClubId) homeCount += 1
+    else if (event.clubId === awayClubId) awayCount += 1
+    else return null
+  }
+  if (Number.isInteger(match.homeGoals) && Number.isInteger(match.awayGoals)) {
+    if (homeCount !== match.homeGoals || awayCount !== match.awayGoals) {
+      return null
+    }
+  }
+  const groupSide = (clubId) => {
+    const map = new Map()
+    for (const event of goalEvents) {
+      if (event.clubId !== clubId) continue
+      const isOwnGoal = event.goalType === 'OWN_GOAL'
+      const rawName = event.playerName && String(event.playerName).trim()
+        ? String(event.playerName).trim()
+        : 'Không rõ'
+      const key = `${event.playerId ?? rawName}:${isOwnGoal ? 'OG' : 'G'}`
+      let entry = map.get(key)
+      if (!entry) {
+        entry = {
+          key,
+          playerId: event.playerId,
+          playerName: rawName,
+          displayName: formatName(rawName),
+          isOwnGoal,
+          minutes: [],
+          count: 0,
+        }
+        map.set(key, entry)
+      }
+      entry.count += 1
+      if (Number.isInteger(event.minute) && event.minute >= 0) {
+        entry.minutes.push(`${event.minute}'`)
+      }
+    }
+    return [...map.values()].map((entry) => {
+      const og = entry.isOwnGoal ? ' (phản lưới)' : ''
+      let text
+      if (entry.minutes.length > 0) {
+        text = `${entry.displayName}${og} ${entry.minutes.join(', ')}`
+      } else if (entry.count > 1) {
+        text = `${entry.displayName}${og} ×${entry.count}`
+      } else {
+        text = `${entry.displayName}${og}`
+      }
+      return { ...entry, text }
+    })
+  }
+  return {
+    home: groupSide(homeClubId),
+    away: groupSide(awayClubId),
+  }
+}
+
+const LIVE_MATCH_STATUSES = new Set(['LIVE', 'IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'])
+
+export function shouldAutoRefreshMatchDetail(match, detail, liveState) {
+  if (!match) return false
+  const isConfirmed = detail?.dataStatus === 'CONFIRMED' || Boolean(match.hasManualStats)
+  if (match.status === 'FINISHED' && isConfirmed) {
+    return false
+  }
+  if (liveState?.status === 'LIVE') return true
+  if (LIVE_MATCH_STATUSES.has(match.status)) return true
+  if (detail?.dataStatus === 'PROVISIONAL_FPL' && match.status !== 'FINISHED') return true
+  return false
+}
+
+export function startVisibleInterval({
+  intervalMs = 60_000,
+  isVisible = () => typeof document === 'undefined' || document.visibilityState === 'visible',
+  onTick,
+  setIntervalFn = setInterval,
+  clearIntervalFn = clearInterval,
+}) {
+  const id = setIntervalFn(() => {
+    if (isVisible()) {
+      onTick()
+    }
+  }, intervalMs)
+  return () => clearIntervalFn(id)
+}
+
 export function formatLiveGoalText(goal) {
   if (!goal || typeof goal !== 'object') return ''
   const name = goal.playerName && String(goal.playerName).trim()

@@ -33,9 +33,25 @@ public final class FplModels {
             int teamA,
             Integer teamHScore,
             Integer teamAScore,
+            boolean started,
             boolean finished,
             boolean finishedProvisional
     ) {
+        public FplFixture(
+                int id,
+                Integer event,
+                Instant kickoffTime,
+                int teamH,
+                int teamA,
+                Integer teamHScore,
+                Integer teamAScore,
+                boolean finished,
+                boolean finishedProvisional
+        ) {
+            this(id, event, kickoffTime, teamH, teamA, teamHScore, teamAScore,
+                    finished || finishedProvisional, finished, finishedProvisional);
+        }
+
         public LocalDate kickoffDateUtc() {
             return kickoffTime.atOffset(ZoneOffset.UTC).toLocalDate();
         }

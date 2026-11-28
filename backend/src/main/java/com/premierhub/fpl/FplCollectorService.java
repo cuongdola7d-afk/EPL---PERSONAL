@@ -390,18 +390,29 @@ public class FplCollectorService {
                         fixtureId, gameweek, db.matchDate(), fpl.kickoffDateUtc());
                 continue;
             }
-            if (!fpl.finished() && !fpl.finishedProvisional()) {
+            if (!fpl.started() && !fpl.finished() && !fpl.finishedProvisional()) {
                 skippedNotFinished++;
                 continue;
             }
-            if (fpl.teamHScore() == null || fpl.teamAScore() == null
-                    || db.homeGoals() == null || db.awayGoals() == null
-                    || !Objects.equals(fpl.teamHScore(), db.homeGoals())
-                    || !Objects.equals(fpl.teamAScore(), db.awayGoals())) {
-                skippedScoreMismatch++;
-                log.warn("FPL provisional sync skipped fixture_id={} (fpl_fixture={}): score mismatch db={}-{} vs fpl={}-{}",
-                        db.id(), fpl.id(), db.homeGoals(), db.awayGoals(), fpl.teamHScore(), fpl.teamAScore());
-                continue;
+            boolean dbHasScore = db.homeGoals() != null && db.awayGoals() != null;
+            if (fpl.finished()) {
+                if (fpl.teamHScore() == null || fpl.teamAScore() == null || !dbHasScore
+                        || !Objects.equals(fpl.teamHScore(), db.homeGoals())
+                        || !Objects.equals(fpl.teamAScore(), db.awayGoals())) {
+                    skippedScoreMismatch++;
+                    log.warn("FPL provisional sync skipped fixture_id={} (fpl_fixture={}): score mismatch db={}-{} vs fpl={}-{}",
+                            db.id(), fpl.id(), db.homeGoals(), db.awayGoals(), fpl.teamHScore(), fpl.teamAScore());
+                    continue;
+                }
+            } else if (dbHasScore) {
+                if (fpl.teamHScore() == null || fpl.teamAScore() == null
+                        || !Objects.equals(fpl.teamHScore(), db.homeGoals())
+                        || !Objects.equals(fpl.teamAScore(), db.awayGoals())) {
+                    skippedScoreMismatch++;
+                    log.warn("FPL provisional sync skipped fixture_id={} (fpl_fixture={}): score mismatch db={}-{} vs fpl={}-{}",
+                            db.id(), fpl.id(), db.homeGoals(), db.awayGoals(), fpl.teamHScore(), fpl.teamAScore());
+                    continue;
+                }
             }
             String fplStatus = fpl.finished() ? "FINAL_FPL" : "PROVISIONAL";
             readyMatched.put(fpl.id(), new MatchedFixture(

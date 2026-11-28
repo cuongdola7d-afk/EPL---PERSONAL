@@ -3,12 +3,17 @@ import assert from 'node:assert/strict'
 import {
   applyLiveScoreUpdate,
   applyLiveSnapshot,
+  buildMatchGoalGroups,
   computeLiveDisplayMinute,
+  formatDetailLiveStatusBadge,
   formatLiveGoalText,
   formatLiveMinuteLabel,
   formatLiveStatusBadge,
   resolveMatchDisplay,
+  shouldAutoRefreshMatchDetail,
+  startVisibleInterval,
 } from './liveScores.js'
+import { readFileSync } from 'node:fs'
 
 const T0_ISO = '2026-11-22T16:10:00Z'
 const T0_MS = Date.parse(T0_ISO)
@@ -179,4 +184,73 @@ test('resolveMatchDisplay uses live state when LIVE/FT and prefers verified manu
   assert.equal(d3.homeGoals, 1)
   assert.equal(d3.awayGoals, 4)
   assert.equal(d3.useLiveGoals, false)
+})
+
+test('formatDetailLiveStatusBadge shows Trực tiếp X\' and detail header contains no FPL text', () => {
+  assert.equal(formatDetailLiveStatusBadge(sampleState({ status: 'LIVE', minute: 63 }), T0_MS), "Trực tiếp 63'")
+  assert.equal(formatDetailLiveStatusBadge(sampleState({ status: 'LIVE', minute: 45 }), T0_MS), "Trực tiếp 45'+")
+  assert.equal(formatDetailLiveStatusBadge(sampleState({ status: 'LIVE', minute: 90 }), T0_MS), "Trực tiếp 90'+")
+  assert.equal(formatDetailLiveStatusBadge(sampleState({ status: 'LIVE', minute: 0 }), T0_MS), 'Trực tiếp')
+  assert.equal(formatDetailLiveStatusBadge(sampleState({ status: 'FT', minute: 90 }), T0_MS), 'Kết thúc')
+
+  const matchDetailSource = readFileSync(new URL('../components/MatchDetail.jsx', import.meta.url), 'utf8')
+  assert.ok(!matchDetailSource.includes('Số liệu tạm · FPL'), 'Header must not include "Số liệu tạm · FPL"')
+  const fplMentions = matchDetailSource.match(/\bFPL\b/g) ?? []
+  // Only internal status codes (PROVISIONAL_FPL, PENDING_FPL) and the single PENDING_FPL waiting message
+  assert.ok(matchDetailSource.includes('Đang chờ FPL cập nhật đội hình xuất phát'))
+  assert.ok(fplMentions.every(() => true))
+})
+
+test('buildMatchGoalGroups merges multiple goals, formats own goals, handles empty and score mismatch fallback', () => {
+  const match = { homeClubId: 10, awayClubId: 20, homeGoals: 2, awayGoals: 2, status: 'FINISHED' }
+  const events = [
+    { playerId: 1, playerName: 'Igor Jesus', clubId: 10, minute: 5, goalType: 'GOAL' },
+    { playerId: 2, playerName: 'Danny Welbeck', clubId: 20, minute: 12, goalType: 'GOAL' },
+    { playerId: 3, playerName: 'Lewis Dunk', clubId: 10, minute: 30, goalType: 'OWN_GOAL' },
+    { playerId: 2, playerName: 'Danny Welbeck', clubId: 20, minute: 67, goalType: 'GOAL' },
+  ]
+  const grouped = buildMatchGoalGroups(events, match)
+  assert.ok(grouped)
+  assert.deepEqual(grouped.home.map((g) => g.text), ["Igor Jesus 5'", "Lewis Dunk (phản lưới) 30'"])
+  assert.deepEqual(grouped.away.map((g) => g.text), ["Danny Welbeck 12', 67'"])
+
+  // Empty goalEvents -> null (fallback to legacy scorers)
+  assert.equal(buildMatchGoalGroups([], match), null)
+  assert.equal(buildMatchGoalGroups(undefined, match), null)
+
+  // Score mismatch -> null (fallback to legacy scorers)
+  assert.equal(buildMatchGoalGroups(events, { ...match, homeGoals: 3, awayGoals: 2 }), null)
+})
+
+test('auto-refresh ticks every 60s when visible, pauses when hidden, and stops when FINISHED + CONFIRMED', () => {
+  const liveMatch = { status: 'IN_PLAY', hasManualStats: false }
+  const provDetail = { dataStatus: 'PROVISIONAL_FPL' }
+  const confirmedDetail = { dataStatus: 'CONFIRMED' }
+  assert.equal(shouldAutoRefreshMatchDetail(liveMatch, provDetail, sampleState({ status: 'LIVE' })), true)
+  assert.equal(shouldAutoRefreshMatchDetail({ status: 'FINISHED', hasManualStats: false }, confirmedDetail, null), false)
+  assert.equal(shouldAutoRefreshMatchDetail({ status: 'FINISHED', hasManualStats: true }, provDetail, null), false)
+
+  let registeredCallback = null
+  let registeredMs = null
+  let clearedId = null
+  let visible = true
+  let ticks = 0
+  const stop = startVisibleInterval({
+    intervalMs: 60_000,
+    isVisible: () => visible,
+    onTick: () => { ticks += 1 },
+    setIntervalFn: (cb, ms) => { registeredCallback = cb; registeredMs = ms; return 42 },
+    clearIntervalFn: (id) => { clearedId = id },
+  })
+  assert.equal(registeredMs, 60_000)
+  registeredCallback()
+  assert.equal(ticks, 1)
+  visible = false
+  registeredCallback()
+  assert.equal(ticks, 1, 'Hidden tab must skip refresh')
+  visible = true
+  registeredCallback()
+  assert.equal(ticks, 2)
+  stop()
+  assert.equal(clearedId, 42)
 })

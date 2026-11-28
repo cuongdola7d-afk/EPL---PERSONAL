@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +50,7 @@ public class LiveScoreService {
     private static final Logger LOG = LoggerFactory.getLogger(LiveScoreService.class);
 
     private final JdbcTemplate jdbc;
+    private final MatchGoalEventRepository goalEventRepository;
     private final FplLiveClient fplClient;
     private final LiveStreamService streamService;
     private final ObjectMapper objectMapper;
@@ -56,6 +58,7 @@ public class LiveScoreService {
 
     private final Map<Integer, TeamMapping> teamMap;
     private final Map<Integer, PlayerMapping> playerMap;
+    private final Map<Integer, Integer> fplElementByPlayerId;
     private final Set<Integer> warnedUnmappedElements = ConcurrentHashMap.newKeySet();
     private final Set<Integer> evictedFtFixtureIds = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<Integer, TrackedFixture> trackedFixtures = new ConcurrentHashMap<>();
@@ -109,12 +112,18 @@ public class LiveScoreService {
             String replayDir,
             List<String> activeProfiles) {
         this.jdbc = jdbc;
+        this.goalEventRepository = new MatchGoalEventRepository(jdbc);
         this.fplClient = fplClient;
         this.streamService = streamService;
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.teamMap = Map.copyOf(teamMap);
         this.playerMap = Map.copyOf(playerMap);
+        Map<Integer, Integer> reversePlayers = new HashMap<>();
+        for (Map.Entry<Integer, PlayerMapping> entry : this.playerMap.entrySet()) {
+            reversePlayers.putIfAbsent(entry.getValue().playerId(), entry.getKey());
+        }
+        this.fplElementByPlayerId = Map.copyOf(reversePlayers);
         this.enabled = enabled;
 
         boolean isProd = activeProfiles != null && activeProfiles.stream()
@@ -278,8 +287,22 @@ public class LiveScoreService {
             }
 
             boolean isInitialSighting = (existing == null);
+            List<TrackedGoal> previousGoals = existing != null
+                    ? existing.trackedGoals()
+                    : (isReplay ? List.of() : loadPersistedTrackedGoals(dbFixture));
             List<TrackedGoal> updatedGoals = extractGoals(node.get("stats"), minute, isInitialSighting,
-                    existing == null ? List.of() : existing.trackedGoals(), dbFixture.id());
+                    previousGoals, dbFixture.id());
+            if (!isReplay && shouldSyncGoalEvents(node.get("stats"), homeScore, awayScore)) {
+                List<MatchGoalEventRepository.GoalRecord> goalRecords = updatedGoals.stream()
+                        .map(g -> new MatchGoalEventRepository.GoalRecord(
+                                "home".equals(g.side()) ? dbFixture.homeClubId() : dbFixture.awayClubId(),
+                                g.playerId(),
+                                g.approxMinute(),
+                                g.ownGoal() ? MatchGoalEventRepository.TYPE_OWN_GOAL : MatchGoalEventRepository.TYPE_GOAL,
+                                g.occurrence()))
+                        .toList();
+                goalEventRepository.syncFixtureGoals(dbFixture.id(), goalRecords, now);
+            }
             List<GoalEvent> goalEvents = updatedGoals.stream()
                     .map(TrackedGoal::toEvent)
                     .toList();
@@ -412,13 +435,17 @@ public class LiveScoreService {
 
         // Keep existing goal occurrences in their original order up to the current count
         for (TrackedGoal prev : previousGoals) {
-            GoalKey key = new GoalKey(prev.fplElementId(), prev.side(), prev.ownGoal());
+            GoalKey key = matchPreviousGoalKey(prev, counts, fixtureId);
+            if (key == null) {
+                continue;
+            }
             int targetCount = counts.getOrDefault(key, 0);
             int seen = keptSoFar.getOrDefault(key, 0);
             if (seen < targetCount) {
                 keptSoFar.put(key, seen + 1);
-                retained.add(new TrackedGoal(prev.fplElementId(), prev.playerId(), prev.playerName(),
-                        prev.side(), prev.ownGoal(), seen + 1, prev.approxMinute()));
+                ResolvedPlayer resolved = resolvePlayer(key.fplElementId(), fixtureId);
+                retained.add(new TrackedGoal(key.fplElementId(), resolved.playerId(), resolved.playerName(),
+                        key.side(), key.ownGoal(), seen + 1, prev.approxMinute()));
             }
         }
 
@@ -437,6 +464,62 @@ public class LiveScoreService {
             }
         }
         return List.copyOf(retained);
+    }
+
+    private GoalKey matchPreviousGoalKey(TrackedGoal prev, Map<GoalKey, Integer> counts, int fixtureId) {
+        if (prev.fplElementId() > 0) {
+            GoalKey direct = new GoalKey(prev.fplElementId(), prev.side(), prev.ownGoal());
+            if (counts.containsKey(direct)) {
+                return direct;
+            }
+        }
+        for (GoalKey candidate : counts.keySet()) {
+            if (!candidate.side().equals(prev.side()) || candidate.ownGoal() != prev.ownGoal()) {
+                continue;
+            }
+            Integer candidatePlayerId = resolvePlayer(candidate.fplElementId(), fixtureId).playerId();
+            if (Objects.equals(candidatePlayerId, prev.playerId())) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private List<TrackedGoal> loadPersistedTrackedGoals(DbFixture dbFixture) {
+        List<MatchGoalEventRepository.StoredGoalEvent> stored = goalEventRepository.findByFixture(dbFixture.id());
+        if (stored.isEmpty()) {
+            return List.of();
+        }
+        List<TrackedGoal> restored = new ArrayList<>(stored.size());
+        for (MatchGoalEventRepository.StoredGoalEvent e : stored) {
+            String side = e.clubId() == dbFixture.homeClubId() ? "home" : "away";
+            boolean ownGoal = MatchGoalEventRepository.TYPE_OWN_GOAL.equals(e.goalType());
+            int fplElementId = e.playerId() == null ? -1 : fplElementByPlayerId.getOrDefault(e.playerId(), -1);
+            String playerName = e.playerName();
+            if (playerName == null && fplElementId > 0) {
+                PlayerMapping mapped = playerMap.get(fplElementId);
+                if (mapped != null) {
+                    playerName = mapped.playerName();
+                }
+            }
+            if (playerName == null) {
+                playerName = UNKNOWN_PLAYER_NAME;
+            }
+            restored.add(new TrackedGoal(fplElementId, e.playerId(), playerName, side, ownGoal, e.seq(), e.minute()));
+        }
+        return restored;
+    }
+
+    private static boolean shouldSyncGoalEvents(JsonNode statsNode, Integer homeScore, Integer awayScore) {
+        if (statsNode != null && statsNode.isArray()) {
+            for (int i = 0; i < statsNode.size(); i++) {
+                String id = statsNode.get(i).path("identifier").asText("");
+                if ("goals_scored".equals(id) || "own_goals".equals(id)) {
+                    return true;
+                }
+            }
+        }
+        return homeScore != null && awayScore != null && (homeScore + awayScore) == 0;
     }
 
     private static void collectGoalCounts(JsonNode arrayNode, String benefitingSide,

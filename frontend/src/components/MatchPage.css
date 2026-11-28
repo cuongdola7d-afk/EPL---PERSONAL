@@ -622,6 +622,20 @@
 .mx-pitch-evs .mx-ic-goal, .mx-pitch-evs .mx-ic-ast { width: 14px; height: 14px; }
 .mx-pitch-sub-out { position: absolute; left: -24px; bottom: 2px; display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px 1px 1px; border-radius: 999px; background: rgba(8, 20, 26, .88); color: #fff; font-size: .6rem; font-weight: 800; line-height: 1; white-space: nowrap; z-index: 2; }
 .mx-pitch-sub-out .mx-ic-sub { width: 14px; height: 14px; }
+.mx-pitch-sub-out-prov { left: -16px; bottom: -5px; padding: 1px 5px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, .22); color: #ff8a8a; }
+.mx-lineup-wait { padding: 24px 18px; border: 1px dashed var(--mx-line); border-radius: 16px; text-align: center; color: var(--mx-muted); font-size: .88rem; }
+.mx-lineup-wait strong { display: block; margin-bottom: 5px; color: var(--mx-text); font-size: .95rem; }
+.mx-lineup-wait p { margin: 0; }
+.mx-sub-group { min-width: 0; }
+.mx-sub-group h4 { margin: 0 0 9px; color: var(--mx-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.mx-sub-row { display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 7px; padding: 8px 11px; border: 1px solid var(--mx-line); border-radius: 12px; background: var(--mx-card-soft); color: var(--mx-text); text-align: left; font-size: .86rem; }
+.mx-sub-row-btn { cursor: pointer; }
+.mx-sub-row-btn:hover { border-color: var(--mx-accent); }
+.mx-sub-row .mx-avatar { width: 30px; height: 30px; font-size: .64rem; }
+.mx-sub-row strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .86rem; }
+.mx-sub-row small { flex: none; color: var(--mx-muted); font-size: .74rem; white-space: nowrap; }
+.mx-sub-empty { padding: 9px 11px; border: 1px dashed var(--mx-line); border-radius: 12px; color: var(--mx-muted); font-size: .8rem; }
+.mx-lineup-foot { margin: 12px 0 0; color: var(--mx-muted); font-size: .75rem; text-align: center; }
 .mx-player-row-btn { width: 100%; text-align: left; cursor: pointer; }
 .mx-player-row-dnp { opacity: .72; cursor: default; }
 .mx-player-row-dnp:hover { border-color: var(--mx-line); }

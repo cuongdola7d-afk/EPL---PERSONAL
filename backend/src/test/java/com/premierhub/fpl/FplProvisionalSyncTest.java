@@ -72,14 +72,18 @@ class FplProvisionalSyncTest {
     @BeforeEach
     void resetDb() {
         mvc = MockMvcBuilders.webAppContextSetup(wac).build();
+        jdbc.update("DELETE FROM match_goal_events");
         jdbc.update("DELETE FROM fpl_provisional_unmapped");
         jdbc.update("DELETE FROM fpl_provisional_player_stats");
         jdbc.update("DELETE FROM manual_fixture_player_extra_stats");
         jdbc.update("DELETE FROM manual_fixture_player_stats");
         jdbc.update("DELETE FROM fixture_lineup_players");
         jdbc.update("DELETE FROM fixture_lineups");
+        jdbc.update("DELETE FROM club_season_formations");
         jdbc.update("DELETE FROM football_data_fixtures");
         jdbc.update("DELETE FROM fixtures");
+        jdbc.update("DELETE FROM player_eligible_positions");
+        jdbc.update("DELETE FROM player_specific_positions");
         jdbc.update("DELETE FROM manual_player_memberships");
         jdbc.update("DELETE FROM player_season_profiles");
         jdbc.update("DELETE FROM player_season_stats");
@@ -87,6 +91,26 @@ class FplProvisionalSyncTest {
         jdbc.update("DELETE FROM players");
         jdbc.update("DELETE FROM clubs");
         jdbc.update("DELETE FROM seasons");
+    }
+
+    private void seedFixtureRow(int fixtureId, int gameweek, int homeClubId, int awayClubId,
+                                String matchDate, String status, Integer homeGoals, Integer awayGoals,
+                                String kickoffUtc) {
+        jdbc.update("MERGE INTO seasons (league_id, season_year) KEY(league_id, season_year) VALUES (39, 2026)");
+        jdbc.update("MERGE INTO clubs (id, name, city) KEY(id) VALUES (?, ?, 'England')", homeClubId, "Club " + homeClubId);
+        jdbc.update("MERGE INTO clubs (id, name, city) KEY(id) VALUES (?, ?, 'England')", awayClubId, "Club " + awayClubId);
+        jdbc.update("MERGE INTO season_clubs (league_id, season_year, club_id) KEY(league_id, season_year, club_id) VALUES (39, 2026, ?)", homeClubId);
+        jdbc.update("MERGE INTO season_clubs (league_id, season_year, club_id) KEY(league_id, season_year, club_id) VALUES (39, 2026, ?)", awayClubId);
+        jdbc.update("""
+                MERGE INTO fixtures (id, league_id, season_year, home_club_id, away_club_id,
+                  gameweek, match_date, status, provider_status, home_goals, away_goals, payload_hash, synced_at)
+                KEY(id) VALUES (?, 39, 2026, ?, ?, ?, ?, ?, ?, ?, ?, 'hash', CURRENT_TIMESTAMP)
+                """, fixtureId, homeClubId, awayClubId, gameweek, java.sql.Date.valueOf(matchDate),
+                status, status, homeGoals, awayGoals);
+        jdbc.update("""
+                MERGE INTO football_data_fixtures (provider_id, fixture_id, kickoff_utc, provider_status)
+                KEY(provider_id) VALUES (?, ?, ?, ?)
+                """, fixtureId, fixtureId, kickoffUtc, status);
     }
 
     private void seedRealGw11ClubsAndPlayers(Set<Integer> fixtureIdsToSeed) throws Exception {
@@ -450,8 +474,9 @@ class FplProvisionalSyncTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dataStatus", is("PROVISIONAL_FPL")))
                 .andExpect(jsonPath("$.provisionalFetchedAt", is("2026-11-22T19:30:00Z")))
-                .andExpect(jsonPath("$.homeLineup").doesNotExist())
-                .andExpect(jsonPath("$.awayLineup").doesNotExist())
+                .andExpect(jsonPath("$.homeLineup.startersStatus", is("PROVISIONAL")))
+                .andExpect(jsonPath("$.homeLineup.formationSource", is("CLUB_USUAL")))
+                .andExpect(jsonPath("$.awayLineup.startersStatus", is("PROVISIONAL")))
                 .andExpect(jsonPath("$.homePlayers.length()", greaterThan(10)))
                 .andExpect(jsonPath("$.homePlayers[0].rating", nullValue()))
                 .andExpect(jsonPath("$.homePlayers[0].participationStatus", is("PLAYED")))
@@ -610,6 +635,223 @@ class FplProvisionalSyncTest {
         String actualMap = Files.readString(outDir.resolve("fixture-map.csv"), StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").trim();
         assertEquals(expectedMap, actualMap, "fixture-map.csv must match exactly");
+    }
+
+    @Test
+    void startsAtMinute5UsesTwoMinuteLiveCadenceTenMinutePostMatchAndSingleEventLiveCall() throws Exception {
+        seedFixtureRow(1000560650, 11, 1000000057, 1000000061, "2026-11-21", "IN_PLAY", null, null, "2026-11-21T15:00:00Z");
+        seedFixtureRow(1000560651, 11, 1000000064, 1000000066, "2026-11-21", "IN_PLAY", null, null, "2026-11-21T15:00:00Z");
+        jdbc.update("""
+                MERGE INTO players (id, name) KEY(id) VALUES
+                  (2000001001, 'Alex Alpha'), (2000001002, 'Ben Beta'),
+                  (2000001003, 'Carl Gamma'), (2000001004, 'Dan Delta')
+                """);
+        jdbc.update("""
+                MERGE INTO player_season_stats (league_id, season_year, player_id, club_id, position, appearances, minutes, goals, assists)
+                KEY(league_id, season_year, player_id, club_id) VALUES
+                  (39, 2026, 2000001001, 1000000057, 'MIDFIELDER', 0, 0, 0, 0),
+                  (39, 2026, 2000001002, 1000000061, 'FORWARD', 0, 0, 0, 0),
+                  (39, 2026, 2000001003, 1000000064, 'DEFENDER', 0, 0, 0, 0),
+                  (39, 2026, 2000001004, 1000000066, 'GOALKEEPER', 0, 0, 0, 0)
+                """);
+
+        String bootstrapJson = """
+                {
+                  "teams": [
+                    {"id":1,"name":"Arsenal","short_name":"ARS"},
+                    {"id":6,"name":"Chelsea","short_name":"CHE"},
+                    {"id":14,"name":"Liverpool","short_name":"LIV"},
+                    {"id":15,"name":"Man Utd","short_name":"MUN"}
+                  ],
+                  "elements": [
+                    {"id":101,"code":1001,"web_name":"Alpha","first_name":"Alex","second_name":"Alpha","team":1},
+                    {"id":102,"code":1002,"web_name":"Beta","first_name":"Ben","second_name":"Beta","team":6},
+                    {"id":103,"code":1003,"web_name":"Gamma","first_name":"Carl","second_name":"Gamma","team":14},
+                    {"id":104,"code":1004,"web_name":"Delta","first_name":"Dan","second_name":"Delta","team":15}
+                  ],
+                  "events": [{"id":11,"name":"Gameweek 11","finished":false}]
+                }
+                """;
+        String liveFixturesJson = """
+                [
+                  {"id":101,"event":11,"kickoff_time":"2026-11-21T15:00:00Z","team_h":1,"team_a":6,"team_h_score":1,"team_a_score":0,"started":true,"finished":false,"finished_provisional":false},
+                  {"id":102,"event":11,"kickoff_time":"2026-11-21T15:00:00Z","team_h":14,"team_a":15,"team_h_score":0,"team_a_score":0,"started":true,"finished":false,"finished_provisional":false}
+                ]
+                """;
+        String liveEventJson = """
+                {
+                  "elements": [
+                    {"id":101,"stats":{"minutes":5,"goals_scored":1,"assists":0,"clean_sheets":0,"goals_conceded":0,"own_goals":0,"penalties_saved":0,"penalties_missed":0,"yellow_cards":0,"red_cards":0,"saves":0,"bonus":0,"bps":24,"influence":"30.0","creativity":"10.0","threat":"20.0","ict_index":"6.0","clearances_blocks_interceptions":0,"recoveries":1,"tackles":0,"defensive_contribution":0,"starts":1,"expected_goals":"0.35","expected_assists":"0.05","expected_goal_involvements":"0.40","expected_goals_conceded":"0.10"},"explain":[{"fixture":101,"stats":[]}]},
+                    {"id":102,"stats":{"minutes":5,"goals_scored":0,"assists":0,"clean_sheets":0,"goals_conceded":1,"own_goals":0,"penalties_saved":0,"penalties_missed":0,"yellow_cards":0,"red_cards":0,"saves":0,"bonus":0,"bps":4,"influence":"5.0","creativity":"2.0","threat":"3.0","ict_index":"1.0","clearances_blocks_interceptions":0,"recoveries":0,"tackles":0,"defensive_contribution":0,"starts":1,"expected_goals":"0.00","expected_assists":"0.00","expected_goal_involvements":"0.00","expected_goals_conceded":"0.35"},"explain":[{"fixture":101,"stats":[]}]},
+                    {"id":103,"stats":{"minutes":5,"goals_scored":0,"assists":0,"clean_sheets":0,"goals_conceded":0,"own_goals":0,"penalties_saved":0,"penalties_missed":0,"yellow_cards":0,"red_cards":0,"saves":0,"bonus":0,"bps":10,"influence":"8.0","creativity":"1.0","threat":"0.0","ict_index":"0.9","clearances_blocks_interceptions":2,"recoveries":1,"tackles":1,"defensive_contribution":4,"starts":1,"expected_goals":"0.00","expected_assists":"0.00","expected_goal_involvements":"0.00","expected_goals_conceded":"0.00"},"explain":[{"fixture":102,"stats":[]}]},
+                    {"id":104,"stats":{"minutes":5,"goals_scored":0,"assists":0,"clean_sheets":0,"goals_conceded":0,"own_goals":0,"penalties_saved":0,"penalties_missed":0,"yellow_cards":0,"red_cards":0,"saves":1,"bonus":0,"bps":11,"influence":"9.0","creativity":"0.0","threat":"0.0","ict_index":"0.9","clearances_blocks_interceptions":0,"recoveries":1,"tackles":0,"defensive_contribution":0,"starts":1,"expected_goals":"0.00","expected_assists":"0.00","expected_goal_involvements":"0.00","expected_goals_conceded":"0.00"},"explain":[{"fixture":102,"stats":[]}]}
+                  ]
+                }
+                """;
+
+        AtomicInteger eventLiveCalls = new AtomicInteger();
+        FplSource source = new FplSource() {
+            @Override public String fetchBootstrapStatic() { return bootstrapJson; }
+            @Override public String fetchFixtures(int gw) { return liveFixturesJson; }
+            @Override public String fetchEventLive(int gw) { eventLiveCalls.incrementAndGet(); return liveEventJson; }
+            @Override public String fetchElementSummary(int id) { throw new AssertionError("Should not call element-summary"); }
+        };
+
+        Map<Integer, FplMappingReader.TeamMapping> teamMap = Map.of(
+                1, new FplMappingReader.TeamMapping(1, 1000000057, "Arsenal", "Arsenal FC"),
+                6, new FplMappingReader.TeamMapping(6, 1000000061, "Chelsea", "Chelsea FC"),
+                14, new FplMappingReader.TeamMapping(14, 1000000064, "Liverpool", "Liverpool FC"),
+                15, new FplMappingReader.TeamMapping(15, 1000000066, "Man Utd", "Manchester United FC"));
+        Map<Integer, FplMappingReader.PlayerMapping> playerMap = Map.of(
+                101, new FplMappingReader.PlayerMapping(101, 2000001001, "Alex Alpha", "Alex Alpha", "test", java.time.LocalDate.of(2026, 11, 21)),
+                102, new FplMappingReader.PlayerMapping(102, 2000001002, "Ben Beta", "Ben Beta", "test", java.time.LocalDate.of(2026, 11, 21)),
+                103, new FplMappingReader.PlayerMapping(103, 2000001003, "Carl Gamma", "Carl Gamma", "test", java.time.LocalDate.of(2026, 11, 21)),
+                104, new FplMappingReader.PlayerMapping(104, 2000001004, "Dan Delta", "Dan Delta", "test", java.time.LocalDate.of(2026, 11, 21)));
+
+        AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-11-21T15:04:00Z"));
+        Clock mutableClock = new Clock() {
+            @Override public java.time.ZoneId getZone() { return ZoneOffset.UTC; }
+            @Override public Clock withZone(java.time.ZoneId zone) { return this; }
+            @Override public Instant instant() { return now.get(); }
+        };
+        FplProvisionalSync sync = new FplProvisionalSync(
+                jdbc, transactions, collector, parser, source, mappingReader, mutableClock,
+                true, Duration.ofMinutes(5), Duration.ofHours(72), Duration.ofHours(6), 10, 60);
+
+        // Minute 4 -> before min-elapsed-minutes (5) -> NO_CANDIDATES
+        assertEquals(FplProvisionalSync.TickOutcome.NO_CANDIDATES, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(0, eventLiveCalls.get());
+
+        // Minute 5 -> live match syncs BOTH fixtures with ONLY 1 event/{gw}/live call!
+        now.set(Instant.parse("2026-11-21T15:05:00Z"));
+        FplProvisionalSync.SyncSummary first = sync.runScheduledTick(source, teamMap, playerMap);
+        assertEquals(FplProvisionalSync.TickOutcome.SYNCED, first.outcome());
+        assertEquals(2, first.fixturesWritten());
+        assertEquals(4, first.playerRowsWritten());
+        assertEquals(1, eventLiveCalls.get());
+
+        // 1 minute later (minute 6, inside 5-130m live window) -> NOT_DUE (cadence is 2 min)
+        now.set(Instant.parse("2026-11-21T15:06:00Z"));
+        assertEquals(FplProvisionalSync.TickOutcome.NOT_DUE, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(1, eventLiveCalls.get());
+
+        // 2 minutes after first sync (minute 7) -> SYNCED again!
+        now.set(Instant.parse("2026-11-21T15:07:00Z"));
+        assertEquals(FplProvisionalSync.TickOutcome.SYNCED, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(2, eventLiveCalls.get());
+
+        // Outside 130m live window (140 min elapsed -> 17:20Z): syncs once, then requires 10 min cadence
+        now.set(Instant.parse("2026-11-21T17:20:00Z"));
+        assertEquals(FplProvisionalSync.TickOutcome.SYNCED, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(3, eventLiveCalls.get());
+
+        now.set(Instant.parse("2026-11-21T17:25:00Z")); // +5 min -> NOT_DUE
+        assertEquals(FplProvisionalSync.TickOutcome.NOT_DUE, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(3, eventLiveCalls.get());
+
+        now.set(Instant.parse("2026-11-21T17:30:00Z")); // +10 min -> SYNCED
+        assertEquals(FplProvisionalSync.TickOutcome.SYNCED, sync.runScheduledTick(source, teamMap, playerMap).outcome());
+        assertEquals(4, eventLiveCalls.get());
+
+        // Manual stats & Fantasy entries must remain untouched
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM manual_fixture_player_stats", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM fantasy_entries", Integer.class));
+    }
+
+    @Test
+    void provisionalLineupSupports11Starters10PendingSubsExcludesZeroMinutesAndFormationFallbacks() throws Exception {
+        int fixtureId = 1000560650;
+        int homeClub = 1000000057;
+        int awayClub = 1000000061;
+        seedFixtureRow(fixtureId, 11, homeClub, awayClub, "2026-11-21", "IN_PLAY", null, null, "2026-11-21T15:00:00Z");
+
+        // Seed a prior GW10 fixture_lineups row so club usual formation matches ClubOverviewService logic
+        seedFixtureRow(1000560600, 10, homeClub, awayClub, "2026-11-10", "FINISHED", 1, 0, "2026-11-10T15:00:00Z");
+        jdbc.update("""
+                INSERT INTO fixture_lineups (fixture_id, club_id, league_id, season_year, formation, formation_verified_on, formation_source)
+                VALUES (1000560600, ?, 39, 2026, '4-2-3-1', DATE '2026-11-10', 'test'),
+                       (1000560600, ?, 39, 2026, '4-3-3', DATE '2026-11-10', 'test')
+                """, homeClub, awayClub);
+
+        // Seed 11 home starters matching 4-2-3-1 + 1 sub (minutes=15, starts=0) + 1 zero-minute row (minutes=0, starts=0)
+        String[] homeSpecPos = {"GK", "LB", "CB", "CB", "RB", "CDM", "CDM", "LW", "CAM", "RW", "ST", "ST", "CM"};
+        String[] homeBroadPos = {"GOALKEEPER", "DEFENDER", "DEFENDER", "DEFENDER", "DEFENDER",
+                "MIDFIELDER", "MIDFIELDER", "MIDFIELDER", "MIDFIELDER", "MIDFIELDER", "FORWARD", "FORWARD", "MIDFIELDER"};
+        for (int i = 0; i < 13; i++) {
+            int pid = 2000091000 + i;
+            jdbc.update("MERGE INTO players (id, name) KEY(id) VALUES (?, ?)", pid, "Home Player " + i);
+            jdbc.update("""
+                    MERGE INTO player_season_stats (league_id, season_year, player_id, club_id, position, appearances, minutes, goals, assists)
+                    KEY(league_id, season_year, player_id, club_id) VALUES (39, 2026, ?, ?, ?, 0, 0, 0, 0)
+                    """, pid, homeClub, homeBroadPos[i]);
+            jdbc.update("""
+                    MERGE INTO player_specific_positions (league_id, season_year, player_id, primary_position)
+                    KEY(league_id, season_year, player_id) VALUES (39, 2026, ?, ?)
+                    """, pid, homeSpecPos[i]);
+            jdbc.update("""
+                    MERGE INTO player_eligible_positions (league_id, season_year, player_id, position_code)
+                    KEY(league_id, season_year, player_id, position_code) VALUES (39, 2026, ?, ?)
+                    """, pid, homeSpecPos[i]);
+            int minutes = i < 11 ? 63 : (i == 11 ? 15 : 0);
+            int starts = i < 11 ? 1 : 0;
+            jdbc.update("""
+                    INSERT INTO fpl_provisional_player_stats
+                    (fixture_id, player_id, league_id, season_year, club_id, minutes, starts, goals, assists,
+                     yellow_cards, red_cards, fpl_status, fetched_at)
+                    VALUES (?, ?, 39, 2026, ?, ?, ?, 0, 0, 0, 0, 'PROVISIONAL', TIMESTAMP '2026-11-21 16:05:00')
+                    """, fixtureId, pid, homeClub, minutes, starts);
+        }
+
+        // Seed only 10 away starters -> must be PENDING_FPL
+        for (int i = 0; i < 10; i++) {
+            int pid = 2000092000 + i;
+            jdbc.update("MERGE INTO players (id, name) KEY(id) VALUES (?, ?)", pid, "Away Player " + i);
+            jdbc.update("""
+                    MERGE INTO player_season_stats (league_id, season_year, player_id, club_id, position, appearances, minutes, goals, assists)
+                    KEY(league_id, season_year, player_id, club_id) VALUES (39, 2026, ?, ?, 'MIDFIELDER', 0, 0, 0, 0)
+                    """, pid, awayClub);
+            jdbc.update("""
+                    INSERT INTO fpl_provisional_player_stats
+                    (fixture_id, player_id, league_id, season_year, club_id, minutes, starts, goals, assists,
+                     yellow_cards, red_cards, fpl_status, fetched_at)
+                    VALUES (?, ?, 39, 2026, ?, 63, 1, 0, 0, 0, 0, 'PROVISIONAL', TIMESTAMP '2026-11-21 16:05:00')
+                    """, fixtureId, pid, awayClub);
+        }
+
+        mvc.perform(get("/api/matches/" + fixtureId + "/details").param("season", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dataStatus", is("PROVISIONAL_FPL")))
+                .andExpect(jsonPath("$.homeLineup.startersStatus", is("PROVISIONAL")))
+                .andExpect(jsonPath("$.homeLineup.formation", is("4-2-3-1")))
+                .andExpect(jsonPath("$.homeLineup.formationSource", is("CLUB_USUAL")))
+                .andExpect(jsonPath("$.homeLineup.players", hasSize(12))) // 11 STARTER + 1 SUB_USED; 0-min excluded!
+                .andExpect(jsonPath("$.homeLineup.players[?(@.role=='STARTER')]", hasSize(11)))
+                .andExpect(jsonPath("$.homeLineup.players[?(@.role=='SUB_USED')]", hasSize(1)))
+                .andExpect(jsonPath("$.homeLineup.players[?(@.role=='SUB_UNUSED')]", hasSize(0)))
+                .andExpect(jsonPath("$.awayLineup.startersStatus", is("PENDING_FPL")));
+
+        // Verify formation fallback when usual 3-4-3 cannot fit a defensive 5-4-1 XI (only 1 forward, 0 wingers/AMs)
+        List<com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec> defensiveXi = List.of(
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(1, "GK", List.of("GK"), "G"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(2, "LB", List.of("LB"), "D"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(3, "CB", List.of("CB"), "D"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(4, "CB", List.of("CB"), "D"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(5, "CB", List.of("CB"), "D"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(6, "RB", List.of("RB"), "D"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(7, "CDM", List.of("CDM"), "M"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(8, "CM", List.of("CM"), "M"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(9, "CM", List.of("CM"), "M"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(10, "CDM", List.of("CDM"), "M"),
+                new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(11, "ST", List.of("ST"), "F")
+        );
+        String fallbackFormation = com.premierhub.lineups.ProvisionalFormationResolver.resolveFormation("3-4-3", defensiveXi);
+        assertEquals("5-4-1", fallbackFormation);
+
+        // Verify unassignable XI (2 GKs): canAssign is false; resolver preserves candidate so frontend reports INSUFFICIENT_POSITIONS
+        List<com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec> twoGks = new ArrayList<>(defensiveXi);
+        twoGks.set(1, new com.premierhub.lineups.ProvisionalFormationResolver.StarterSpec(2, "GK", List.of("GK"), "G"));
+        assertFalse(com.premierhub.lineups.ProvisionalFormationResolver.canAssign(twoGks, "4-2-3-1"));
+        assertEquals("4-2-3-1", com.premierhub.lineups.ProvisionalFormationResolver.resolveFormation("4-2-3-1", twoGks));
     }
 
     private static List<String> stripLastColumn(List<String> lines) {

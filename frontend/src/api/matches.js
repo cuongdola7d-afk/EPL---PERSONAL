@@ -53,7 +53,15 @@ export async function fetchMatchDetail(id, signal, season) {
   const isValidFetchedAt = detail?.provisionalFetchedAt === undefined ||
     detail.provisionalFetchedAt === null ||
     typeof detail.provisionalFetchedAt === 'string'
-  if (!detail || !isValidMatch(detail.match) || !isValidDataStatus || !isValidFetchedAt ||
+  const isValidGoalEvent = (event) => event !== null && typeof event === 'object' &&
+    (event.playerId === null || Number.isInteger(event.playerId)) &&
+    (event.playerName === null || typeof event.playerName === 'string') &&
+    Number.isInteger(event.clubId) &&
+    (event.minute === null || Number.isInteger(event.minute)) &&
+    typeof event.goalType === 'string'
+  const isValidGoalEvents = detail?.goalEvents === undefined ||
+    (Array.isArray(detail.goalEvents) && detail.goalEvents.every(isValidGoalEvent))
+  if (!detail || !isValidMatch(detail.match) || !isValidDataStatus || !isValidFetchedAt || !isValidGoalEvents ||
       !Array.isArray(detail.homePlayers) || !detail.homePlayers.every(isValidPlayer) ||
       !Array.isArray(detail.awayPlayers) || !detail.awayPlayers.every(isValidPlayer)) {
     throw new Error('Dữ liệu chi tiết trận đấu từ API không đúng định dạng.')

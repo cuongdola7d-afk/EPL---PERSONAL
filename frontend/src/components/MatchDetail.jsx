@@ -3,7 +3,13 @@ import { fetchMatchDetail } from '../api/matches.js'
 import { playerDetailHash } from '../utils/playerRoute.js'
 import { clubVisual, estimatedPitchPlayers, matchPlayerState, matchPlayerValue, matchRating, pitchPositions, shortPlayerName } from '../utils/matchView.js'
 import { hasMatchScore } from '../utils/seasons.js'
-import { formatLiveGoalText, resolveMatchDisplay } from '../utils/liveScores.js'
+import {
+  buildMatchGoalGroups,
+  formatLiveGoalText,
+  resolveMatchDisplay,
+  shouldAutoRefreshMatchDetail,
+  startVisibleInterval,
+} from '../utils/liveScores.js'
 import { formationLines, matchLineup } from '../utils/matchLineup.js'
 import { formatVietnamTimeHHmm } from '../utils/matchTime.js'
 import { ClubCrest, MatchStatus } from './MatchCard.jsx'
@@ -187,15 +193,69 @@ function PlayerGroup({ title, rows, club, season, evidenceStatus, onSelectPlayer
   )
 }
 
-function PitchNode({ player, club, season, evidenceStatus, x, y, layoutPosition, onSelectPlayer }) {
+function ProvisionalSubGroup({ club, rows, season, evidenceStatus, onSelectPlayer }) {
+  return (
+    <section className="mx-sub-group">
+      <h4>Vào sân thay người · {clubVisual(club).code}</h4>
+      {rows.length > 0 ? rows.map((player) => {
+        const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
+        const posLabel = player.seasonPosition ?? POSITIONS[player.position] ?? player.position ?? '—'
+        const interactive = season === 2026 && Boolean(onSelectPlayer)
+        const inner = (
+          <>
+            <Avatar name={player.playerName} club={club} />
+            <strong title={player.playerName}>
+              {playerLabel(player.playerName, season)}
+              <PlayerEventIcons player={player} evidenceStatus={evidenceStatus} className="mx-inline-ev" />
+            </strong>
+            <small>{posLabel}{minutes != null ? ` · đã đá ${minutes}'` : ''}</small>
+          </>
+        )
+        return interactive ? (
+          <button
+            key={player.playerId}
+            type="button"
+            className="mx-sub-row mx-sub-row-btn"
+            onClick={(event) => onSelectPlayer(player, club, event.currentTarget)}
+          >
+            {inner}
+          </button>
+        ) : (
+          <div key={player.playerId} className="mx-sub-row">{inner}</div>
+        )
+      }) : <div className="mx-sub-empty">Chưa có thay người</div>}
+    </section>
+  )
+}
+
+function PitchNode({
+  player,
+  club,
+  season,
+  evidenceStatus,
+  x,
+  y,
+  layoutPosition,
+  onSelectPlayer,
+  isProvisional = false,
+  teamMaxMinutes = null,
+}) {
   const initials = player.playerName.replace(/\./g, '').split(/\s+/).filter(Boolean)
   const label = initials.length < 2 ? player.playerName.slice(0, 2) : `${initials[0][0]}${initials.at(-1)[0]}`
   const minutes = matchPlayerValue(player, 'minutes', evidenceStatus)
   const positionLabel = season === 2026 ? layoutPosition : player.matchPosition
   const eventSummary = playerEventSummary(player, evidenceStatus)
   const hasEvents = Boolean(eventSummary)
-  const ratingText = matchRating(player) == null ? 'chưa có' : matchRating(player).toFixed(1)
-  const ariaLabel = `${player.playerName}, ${club}, rating ${ratingText}${eventSummary ? `, ${eventSummary}` : ''}`
+  const rating = matchRating(player)
+  const showRatingBadge = !isProvisional || rating != null
+  const isProvisionalSubOut = isProvisional &&
+    player.substitutionOutMinute == null &&
+    minutes != null &&
+    teamMaxMinutes != null &&
+    teamMaxMinutes > 0 &&
+    minutes < teamMaxMinutes
+  const ratingText = rating == null ? 'chưa có' : rating.toFixed(1)
+  const ariaLabel = `${player.playerName}, ${club}${showRatingBadge ? `, rating ${ratingText}` : ''}${eventSummary ? `, ${eventSummary}` : ''}`
   const style = { '--mx-x': `${x}%`, '--mx-y': `${y}%`, '--mx-club-color': clubVisual(club).color }
 
   const inner = (
@@ -211,11 +271,16 @@ function PitchNode({ player, club, season, evidenceStatus, x, y, layoutPosition,
             <span>{player.substitutionOutMinute}′</span>
           </span>
         )}
-        {player.substitutionOutMinute == null && minutes != null && minutes < 90 && (
+        {isProvisionalSubOut && (
+          <span className="mx-pitch-sub-out mx-pitch-sub-out-prov" title={`Rời sân · đã đá ${minutes} phút`}>
+            ↓{minutes}&apos;
+          </span>
+        )}
+        {!isProvisional && player.substitutionOutMinute == null && minutes != null && minutes < 90 && (
           <span className="mx-pitch-minutes" title="Số phút thi đấu">{minutes}′</span>
         )}
       </span>
-      <RatingBadge player={player} />
+      {showRatingBadge && <RatingBadge player={player} />}
       {positionLabel && (
         <span className="mx-match-position" title={season === 2026 ? `Ô ${positionLabel} trong sơ đồ` : 'Vị trí trận đã xác minh'}>
           {positionLabel}
@@ -302,71 +367,110 @@ function SeasonLineup({ match, detail, season, onSelectPlayer }) {
   const away = matchLineup(detail.awayPlayers, detail.awayLineup, 'away')
   const sides = [home, away]
   const clubs = [match.homeClub, match.awayClub]
+  const isProvisional = detail.dataStatus === 'PROVISIONAL_FPL'
+  const waitingForFpl = isProvisional && sides.some((team) => team.startersStatus === 'PENDING_FPL')
+  const teamMaxMinutes = sides.map((team) =>
+    Math.max(0, ...team.starters.map((player) => matchPlayerValue(player, 'minutes', detail.evidenceStatus) ?? 0)),
+  )
   const pitchRows = Math.max(...sides.map((team) => formationLines(team.formation)?.length ?? 0), 4)
   return <div className="mx-lineup mx-lineup-2026">
     <div className="mx-lineup-heading">{sides.map((team, index) => <div key={index} className={`mx-lineup-team mx-lineup-team-${index ? 'away' : 'home'}`}>
       <ClubCrest name={clubs[index]} /><span><strong>{clubs[index]}</strong><span>{team.formation ? `Sơ đồ ${team.formation}` : 'Chưa có sơ đồ'}</span>
         {team.formationSource === 'FIXTURE' && <span>Sơ đồ trận đã xác minh</span>}</span>
     </div>)}</div>
-    {sides.map((team, index) => (team.startersStatus !== 'VERIFIED' || !team.formation || ['INVALID', 'INSUFFICIENT_POSITIONS'].includes(team.positionSource)) && <div key={index} className="mx-lineup-notice" role="status">
-      <strong>{clubs[index]}: </strong>{team.startersStatus !== 'VERIFIED' ? 'Chưa có đủ dữ liệu xác nhận 11 cầu thủ đá chính.' :
-        !team.formation ? 'Đã xác nhận 11 đá chính; chưa có sơ đồ để bố trí trên sân.' :
-          team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
-            'Chưa đủ vị trí phù hợp để bố trí sơ đồ này; cần bổ sung vị trí trận đã xác minh.'}
-    </div>)}
-    {sides.some((team) => team.nodes.length > 0) && <div className="mx-pitch mx-pitch-2026" style={{ '--mx-lineup-rows': pitchRows }} aria-label="Sơ đồ sân bóng hai đội">
-      <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="14" y="14" width="972" height="592" /><path d="M500 14v592" /><circle cx="500" cy="310" r="72" />
-        <rect x="14" y="145" width="165" height="330" /><rect x="14" y="235" width="55" height="150" />
-        <rect x="821" y="145" width="165" height="330" /><rect x="931" y="235" width="55" height="150" />
-        <circle cx="500" cy="310" r="5" className="mx-pitch-center-dot" />
-      </svg>
-      <svg className="mx-pitch-vertical" viewBox="0 0 620 1000" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="14" y="14" width="592" height="972" /><path d="M14 500h592" /><circle cx="310" cy="500" r="72" />
-        <rect x="145" y="14" width="330" height="165" /><rect x="235" y="14" width="150" height="55" />
-        <rect x="145" y="821" width="330" height="165" /><rect x="235" y="931" width="150" height="55" />
-        <circle cx="310" cy="500" r="5" className="mx-pitch-center-dot" />
-      </svg>
-      {sides.flatMap((team, index) => team.nodes.map((node) => (
-        <PitchNode
-          key={`${index}-${node.player.playerId}`}
-          {...node}
-          club={clubs[index]}
-          season={season}
-          evidenceStatus={detail.evidenceStatus}
-          onSelectPlayer={onSelectPlayer}
-        />
-      )))}
-    </div>}
-    <div className="mx-bench">{sides.map((team, index) => <div key={index}>
-      {team.startersStatus === 'VERIFIED' ? <>
-        <PlayerGroup
-          title={`Dự bị đã vào sân · ${clubs[index]}`}
-          rows={team.substitutes}
-          club={clubs[index]}
-          season={season}
-          evidenceStatus={detail.evidenceStatus}
-          onSelectPlayer={onSelectPlayer}
-        />
-        <PlayerGroup
-          title={`Không ra sân · ${clubs[index]}`}
-          rows={team.bench}
-          club={clubs[index]}
-          season={season}
-          evidenceStatus={detail.evidenceStatus}
-          onSelectPlayer={onSelectPlayer}
-        />
+    {waitingForFpl ? (
+      <div className="mx-lineup-wait" role="status">
+        <strong>Đang chờ FPL cập nhật đội hình xuất phát</strong>
+        <p>Thường có sau khoảng 5 phút kể từ giờ bóng lăn.</p>
+      </div>
+    ) : <>
+      {sides.map((team, index) => {
+        const expectedStatus = isProvisional ? 'PROVISIONAL' : 'VERIFIED'
+        const hasIssue = team.startersStatus !== expectedStatus ||
+          !team.formation ||
+          ['INVALID', 'INSUFFICIENT_POSITIONS'].includes(team.positionSource)
+        if (!hasIssue) return null
+        return (
+          <div key={index} className="mx-lineup-notice" role="status">
+            <strong>{clubs[index]}: </strong>{team.startersStatus !== expectedStatus ? 'Chưa có đủ dữ liệu xác nhận 11 cầu thủ đá chính.' :
+              !team.formation ? 'Đã có 11 đá chính; chưa có sơ đồ để bố trí trên sân.' :
+                team.positionSource === 'INVALID' ? 'Dữ liệu vị trí trận không hợp lệ; cần kiểm tra lại.' :
+                  'Chưa đủ vị trí phù hợp để bố trí sơ đồ này; cần bổ sung vị trí trận đã xác minh.'}
+          </div>
+        )
+      })}
+      {sides.some((team) => team.nodes.length > 0) && <div className="mx-pitch mx-pitch-2026" style={{ '--mx-lineup-rows': pitchRows }} aria-label="Sơ đồ sân bóng hai đội">
+        <svg className="mx-pitch-horizontal" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="14" y="14" width="972" height="592" /><path d="M500 14v592" /><circle cx="500" cy="310" r="72" />
+          <rect x="14" y="145" width="165" height="330" /><rect x="14" y="235" width="55" height="150" />
+          <rect x="821" y="145" width="165" height="330" /><rect x="931" y="235" width="55" height="150" />
+          <circle cx="500" cy="310" r="5" className="mx-pitch-center-dot" />
+        </svg>
+        <svg className="mx-pitch-vertical" viewBox="0 0 620 1000" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="14" y="14" width="592" height="972" /><path d="M14 500h592" /><circle cx="310" cy="500" r="72" />
+          <rect x="145" y="14" width="330" height="165" /><rect x="235" y="14" width="150" height="55" />
+          <rect x="145" y="821" width="330" height="165" /><rect x="235" y="931" width="150" height="55" />
+          <circle cx="310" cy="500" r="5" className="mx-pitch-center-dot" />
+        </svg>
+        {sides.flatMap((team, index) => team.nodes.map((node) => (
+          <PitchNode
+            key={`${index}-${node.player.playerId}`}
+            {...node}
+            club={clubs[index]}
+            season={season}
+            evidenceStatus={detail.evidenceStatus}
+            onSelectPlayer={onSelectPlayer}
+            isProvisional={isProvisional}
+            teamMaxMinutes={isProvisional ? teamMaxMinutes[index] : null}
+          />
+        )))}
+      </div>}
+      {isProvisional ? <>
+        <div className="mx-bench">
+          {sides.map((team, index) => (
+            <ProvisionalSubGroup
+              key={index}
+              club={clubs[index]}
+              rows={team.substitutes}
+              season={season}
+              evidenceStatus={detail.evidenceStatus}
+              onSelectPlayer={onSelectPlayer}
+            />
+          ))}
+        </div>
+        <p className="mx-lineup-foot">Danh sách dự bị không vào sân chỉ có sau khi trận được xác nhận.</p>
       </> : (
-        <PlayerGroup
-          title={`Chưa xác nhận vai trò · ${clubs[index]}`}
-          rows={team.unknown}
-          club={clubs[index]}
-          season={season}
-          evidenceStatus={detail.evidenceStatus}
-          onSelectPlayer={onSelectPlayer}
-        />
+        <div className="mx-bench">{sides.map((team, index) => <div key={index}>
+          {team.startersStatus === 'VERIFIED' ? <>
+            <PlayerGroup
+              title={`Dự bị đã vào sân · ${clubs[index]}`}
+              rows={team.substitutes}
+              club={clubs[index]}
+              season={season}
+              evidenceStatus={detail.evidenceStatus}
+              onSelectPlayer={onSelectPlayer}
+            />
+            <PlayerGroup
+              title={`Không ra sân · ${clubs[index]}`}
+              rows={team.bench}
+              club={clubs[index]}
+              season={season}
+              evidenceStatus={detail.evidenceStatus}
+              onSelectPlayer={onSelectPlayer}
+            />
+          </> : (
+            <PlayerGroup
+              title={`Chưa xác nhận vai trò · ${clubs[index]}`}
+              rows={team.unknown}
+              club={clubs[index]}
+              season={season}
+              evidenceStatus={detail.evidenceStatus}
+              onSelectPlayer={onSelectPlayer}
+            />
+          )}
+        </div>)}</div>
       )}
-    </div>)}</div>
+    </>}
   </div>
 }
 
@@ -450,7 +554,9 @@ function Overview({ match, detail, season, isProvisional = false }) {
     <section className="mx-block"><h3>Sự kiện chính</h3>
       <div className="mx-event-grid"><EventColumn club={match.homeClub} players={detail.homePlayers} evidenceStatus={detail.evidenceStatus} season={season} />
         <EventColumn club={match.awayClub} players={detail.awayPlayers} evidenceStatus={detail.evidenceStatus} season={season} /></div>
-      <p className="mx-detail-note">Nguồn hiện chưa lưu phút xảy ra sự kiện.</p>
+      {(!Array.isArray(detail.goalEvents) || detail.goalEvents.length === 0) && (
+        <p className="mx-detail-note">Nguồn hiện chưa lưu phút xảy ra sự kiện.</p>
+      )}
     </section>
     {!isProvisional && (
       <section className="mx-block"><h3>Rating trung bình của đội</h3>
@@ -462,6 +568,29 @@ function Overview({ match, detail, season, isProvisional = false }) {
 }
 
 function Scorers({ detail, season }) {
+  const goalGroups = buildMatchGoalGroups(detail.goalEvents, detail.match, (name) => playerLabel(name, season))
+  if (goalGroups && (goalGroups.home.length > 0 || goalGroups.away.length > 0)) {
+    return (
+      <div className="mx-scorers">
+        <div>
+          {goalGroups.home.map((item) => (
+            <span key={item.key} className="mx-scorer-item" title={item.playerName}>
+              <GoalIcon />
+              <span>{item.text}</span>
+            </span>
+          ))}
+        </div>
+        <div>
+          {goalGroups.away.map((item) => (
+            <span key={item.key} className="mx-scorer-item" title={item.playerName}>
+              <span>{item.text}</span>
+              <GoalIcon />
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
   const sides = [detail.homePlayers, detail.awayPlayers]
   if (!sides.some((players) => players.some((player) =>
     (matchPlayerValue(player, 'goals', detail.evidenceStatus) ?? 0) > 0))) return null
@@ -563,14 +692,40 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
   const isProvisional = status === 'success' && detail?.dataStatus === 'PROVISIONAL_FPL'
   const hasVerifiedManualStats = Boolean(match?.hasManualStats) ||
     (status === 'success' && (detail?.dataStatus === 'CONFIRMED' || (season !== 2026 && !noStats)))
-  const effectiveLiveState = (hasVerifiedManualStats || isProvisional) ? null : liveState
+  const effectiveLiveState = (hasVerifiedManualStats || match?.status === 'FINISHED') ? null : liveState
   const display = resolveMatchDisplay(match, effectiveLiveState, { preferManualStats: true })
   const scored = display.scored
   const provisionalTime = isProvisional ? formatVietnamTimeHHmm(detail?.provisionalFetchedAt) : null
-  const activeTab = isProvisional && tab === 'lineup'
-    ? 'overview'
-    : (season === 2026 ? tab : (tab === 'stats' ? 'lineup' : tab))
+  const activeTab = season === 2026 ? tab : (tab === 'stats' ? 'lineup' : tab)
   const canShowTabs = status === 'success' && !noStats && (match.status === 'FINISHED' || isProvisional)
+  const autoRefreshActive = status === 'success' && shouldAutoRefreshMatchDetail(match, detail, effectiveLiveState)
+  const hasPersistedGoalEvents = status === 'success' &&
+    buildMatchGoalGroups(detail?.goalEvents, detail?.match, (name) => playerLabel(name, season)) !== null
+
+  useEffect(() => {
+    if (!autoRefreshActive) return undefined
+    let activeController = null
+    const stop = startVisibleInterval({
+      intervalMs: 60_000,
+      onTick: () => {
+        activeController?.abort()
+        const controller = new AbortController()
+        activeController = controller
+        fetchMatchDetail(matchId, controller.signal, season)
+          .then((value) => {
+            if (!controller.signal.aborted) {
+              setDetail(value)
+              setStatus('success')
+            }
+          })
+          .catch(() => {})
+      },
+    })
+    return () => {
+      stop()
+      activeController?.abort()
+    }
+  }, [autoRefreshActive, matchId, season])
 
   return <div className="mx-detail" aria-busy={status === 'loading'}>
     <button className="mx-back" type="button" onClick={onClose}>‹ <span>{backLabel}</span></button>
@@ -578,16 +733,14 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
       <div className="mx-detail-meta">
         <span className="mx-gw">GW{match.matchweek}</span>
         {season === 2026 ? <MatchKickoff match={match} season={season} /> : <time dateTime={match.date}>{dateLabel(match.date)}</time>}
-        <MatchStatus status={match.status} liveState={effectiveLiveState} />
-        {isProvisional && (
-          <span className="mx-status mx-status-prov" role="status">
-            <span className="mx-prov-dot" aria-hidden="true" />
-            Số liệu tạm · FPL
-          </span>
-        )}
+        <MatchStatus status={match.status} liveState={effectiveLiveState} detail />
       </div>
       {isProvisional && provisionalTime && (
-        <p className="mx-prov-updated">Cập nhật tự động lúc {provisionalTime}</p>
+        <p className="mx-prov-updated">
+          {display.isLive || match.status !== 'FINISHED'
+            ? `Chỉ số cầu thủ cập nhật lúc ${provisionalTime} · tự làm mới mỗi 2 phút`
+            : `Chỉ số cầu thủ cập nhật lúc ${provisionalTime}`}
+        </p>
       )}
       <div className="mx-detail-score"><div className="mx-detail-club"><ClubCrest name={match.homeClub} large />
         <strong>{match.homeClub}</strong></div><div className={`mx-big-score${isFlashing && !hasVerifiedManualStats ? ' mx-score-flash' : ''}`} ref={headingRef} tabIndex="-1" aria-live="polite"
@@ -596,9 +749,11 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
           {!scored && <small>Chưa có tỉ số</small>}</div>
         <div className="mx-detail-club"><ClubCrest name={match.awayClub} large />
           <strong>{match.awayClub}</strong></div></div>
-      {status === 'success' && !noStats
+      {hasPersistedGoalEvents
         ? <Scorers detail={detail} season={season} />
-        : display.useLiveGoals && effectiveLiveState && <LiveScorers goals={effectiveLiveState.goals} />}
+        : display.useLiveGoals && effectiveLiveState
+          ? <LiveScorers goals={effectiveLiveState.goals} />
+          : status === 'success' && !noStats && <Scorers detail={detail} season={season} />}
     </header>}
 
     {status === 'loading' && <div className="mx-empty" role="status">Đang tải chi tiết trận...</div>}
@@ -606,22 +761,24 @@ function MatchDetail({ matchId, summary, onClose, season, backLabel = 'Lịch đ
       <p>{error}</p><button type="button" onClick={() => { setStatus('loading'); setReloadCount((count) => count + 1) }}>Thử lại</button></div>}
     {status === 'success' && detail.evidenceStatus === 'INVALID' &&
       <p className="mx-evidence-error" role="alert">Bằng chứng trận không khớp: {detail.evidenceError}. Điểm vẫn tạm tính.</p>}
-    {status === 'success' && !canShowTabs &&
+    {status === 'success' && !canShowTabs && (display.isLive ? (
+      <div className="mx-lineup-wait" role="status">
+        <strong>Đang chờ FPL cập nhật đội hình xuất phát</strong>
+        <p>Thường có sau khoảng 5 phút kể từ giờ bóng lăn.</p>
+      </div>
+    ) : (
       <div className="mx-empty"><strong>{match.status === 'FINISHED' ? 'Chưa có chỉ số cầu thủ' : 'Trận chưa kết thúc'}</strong>
-        <p>{match.status === 'FINISHED' ? 'Tỉ số đã có, thống kê cầu thủ của trận này chưa được lưu.' : 'Thông tin cầu thủ sẽ hiện khi trận kết thúc và có dữ liệu.'}</p></div>}
+        <p>{match.status === 'FINISHED' ? 'Tỉ số đã có, thống kê cầu thủ của trận này chưa được lưu.' : 'Thông tin cầu thủ sẽ hiện khi trận kết thúc và có dữ liệu.'}</p></div>
+    ))}
     {canShowTabs && <>
       <div className="mx-detail-tabs" role="tablist" aria-label="Chi tiết trận đấu">
         <button
           type="button"
           role="tab"
-          className={isProvisional ? 'mx-tab-disabled' : undefined}
-          disabled={isProvisional}
-          title={isProvisional ? 'Chờ xác nhận' : undefined}
           aria-selected={activeTab === 'lineup'}
-          onClick={() => { if (!isProvisional) setTab('lineup') }}
+          onClick={() => setTab('lineup')}
         >
           Đội hình
-          {isProvisional && <small className="mx-tab-wait">chờ</small>}
         </button>
         {season === 2026 && (
           <button type="button" role="tab" aria-selected={activeTab === 'stats'} onClick={() => setTab('stats')}>Thống kê</button>

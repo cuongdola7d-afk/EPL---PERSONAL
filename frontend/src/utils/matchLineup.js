@@ -125,6 +125,67 @@ export function matchLineup(players, evidence, side) {
   const metadata = evidence?.players ?? []
   const byId = new Map(metadata.map(player => [player.playerId, player]))
   const ids = new Set(players.map(player => player.playerId))
+
+  if (evidence?.startersStatus === 'PENDING_FPL') {
+    return {
+      ...missing,
+      formation,
+      formationSource: formation ? evidence.formationSource : 'MISSING',
+      startersStatus: 'PENDING_FPL',
+      unknown: [],
+    }
+  }
+
+  if (evidence?.startersStatus === 'PROVISIONAL') {
+    const validProvisional = byId.size === metadata.length &&
+      metadata.every(player => ids.has(player.playerId) && ['STARTER', 'SUB_USED'].includes(player.role)) &&
+      metadata.filter(player => player.role === 'STARTER').length === 11
+    if (!validProvisional) {
+      return {
+        ...missing,
+        formation,
+        formationSource: formation ? evidence.formationSource : 'MISSING',
+        startersStatus: 'PENDING_FPL',
+        unknown: [],
+      }
+    }
+    const joined = players
+      .filter(player => byId.has(player.playerId))
+      .map(player => ({ ...player, ...byId.get(player.playerId) }))
+    const starters = joined.filter(player => player.role === 'STARTER')
+    const substitutes = joined.filter(player => player.role === 'SUB_USED')
+    const result = {
+      formation,
+      formationSource: formation ? evidence.formationSource : 'MISSING',
+      startersStatus: 'PROVISIONAL',
+      starters,
+      substitutes,
+      bench: [],
+      unknown: [],
+      nodes: [],
+      positionSource: null,
+    }
+    if (!formation) return { ...result, positionSource: 'INSUFFICIENT_POSITIONS' }
+    const lines = formationLines(formation)
+    const slots = formationSlots(lines)
+    const assigned = illustrate(starters, slots)
+    if (assigned.length !== slots.length) return { ...result, positionSource: 'INSUFFICIENT_POSITIONS' }
+    result.positionSource = 'ILLUSTRATION'
+    result.nodes = slots.map((slot, index) => {
+      const player = assigned[index]
+      const along = 7 + slot.rowIndex * 36 / (lines.length - 1)
+      const across = (slot.slotIndex + 1) * 100 / (lines[slot.rowIndex] + 1)
+      return {
+        player,
+        ...slot,
+        x: side === 'home' ? along : 100 - along,
+        y: side === 'home' ? across : 100 - across,
+        positionSource: 'ILLUSTRATION',
+      }
+    })
+    return result
+  }
+
   const valid = evidence?.startersStatus === 'VERIFIED' && byId.size === metadata.length && ids.size === players.length &&
     byId.size === ids.size && metadata.every(player => ids.has(player.playerId) && ['STARTER', 'SUB_USED', 'SUB_UNUSED'].includes(player.role)) &&
     metadata.filter(player => player.role === 'STARTER').length === 11 &&

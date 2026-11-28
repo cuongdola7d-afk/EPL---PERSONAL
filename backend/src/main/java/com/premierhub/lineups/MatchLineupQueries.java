@@ -8,12 +8,18 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Read-only metadata; never uses minutes, ratings or eligibility to identify starters. */
 public final class MatchLineupQueries {
+    public record ProvisionalPlayerInput(int playerId, int minutes, int starts, String broadPosition) {
+    }
     private static final Logger LOG = LoggerFactory.getLogger(MatchLineupQueries.class);
     private static final BundledMatchLineups BUNDLED = new BundledMatchLineups();
     private final JdbcTemplate jdbc;
@@ -96,6 +102,119 @@ public final class MatchLineupQueries {
                 defaults == null ? null : defaults.count(), defaults == null ? null : defaults.frequencies(),
                 defaults == null ? null : defaults.ids(), verified ? "VERIFIED" : players.isEmpty() ? "MISSING" : "INCOMPLETE",
                 rolesDate, rolesSource, players);
+    }
+
+    /**
+     * Builds provisional lineup metadata from {@code fpl_provisional_player_stats} rows (minutes &gt; 0 only).
+     * Never writes to any official lineup or manual table.
+     */
+    public MatchLineupResponse buildProvisional(int clubId, List<ProvisionalPlayerInput> provisionalRows) {
+        List<ProvisionalPlayerInput> played = provisionalRows == null
+                ? List.of()
+                : provisionalRows.stream().filter(r -> r.minutes() > 0).toList();
+
+        Map<Integer, String> primaryPositions = optionalQuery(
+                "SELECT player_id, primary_position FROM player_specific_positions "
+                        + "WHERE league_id=39 AND season_year=2026 AND primary_position IS NOT NULL",
+                (rs, idx) -> new SeasonPosition(rs.getInt(1), rs.getString(2)))
+                .stream()
+                .collect(Collectors.toMap(SeasonPosition::playerId, SeasonPosition::position, (a, b) -> a));
+
+        Map<Integer, List<String>> eligibility = optionalQuery(
+                "SELECT player_id, position_code FROM player_eligible_positions "
+                        + "WHERE league_id=39 AND season_year=2026 ORDER BY player_id, position_code",
+                (rs, idx) -> new SeasonPosition(rs.getInt(1), rs.getString(2)))
+                .stream()
+                .collect(Collectors.groupingBy(SeasonPosition::playerId,
+                        Collectors.mapping(SeasonPosition::position, Collectors.toList())));
+
+        List<MatchLineupResponse.Player> players = new ArrayList<>(played.size());
+        List<ProvisionalFormationResolver.StarterSpec> starterSpecs = new ArrayList<>();
+        for (ProvisionalPlayerInput row : played) {
+            boolean starter = row.starts() == 1;
+            String role = starter ? "STARTER" : "SUB_USED";
+            String primary = primaryPositions.get(row.playerId());
+            List<String> eligible = List.copyOf(eligibility.getOrDefault(row.playerId(), List.of()));
+            players.add(new MatchLineupResponse.Player(
+                    row.playerId(), role, null, null, null, null, null, primary, eligible));
+            if (starter) {
+                starterSpecs.add(new ProvisionalFormationResolver.StarterSpec(
+                        row.playerId(), primary, eligible, row.broadPosition()));
+            }
+        }
+
+        String startersStatus = starterSpecs.size() == 11 ? "PROVISIONAL" : "PENDING_FPL";
+        String clubUsualFormation = findClubUsualFormation(clubId);
+        String resolvedFormation = "PROVISIONAL".equals(startersStatus)
+                ? ProvisionalFormationResolver.resolveFormation(clubUsualFormation, starterSpecs)
+                : clubUsualFormation;
+        String formationSource = resolvedFormation != null ? "CLUB_USUAL" : "MISSING";
+
+        return new MatchLineupResponse(
+                resolvedFormation,
+                formationSource,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                startersStatus,
+                null,
+                null,
+                List.copyOf(players)
+        );
+    }
+
+    private String findClubUsualFormation(int clubId) {
+        record ObservedFormation(int fixtureId, int gameweek, LocalDate matchDate, String formation) { }
+        List<ObservedFormation> rows = optionalQuery("""
+                SELECT fl.fixture_id, f.gameweek, f.match_date, fl.formation
+                FROM fixture_lineups fl
+                JOIN fixtures f ON f.id = fl.fixture_id
+                  AND f.league_id = fl.league_id
+                  AND f.season_year = fl.season_year
+                WHERE fl.league_id = 39
+                  AND fl.season_year = 2026
+                  AND fl.club_id = ?
+                  AND fl.formation IS NOT NULL
+                ORDER BY f.match_date ASC, f.gameweek ASC, fl.fixture_id ASC
+                """, (rs, idx) -> new ObservedFormation(
+                rs.getInt("fixture_id"),
+                rs.getInt("gameweek"),
+                date(rs.getDate("match_date")) == null ? LocalDate.MIN : date(rs.getDate("match_date")),
+                rs.getString("formation").strip()
+        ), clubId);
+
+        if (!rows.isEmpty()) {
+            Map<String, Integer> counts = new HashMap<>();
+            Map<String, ObservedFormation> latest = new HashMap<>();
+            Comparator<ObservedFormation> matchOrder = Comparator
+                    .comparing(ObservedFormation::matchDate)
+                    .thenComparingInt(ObservedFormation::gameweek)
+                    .thenComparingInt(ObservedFormation::fixtureId);
+            for (ObservedFormation row : rows) {
+                counts.merge(row.formation(), 1, Integer::sum);
+                latest.merge(row.formation(), row, (a, b) -> matchOrder.compare(a, b) >= 0 ? a : b);
+            }
+            return counts.keySet().stream()
+                    .min(Comparator
+                            .comparingInt((String fm) -> counts.get(fm)).reversed()
+                            .thenComparing(latest::get, matchOrder.reversed())
+                            .thenComparing(Comparator.naturalOrder()))
+                    .orElse(null);
+        }
+
+        List<String> fallbackDb = optionalQuery(
+                "SELECT default_formation FROM club_season_formations "
+                        + "WHERE league_id=39 AND season_year=2026 AND club_id=? AND default_formation IS NOT NULL",
+                (rs, idx) -> rs.getString(1), clubId);
+        if (!fallbackDb.isEmpty()) {
+            return fallbackDb.getFirst().strip();
+        }
+        var bundled = BUNDLED.clubDefault(clubId);
+        return bundled == null ? null : bundled.formation();
     }
 
     private <T> List<T> optionalQuery(String sql, RowMapper<T> mapper, Object... arguments) {
