@@ -144,6 +144,7 @@ public final class WordleData {
             LocalDate date,
             int length,
             List<Integer> shape,
+            String key,
             Instant serverTime,
             Instant nextAt,
             Status status,

@@ -1,5 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   TELEX_DELETE_HOLD_MS,
   WORDLE_DEBUG_MAX_ENTRIES,
@@ -7,15 +10,19 @@ import {
   WORDLE_FLIP_TOTAL_MS,
   buildRowWordGroups,
   buildShareText,
+  createGuessSyncQueue,
   createTelexBurstQueue,
   createWordleDebugLog,
   decodeTelexBurst,
+  decodeWordleKey,
   filterWordleSuggestions,
   formatWordleDateLabel,
   highlightWordPrefix,
   isWordleDebugEnabled,
   keyboardKeyStates,
   resolveWordleAccess,
+  scoreWordleGuess,
+  validateWordleGuessLocally,
   wordleFlipDelayMs,
   wordleHubSummary,
   wordleToastMessage,
@@ -40,6 +47,16 @@ import {
 const serverTime = '2026-11-27T12:00:00Z'
 const nextAt = '2026-11-27T17:00:00Z'
 
+function encodeKeyForTest(letters, mask = [0x1a, 0x2b, 0x3c, 0x4d]) {
+  const bytes = new Uint8Array(4 + letters.length)
+  bytes.set(mask, 0)
+  for (let i = 0; i < letters.length; i += 1) {
+    const mix = mask[i % 4] ^ ((i * 31 + 17) & 0xFF)
+    bytes[4 + i] = letters.charCodeAt(i) ^ mix
+  }
+  return Buffer.from(bytes).toString('base64')
+}
+
 function sampleStats(overrides = {}) {
   return {
     played: 9,
@@ -58,6 +75,7 @@ function sampleToday(overrides = {}) {
     date: '2026-11-27',
     length: 7,
     shape: [3, 4],
+    key: encodeKeyForTest('VANDIJK'),
     serverTime,
     nextAt,
     status: 'PLAYING',
@@ -627,14 +645,179 @@ test('Wordle API caches CSRF across POSTs and retries exactly once on 403', asyn
   })
 })
 
-test('wordleFlipDelayMs completes row flip within 0.6-0.7s for all guess lengths 4..11', () => {
-  assert.equal(WORDLE_FLIP_DURATION_MS, 360)
-  assert.equal(WORDLE_FLIP_TOTAL_MS, 650)
+test('wordleFlipDelayMs completes row flip in ~0.6s for all guess lengths 4..11 and submitting state is removed', () => {
+  assert.equal(WORDLE_FLIP_DURATION_MS, 320)
+  assert.equal(WORDLE_FLIP_TOTAL_MS, 600)
   for (const len of [4, 5, 7, 10, 11]) {
     assert.equal(wordleFlipDelayMs(0, len), 0)
     const lastFinish = wordleFlipDelayMs(len - 1, len) + WORDLE_FLIP_DURATION_MS
-    assert.ok(lastFinish >= 600 && lastFinish <= 700, `len=${len} finished at ${lastFinish}ms`)
+    assert.ok(lastFinish >= 580 && lastFinish <= 620, `len=${len} finished at ${lastFinish}ms`)
   }
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const jsx = fs.readFileSync(path.resolve(here, '../components/WordleGame.jsx'), 'utf8')
+  const css = fs.readFileSync(path.resolve(here, '../components/WordleGame.css'), 'utf8')
+  assert.equal(jsx.includes('wd-submitting'), false)
+  assert.equal(css.includes('wd-submitting'), false)
+})
+
+test('scoreWordleGuess matches every shared case in docs/wordle-score-cases.json and decodeWordleKey round-trips', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const casesPath = path.resolve(here, '../../../docs/wordle-score-cases.json')
+  const cases = JSON.parse(fs.readFileSync(casesPath, 'utf8'))
+  assert.ok(Array.isArray(cases) && cases.length >= 30)
+  for (const entry of cases) {
+    assert.equal(
+      scoreWordleGuess(entry.guess, entry.answer),
+      entry.expected,
+      `Shared case ${entry.name}: ${entry.guess} vs ${entry.answer}`
+    )
+  }
+
+  assert.equal(decodeWordleKey(encodeKeyForTest('VANDIJK')), 'VANDIJK')
+  assert.equal(decodeWordleKey(encodeKeyForTest('MACALLISTER', [0xfe, 0x01, 0x99, 0x42])), 'MACALLISTER')
+  assert.equal(decodeWordleKey(''), null)
+  assert.equal(decodeWordleKey('AAAA'), null)
+})
+
+test('decodeTelexBurst ignores UniKey placeholder dot U+00B7 across real user log and all tones/doubled letters/W', async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms))
+  async function replay(events) {
+    let state = { raw: '', shadow: '', uncertain: false }
+    const queue = createTelexBurstQueue({
+      onFlush: burst => {
+        state = decodeTelexBurst(state, burst, 11)
+      },
+    })
+    for (const ev of events) {
+      if (ev.wait) await wait(ev.wait)
+      if (ev.del) queue.pushDelete(ev.del)
+      if (ev.ins) queue.pushInsert(ev.ins)
+    }
+    await wait(TELEX_DELETE_HOLD_MS + 50)
+    return state
+  }
+
+  // Exact replay of real user UniKey log: A then R (1st press -> AR, 2nd press undo -> ARR)
+  const firstR = await replay([
+    { ins: 'a' },
+    { wait: 40, ins: '·' },
+    { wait: 5, del: 1 },
+    { wait: 5, del: 1 },
+    { wait: 5, ins: 'ả' },
+  ])
+  assert.equal(firstR.raw, 'AR')
+  assert.equal(firstR.shadow, 'ả')
+  assert.equal(firstR.uncertain, false)
+
+  const secondR = await replay([
+    { ins: 'a' },
+    { wait: 40, ins: '·' },
+    { wait: 5, del: 1 },
+    { wait: 5, del: 1 },
+    { wait: 5, ins: 'ả' },
+    { wait: 60, ins: '·' },
+    { wait: 5, del: 1 },
+    { wait: 5, del: 1 },
+    { wait: 5, ins: 'a' },
+    { wait: 5, ins: 'r' },
+  ])
+  assert.equal(secondR.raw, 'ARR')
+  assert.equal(secondR.shadow, 'ar')
+  assert.equal(secondR.uncertain, false)
+
+  // All tones + doubled letters + W -> Ư with U+00B7 placeholder
+  const dotCases = [
+    // Nặng: d i · ⌫⌫ ị k -> DIJK
+    [[{ insert: 'd' }, { insert: 'i' }, { insert: '·' }, { deletes: 2, insert: 'ị' }, { insert: 'k' }], 'DIJK'],
+    // Sắc: v a n · ⌫⌫⌫ án -> VANS
+    [[{ insert: 'v' }, { insert: 'a' }, { insert: 'n' }, { insert: '·' }, { deletes: 3, insert: 'án' }], 'VANS'],
+    // Huyền: s a · ⌫⌫ à -> SAF
+    [[{ insert: 's' }, { insert: 'a' }, { insert: '·' }, { deletes: 2, insert: 'à' }], 'SAF'],
+    // Ngã: a · ⌫⌫ ã -> AX
+    [[{ insert: 'a' }, { insert: '·' }, { deletes: 2, insert: 'ã' }], 'AX'],
+    // Chữ đôi AA: h a · ⌫⌫ â l a n d -> HAALAND
+    [[{ insert: 'h' }, { insert: 'a' }, { insert: '·' }, { deletes: 2, insert: 'â' }, { insert: 'l' }, { insert: 'a' }, { insert: 'n' }, { insert: 'd' }], 'HAALAND'],
+    // Chữ đôi DD: d · ⌫⌫ đ -> DD
+    [[{ insert: 'd' }, { insert: '·' }, { deletes: 2, insert: 'đ' }], 'DD'],
+    // Chữ đôi OO: o · ⌫⌫ ô -> OO
+    [[{ insert: 'o' }, { insert: '·' }, { deletes: 2, insert: 'ô' }], 'OO'],
+    // W -> Ư (standalone via · ⌫ ư, plus WIRTZ with ·)
+    [[{ insert: '·' }, { deletes: 1, insert: 'ư' }, { insert: 'i' }, { insert: '·' }, { deletes: 3, insert: 'ửi' }, { insert: 't' }, { insert: '·' }, { deletes: 4, insert: 'ưit' }], 'WIRTZ'],
+    // A + W -> Ă via · ⌫⌫ ă
+    [[{ insert: 'a' }, { insert: '·' }, { deletes: 2, insert: 'ă' }], 'AW'],
+  ]
+  for (const [bursts, expected] of dotCases) {
+    const res = runTelexBursts(bursts)
+    assert.equal(res.raw, expected, `Expected ${expected}, got ${res.raw}`)
+    assert.equal(res.uncertain, false, `Expected uncertain=false for ${expected}`)
+  }
+})
+
+test('validateWordleGuessLocally validates all error codes before any server call', () => {
+  const dict = new Map([
+    ['SALAH', { letters: 'SALAH', word: 'SALAH', name: 'Mohamed Salah', club: 'Liverpool FC' }],
+    ['VANDIJK', { letters: 'VANDIJK', word: 'VAN DIJK', name: 'Virgil van Dijk', club: 'Liverpool FC' }],
+  ])
+  assert.equal(validateWordleGuessLocally({ letters: 'ABC', maxLength: 7, dictionaryByLetters: dict }).code, 'TOO_SHORT')
+  assert.equal(validateWordleGuessLocally({ letters: 'ODEGAARD', maxLength: 7, dictionaryByLetters: dict }).code, 'TOO_LONG')
+  assert.equal(validateWordleGuessLocally({ letters: 'VAN DIJK', maxLength: 7, dictionaryByLetters: dict }).code, 'INVALID_CHARACTERS')
+  assert.equal(validateWordleGuessLocally({ letters: 'ZZZZZ', maxLength: 7, dictionaryByLetters: dict }).code, 'NOT_A_PLAYER')
+  assert.equal(validateWordleGuessLocally({ letters: 'SALAH', maxLength: 7, dictionaryByLetters: dict, guessedLetters: ['SALAH'] }).code, 'ALREADY_GUESSED')
+  assert.equal(validateWordleGuessLocally({ letters: 'VANDIJK', maxLength: 7, dictionaryByLetters: dict, finished: true }).code, 'GAME_FINISHED')
+  const ok = validateWordleGuessLocally({ letters: 'salah', maxLength: 7, dictionaryByLetters: dict, guessedLetters: [] })
+  assert.equal(ok.ok, true)
+  assert.equal(ok.normalized, 'SALAH')
+})
+
+test('createGuessSyncQueue sends in FIFO order, retries transient network errors up to 3x, and resyncs on mismatch or rejection', async () => {
+  // 1. FIFO order + 2 transient network failures before succeeding on retry #2
+  const sentOrder = []
+  let attemptsForTurn1 = 0
+  const syncedTurns = []
+  const mismatches = []
+  const queue = createGuessSyncQueue({
+    retryDelaysMs: [5, 10, 15],
+    sendGuess: async item => {
+      sentOrder.push(`${item.turn}:${item.letters}`)
+      if (item.turn === 1 && attemptsForTurn1 < 2) {
+        attemptsForTurn1 += 1
+        throw new Error('Network down')
+      }
+      await new Promise(r => setTimeout(r, 10))
+      const guesses = []
+      if (item.turn >= 1) guesses.push({ turn: 1, letters: 'SALAH', feedback: 'MHMMM' })
+      if (item.turn >= 2) guesses.push({ turn: 2, letters: 'BARCOLA', feedback: 'MHMMMMM' })
+      return { status: 'PLAYING', guesses }
+    },
+    onSynced: (_data, item) => syncedTurns.push(item.turn),
+    onMismatchOrRejected: reason => mismatches.push(reason),
+  })
+
+  queue.enqueue({ turn: 1, letters: 'SALAH', feedback: 'MHMMM', status: 'PLAYING', date: '2026-11-27' })
+  queue.enqueue({ turn: 2, letters: 'BARCOLA', feedback: 'MHMMMMM', status: 'PLAYING', date: '2026-11-27' })
+  await queue.waitUntilIdle()
+
+  assert.deepEqual(sentOrder, ['1:SALAH', '1:SALAH', '1:SALAH', '2:BARCOLA'])
+  assert.deepEqual(syncedTurns, [1, 2])
+  assert.deepEqual(mismatches, [])
+
+  // 2. Server feedback mismatch clears queued turn 2 and triggers resync callback
+  const sent2 = []
+  const reasons2 = []
+  const queue2 = createGuessSyncQueue({
+    retryDelaysMs: [5, 10, 15],
+    sendGuess: async item => {
+      sent2.push(item.turn)
+      return { status: 'PLAYING', guesses: [{ turn: 1, letters: 'SALAH', feedback: 'HHHHH' }] }
+    },
+    onMismatchOrRejected: reason => reasons2.push(reason),
+  })
+  queue2.enqueue({ turn: 1, letters: 'SALAH', feedback: 'MHMMM', status: 'PLAYING', date: '2026-11-27' })
+  queue2.enqueue({ turn: 2, letters: 'BARCOLA', feedback: 'MHMMMMM', status: 'PLAYING', date: '2026-11-27' })
+  await queue2.waitUntilIdle()
+
+  assert.deepEqual(sent2, [1])
+  assert.deepEqual(reasons2, ['mismatch'])
 })
 
 test('debug mode activates only via ?debug=1 or localStorage.wdDebug=1, supports hash route, and caps log at 500 entries', () => {

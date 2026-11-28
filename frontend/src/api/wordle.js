@@ -72,6 +72,7 @@ export function isValidWordleToday(data) {
     isoDate(data.date) &&
     integer(data.length, 4, 11) &&
     isValidWordleShape(data.shape, data.length) &&
+    text(data.key) &&
     instant(data.serverTime) &&
     instant(data.nextAt) &&
     (terminal || data.status === 'PLAYING') &&

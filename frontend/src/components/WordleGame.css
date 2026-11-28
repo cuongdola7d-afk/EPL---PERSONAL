@@ -227,7 +227,7 @@
 }
 
 .wd-tile.wd-flip {
-  animation: wd-flip 0.36s ease both;
+  animation: wd-flip 0.32s ease both;
 }
 
 @keyframes wd-flip {
@@ -236,15 +236,41 @@
   100% { transform: rotateX(0); }
 }
 
-.wd-row.wd-submitting .wd-tile.wd-f {
-  border-color: var(--mg-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mg-accent) 26%, transparent);
-  animation: wd-submitting-pulse 0.7s ease-in-out infinite;
+.wd-skel {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--wd-chip) 25%, color-mix(in srgb, var(--mg-text) 14%, transparent) 50%, var(--wd-chip) 75%);
+  background-size: 200% 100%;
+  animation: wd-skel-shimmer 1.15s ease-in-out infinite;
 }
 
-@keyframes wd-submitting-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.62; }
+.wd-pc-pending .wd-no.wd-skel,
+.wd-pc-pending .wd-ovr.wd-skel {
+  color: transparent;
+}
+
+.wd-skel-inline {
+  width: 110px;
+  height: 11px;
+  border-radius: 5px;
+  vertical-align: middle;
+}
+
+.wd-skel-num {
+  width: 38px;
+  height: 28px;
+  border-radius: 7px;
+  margin: 4px auto;
+}
+
+.wd-skel-bar {
+  width: 45%;
+  height: 20px;
+  border-radius: 5px;
+}
+
+@keyframes wd-skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .wd-who {

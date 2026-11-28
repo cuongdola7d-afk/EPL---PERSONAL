@@ -3,13 +3,41 @@ package com.premierhub.minigame.wordle;
 import com.premierhub.minigame.wordle.WordleData.Status;
 import com.premierhub.minigame.wordle.WordleStatsCalculator.GameOutcome;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WordleScorerAndStatsTest {
+    @Test
+    void matchesAllSharedScoreCasesAndKeyCodecRoundTrips() throws Exception {
+        Path casesPath = Path.of("..", "docs", "wordle-score-cases.json");
+        assertTrue(Files.exists(casesPath), "Shared score cases file must exist: " + casesPath.toAbsolutePath());
+        JsonNode cases = JsonMapper.builder().build().readTree(Files.readString(casesPath));
+        assertTrue(cases.isArray() && cases.size() >= 30, "Expected at least 30 shared scoring cases");
+        for (JsonNode entry : cases) {
+            String name = entry.get("name").asText();
+            String guess = entry.get("guess").asText();
+            String answer = entry.get("answer").asText();
+            String expected = entry.get("expected").asText();
+            assertEquals(expected, WordleScorer.score(guess, answer),
+                    "Mismatch in shared case " + name + " (" + guess + " vs " + answer + ")");
+        }
+
+        String key1 = WordleKeyCodec.encode("VANDIJK", "550e8400-e29b-41d4-a716-446655440000");
+        String key2 = WordleKeyCodec.encode("VANDIJK", "660e8400-e29b-41d4-a716-446655440001");
+        assertNotEquals(key1, key2);
+        assertFalse(key1.contains("VANDIJK"));
+        assertEquals("VANDIJK", WordleKeyCodec.decode(key1));
+        assertEquals("VANDIJK", WordleKeyCodec.decode(key2));
+        assertEquals("MACALLISTER", WordleKeyCodec.decode(WordleKeyCodec.encode("MACALLISTER", "p-123")));
+    }
+
     @Test
     void scoresRepeatedLettersInGuessAndAnswerAndMultiWordAgainstSingleWord() {
         // Prompt example: HAALAND vs VANDIJK -> A at index 1 is H, second/third A are M, N & D are N.

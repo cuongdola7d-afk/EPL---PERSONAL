@@ -3,17 +3,264 @@ export const WORDLE_HINT_UNLOCK_TURNS = 4
 export const WORDLE_MIN_LENGTH = 4
 export const TELEX_DELETE_HOLD_MS = 150
 export const TELEX_BURST_MS = 25
-export const WORDLE_FLIP_DURATION_MS = 360
-export const WORDLE_FLIP_TOTAL_MS = 650
+export const WORDLE_FLIP_DURATION_MS = 320
+export const WORDLE_FLIP_TOTAL_MS = 600
 export const WORDLE_DEBUG_MAX_ENTRIES = 500
+export const WORDLE_SYNC_MAX_RETRIES = 3
+export const WORDLE_SYNC_RETRY_DELAYS_MS = [600, 1500, 3000]
 
 export function wordleFlipDelayMs(tileIndex, guessLength) {
   if (!Number.isFinite(tileIndex) || tileIndex <= 0 || !Number.isFinite(guessLength) || guessLength <= 1) {
     return 0
   }
   const budget = Math.max(0, WORDLE_FLIP_TOTAL_MS - WORDLE_FLIP_DURATION_MS)
-  const step = Math.min(80, Math.floor(budget / (guessLength - 1)))
+  const step = Math.min(93, Math.floor(budget / (guessLength - 1)))
   return tileIndex * step
+}
+
+/**
+ * Decodes the lightweight XOR + Base64 answer key produced by WordleKeyCodec.java.
+ * First 4 bytes are the puzzleId-derived mask; remaining bytes are XORed ASCII A-Z letters.
+ */
+export function decodeWordleKey(key) {
+  if (typeof key !== 'string' || !key.trim()) return null
+  try {
+    let bytes
+    if (typeof atob === 'function') {
+      const bin = atob(key)
+      bytes = new Uint8Array(bin.length)
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i)
+    } else if (typeof Buffer !== 'undefined') {
+      bytes = Buffer.from(key, 'base64')
+    } else {
+      return null
+    }
+    if (bytes.length <= 4) return null
+    let out = ''
+    for (let i = 0; i < bytes.length - 4; i += 1) {
+      const mix = bytes[i % 4] ^ ((i * 31 + 17) & 0xFF)
+      out += String.fromCharCode(bytes[4 + i] ^ mix)
+    }
+    return /^[A-Z]+$/.test(out) ? out : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Exact two-pass Wordle scorer matching backend WordleScorer.java.
+ * Supports guesses of length 1..N against an answer of length N.
+ */
+export function scoreWordleGuess(guessLetters, answerLetters) {
+  if (typeof guessLetters !== 'string' || typeof answerLetters !== 'string') {
+    throw new Error('Guess and answer must be strings')
+  }
+  const l = guessLetters.length
+  const n = answerLetters.length
+  if (l < 1 || l > n) {
+    throw new Error('Guess length must be between 1 and answer length')
+  }
+  const result = new Array(l).fill('M')
+  const remaining = new Int32Array(26)
+
+  for (let i = 0; i < l; i += 1) {
+    const g = guessLetters.charCodeAt(i)
+    const a = answerLetters.charCodeAt(i)
+    if (g < 65 || g > 90 || a < 65 || a > 90) {
+      throw new Error('Letters must be uppercase A-Z')
+    }
+    if (g === a) {
+      result[i] = 'H'
+    } else {
+      remaining[a - 65] += 1
+    }
+  }
+  for (let i = l; i < n; i += 1) {
+    const a = answerLetters.charCodeAt(i)
+    if (a < 65 || a > 90) {
+      throw new Error('Letters must be uppercase A-Z')
+    }
+    remaining[a - 65] += 1
+  }
+
+  for (let i = 0; i < l; i += 1) {
+    if (result[i] === 'H') continue
+    const idx = guessLetters.charCodeAt(i) - 65
+    if (remaining[idx] > 0) {
+      result[i] = 'N'
+      remaining[idx] -= 1
+    }
+  }
+  return result.join('')
+}
+
+/**
+ * Validates a guess locally in the exact same order as WordleService.applyGuessTimed
+ * so invalid guesses shake and show a toast instantly with zero network calls.
+ */
+export function validateWordleGuessLocally({
+  letters,
+  maxLength,
+  dictionaryByLetters,
+  guessedLetters = [],
+  finished = false,
+}) {
+  if (finished) return { ok: false, code: 'GAME_FINISHED' }
+  const normalized = typeof letters === 'string' ? letters.trim().toUpperCase() : ''
+  if (normalized.length > 0 && !/^[A-Z]+$/.test(normalized)) {
+    return { ok: false, code: 'INVALID_CHARACTERS' }
+  }
+  if (normalized.length < WORDLE_MIN_LENGTH) {
+    return { ok: false, code: 'TOO_SHORT' }
+  }
+  if (normalized.length > maxLength) {
+    return { ok: false, code: 'TOO_LONG' }
+  }
+  const entry = dictionaryByLetters?.get?.(normalized) ?? null
+  if (!entry) {
+    return { ok: false, code: 'NOT_A_PLAYER' }
+  }
+  if (guessedLetters.includes(normalized)) {
+    return { ok: false, code: 'ALREADY_GUESSED' }
+  }
+  if (guessedLetters.length >= WORDLE_MAX_TURNS) {
+    return { ok: false, code: 'GAME_FINISHED' }
+  }
+  return { ok: true, normalized, entry }
+}
+
+/**
+ * FIFO background sync queue for client-scored guesses:
+ * - Sends turns strictly in order, allowing the player to type the next turn immediately.
+ * - Retries transient network / 5xx errors up to maxRetries with increasing delays.
+ * - Verifies server feedback/status against client result; on mismatch or rejection, clears
+ *   the queue and notifies onMismatchOrRejected so the UI resyncs from /today.
+ */
+export function createGuessSyncQueue({
+  sendGuess,
+  onSynced,
+  onMismatchOrRejected,
+  onPendingChange,
+  maxRetries = WORDLE_SYNC_MAX_RETRIES,
+  retryDelaysMs = WORDLE_SYNC_RETRY_DELAYS_MS,
+} = {}) {
+  const queue = []
+  let running = false
+  let cancelled = false
+  let retryTimer = null
+  let idleWaiters = []
+
+  const notifyPending = () => {
+    onPendingChange?.(queue.length + (running ? 1 : 0))
+  }
+
+  const resolveIdleIfDone = () => {
+    if (!running && queue.length === 0 && idleWaiters.length > 0) {
+      const waiters = idleWaiters
+      idleWaiters = []
+      for (const resolve of waiters) resolve()
+    }
+  }
+
+  const waitDelay = ms => new Promise(resolve => {
+    retryTimer = setTimeout(() => {
+      retryTimer = null
+      resolve()
+    }, ms)
+  })
+
+  const isRetryableError = err => !err?.status || err.status >= 500
+
+  async function drain() {
+    if (running || cancelled) return
+    while (!cancelled && queue.length > 0) {
+      const item = queue.shift()
+      running = true
+      notifyPending()
+
+      let attempt = 0
+      let serverData = null
+      let lastError = null
+
+      while (!cancelled) {
+        try {
+          serverData = await sendGuess(item)
+          lastError = null
+          break
+        } catch (err) {
+          lastError = err
+          if (cancelled) break
+          if (!isRetryableError(err) || attempt >= maxRetries) break
+          const delay = retryDelaysMs[Math.min(attempt, retryDelaysMs.length - 1)] ?? 1000
+          attempt += 1
+          await waitDelay(delay)
+        }
+      }
+
+      if (cancelled) {
+        running = false
+        notifyPending()
+        resolveIdleIfDone()
+        return
+      }
+
+      if (lastError) {
+        queue.length = 0
+        running = false
+        notifyPending()
+        await onMismatchOrRejected?.('rejected', lastError, item)
+        resolveIdleIfDone()
+        return
+      }
+
+      const serverGuess = serverData?.guesses?.[item.turn - 1]
+      const matches = !!serverGuess &&
+        serverGuess.letters === item.letters &&
+        serverGuess.feedback === item.feedback &&
+        (item.status === 'PLAYING' || serverData.status === item.status)
+
+      if (!matches) {
+        queue.length = 0
+        running = false
+        notifyPending()
+        await onMismatchOrRejected?.('mismatch', null, item, serverData)
+        resolveIdleIfDone()
+        return
+      }
+
+      onSynced?.(serverData, item)
+      running = false
+      notifyPending()
+    }
+    resolveIdleIfDone()
+  }
+
+  return {
+    enqueue(item) {
+      if (cancelled) return
+      queue.push(item)
+      notifyPending()
+      drain()
+    },
+    pendingCount() {
+      return queue.length + (running ? 1 : 0)
+    },
+    waitUntilIdle() {
+      if (!running && queue.length === 0) return Promise.resolve()
+      return new Promise(resolve => { idleWaiters.push(resolve) })
+    },
+    cancel() {
+      cancelled = true
+      queue.length = 0
+      if (retryTimer !== null) {
+        clearTimeout(retryTimer)
+        retryTimer = null
+      }
+      running = false
+      notifyPending()
+      resolveIdleIfDone()
+    },
+  }
 }
 
 export function isWordleDebugEnabled(hash = '', search = '', storage = null) {
@@ -275,6 +522,60 @@ function baseLetters(str) {
   return out
 }
 
+function letterCharsOnly(str) {
+  return Array.from(str).filter(ch => analyzeViChar(ch).base !== '')
+}
+
+function decodePureInsert({ raw, shadowChars, nextShadow, text, clamp }) {
+  if (/^\s+$/.test(text)) {
+    return { raw, shadow: shadowChars.join(''), uncertain: false }
+  }
+  const insOnlyChars = Array.from(text)
+  if (insOnlyChars.length === 1) {
+    if (/^[A-Za-z]$/.test(text)) {
+      return { raw: clamp(raw + text.toUpperCase()), shadow: nextShadow, uncertain: false }
+    }
+    const info = analyzeViChar(text)
+    // Non-letter placeholder (e.g. UniKey U+00B7 "·"): keep in shadow for delete counting, ignore in raw.
+    if (!info.base) {
+      return { raw, shadow: nextShadow, uncertain: false }
+    }
+    // Safety net: 1 accented char inserted without a Backspace whose base letter matches
+    // the last letter in raw (or last letter char in shadow) -> treat as k=1 transform.
+    if (info.tone || info.shape) {
+      const shadowLetters = letterCharsOnly(shadowChars.join(''))
+      const lastShadowChar = shadowLetters.length > 0 ? shadowLetters[shadowLetters.length - 1] : ''
+      const lastShadowBase = analyzeViChar(lastShadowChar).base
+      if ((raw.length > 0 && raw[raw.length - 1] === info.base) || lastShadowBase === info.base) {
+        const beforeChar = lastShadowBase === info.base ? lastShadowChar : info.base
+        const key = inferSwallowedKey(beforeChar, text)
+        if (key) {
+          let replacedShadow = nextShadow
+          if (lastShadowBase === info.base) {
+            let cut = shadowChars.length - 1
+            while (cut >= 0 && analyzeViChar(shadowChars[cut]).base === '') cut -= 1
+            replacedShadow = shadowChars.slice(0, Math.max(0, cut)).join('') + text
+          }
+          return { raw: clamp(raw + key), shadow: replacedShadow, uncertain: false }
+        }
+      }
+    }
+    // Standalone W key in Telex inserts Ư/ư or Ơ/ơ with no letter deleted.
+    if (info.shape === 'HORN' && !info.tone && (info.base === 'U' || info.base === 'O')) {
+      return { raw: clamp(raw + 'W'), shadow: nextShadow, uncertain: false }
+    }
+  }
+  if (/^[A-Za-z]+$/.test(text)) {
+    return { raw: clamp(raw + text.toUpperCase()), shadow: nextShadow, uncertain: false }
+  }
+  // Non-letter placeholder string or unexpected non-ASCII pure insert
+  const fallback = baseLetters(text)
+  if (!fallback) {
+    return { raw, shadow: nextShadow, uncertain: false }
+  }
+  return { raw: clamp(raw + fallback), shadow: nextShadow, uncertain: true }
+}
+
 function inferSwallowedKey(deleted, inserted, { allowRemoval = true } = {}) {
   const delChars = Array.from(deleted)
   const insChars = Array.from(inserted)
@@ -326,51 +627,15 @@ export function decodeTelexBurst({ raw = '', shadow = '' }, { deletes = 0, inser
 
   // 1. Pure delete (real Backspace)
   if (k > 0 && T.length === 0) {
-    const nextRaw = raw.slice(0, Math.max(0, raw.length - k))
+    const deletedLetterCount = letterCharsOnly(deleted).length
+    const removeCount = kEff === 0 ? k : deletedLetterCount + Math.max(0, k - kEff)
+    const nextRaw = raw.slice(0, Math.max(0, raw.length - removeCount))
     return { raw: nextRaw, shadow: nextShadow, uncertain: false }
   }
 
   // 2. Pure insert without delete
   if (k === 0) {
-    if (/^\s+$/.test(T)) {
-      return { raw, shadow, uncertain: false }
-    }
-    const insOnlyChars = Array.from(T)
-    if (insOnlyChars.length === 1) {
-      if (/^[A-Za-z]$/.test(T)) {
-        return { raw: clamp(raw + T.toUpperCase()), shadow: nextShadow, uncertain: false }
-      }
-      const info = analyzeViChar(T)
-      // Safety net: 1 accented char inserted without a Backspace whose base letter matches
-      // the last letter in raw (or shadow) -> treat as k=1 transform of that letter.
-      if (info.base && (info.tone || info.shape)) {
-        const lastShadowChar = shadowChars.length > 0 ? shadowChars[shadowChars.length - 1] : ''
-        const lastShadowBase = analyzeViChar(lastShadowChar).base
-        if ((raw.length > 0 && raw[raw.length - 1] === info.base) || lastShadowBase === info.base) {
-          const beforeChar = lastShadowBase === info.base ? lastShadowChar : info.base
-          const key = inferSwallowedKey(beforeChar, T)
-          if (key) {
-            const replacedShadow = lastShadowBase === info.base
-              ? shadowChars.slice(0, shadowChars.length - 1).join('') + T
-              : nextShadow
-            return { raw: clamp(raw + key), shadow: replacedShadow, uncertain: false }
-          }
-        }
-      }
-      // Standalone W key in Telex inserts Ư/ư or Ơ/ơ with no delete.
-      if (info.shape === 'HORN' && !info.tone && (info.base === 'U' || info.base === 'O')) {
-        return { raw: clamp(raw + 'W'), shadow: nextShadow, uncertain: false }
-      }
-    }
-    if (/^[A-Za-z]+$/.test(T)) {
-      return { raw: clamp(raw + T.toUpperCase()), shadow: nextShadow, uncertain: false }
-    }
-    // Non-letter or unexpected non-ASCII pure insert
-    const fallback = baseLetters(T)
-    if (!fallback) {
-      return { raw, shadow: nextShadow, uncertain: false }
-    }
-    return { raw: clamp(raw + fallback), shadow: nextShadow, uncertain: true }
+    return decodePureInsert({ raw, shadowChars, nextShadow, text: T, clamp })
   }
 
   // 2b. Spacebar auto-restore (e.g. Unikey restores 'hâland' -> 'haaland ' on Space): no letter added.
@@ -381,32 +646,44 @@ export function decodeTelexBurst({ raw = '', shadow = '' }, { deletes = 0, inser
   }
 
   // 3. Delete + Insert burst (k > 0 && T.length > 0)
-  const delChars = Array.from(deleted)
-  const insChars = Array.from(T)
-  const delBase = baseLetters(deleted)
-  const insBase = baseLetters(T)
+  // Ignore non-letter placeholder chars (e.g. UniKey U+00B7 "·") when comparing deleted vs inserted letters.
+  const delLetters = letterCharsOnly(deleted)
+  const insLetters = letterCharsOnly(T)
+  const delLetterStr = delLetters.join('')
+  const insLetterStr = insLetters.join('')
+  const delBase = baseLetters(delLetterStr)
+  const insBase = baseLetters(insLetterStr)
+
+  // 3-pre. Only placeholders were deleted (e.g. "·" + ⌫ + "ư" for standalone W): decode insert as pure insert.
+  if (delLetters.length === 0) {
+    if (insLetters.length === 0) {
+      return { raw, shadow: nextShadow, uncertain: false }
+    }
+    const keptShadowChars = shadowChars.slice(0, shadowChars.length - kEff)
+    return decodePureInsert({ raw, shadowChars: keptShadowChars, nextShadow, text: insLetterStr, clamp })
+  }
 
   // 3a. Same base letters -> diacritic/tone transformation swallowed 1 Telex key.
-  if (delBase.length > 0 && insBase === delBase && insChars.length === delChars.length) {
-    const key = inferSwallowedKey(deleted, T)
+  if (delBase.length > 0 && insBase === delBase && insLetters.length === delLetters.length) {
+    const key = inferSwallowedKey(delLetterStr, insLetterStr)
     if (key !== null) {
       return { raw: clamp(raw + key), shadow: nextShadow, uncertain: false }
     }
   }
 
-  // 3b. All-ASCII replacement differing from deleted -> Telex undo or auto-restore (e.g. Â+A -> AA, ỬI+T -> WIRT).
-  if (/^[A-Za-z]+$/.test(T) && T !== deleted) {
-    const lastChar = T[T.length - 1].toUpperCase()
+  // 3b. All-ASCII replacement differing from deleted -> Telex undo or auto-restore (e.g. Â+A -> AA, Ả·+⌫⌫+AR -> ARR).
+  if (/^[A-Za-z]+$/.test(insLetterStr) && insLetterStr !== delLetterStr) {
+    const lastChar = insLetterStr[insLetterStr.length - 1].toUpperCase()
     return { raw: clamp(raw + lastChar), shadow: nextShadow, uncertain: false }
   }
 
   // 3c. Base letters preserved plus 1+ new ASCII letters appended:
-  // handles both Unikey tone-strip on consonant (ƯỈ+T -> ƯIT) and fast typing inside 25ms (A -> ÂL).
+  // handles both Unikey tone-strip on consonant (ƯỈ+T -> ƯIT) and fast typing inside 25ms (A· -> ÂL).
   if (delBase.length > 0 && insBase.startsWith(delBase) && insBase.length > delBase.length) {
-    const prefix = insChars.slice(0, delChars.length).join('')
-    const suffix = insChars.slice(delChars.length).join('')
+    const prefix = insLetters.slice(0, delLetters.length).join('')
+    const suffix = insLetters.slice(delLetters.length).join('')
     if (/^[A-Za-z]+$/.test(suffix)) {
-      const addedBeforeSuffix = inferSwallowedKey(deleted, prefix, { allowRemoval: false }) || ''
+      const addedBeforeSuffix = inferSwallowedKey(delLetterStr, prefix, { allowRemoval: false }) || ''
       return { raw: clamp(raw + addedBeforeSuffix + suffix.toUpperCase()), shadow: nextShadow, uncertain: false }
     }
   }

@@ -12,14 +12,18 @@ import {
   WORDLE_MAX_TURNS,
   buildRowWordGroups,
   buildShareText,
+  createGuessSyncQueue,
   createTelexBurstQueue,
   createWordleDebugLog,
   decodeTelexBurst,
+  decodeWordleKey,
   filterWordleSuggestions,
   formatWordleDateLabel,
   isWordleDebugEnabled,
   keyboardKeyStates,
   resolveWordleAccess,
+  scoreWordleGuess,
+  validateWordleGuessLocally,
   wordleFlipDelayMs,
   wordleToastMessage,
 } from '../minigame/wordle.js'
@@ -154,8 +158,9 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   const [dictionary, setDictionary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [hintBusy, setHintBusy] = useState(false)
+  const [fallbackBusy, setFallbackBusy] = useState(false)
+  const [pendingSyncCount, setPendingSyncCount] = useState(0)
   const [reloadTick, setReloadTick] = useState(0)
 
   const [input, setInput] = useState('')
@@ -177,6 +182,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   const shadowRef = useRef('')
   const imeWarnedRef = useRef(false)
   const burstQueueRef = useRef(null)
+  const syncQueueRef = useRef(null)
   const debugEnabledRef = useRef(debugEnabled)
   debugEnabledRef.current = debugEnabled
   const debugLogRef = useRef(null)
@@ -317,7 +323,84 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   const finished = !!data && data.status !== 'PLAYING'
   dataRef.current = data
   finishedRef.current = finished
-  busyRef.current = busy
+  busyRef.current = fallbackBusy
+
+  const dictionaryByLetters = useMemo(() => {
+    if (!Array.isArray(dictionary)) return null
+    const map = new Map()
+    for (const entry of dictionary) {
+      if (entry?.letters) map.set(entry.letters, entry)
+    }
+    return map
+  }, [dictionary])
+
+  // Background ordered sync queue for instant client-scored turns.
+  useEffect(() => {
+    if (!account?.id) {
+      syncQueueRef.current?.cancel()
+      syncQueueRef.current = null
+      setPendingSyncCount(0)
+      return undefined
+    }
+    const queue = createGuessSyncQueue({
+      sendGuess: item => submitWordleGuess(account.id, item.letters, { date: item.date }),
+      onSynced: (serverData, item) => {
+        setData(prev => {
+          if (!prev || prev.date !== serverData.date) return prev
+          const mergedGuesses = prev.guesses.map(localGuess => {
+            const fromServer = serverData.guesses[localGuess.turn - 1]
+            return fromServer ?? localGuess
+          })
+          const fullyCaughtUp = mergedGuesses.length === serverData.guesses.length
+          return {
+            ...prev,
+            key: serverData.key,
+            serverTime: serverData.serverTime,
+            hintUsed: serverData.hintUsed,
+            hintClub: serverData.hintClub,
+            guesses: mergedGuesses,
+            status: fullyCaughtUp ? serverData.status : prev.status,
+            answer: serverData.answer ?? prev.answer,
+            stats: serverData.stats ?? prev.stats,
+          }
+        })
+      },
+      onMismatchOrRejected: async (_reason, failure) => {
+        if (failure?.status === 404) {
+          window.location.hash = '#minigame'
+          return
+        }
+        try {
+          const fresh = await fetchWordleToday(account.id)
+          setData(fresh)
+          resetShadow()
+          setRawInput('', false)
+          setFlipRow(-1)
+          showToast('Đã đồng bộ lại ván chơi')
+        } catch {
+          setReloadTick(v => v + 1)
+          showToast('Đã đồng bộ lại ván chơi')
+        }
+      },
+      onPendingChange: count => setPendingSyncCount(count),
+    })
+    syncQueueRef.current = queue
+    return () => {
+      queue.cancel()
+      if (syncQueueRef.current === queue) syncQueueRef.current = null
+    }
+  }, [account?.id, resetShadow, setRawInput, showToast])
+
+  // Warn user before leaving page while client-scored turns are still syncing to server.
+  useEffect(() => {
+    if (pendingSyncCount <= 0) return undefined
+    const handleBeforeUnload = event => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pendingSyncCount])
 
   // Initialize Telex burst queue once and flush on unmount.
   useEffect(() => {
@@ -378,6 +461,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   }, [sugOpen])
 
   const handleMidnightRollover = useCallback(() => {
+    syncQueueRef.current?.cancel()
     resetShadow()
     setRawInput('', false)
     setFlipRow(-1)
@@ -386,13 +470,74 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
 
   const submitCurrentGuess = useCallback(async () => {
     burstQueueRef.current?.flush()
+    const currentData = dataRef.current
     const currentInput = rawRef.current
-    if (!account?.id || !data || finished || busy) return
+    if (!account?.id || !currentData || finishedRef.current || busyRef.current) return
+
+    const decodedAnswer = decodeWordleKey(currentData.key)
+    if (dictionaryByLetters && decodedAnswer && syncQueueRef.current) {
+      const check = validateWordleGuessLocally({
+        letters: currentInput,
+        maxLength: currentData.length,
+        dictionaryByLetters,
+        guessedLetters: currentData.guesses.map(g => g.letters),
+        finished: currentData.status !== 'PLAYING',
+      })
+      if (!check.ok) {
+        showToast(wordleToastMessage(check.code, currentData.length))
+        triggerShake()
+        if (!isCoarsePointer()) requestAnimationFrame(() => focusDesktopInput())
+        return
+      }
+
+      const { normalized, entry } = check
+      const feedback = scoreWordleGuess(normalized, decodedAnswer)
+      const turn = currentData.guesses.length + 1
+      const nextStatus = normalized === decodedAnswer
+        ? 'WON'
+        : (turn >= WORDLE_MAX_TURNS ? 'LOST' : 'PLAYING')
+
+      const optimisticGuess = {
+        turn,
+        word: entry.word,
+        letters: normalized,
+        feedback,
+        playerName: entry.name,
+        club: entry.club,
+      }
+      const nextData = {
+        ...currentData,
+        status: nextStatus,
+        guesses: [...currentData.guesses, optimisticGuess],
+      }
+      dataRef.current = nextData
+      finishedRef.current = nextStatus !== 'PLAYING'
+      setData(nextData)
+      resetShadow()
+      setRawInput('', false)
+      setFlipRow(turn - 1)
+      clearTimeout(flipTimerRef.current)
+      flipTimerRef.current = setTimeout(() => setFlipRow(-1), WORDLE_FLIP_TOTAL_MS + 40)
+
+      syncQueueRef.current.enqueue({
+        turn,
+        letters: normalized,
+        feedback,
+        status: nextStatus,
+        date: currentData.date,
+      })
+
+      if (nextStatus === 'PLAYING' && !isCoarsePointer()) {
+        requestAnimationFrame(() => focusDesktopInput())
+      }
+      return
+    }
+
+    // Fallback path when dictionary failed to load: submit directly to server.
     setSugOpen(false)
-    setBusy(true)
-    setSubmitting(true)
+    setFallbackBusy(true)
     try {
-      const next = await submitWordleGuess(account.id, currentInput, { date: data.date })
+      const next = await submitWordleGuess(account.id, currentInput, { date: currentData.date })
       const submittedIndex = next.guesses.length - 1
       setData(prev => ({ ...next, stats: next.stats ?? prev?.stats ?? null }))
       resetShadow()
@@ -406,23 +551,22 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
         return
       }
       if (['TOO_SHORT', 'TOO_LONG', 'WRONG_LENGTH', 'NOT_A_PLAYER', 'ALREADY_GUESSED', 'INVALID_CHARACTERS'].includes(failure.code)) {
-        showToast(wordleToastMessage(failure.code, data.length, failure.message))
+        showToast(wordleToastMessage(failure.code, currentData.length, failure.message))
         triggerShake()
       } else if (failure.code === 'GAME_FINISHED') {
-        showToast(wordleToastMessage('GAME_FINISHED', data.length, failure.message))
+        showToast(wordleToastMessage('GAME_FINISHED', currentData.length, failure.message))
         setReloadTick(v => v + 1)
       } else {
         showToast(failure.message)
       }
     } finally {
-      setSubmitting(false)
-      setBusy(false)
+      setFallbackBusy(false)
       if (!isCoarsePointer()) requestAnimationFrame(() => focusDesktopInput())
     }
-  }, [account?.id, busy, data, finished, focusDesktopInput, resetShadow, setRawInput, showToast, triggerShake])
+  }, [account?.id, dictionaryByLetters, focusDesktopInput, resetShadow, setRawInput, showToast, triggerShake])
 
   const handleVirtualKey = useCallback(key => {
-    if (!data || finished || busy) return
+    if (!dataRef.current || finishedRef.current || busyRef.current) return
     if (key === 'Enter') {
       submitCurrentGuess()
       return
@@ -435,10 +579,10 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
       return
     }
     if (/^[A-Z]$/.test(key)) {
-      if (rawRef.current.length >= data.length) return
+      if (rawRef.current.length >= dataRef.current.length) return
       setRawInput(rawRef.current + key, true)
     }
-  }, [busy, data, finished, resetShadow, setRawInput, submitCurrentGuess])
+  }, [resetShadow, setRawInput, submitCurrentGuess])
 
   // Attach beforeinput/composition/input listeners to desktop hidden <input> so Unikey/EVKey Telex bursts are decoded.
   useEffect(() => {
@@ -514,7 +658,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   // Global keydown on desktop: handles Enter, logs debug keydowns, or redirects focus to the hidden <input> if unfocused.
   useEffect(() => {
     const onKeyDown = event => {
-      if (!data || finished || busy || sheet) return
+      if (!data || finished || fallbackBusy || sheet) return
       if (event.ctrlKey || event.metaKey || event.altKey) return
       const target = event.target
       const isHiddenInput = target === imeInputRef.current
@@ -546,14 +690,20 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [busy, data, finished, focusDesktopInput, handleVirtualKey, recordDebug, sheet, submitCurrentGuess])
+  }, [data, fallbackBusy, finished, focusDesktopInput, handleVirtualKey, recordDebug, sheet, submitCurrentGuess])
 
   const handleRevealHint = async () => {
-    if (!account?.id || !data || finished || busy || data.hintUsed || data.guesses.length < WORDLE_HINT_UNLOCK_TURNS) return
-    setBusy(true)
+    if (!account?.id || !data || finished || hintBusy || data.hintUsed || data.guesses.length < WORDLE_HINT_UNLOCK_TURNS) return
+    setHintBusy(true)
     try {
-      const next = await revealWordleHint(account.id, { date: data.date })
-      setData(prev => ({ ...next, stats: next.stats ?? prev?.stats ?? null }))
+      await syncQueueRef.current?.waitUntilIdle()
+      const current = dataRef.current
+      if (!current || current.status !== 'PLAYING' || current.hintUsed) return
+      const next = await revealWordleHint(account.id, { date: current.date })
+      setData(prev => {
+        if (!prev || prev.date !== next.date) return prev
+        return { ...prev, hintUsed: next.hintUsed, hintClub: next.hintClub, serverTime: next.serverTime }
+      })
     } catch (failure) {
       if (failure.status === 404) {
         window.location.hash = '#minigame'
@@ -561,7 +711,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
       }
       showToast(wordleToastMessage(failure.code, data.length, failure.message))
     } finally {
-      setBusy(false)
+      setHintBusy(false)
     }
   }
 
@@ -602,7 +752,16 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
   const hintUnlocked = !!data && data.guesses.length >= WORDLE_HINT_UNLOCK_TURNS && !finished
   const hintVisual = data?.hintClub ? clubVisual(data.hintClub) : null
   const answer = data?.answer ?? null
-  const answerVisual = answer ? clubVisual(answer.club) : null
+  const preliminaryAnswer = useMemo(() => {
+    if (!finished || answer || !data?.key) return null
+    const decoded = decodeWordleKey(data.key)
+    if (!decoded) return null
+    const entry = dictionaryByLetters?.get(decoded)
+    return entry
+      ? { name: entry.name, club: entry.club, word: entry.word }
+      : { name: decoded, club: '', word: decoded }
+  }, [answer, data?.key, dictionaryByLetters, finished])
+  const answerVisual = answer ? clubVisual(answer.club) : (preliminaryAnswer?.club ? clubVisual(preliminaryAnswer.club) : null)
   const answerMeta = answer
     ? [answer.club, answer.position, answer.nationality, answer.age != null ? `${answer.age} tuổi` : null]
         .filter(Boolean)
@@ -742,10 +901,10 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                   letters: input,
                   length: data.length,
                 })
-                const showSug = sugOpen && !submitting && input.length > 0 && dictionary !== null
+                const showSug = sugOpen && input.length > 0 && dictionary !== null
                 return (
                   <div
-                    className={`wd-row wd-cur${shaking ? ' wd-shake' : ''}${submitting ? ' wd-submitting' : ''}`}
+                    className={`wd-row wd-cur${shaking ? ' wd-shake' : ''}`}
                     ref={curRowRef}
                     key={rowIndex}
                   >
@@ -840,7 +999,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
             ) : (
               <button
                 type="button"
-                disabled={!hintUnlocked || busy}
+                disabled={!hintUnlocked || hintBusy}
                 onClick={handleRevealHint}
               >
                 💡 Gợi ý: xem CLB{data.guesses.length >= WORDLE_HINT_UNLOCK_TURNS ? '' : ' · mở sau lượt 4'}
@@ -860,7 +1019,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                       type="button"
                       key={key}
                       className={`wd-k${isWide ? ' wd-wide' : ''}${state ? ` wd-${state}` : ''}`}
-                      disabled={finished || busy}
+                      disabled={finished || fallbackBusy}
                       aria-label={key === 'Enter' ? 'Đoán' : key === 'Backspace' ? 'Xóa chữ' : key}
                       onClick={() => handleVirtualKey(key)}
                     >
@@ -872,7 +1031,7 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
             ))}
           </div>
 
-          {finished && answer && (
+          {finished && (answer || preliminaryAnswer) && (
             <div className="wd-res" aria-live="polite">
               <div className="wd-rh">
                 <span className="wd-rh-ico" aria-hidden="true">{data.status === 'WON' ? '🎉' : '😢'}</span>
@@ -886,23 +1045,55 @@ export default function WordleGame({ account, authLoading, authError, wordleInfo
                 </div>
               </div>
 
-              <div className="wd-pc">
-                <span className="wd-no" style={{ background: answerVisual.color }}>
-                  {answer.shirtNumber ?? '—'}
-                </span>
-                <div className="wd-pc-copy">
-                  <b>{answer.name}</b>
-                  <small>{answerMeta}</small>
+              {answer ? (
+                <div className="wd-pc">
+                  <span className="wd-no" style={{ background: answerVisual.color }}>
+                    {answer.shirtNumber ?? '—'}
+                  </span>
+                  <div className="wd-pc-copy">
+                    <b>{answer.name}</b>
+                    <small>{answerMeta}</small>
+                  </div>
+                  {answer.overall != null && (
+                    <span className="wd-ovr" title="OVR FC 27">{answer.overall}</span>
+                  )}
                 </div>
-                {answer.overall != null && (
-                  <span className="wd-ovr" title="OVR FC 27">{answer.overall}</span>
-                )}
-              </div>
+              ) : (
+                <div className="wd-pc wd-pc-pending" aria-busy="true">
+                  <span className="wd-no wd-skel" aria-hidden="true" />
+                  <div className="wd-pc-copy">
+                    <b>{preliminaryAnswer.name}</b>
+                    <small>
+                      {preliminaryAnswer.club ? `${preliminaryAnswer.club} · ` : ''}
+                      <span className="wd-skel wd-skel-inline" aria-hidden="true" />
+                    </small>
+                  </div>
+                  <span className="wd-ovr wd-skel" aria-hidden="true" />
+                </div>
+              )}
 
-              <WordleStatsBlock
-                stats={data.stats}
-                highlightTurn={data.status === 'WON' ? data.guesses.length : null}
-              />
+              {answer ? (
+                <WordleStatsBlock
+                  stats={data.stats}
+                  highlightTurn={data.status === 'WON' ? data.guesses.length : null}
+                />
+              ) : (
+                <div className="wd-stats-skel" aria-busy="true" aria-label="Đang tải thống kê">
+                  <div className="wd-st">
+                    {[0, 1, 2, 3].map(i => (
+                      <div key={i}><span className="wd-skel wd-skel-num" /></div>
+                    ))}
+                  </div>
+                  <div className="wd-dist">
+                    {[0, 1, 2, 3, 4, 5].map(i => (
+                      <div className="wd-dr" key={i}>
+                        <span>{i + 1}</span>
+                        <div className="wd-bar-track"><span className="wd-skel wd-skel-bar" /></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="wd-acts">
                 <button type="button" className="wd-share-btn" onClick={handleShare}>

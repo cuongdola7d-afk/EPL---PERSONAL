@@ -148,7 +148,7 @@ class WordleIntegrationTest {
         assertEquals("VAN DIJK", puzzle.answerWord());
         assertEquals("VANDIJK", puzzle.answerLetters());
 
-        // 1. /today while PLAYING must NOT leak answer id, name, word, letters, or club
+        // 1. /today while PLAYING must NOT leak plaintext answer word/letters, player name, id, or club (only obfuscated key is allowed)
         String todayJson = mvc.perform(get(API + "/today")
                         .with(user("a@example.test").roles("USER"))
                         .header("X-PrismaXI-Account-ID", "101"))
@@ -158,6 +158,7 @@ class WordleIntegrationTest {
                 .andExpect(jsonPath("$.shape[0]").value(3))
                 .andExpect(jsonPath("$.shape[1]").value(4))
                 .andExpect(jsonPath("$.shape.length()").value(2))
+                .andExpect(jsonPath("$.key").isString())
                 .andExpect(jsonPath("$.status").value("PLAYING"))
                 .andExpect(jsonPath("$.hintUsed").value(false))
                 .andExpect(jsonPath("$.hintClub").doesNotExist())
@@ -165,9 +166,12 @@ class WordleIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         assertFalse(todayJson.contains("Virgil"));
         assertFalse(todayJson.contains("van Dijk"));
+        assertFalse(todayJson.contains("VAN DIJK"));
         assertFalse(todayJson.contains("VANDIJK"));
         assertFalse(todayJson.contains("Liverpool"));
         assertFalse(todayJson.contains("\"answerPlayerId\""));
+        String key = json.readTree(todayJson).get("key").asText();
+        assertEquals("VANDIJK", WordleKeyCodec.decode(key));
 
         // 2. /dictionary has 4..N players including low-OVR, excludes >N, deduplicates BARCOLA to higher OVR, never exposes playerId or answer flags
         String dictJson = mvc.perform(get(API + "/dictionary")
